@@ -1,0 +1,273 @@
+{
+ "lote": "lote-08",
+ "tema": "Social, caras y gestos",
+ "nota": "Personas y gestos, con dignidad: cabezas cúbicas de duende (cuadrado de esquinas suaves) y manos sobrias. Ni una carita redonda amarilla.",
+ "glifos": [
+  {
+   "nombre": "grupo",
+   "cps": [
+    "1F465"
+   ],
+   "caracteres": "👥",
+   "significado": "Amigos en línea, grupo, jugadores conectados.",
+   "dibuja": "Tres bustos: uno delante al centro y dos detrás más pequeños, cabezas cúbicas, separados por un filete.",
+   "usos": 31,
+   "ctx": [
+    "mundo/index.html: s\" title=\"Amigos y jugadores en línea\" data-l=\"Amigos\">👥</button> <button class=\"bt\" id=\"b-chat\" title=\"Chat …",
+    "mundo/js/mundo.js: ' +10% XP' : '') + clima3 + (enLinea3 > 1 ? ' · 👥 ' + enLinea3 + ' en línea' : '') + (hoy3 > enLinea3 ? …",
+    "mundo/js/mundo.js: ak; // cuanta gente juega (reloj de arriba y ventana 👥) case 'tempFin': mostrarTempFin(m); break; cas…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "usuario",
+   "cps": [
+    "1F464"
+   ],
+   "caracteres": "👤",
+   "significado": "Aspecto del personaje (look), perfil.",
+   "dibuja": "Un busto: cabeza cúbica de esquinas suaves y hombros anchos.",
+   "usos": 26,
+   "ctx": [
+    "mundo/index.html: pariencia (cara, cuerpo, altura y pelo)\" data-l=\"Look\">👤</button> <button class=\"bt extra\" id=\"b-mapa\" title=…",
+    "mundo/js/mundo.js: ae yo). // En movil no se abre solo: esta en ⋯ → 👤. if (antes && !antes.clase && yo.clase && !yo.lo…",
+    "mundo/js/mundo.js: celular): ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p>…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cabeza-duende",
+   "cps": [
+    "1F9DD",
+    "1F9CC"
+   ],
+   "caracteres": "🧝🧌",
+   "significado": "La marca: Duende Quest, tu duende.",
+   "dibuja": "Cabeza del duende de frente: cubo de esquinas suaves con dos orejas en punta hacia los lados, ojos rectangulares tallados y boca recta corta.",
+   "usos": 19,
+   "ctx": [
+    "mundo/js/mundo.js: irma. const linea = lineaFija || lineaPresumir() || '🧝 Duende Quest · ¿Me ganas?'; x.font = 'bold 30px syst…",
+    "mundo/js/mundo.js: -ÿ _.-]/g, '').trim().slice(0, 16); if (nom) p.push('🧝 ' + nom); if (yo.nivel) p.push('Nv ' + yo.nivel + (E…",
+    "mundo/js/mundo.js: '¡Juega gratis conmigo a Duende Quest 3D en Telegram! 🧝'); const img = location.origin + '/assets/promo/hist…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cara-feliz",
+   "cps": [
+    "1F600",
+    "1F642",
+    "1F602"
+   ],
+   "caracteres": "😀🙂😂",
+   "significado": "Gestos y frases rápidas; reír.",
+   "dibuja": "La cabeza del duende con ojos en arco (sonrientes) y boca abierta en media luna tallada.",
+   "usos": 6,
+   "otros": "😂 y 🙂 son alias",
+   "ctx": [
+    "mundo/index.html: da, encima del chat (no en medio de la pantalla) */ /* 😀 Gestos y frases rapidas (mundo.js coloca la fila bajo …",
+    "mundo/index.html: \" aria-label=\"Gestos y frases rápidas\" data-l=\"Gestos\">😀</button> <button class=\"bt extra\" id=\"b-ayuda\" title…",
+    "mundo/js/mundo.js: chat-in'); i.style.display = 'block'; i.focus(); }; // 😀 Gestos y frases rapidas: hablar sin teclado (movil). F…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cara-llanto",
+   "cps": [
+    "1F62D"
+   ],
+   "caracteres": "😭",
+   "significado": "«Se me escapó…».",
+   "dibuja": "La cabeza del duende con ojos cerrados en arco hacia abajo, dos lágrimas talladas y boca en arco triste.",
+   "usos": 2,
+   "ctx": [
+    "mundo/js/mundo.js: r.lad || 0) < 75000) setTimeout(() => ofrecerPresumir('😭 ¡Se me escapó un Duende Ladrón con todo su oro en Duen…",
+    "mmo/js/data.js: jo: { e: '😡', txt: 'se enfada' }, llorar: { e: '😭', txt: 'llora' }, }; // ── HORA FELIZ ── // Cada dia …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "furia",
+   "cps": [
+    "1F621"
+   ],
+   "caracteres": "😡",
+   "significado": "Afijo «Furioso».",
+   "dibuja": "La cabeza del duende con cejas en V muy marcadas, ojos en cuña y colmillos tallados en la boca.",
+   "usos": 6,
+   "ctx": [
+    "mundo/js/mundo.js: 💰 ' : '★ ') + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv …",
+    "mmo/js/data.js: o.' }, furioso: { nombre: 'Furioso', emoji: '😡', desde: 5, desc: 'Los monstruos que no son jefes se e…",
+    "mmo/js/data.js: { e: '👍', txt: 'dice que sí' }, enojo: { e: '😡', txt: 'se enfada' }, llorar: { e: '😭', txt: 'llor…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "anciano",
+   "cps": [
+    "1F475",
+    "1F474"
+   ],
+   "caracteres": "👵👴",
+   "significado": "Abuela Sisa y Tayta Mallku (retratos de NPC).",
+   "dibuja": "Busto con chullo (gorro andino con orejeras y borla) y hombros de poncho.",
+   "usos": 6,
+   "ctx": [
+    "mundo/js/mundo.js: eleer del diario). const NPC_EMOJI = { 'Abuela Sisa': '👵', 'Tayta Mallku': '👴', 'Chamán Amaru': '🌿', 'Herrera C…",
+    "mundo/js/mundo.js: .length; abrirAbuela.ult = i; if (L[i]) aviso('👵 Abuela: «' + L[i] + '»', 'ok'); } try { V.abrirTie…",
+    "mundo/js/vecinos.js: nombre: 'Abuela Sisa', hoja: 'goblin_peasant', emoji: '👵', rol: '🥖 Horno', zona: 'pueblo', x: 10, z: -13, look:…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "apreton",
+   "cps": [
+    "1F91D"
+   ],
+   "caracteres": "🤝",
+   "significado": "Ayni (ayudar a otro), equipo.",
+   "dibuja": "Dos manos que se estrechan en horizontal, mangas rectas macizas a los lados y dedos sugeridos con dos cortes.",
+   "usos": 25,
+   "ctx": [
+    "mundo/js/mundo.js: ')) SON.tocar('logro', { vol: 0.6 }); else if (/^🤝 Ayni/.test(m.m || '')) { SON.tocar('cura', { v…",
+    "mundo/js/mundo.js: ? 'Martillo 🔨' : b > 0 && a === b ? 'Muro 🛡' : 'Equipo 🤝'; const partes = [nom + ' vencido', 'Tu aporte ' + M…",
+    "mundo/js/mundo.js: 'TE INVITÓ') + `<p class=\"vv-p\" style=\"font-size:12px\">🤝 <b>${esc(inv3.por.n)}</b>: a Nv ${meta} ganan oro los …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "gracias",
+   "cps": [
+    "1F64F"
+   ],
+   "caracteres": "🙏",
+   "significado": "Dar las gracias a otro jugador.",
+   "dibuja": "Dos manos juntas palma con palma en vertical, simétricas, con mangas abajo.",
+   "usos": 9,
+   "ctx": [
+    "mundo/js/mundo.js: Quest 3D!', 'logro'), 1500); } else if (/^🙏 .+ te agradeció$/.test(m.m || '')) { SON.tocar('cura',…",
+    "mmo/js/data.js: o 10 niveles mayor.', 'Ayudar a otros (Ayni) y dar 🙏 gracias ya dan logros y títulos.', 'Nuevo punto de…",
+    "mmo/js/data.js: plaudir: { e: '👏', txt: 'aplaude' }, gracias: { e: '🙏', txt: 'da las gracias' }, si: { e: '👍', txt: …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "saludo",
+   "cps": [
+    "1F44B",
+    "270B",
+    "1F44F"
+   ],
+   "caracteres": "👋✋👏",
+   "significado": "Gestos (/saludar), alto, aplaudir.",
+   "dibuja": "Mano abierta de frente, cuatro dedos juntos y pulgar separado, con dos rayitas de movimiento a la derecha.",
+   "usos": 7,
+   "otros": "✋ y 👏 son alias",
+   "ctx": [
+    "mmo/js/data.js: gram; El Duende revisa el pago y te la entrega.', '👋 Gestos (/saludar, /bailar...), lista de amigos con avi…",
+    "mmo/js/data.js: desde su marco: su equipo, conjuntos y logros.', '👋 Gestos: /saludar, /bailar, /reir, /aplaudir… (en el mó…",
+    "mmo/js/data.js: Solo social. export const GESTOS = { saludar: { e: '👋', txt: 'saluda' }, bailar: { e: '💃', txt: 'baila' …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pulgar",
+   "cps": [
+    "1F44D"
+   ],
+   "caracteres": "👍",
+   "significado": "Decir que sí.",
+   "dibuja": "Puño de perfil con el pulgar arriba y puño de manga.",
+   "usos": 1,
+   "ctx": [
+    "mmo/js/data.js: { e: '🙏', txt: 'da las gracias' }, si: { e: '👍', txt: 'dice que sí' }, enojo: { e: '😡', txt: 'se…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "tocar",
+   "cps": [
+    "1F446",
+    "261D"
+   ],
+   "caracteres": "👆☝",
+   "significado": "Usar / interactuar (botón táctil), «toca aquí».",
+   "dibuja": "Mano con el índice extendido hacia arriba y dos arcos de pulsación sobre la yema.",
+   "usos": 5,
+   "ctx": [
+    "mundo/index.html: :#fbbf24;} body.movil #tactil #t-usar::before{content:'👆';} body.movil #tactil #t-bajar::before{content:'⏬';} b…",
+    "mundo/js/mundo.js: 2m')) { localStorage.setItem('dq3_tip2m', '1'); aviso('👆 Monstruo marcado: acércate y tócalo o toca ' + K('1', …",
+    "game.html: ails> <details id=\"ctl-tactil\"> <summary>👆 Pantalla táctil</summary> <ul> <li><…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "baile",
+   "cps": [
+    "1F483"
+   ],
+   "caracteres": "💃",
+   "significado": "Bailar (huayno).",
+   "dibuja": "Figura de duende bailando huayno: un brazo arriba con pañuelo y pollera/poncho en vuelo.",
+   "usos": 2,
+   "ctx": [
+    "mundo/js/mundo.js: ntro de la activacion del toque). const LINEA_BAILE = '💃 ¡Mi duende baila en Duende Quest! ¿Me ganas?'; let fot…",
+    "mmo/js/data.js: saludar: { e: '👋', txt: 'saluda' }, bailar: { e: '💃', txt: 'baila' }, reir: { e: '😂', txt: 'se ríe' …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "camara",
+   "cps": [
+    "1F4F8",
+    "1F3A5",
+    "1F3AC"
+   ],
+   "caracteres": "📸🎥🎬",
+   "significado": "Presumir (foto), modo cine para grabar.",
+   "dibuja": "Cámara de frente: cuerpo macizo con visor arriba, objetivo en aro tallado y un destello pequeño.",
+   "usos": 16,
+   "otros": "🎥 y 🎬 son alias",
+   "ctx": [
+    "mundo/index.html: .movil: gana a la regla vertical de mas abajo) */ } /* 🎬 Modo cine: sin HUD para grabar (el lienzo 3D sigue vis…",
+    "mundo/js/mundo.js: grabar tu pantalla\" aria-label=\"Modo cine para grabar\">🎬</button></div>' + '<div class=\"g3-f\">' + FRASES3.m…",
+    "mundo/js/mundo.js: ok = false; } if (!ok) fin(null); }, 600); } // 🎬 Modo cine: oculta el HUD 15 s, el duende baila y la ca…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "poncho",
+   "cps": [
+    "1F455",
+    "1F9E3",
+    "1F3A9"
+   ],
+   "caracteres": "👕🧣🎩",
+   "significado": "Ropa, colección de atuendos, prendas.",
+   "dibuja": "Poncho andino de frente: rombo/trapecio con cuello en V tallado, dos franjas talladas y flecos abajo.",
+   "usos": 4,
+   "ctx": [
+    "functions/mmo/retencion.js: const falta = faltaSk; add('col', falta > 0 ? `👕 Te faltan ${fmt(falta)} de oro para la skin «${SKINS[s…",
+    "functions/mmo/retencion.js: ta)} de oro para la skin «${SKINS[sk.id].nombre}».` : `👕 ¡Ya te alcanza el oro para la skin «${SKINS[sk.id].nom…",
+    "mmo/js/caso.js: , zona: 'cumbres', nv: 44, tipo: 'Testimonio', emoji: '🧣', titulo: 'Tito dormía', texto: 'Tapado con manta; mig…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "bota",
+   "cps": [
+    "1F462",
+    "1F45F"
+   ],
+   "caracteres": "👢👟",
+   "significado": "Expulsar de la hermandad; botas veloces.",
+   "dibuja": "Bota alta de cuero de perfil mirando a la derecha, con vuelta arriba y suela marcada.",
+   "usos": 2,
+   "ctx": [
+    "functions/mmo/dios.js: ing(m.motivo).slice(0, 80) : '.')); return ok('👢 Expulsado.'); } case 'silenciar': { …",
+    "js/engine.js: { mej.alcance += .30; } }, { id: 'botas', icono: '👟', nombre: 'BOTAS VELOCES', desc: '+20% de velocidad', …"
+   ],
+   "hecho": false
+  }
+ ]
+}

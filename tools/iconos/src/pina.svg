@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs><clipPath id="c"><ellipse cx="32" cy="42" rx="13.5" ry="14.5"/></clipPath></defs>
+<path fill="#000" stroke="#000" stroke-width="2" stroke-linejoin="round" d="M32 5 L36 15 L44 8 L42 19 L52 16 L42 28 H22 L12 16 L22 19 L20 8 L28 15 Z"/>
+<ellipse cx="32" cy="42" rx="17" ry="18" fill="#000"/>
+<path clip-path="url(#c)" fill="none" stroke="#fff" stroke-width="3.2" d="M7 60 L47 20 M21 60 L61 20 M57 60 L17 20 M43 60 L3 20"/>
+</svg>

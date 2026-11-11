@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DQ Iconos · muestra</title>
+<!--
+  Página de muestra de la fuente "DQ Iconos".
+  Se abre con un servidor estático desde la RAÍZ del repo:  http://localhost:PUERTO/tools/iconos/muestra.html
+  (o sin ventana:  node tools/iconos/probar.mjs captura.png )
+  Lee tools/iconos/mapa.json y tools/iconos/resumen.json (lo escribe construir.mjs).
+-->
+<style>
+/* El mismo enganche que el juego (mundo/index.html y mmo/index.html). */
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+/* La misma fuente sin unicode-range, para comparar qué pasa con U+FE0F. */
+@font-face{font-family:"DQ Iconos Libre";src:url(/assets/ui/dq-iconos.woff2) format("woff2");font-display:block;}
+:root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--oro:#ffd84a;--oro2:#c9a227;--marco:rgba(201,162,39,.42);
+  --sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--px:"DQ Iconos","Press Start 2P",monospace;--titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;
+  --sistema:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:#0a0418;color:var(--txt);font:14px/1.45 var(--sans);padding:14px}
+h1{font:600 20px/1.2 var(--titulo);letter-spacing:.06em;color:var(--oro);margin:0 0 4px}
+h2{font:600 14px/1.2 var(--titulo);letter-spacing:.06em;color:var(--oro);margin:18px 0 8px;text-transform:uppercase}
+p.nota{color:var(--txt2);margin:0 0 8px;font-size:12px}
+.panel{background:#0e091e;border:1px solid var(--marco);border-radius:10px;padding:10px 12px}
+#rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+.celda{background:#0e091e;border:1px solid rgba(160,140,255,.22);border-radius:8px;padding:6px 4px;text-align:center;min-width:0}
+.celda .g{font-size:36px;line-height:44px;color:var(--txt);white-space:nowrap}
+.celda .g i{font-style:normal;font-size:16px;color:var(--oro);margin-left:6px}
+.celda b{display:block;font:600 11px/1.2 var(--sistema);color:var(--oro);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.celda small{display:block;font:10px/1.2 var(--sistema);color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cols h3{font:600 11px/1.2 var(--sistema);color:var(--txt3);margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em}
+.frases div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0}
+.sis{font-family:var(--sistema)}
+.btn{display:inline-block;background:#2563eb;color:#fff;border-radius:8px;padding:7px 12px;font:600 13px/1 var(--sans);margin:2px 4px 2px 0}
+.btn.sec{background:rgba(160,140,255,.14);border:1px solid rgba(160,140,255,.3)}
+.bt{display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;background:rgba(14,9,30,.86);border:1px solid var(--marco);border-radius:10px;font-size:20px;color:var(--oro);margin-right:4px}
+.linea{position:relative;font-size:16px;line-height:24px}
+.linea::after{content:"";position:absolute;left:0;right:0;top:0;bottom:0;border-top:1px solid rgba(255,90,106,.5);border-bottom:1px solid rgba(255,90,106,.5);pointer-events:none}
+table{border-collapse:collapse;font:12px/1.3 var(--sistema)}
+td,th{border:1px solid rgba(160,140,255,.18);padding:3px 7px;text-align:left}
+th{color:var(--txt3);font-weight:600}
+td.i{font:20px/26px var(--sans);text-align:center}
+td.l{font:20px/26px "DQ Iconos Libre",system-ui,"Segoe UI",sans-serif;text-align:center}
+td.s{font:20px/26px var(--sistema);text-align:center}
+#resumen{color:var(--txt2);font-size:12px}
+</style>
+</head>
+<body>
+<h1>DQ Iconos</h1>
+<div id="resumen">Cargando…</div>
+
+<h2>Frases reales del juego</h2>
+<p class="nota">Izquierda: como se verá en el juego (DQ Iconos primero). Centro: lo mismo con el selector U+FE0F detrás de cada icono. Derecha: la fuente del sistema (el emoji de hoy). Los caracteres sin dibujar todavía caen al emoji de siempre.</p>
+<div class="panel cols">
+  <div><h3>DQ Iconos (sin U+FE0F)</h3><div class="frases" id="f-sin"></div></div>
+  <div><h3>DQ Iconos (con U+FE0F)</h3><div class="frases" id="f-con"></div></div>
+  <div><h3>Sistema (hoy)</h3><div class="frases sis" id="f-sis"></div></div>
+</div>
+
+<h2>Botones, títulos y línea base</h2>
+<div class="panel">
+  <div><span class="bt">🏆</span><span class="bt">🗺</span><span class="bt">🎒</span><span class="bt">👥</span><span class="bt">⚔</span><span class="bt">🛡</span><span class="bt">🥤</span><span class="bt">💎</span><span class="bt">⚙</span><span class="bt">🚪</span>
+  <span class="btn">⚔ Retar a duelo</span><span class="btn sec">⭐ Amigo</span><span class="btn sec">🔒 Bloqueado</span><span class="btn sec">✓ Listo</span></div>
+  <div style="font:600 18px/1.4 var(--titulo);letter-spacing:.06em;color:var(--oro);margin-top:8px">⚙ AJUSTES · 🧭 ENCARGOS · 📜 LA LEYENDA DEL CÁNTARO</div>
+  <div style="font:11px/1.6 var(--px);color:var(--txt);margin-top:6px">★ NV 12 → 13 ⚔ 🪙 250</div>
+  <div class="linea" style="margin-top:8px">Línea de 16/24 px sin iconos: Ajustes del juego Hxgp</div>
+  <div class="linea">Línea de 16/24 px con iconos: ⚔ 🛡 🥤 🏆 ⭐ → ✓ Hxgp (las rayas rojas marcan la caja de línea: no debe crecer)</div>
+</div>
+
+<h2>Prueba de U+FE0F (¿qué fuente elige el navegador?)</h2>
+<p class="nota">«Juego» = DQ Iconos con el <code>unicode-range</code> del juego. «Libre» = la misma fuente sin <code>unicode-range</code>. probar.mjs lee aquí la fuente real que usó Chrome para cada celda.</p>
+<div class="panel" style="overflow:auto"><table id="prueba"><thead><tr><th>carácter</th><th>nombre</th><th>juego</th><th>juego + FE0F</th><th>libre</th><th>libre + FE0F</th><th>sistema</th><th>sistema + FE0F</th></tr></thead><tbody></tbody></table></div>
+
+<h2>Todos los glifos dibujados</h2>
+<div id="rejilla"></div>
+
+<h2>Pendientes (aún sin dibujo: se ven con el emoji de hoy)</h2>
+<div class="panel" id="pend" style="font-size:20px;line-height:30px;word-break:break-all"></div>
+
+<script>
+const FRASES = [
+  '⚔ Retar a duelo · ⭐ Amigo · 🛡 Hermandad',
+  '🥤 Nv 60 = 2 L de chicha morada',
+  '🔒 🥤 Nv 30 · ✓ Caso resuelto',
+  'Grupo: clic en un jugador → Invitar · chat de grupo',
+  '🏆 Logros · 🗺 Mapa del mundo (M) · 🎒 Mochila (I)',
+  '👑 Kusi (líder) · 👥 3 en línea',
+  '⚡ Hora Feliz +50% XP · 12:34',
+  '📜 La leyenda del Cántaro',
+  'Mira tus encargos 🧭: ahí sabrás a quién buscar.',
+  '💀 Jefe · ⚔ Arena · 🪙 1 250 · 💎 Tienda',
+  '⚙ Ajustes · 🚪 Salir · Nv 12 ★3 · ★★★☆☆',
+  '⭐ ¡Maestría 4! · 🏆 ¡Llegaste al nivel 60!',
+];
+const TAMS = [11, 12, 13, 14, 16];
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+// Añade U+FE0F detrás de cada carácter que no sea letra, número, espacio ni puntuación corriente.
+const conFE0F = s => Array.from(s).map(c => (c.codePointAt(0) >= 0x2190 ? c + '️' : c)).join('');
+function pintaFrases(id, f) { document.getElementById(id).innerHTML = FRASES.map((t, i) => `<div style="font-size:${TAMS[i % TAMS.length]}px">${esc(f(t))}</div>`).join(''); }
+pintaFrases('f-sin', s => s); pintaFrases('f-con', conFE0F); pintaFrases('f-sis', s => s);
+
+Promise.all([fetch('mapa.json').then(r => r.json()), fetch('resumen.json').then(r => r.json()).catch(() => null)]).then(([mapa, res]) => {
+  const hechos = new Set(res ? res.hechos.map(h => h.nombre) : []);
+  const info = Object.fromEntries((res ? res.hechos : []).map(h => [h.nombre, h]));
+  const car = cp => String.fromCodePoint(parseInt(cp, 16));
+  document.getElementById('resumen').textContent = res
+    ? `${res.glifos} glifos dibujados de ${mapa.length} · ${res.puntosDeCodigo} puntos de código · ${res.fuente}: ${(res.bytes / 1024).toFixed(1)} KB (~${res.bytesPorGlifo} bytes por glifo)`
+    : 'Falta resumen.json: ejecuta node tools/iconos/construir.mjs';
+  const rej = document.getElementById('rejilla'), tb = document.querySelector('#prueba tbody'), pend = document.getElementById('pend');
+  for (const g of mapa) {
+    if (!hechos.has(g.nombre)) { pend.insertAdjacentHTML('beforeend', `<span title="${g.nombre}">${g.cps.map(car).join('')}</span> `); continue; }
+    const c = car(g.cps[0]), h = info[g.nombre];
+    rej.insertAdjacentHTML('beforeend', `<div class="celda"><div class="g">${c}<i>${c}</i></div><b>${g.nombre}</b><small>${g.cps.map(x => 'U+' + x).join(' ')}</small><small>${h.tinta}% tinta · ${h.puntos} pts</small></div>`);
+    tb.insertAdjacentHTML('beforeend', `<tr data-n="${g.nombre}" data-cp="${g.cps[0]}"><td>U+${g.cps[0]}</td><td>${g.nombre}</td><td class="i" data-k="juego">${c}</td><td class="i" data-k="juegoFE0F">${c}️</td><td class="l" data-k="libre">${c}</td><td class="l" data-k="libreFE0F">${c}️</td><td class="s" data-k="sistema">${c}</td><td class="s" data-k="sistemaFE0F">${c}️</td></tr>`);
+  }
+  document.fonts.ready.then(() => { document.body.dataset.lista = '1'; });
+});
+</script>
+</body>
+</html>

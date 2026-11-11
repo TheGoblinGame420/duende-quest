@@ -1,0 +1,275 @@
+{
+ "lote": "lote-01",
+ "tema": "Combate y armas",
+ "nota": "Pictogramas de pelea y estados de combate. Metal = aristas vivas; lo orgánico (gota, corazón, llama) con curvas tensas.",
+ "glifos": [
+  {
+   "nombre": "espadas-cruzadas",
+   "cps": [
+    "2694"
+   ],
+   "caracteres": "⚔",
+   "significado": "Combate, atacar, retar a duelo, fuerza (stat). El icono más usado del juego.",
+   "dibuja": "Dos espadas rectas en aspa a 45°, puntas arriba, guarda recta y pomo redondo; la de delante separada de la de atrás por un filete en negativo.",
+   "usos": 88,
+   "ctx": [
+    "mundo/index.html: 38,38,.9);} body.movil #tactil #t-atk::before{content:'⚔️';font-size:22px;} body.movil #tactil #t-esq{--cx:82px…",
+    "mundo/index.html: v class=\"fila-b\"><button class=\"btn sec\" id=\"op-duelo\">⚔️ Retar a duelo</button><button class=\"btn sec\" id=\"op-…",
+    "mundo/index.html: Abismo)</li> <li><i>💀</i> Jefe</li> <li><i>⚔️</i> Arena del jefe mundial</li> <li><i>🔭</i> Mi…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "escudo",
+   "cps": [
+    "1F6E1"
+   ],
+   "caracteres": "🛡",
+   "significado": "Defensa (stat), escudos de protección y Hermandad (gremio).",
+   "dibuja": "Escudo de lágrima (heater) lleno, con filete interior en negativo y una chakana pequeña tallada en el centro.",
+   "usos": 50,
+   "ctx": [
+    "mundo/index.html: tton class=\"btn sec\" id=\"op-herm\" style=\"display:none\">🛡 Hermandad</button></div> <div class=\"fila-b\"><button…",
+    "mundo/index.html: t extra\" id=\"b-herm\" title=\"Hermandad\" data-l=\"Gremio\">🛡️</button> <button class=\"bt extra\" id=\"b-rank\" title…",
+    "mundo/js/mundo.js: .i && LORE_MISIONES[yo.mis.i]) setTimeout(() => aviso('🛡 Tito: «' + LORE_MISIONES[yo.mis.i] + '»'), 2500); …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "daga",
+   "cps": [
+    "1F5E1"
+   ],
+   "caracteres": "🗡",
+   "significado": "Clase pícaro y Espía Kantu.",
+   "dibuja": "Una sola daga en diagonal (punta arriba a la derecha), hoja ancha y corta de doble filo, guarda curva hacia la hoja; nervio central tallado. Que no se confunda con las espadas: una sola y gruesa.",
+   "usos": 7,
+   "ctx": [
+    "mundo/js/mundo.js: ra Coya': '⚒️', 'Viajera Illari': '🐪', 'Espía Kantu': '🗡️', 'Guardián Inti': '☀️', 'Minera Ñusta': '⛏️', 'Farer…",
+    "mundo/js/mundo.js: { guerrero: '🛡️', mago: '🔮', sacerdote: '✨', picaro: '🗡️' }; // Linea corta para presumir con lo que ya sabe e…",
+    "mundo/js/vecinos.js: ombre: 'Espía Kantu', hoja: 'goblin_assassin', emoji: '🗡️', rol: '🗡️ Espía', zona: 'castillo', x: -12, z: -454 …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "arco",
+   "cps": [
+    "1F3F9"
+   ],
+   "caracteres": "🏹",
+   "significado": "Monstruo que dispara a distancia.",
+   "dibuja": "Arco recurvo tensado en vertical con la flecha montada apuntando a la derecha; cuerda fina de 3 unidades, palas gruesas.",
+   "usos": 2,
+   "ctx": [
+    "mundo/js/mundo.js: == asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${o.noct ?…",
+    "mmo/js/data.js: a, esbirros y afijo visible; campamentos con tiradores 🏹.', 'Corrientes de viento en cada zona junto a su c…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "martillo",
+   "cps": [
+    "1F528",
+    "2692"
+   ],
+   "caracteres": "🔨⚒",
+   "significado": "Reforjar equipo, puesto «Martillo» en la invasión y Fabricar/Artesanía (Herrera Coya).",
+   "dibuja": "Martillo de herrero en diagonal (cabeza arriba a la derecha): cabeza rectangular maciza con una cara biselada y mango grueso; una banda tallada donde entra el mango.",
+   "usos": 8,
+   "otros": "⚒ (martillo y pico) usa este mismo glifo",
+   "ctx": [
+    "mundo/js/mundo.js: ta Mallku': '👴', 'Chamán Amaru': '🌿', 'Herrera Coya': '⚒️', 'Viajera Illari': '🐪', 'Espía Kantu': '🗡️', 'Guardi…",
+    "mundo/js/mundo.js: tienda: '🛒 Tienda', ranking: '🏆 Ranking', artesania: '⚒️ Fabricar' }; const firmaNpc = t => JSON.stringify(t.s…",
+    "mundo/js/mundo.js: DA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranki…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "diana",
+   "cps": [
+    "1F3AF"
+   ],
+   "caracteres": "🎯",
+   "significado": "Marcar objetivo / botón de objetivo en el celular.",
+   "dibuja": "Retícula de puntería: aro grueso con cuatro muescas que lo cortan en cruz y un punto central macizo (mira, no diana de feria).",
+   "usos": 27,
+   "ctx": [
+    "mundo/index.html: --cy:84px;} body.movil #tactil #t-obj::before{content:'🎯';} body.movil #joy{width:40%;} @media (orientation:por…",
+    "mundo/index.html: nth-of-type(n+3){display:none;} /* of-type: el boton 🎯 va delante de las filas y no debe contar */ body:is(.m…",
+    "mundo/index.html: } /* plegada: 2 filas y «Ver más» (of-type: el boton 🎯 no cuenta) */ #misiones .mis-ver{display:block;width:1…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "impacto",
+   "cps": [
+    "1F4A5"
+   ],
+   "caracteres": "💥",
+   "significado": "Golpe divino, estallido, crítico.",
+   "dibuja": "Estallido de 8 puntas irregulares (alternando largas y cortas), macizo, con un rombo pequeño tallado en el centro.",
+   "usos": 4,
+   "ctx": [
+    "mmo/js/client.js: 8px 0\">' + [['inv', '🛡️ Invencible'], ['golpe', '💥 Golpe divino'], ['vel', '⚡ Velocidad libre']].filter((…",
+    "functions/mmo/mazmorras.js: }); this.aClave(w.clave, { t: 'emote', m: '💥 ¡Nadie la aguantó y estalla sobre todos con el doble d…",
+    "index.html: COIN CLICK function coinClick(el){ const opts=['🎉','💥','🌟','🔥','💎','🚀','⚡']; el.style.animation='none'; …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "esquivar",
+   "cps": [
+    "1F4A8"
+   ],
+   "caracteres": "💨",
+   "significado": "Esquivar (botón de combate), ráfaga de velocidad, el Duende Ladrón que huye.",
+   "dibuja": "Bota de perfil lanzada hacia la derecha con tres estelas horizontales de distinto largo detrás (la de arriba, la más larga).",
+   "usos": 21,
+   "ctx": [
+    "mundo/index.html: TACAR</button><button id=\"t-esq\" aria-label=\"Esquivar\">💨</button> </div> <div class=\"modal\" id=\"v-inicio\"><div…",
+    "mundo/js/mundo.js: ah) esqAprendida(true); // salio del golpe rojo con 💨 reciente: esquiva aprendida if (P.muerto || ah -…",
+    "mundo/js/mundo.js: que le pasa al jugador. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "rayo",
+   "cps": [
+    "26A1"
+   ],
+   "caracteres": "⚡",
+   "significado": "Hora Feliz (+50 % XP), velocidad, elemento rayo, energía.",
+   "dibuja": "Rayo macizo en zigzag de un solo quiebro, de arriba a la derecha hacia abajo a la izquierda, puntas afiladas.",
+   "usos": 40,
+   "ctx": [
+    "mundo/js/mundo.js: ) % 60).padStart(2, '0'); const txtHf = hf.activa ? '⚡ Hora Feliz +50% XP · ' + hfMmss : hf.falta < 30 * 6000…",
+    "mundo/js/mundo.js: Feliz +50% XP · ' + hfMmss : hf.falta < 30 * 60000 ? '⚡ Hora Feliz en ' + hfMmss : ''; let txtJefe = ''; i…",
+    "mundo/js/mundo.js: VISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |se marchó d…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "fuego",
+   "cps": [
+    "1F525",
+    "1F30B"
+   ],
+   "caracteres": "🔥🌋",
+   "significado": "Racha de días, elemento fuego, ¡Defensa!; afijo «Volcánico».",
+   "dibuja": "Llama maciza de una lengua principal inclinada y una menor, con una llama interior tallada en negativo desde la base.",
+   "usos": 24,
+   "otros": "🌋 (afijo Volcánico) es alias",
+   "ctx": [
+    "mundo/js/mundo.js: _MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |se marchó del |…",
+    "mundo/js/mundo.js: .login && yo.login.racha | 0; if (racha > 0) p.push('🔥 racha ' + racha + (racha === 1 ? ' día' : ' días')); …",
+    "mundo/js/ventanas.js: A las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale una habilidad del elemento justo, la C…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "gota-sangre",
+   "cps": [
+    "1FA78"
+   ],
+   "caracteres": "🩸",
+   "significado": "Afijo «Sanguinario» y robo de vida.",
+   "dibuja": "Gota grande con la punta desviada a la izquierda y un colmillo (triángulo curvo) tallado dentro: sangre, no agua.",
+   "usos": 5,
+   "ctx": [
+    "mundo/js/mundo.js: }); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`🩸 ${o.ra || nom} se curó al caer su esbirro: ¡mátalos a …",
+    "mundo/js/mundo.js: o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ …",
+    "mmo/js/data.js: a.' }, sanguinario: { nombre: 'Sanguinario', emoji: '🩸', desde: 5, desc: 'Al morir, un monstruo cura un 20% d…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "corazon",
+   "cps": [
+    "2764",
+    "1F496",
+    "1F49C",
+    "1F49B",
+    "1F49A"
+   ],
+   "caracteres": "❤💖💜💛💚",
+   "significado": "Vida máxima (stat), revivir y agradecimientos.",
+   "dibuja": "Corazón macizo de hombros altos y punta marcada, con un brillo corto tallado en el lóbulo izquierdo.",
+   "usos": 13,
+   "otros": "los corazones de color (💖💜💛💚) son alias: su color hay que darlo por CSS",
+   "ctx": [
+    "mundo/js/mundo.js: n.innerHTML = '¡NIVEL ' + m.lv + '!<small>' + (m.mx ? '❤ Vida máx ' + m.mx + ' · ' : '') + 'vida llena' + ganas…",
+    "mundo/js/ventanas.js: que el servidor). const TAL_STAT = { vida: ['maxHp', '❤'], fuerza: ['atk', '⚔'], defensa: ['def', '🛡'] }; func…",
+    "mmo/js/client.js: · 🛡 DEF +' + dd; if (dv > 0) extra += ' · ❤ Vida +' + dv; } } catch (e) { extra …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pocion",
+   "cps": [
+    "1F9EA",
+    "2697",
+    "1F37E"
+   ],
+   "caracteres": "🧪⚗🍾",
+   "significado": "Pociones de vida, elixires y lo fabricado por alquimia.",
+   "dibuja": "Frasco de panza redonda con cuello corto y corcho; la mitad de arriba hueca (solo contorno de 4) y el líquido macizo abajo con dos burbujas talladas.",
+   "usos": 11,
+   "otros": "⚗ alambique y 🍾 botella (pista del misterio) son alias",
+   "ctx": [
+    "mundo/index.html: \"b-revivir-pociones\" style=\"width:100%;margin-top:8px\">🧪 Revivir en el pueblo y comprar pociones</button> </div…",
+    "mundo/js/mundo.js: olsa llena: vendido) · +' + esc2 + ' 🛡️ · +' + poc + ' 🧪' : '+' + esc2 + ' escudos · +' + poc + ' pociones'; …",
+    "mundo/js/mundo.js: ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`; } h += '</…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "orbe-magia",
+   "cps": [
+    "1F52E"
+   ],
+   "caracteres": "🔮",
+   "significado": "Un enemigo lanza un hechizo (barra de casteo).",
+   "dibuja": "Orbe macizo sobre una peana trapezoidal baja, con una media luna de brillo tallada arriba a la izquierda y una estrella de 4 puntas tallada en el centro.",
+   "usos": 7,
+   "ctx": [
+    "mundo/js/mundo.js: m.id || Math.hypot(o.x - P.x, o.z - P.z) < 25) aviso(`🔮 ${nom} lanza ${o.cast.n}: ${corte()}`, 'err'); } …",
+    "mundo/js/mundo.js: ast.ini), 0, 1)})`; bc.lastElementChild.textContent = '🔮 ' + o.cast.n; } else if (bc.style.display !== 'none'…",
+    "mundo/js/mundo.js: isos.appendChild(d); if (tipo === 'err' && !/^(¡|📍|🥤|🔮)|Furia x\\d/.test(txt)) { const ahN = performance.now()…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "amuleto-protector",
+   "cps": [
+    "1F9FF"
+   ],
+   "caracteres": "🧿",
+   "significado": "Protector de racha (salva tu racha un día).",
+   "dibuja": "Amuleto colgante: cordón en V arriba y disco macizo con un ojo almendrado tallado (pupila maciza). Nada de «ojo turco» redondo.",
+   "usos": 21,
+   "ctx": [
+    "mundo/js/mundo.js: ' · ' + esc(m.itemNom) : ''}</b><small>${m.amuUsado ? '🧿 Tu protector salvó tu racha · ' : ''}${m.amuRegalo ? '…",
+    "mundo/js/mundo.js: Tu protector salvó tu racha · ' : ''}${m.amuRegalo ? '🧿 Protector de regalo · ' : ''}${m.pase ? '+' + m.pase +…",
+    "mundo/js/mundo.js: '}${m.pase ? '+' + m.pase + ' al pase del mes · ' : ''}🧿 Protectores: ${m.amu || 0} · ${esc(textoManana3() || '…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "dormido",
+   "cps": [
+    "1F4A4",
+    "1F634"
+   ],
+   "caracteres": "💤😴",
+   "significado": "Descanso x2 de experiencia, guardián dormido.",
+   "dibuja": "Dos «Z» geométricas de trazo grueso, una grande abajo a la izquierda y otra menor arriba a la derecha, sin cara.",
+   "usos": 6,
+   "ctx": [
+    "mundo/index.html: n id=\"xp-pt\"></span><b id=\"xp-pd\" style=\"display:none\">💤 x2 descanso</b></div> <div id=\"joy\"><div class=\"base\"…",
+    "mundo/js/mundo.js: '} · 🛡 Guardián ${asedio.guardian ? (asedio.dormido ? '💤 dormido' : (hp.g ?? 100) + '%') : '—'}` + `<br><sp…",
+    "mundo/js/mundo.js: rev !== null && descansoPrev > 0 && desc === 0) aviso('💤 Descanso gastado: se recarga mientras estás desconecta…"
+   ],
+   "hecho": false
+  }
+ ]
+}

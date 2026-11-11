@@ -20,6 +20,8 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=369';
+// Trajes 3D de las skins: un solo modulo generado por tools/unir_skins.mjs desde mundo/js/skins/*.js.
+import { SKINS3D } from './skins3d.js?v=369';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -74,7 +76,10 @@ const FABRICA = {
 const GEOS = new Map();
 function geo(k) {
   let g = GEOS.get(k);
-  if (!g) { g = FABRICA[k](); g.computeBoundingBox(); GEOS.set(k, g); }
+  if (!g) {
+    if (!FABRICA[k]) throw new Error('Geometría desconocida: «' + k + '». Las hay: ' + Object.keys(FABRICA).join(', '));
+    g = FABRICA[k](); g.computeBoundingBox(); GEOS.set(k, g);
+  }
   return g;
 }
 
@@ -156,6 +161,7 @@ function fusion(partes) {
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
   g.computeVertexNormals();
   g.computeBoundingBox();
+  g.userData.piezas = partes.length;
   FUS.set(clave, g);
   return g;
 }
@@ -918,7 +924,7 @@ function partesMascota() {
     P.push(['esferaB', '#2563eb', [x * 0.115, 0.305, 0.272], [0.056, 0.062, 0.012]]);
     P.push(['esferaB', '#0b0b18', [x * 0.115, 0.305, 0.28], [0.028, 0.032, 0.008]]);
     P.push(['esferaB', '#ffffff', [x * 0.1, 0.325, 0.286], [0.014, 0.014, 0.005]]);
-    P.push(['caja', verde, [x * 0.12, 0.415, 0.262], [0.17, 0.06, 0.06], [0, 0, -x * 0.28]]);
+    P.push(['caja', verde, [x * 0.12, 0.415, 0.262], [0.17, 0.065, 0.06], [0, 0, x * 0.3]]);   /* ceño picaro: el extremo de dentro, mas bajo (11-nov: antes caia el de fuera y salia triste) */
     P.push(['esferaB', mejilla, [x * 0.2, 0.17, 0.252], [0.05, 0.05, 0.016]]);
   }
   P.push(['caja', verde, [0, 0.215, 0.27], [0.09, 0.075, 0.07]]);              // nariz cuadrada
@@ -930,8 +936,14 @@ function partesMascota() {
 }
 // Las dos espadas de pixeles cruzadas detras de la cabeza (el sello de la mascota).
 function partesEspadasPixel() {
-  const P = [], c1 = '#c4732e', c2 = '#8a4a1c';
-  for (const x of [-1, 1]) for (let i = 0; i < 6; i++) P.push(['caja', i % 2 ? c2 : c1, [x * (0.16 + i * 0.055), 0.42 + i * 0.075, -0.2], [0.07, 0.07, 0.05]]);
+  // (11-nov) Banda en escalera de dos pixeles de ancho, naranja por fuera y marron por dentro,
+  // como en las imagenes del dueño: de lejos y de espaldas se leen como dos espadas, no como dos hilos.
+  const P = [], c1 = '#d9782d', c2 = '#8a4a1c', p = 0.07;
+  for (const x of [-1, 1]) for (let i = 0; i < 7; i++) {
+    const px = Math.round((0.13 + i * p) * 1000) / 1000, py = Math.round((0.4 + i * p) * 1000) / 1000;
+    P.push(['caja', c2, [x * px, py, -0.2], [p, p, 0.05]]);
+    P.push(['caja', c1, [x * Math.round((px + p) * 1000) / 1000, py, -0.2], [p, p, 0.05]]);
+  }
   return P;
 }
 // Ojos del duende de los videos del dueño (Descargas/duende_atleta_voz.mp4 y la
@@ -1295,10 +1307,10 @@ function vestirSkin(r, R0, cpo, tocado) {
 }
 // Forma del duende: hombros redondos, pulgares, punteras de bota, boca con
 // dientes y cejas picaras (como en las imagenes 2D).
-function formaDuende(r, R0, lk, colorPelo) {
-  for (const b of [r.bI, r.bD]) M(b, 'esfera', R0.ropa, [0, -0.01, 0], [0.1, 0.09, 0.1]);
-  for (const [mano, lado] of [[r.manoI, 1], [r.manoD, -1]]) M(mano, 'esferaB', PIEL_DUENDE, [-lado * 0.05, 0.03, 0.04], [0.035, 0.05, 0.035]);
-  for (const p of [r.pI, r.pD]) if (p) M(p, 'semi', R0.botas, [0, -0.45 + 0.02, 0.13], [0.09, 0.07, 0.1], [0, 0, 0]);
+function formaDuende(r, R0, lk, colorPelo, L = 0.45) {
+  for (const b of [r.bI, r.bD]) M(b, 'esfera', R0.mangas ?? R0.ropa, [0, -0.01, 0], [0.1, 0.09, 0.1]);
+  for (const [mano, lado] of [[r.manoI, 1], [r.manoD, -1]]) M(mano, 'esferaB', R0.manos ?? PIEL_DUENDE, [-lado * 0.05, 0.03, 0.04], [0.035, 0.05, 0.035]);
+  for (const p of [r.pI, r.pD]) if (p) M(p, 'semi', R0.botas, [0, -L + 0.02, 0.13], [0.09, 0.07, 0.1], [0, 0, 0]);
   const H = r.H, P2 = [];
   fuera(MF(r.cabeza, partesEspadasPixel(), null, null, null, H));
   if (lk.cara === 5) {
@@ -1315,73 +1327,189 @@ const CUERPOS = [
   { ancho: 1, panza: 1, grueso: 1 },           // Normal
   { ancho: 1.2, panza: 1.42, grueso: 1.32 },   // Robusto
 ];
-// look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
-// grado 0-3: equipo y forja que se ven (filo que brilla; en 3, aura en el suelo). colorGrado: color
-// de la rareza (grado 2-3). ligero: calidad baja, aura del suelo mas chica.
-export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '', grado = 0, colorGrado = null, ligero = false } = {}) {
-  const sk = SKINS[skin] || SKINS.comun;
-  const cl = clase && CLASES[clase] ? clase : null;
-  const lk = limpiarLook(look || LOOK_BASE);
-  const brilla = !!(sk.premium || skin === 'legendaria');
-  // Ropa segun la imagen de la skin; las premium (heroe teñido) en su color con neon.
-  const R0 = ROPA_SKIN[SKINS[skin] ? skin : 'comun'] || {
-    ropa: sk.color, pantalon: hx(osc(sk.color, 0.45)), botas: '#26222e', acento: hx(mez(sk.color, '#ffffff', 0.55)), neon: sk.color, hombreras: true,
-  };
-  const ropa = R0.ropa;
-  const r = nuevoRig('bipedo');
-  const cpo = CUERPOS[lk.cuerpo] || CUERPOS[1];
-  humano(r, {
-    piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.3 } : null),
-    pantalon: R0.pantalon, botas: R0.botas, cinto: R0.cinto || '#3a2412',
-    // Orejas largas hacia arriba y afuera, como en los videos (antes casi horizontales).
-    // Como la mascota $DUENDE (Descargas): cabeza cubo, cara propia, orejas con interior naranja.
-    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, mascota: lk.cara !== 5, cabezaCubo: lk.cara !== 5, orejaDentro: '#f07a3a',
-    nariz: lk.cara === 5 ? 'bola' : null, orejas: 0.62, orejaRot: 0.98, orejasVivas: true, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
-    ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
-  });
-  const cc = cl ? CLASES[cl].color : ropa;
-  // Sin clase no lleva nada en la cabeza: se ve el peinado entero.
-  let tocado = '';
-  // Atuendos de los aventureros PNJ, como los duendes de las imagenes del dueño
-  // (Descargas: pirata, militar, vampiro, momia, campesino). Sustituyen al tocado de clase.
-  if (!atuendo && R0.atuendo) atuendo = R0.atuendo;   // las skins disfraz traen su sombrero o peinado
-  if (!atuendo && lk.disfraz) atuendo = DISFRAZ_ID[lk.disfraz] || '';
+// ═══════════ TRAJES 3D POR SKIN ═══════════
+// Cada skin tiene su traje en mundo/js/skins/<id>.js (sin imports; guia y contrato en
+// mundo/js/skins/LEEME.md). tools/unir_skins.mjs los junta en skins3d.js, que es lo
+// unico que carga el juego. Un traje es:
+//   { id, base: { ropa, pantalon, botas, acento, cinto?, mangas?, manos?, hojaNeon? },
+//     cuerpo?: { opciones extra de humano() }, escudoClase?: false,
+//     cabeza?(r, K, ctx) -> tocado, vestir?(r, K, ctx) -> tocado | undefined }
+// Si una skin no tiene traje (o el suyo falla al dibujarse) se ve con ROPA_SKIN +
+// vestirSkin, el aspecto de reserva de siempre: un traje roto no tumba el juego.
+const TRAJES = new Map();          // id de skin -> traje
+const ERR_TRAJES = [];             // [{ id, donde, error }] (lo lee el taller)
+let MEDIR_TRAJES = false;          // el taller cuenta lo que añade cada traje
+// Registra (o reemplaza) el traje de una skin. Devuelve false si no tiene forma de traje.
+export function registrarSkin3D(id, def) {
+  if (typeof id !== 'string' || !id || !def || typeof def !== 'object') return false;
+  if (def.base != null && typeof def.base !== 'object') return false;
+  if (def.cabeza != null && typeof def.cabeza !== 'function') return false;
+  if (def.vestir != null && typeof def.vestir !== 'function') return false;
+  TRAJES.set(id, def);
+  return true;
+}
+export function erroresSkin3D() { return ERR_TRAJES.slice(); }
+// Solo para mundo/taller.html: cada duende lleva en m.traje lo que le añadio su traje.
+export function depurarSkins3D(si) { MEDIR_TRAJES = !!si; }
+function anotarErrorTraje(id, donde, e) {
+  if (ERR_TRAJES.length >= 30 || ERR_TRAJES.some(x => x.id === id && x.donde === donde)) return;
+  ERR_TRAJES.push({ id, donde, error: e });
+  try { console.error('[skin3d] traje «' + id + '» (' + donde + '):', e); } catch (e2) {}
+}
+// Piezas, pivotes y mallas sueltas (las que no se pueden fundir: un draw call cada una) del rig.
+function cuentaRig(r) {
+  let piezas = 0, sueltas = 0;
+  r.raiz.traverse(o => { if (o.isMesh) { piezas += o.geometry.userData.piezas || 1; if (brilloFusion(o) < 0) sueltas++; } });
+  return [piezas, r.piv.length, sueltas];
+}
+
+// Atuendos de cabeza con nombre: los aventureros PNJ, el disfraz del editor de aspecto y
+// la linea base de las skins disfraz. Devuelve el tocado, o null si no conoce el atuendo.
+function ponerAtuendo(r, atuendo) {
   if (atuendo === 'frankenstein') {   // pelo negro plano y tornillos en el cuello
     const H = r.H, g = fuera(G(r.cabeza));
     M(g, 'caja', '#141218', [0, 0.51 * H, -0.01 * H], [0.56 * H, 0.09 * H, 0.52 * H]);
     for (const x of [-1, 1]) M(g, 'cil', '#9aa3ad', [x * 0.3 * H, 0.12 * H, 0], [0.035 * H, 0.09 * H, 0.035 * H], [0, 0, PI / 2]);
-    r.tocado = true; tocado = 'gorra';
-  } else if (atuendo === 'lobo') {   // melena marron y orejas de lobo
+    r.tocado = true; return 'gorra';
+  }
+  if (atuendo === 'lobo') {   // melena marron y orejas de lobo
     const H = r.H, g = fuera(G(r.cabeza));
     M(g, 'semi', '#6b3f1f', [0, 0.4 * H, -0.03 * H], [0.32 * H, 0.2 * H, 0.31 * H]);
     for (const x of [-1, 1]) M(g, 'cono', '#6b3f1f', [x * 0.15 * H, 0.52 * H, -0.02 * H], [0.07 * H, 0.17 * H, 0.05 * H], [0, 0, -x * 0.25]);
-    r.tocado = true; tocado = 'gorra';
-  } else if (atuendo === 'esqueleto') {   // craneo de hueso sobre la cabeza
+    r.tocado = true; return 'gorra';
+  }
+  if (atuendo === 'esqueleto') {   // craneo de hueso sobre la cabeza
     const H = r.H, g = fuera(G(r.cabeza));
     M(g, 'semi', '#efe6cf', [0, 0.42 * H, 0], [0.31 * H, 0.22 * H, 0.3 * H]);
     for (const x of [-1, 1]) M(g, 'esferaB', '#1c1620', [x * 0.1 * H, 0.5 * H, 0.22 * H], [0.06 * H, 0.06 * H, 0.03 * H]);
-    r.tocado = true; tocado = 'gorra';
-  } else if (atuendo === 'bruja') { ACC.sombrero(r, '#3b1f4a', 0.95); tocado = 'sombrero'; }
-  else if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); M(fuera(G(r.cabeza)), 'caja', '#15121c', [0.12 * r.H, 0.31 * r.H, 0.27 * r.H], [0.14 * r.H, 0.13 * r.H, 0.03 * r.H]); tocado = 'sombrero'; }   // parche en el ojo
-  else if (atuendo === 'militar') { ACC.gorra(r, '#3f5f2a'); tocado = 'gorra'; }
-  else if (atuendo === 'vampiro') { ACC.capucha(r, '#5a0f1e'); tocado = 'capucha'; }
-  else if (atuendo === 'momia') { ACC.capucha(r, '#e8e0c8'); ACC.mascara(r, '#d8cfb4'); tocado = 'capucha'; }
-  else if (atuendo === 'campesino') { ACC.paja(r); tocado = 'paja'; }
-  else if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); tocado = 'casco'; }
-  else if (cl === 'mago') { ACC.sombrero(r, osc(cc, 0.75), 0.8); tocado = 'sombrero'; }
-  else if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); tocado = 'capucha'; }
-  else if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); tocado = 'capucha'; }
-  if (cl === 'guerrero') r.escudo = true;
-  tocado = vestirSkin(r, R0, cpo, tocado);
+    r.tocado = true; return 'gorra';
+  }
+  if (atuendo === 'bruja') { ACC.sombrero(r, '#3b1f4a', 0.95); return 'sombrero'; }
+  if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); M(fuera(G(r.cabeza)), 'caja', '#15121c', [0.12 * r.H, 0.31 * r.H, 0.27 * r.H], [0.14 * r.H, 0.13 * r.H, 0.03 * r.H]); return 'sombrero'; }   // parche en el ojo
+  if (atuendo === 'militar') { ACC.gorra(r, '#3f5f2a'); return 'gorra'; }
+  if (atuendo === 'vampiro') { ACC.capucha(r, '#5a0f1e'); return 'capucha'; }
+  if (atuendo === 'momia') { ACC.capucha(r, '#e8e0c8'); ACC.mascara(r, '#d8cfb4'); return 'capucha'; }
+  if (atuendo === 'campesino') { ACC.paja(r); return 'paja'; }
+  return null;
+}
+// Tocado de la clase (y el escudo del guerrero, el halo del sacerdote, la mascara del picaro).
+function tocadoClase(r, cl, cc) {
+  if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); return 'casco'; }
+  if (cl === 'mago') { ACC.sombrero(r, osc(cc, 0.75), 0.8); return 'sombrero'; }
+  if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); return 'capucha'; }
+  if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); return 'capucha'; }
+  return '';
+}
+// Caja de herramientas que reciben los trajes (no tienen imports). Una linea por
+// herramienta en mundo/js/skins/LEEME.md.
+const K = Object.freeze({
+  THREE, PI, PIEL: PIEL_DUENDE, geos: Object.freeze(Object.keys(FABRICA)),
+  M, MF, G, piv, fuera, mat, hx, osc, mez, ACC, capa, hombreras, espada, escudo, baston, auraSuelo,
+  // Los adornos genericos de siempre (vestirSkin) con las banderas que se pasen:
+  // poncho, corbata, capa, corona, neon... Devuelve el tocado (la capucha y la peluca lo cambian).
+  generico(r, banderas, ctx) {
+    const t = vestirSkin(r, Object.assign({}, ctx.base, banderas), ctx.cpo, ctx.tocado);
+    ctx.tocado = t;
+    return t;
+  },
+  // Un atuendo de cabeza con nombre (pirata, bruja, vampiro, momia, militar, campesino,
+  // frankenstein, lobo, esqueleto). Devuelve su tocado ('' si no existe).
+  atuendo(r, id) { return ponerAtuendo(r, id) ?? ''; },
+});
+try { for (const id in SKINS3D) if (SKINS3D[id]) registrarSkin3D(id, SKINS3D[id]); } catch (e) {}
+
+// look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
+// grado 0-3: equipo y forja que se ven (filo que brilla; en 3, aura en el suelo). colorGrado: color
+// de la rareza (grado 2-3). ligero: calidad baja, aura del suelo mas chica (y los trajes quitan adornos caros).
+// Cabeza: manda el atuendo pasado por parametro (PNJ aventureros) o el disfraz del editor de
+// aspecto; si no, la cabeza del traje de la skin; y solo si el traje no define cabeza, el tocado de la clase.
+export function crearDuende(o = {}) {
+  const { skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '', grado = 0, colorGrado = null, ligero = false } = o;
+  const sk = SKINS[skin] || SKINS.comun;
+  const idSkin = SKINS[skin] ? skin : 'comun';
+  const cl = clase && CLASES[clase] ? clase : null;
+  const lk = limpiarLook(look || LOOK_BASE);
+  const brilla = !!(sk.premium || skin === 'legendaria');
+  // Ropa segun la imagen de la skin; las premium (heroe teñido) en su color con neon.
+  const RV = ROPA_SKIN[idSkin] || {
+    ropa: sk.color, pantalon: hx(osc(sk.color, 0.45)), botas: '#26222e', acento: hx(mez(sk.color, '#ffffff', 0.55)), neon: sk.color, hombreras: true,
+  };
+  // Traje de la skin (o._sinTraje: el suyo fallo y se vuelve a armar con el aspecto de reserva).
+  const def = o._sinTraje ? null : TRAJES.get(idSkin) || null;
+  const bs = def && def.base;
+  const R0 = !def ? RV : bs ? { ropa: bs.ropa ?? RV.ropa, pantalon: bs.pantalon ?? RV.pantalon, botas: bs.botas ?? RV.botas, acento: bs.acento ?? RV.acento, cinto: bs.cinto, mangas: bs.mangas, manos: bs.manos, hojaNeon: bs.hojaNeon }
+    : { ropa: RV.ropa, pantalon: RV.pantalon, botas: RV.botas, acento: RV.acento, cinto: RV.cinto, hojaNeon: RV.hojaNeon };
+  const ropa = R0.ropa;
+  const r = nuevoRig('bipedo');
+  const cpo = CUERPOS[lk.cuerpo] || CUERPOS[1];
+  const oh = {
+    piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.3 } : null),
+    pantalon: R0.pantalon, botas: R0.botas, cinto: R0.cinto || '#3a2412', mangas: R0.mangas, manos: R0.manos,
+    // Orejas largas hacia arriba y afuera, como en los videos (antes casi horizontales).
+    // Como la mascota $DUENDE (Descargas): cabeza cubo, cara propia, orejas con interior naranja.
+    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, mascota: lk.cara !== 5, cabezaCubo: lk.cara !== 5, orejaDentro: '#f07a3a',
+    nariz: lk.cara === 5 ? 'bola' : null, orejas: 0.62, orejaRot: 0.98, orejasVivas: true, manoG: 1.36, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    // (11-nov) Brazos, piernas y botas un 18 % mas gruesos y manos mas grandes: la mascota es rechoncha.
+    ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso * 1.18,
+  };
+  if (def && def.cuerpo && typeof def.cuerpo === 'object') Object.assign(oh, def.cuerpo, { piel: PIEL_DUENDE, cabeza: 'duende', ojos: 'duende' });
+  humano(r, oh);
+  const cc = cl ? CLASES[cl].color : ropa;
+  const gr = Math.max(0, Math.min(3, grado | 0)), cg = gr >= 2 && colorGrado ? colorGrado : '#ffe6b8';
+  // Sin clase no lleva nada en la cabeza: se ve el peinado entero.
+  let tocado = '';
+  // Atuendos de los aventureros PNJ, como los duendes de las imagenes del dueño
+  // (Descargas: pirata, militar, vampiro, momia, campesino). Sustituyen al tocado de clase.
+  let at = atuendo || '';
+  if (!def && !at && RV.atuendo) at = RV.atuendo;   // reserva: las skins disfraz traen su sombrero o peinado
+  if (!at && lk.disfraz) at = DISFRAZ_ID[lk.disfraz] || '';
+  const ctx = { skin: idSkin, sk, clase: cl, arma, lk, cpo, T: oh.T, L: oh.L, A: oh.A, H: r.H, ligero: !!ligero, grado: gr, PIEL: PIEL_DUENDE, base: R0, colorClase: cc, tocado: '' };
+  let traje = null, donde = 'traje';
+  try {
+    const n0 = MEDIR_TRAJES && def ? cuentaRig(r) : null;
+    let n1 = n0, n2 = n0;
+    const tAt = at ? ponerAtuendo(r, at) : null;
+    if (tAt != null) { tocado = tAt; if (n0) n2 = cuentaRig(r); }
+    else if (def && def.cabeza) {
+      donde = 'cabeza';
+      tocado = def.cabeza(r, K, ctx);
+      donde = 'traje';
+      if (typeof tocado !== 'string') tocado = '';
+      if (tocado) r.tocado = true;
+      if (n0) n1 = n2 = cuentaRig(r);
+      // La clase se sigue leyendo aunque la cabeza sea del traje: escudo del guerrero y halo del sacerdote.
+      if (cl === 'guerrero' && def.escudoClase !== false) escudo(r.manoI, '#7a4a26', 'redondo', null);
+      else if (cl === 'sacerdote') ACC.halo(r);
+      if (n0) n2 = cuentaRig(r);
+    } else {
+      tocado = tocadoClase(r, cl, cc);
+      if (n0) n2 = cuentaRig(r);   /* el tocado de la clase no cuenta como traje */
+    }
+    if (cl === 'guerrero') r.escudo = true;
+    ctx.tocado = tocado;
+    if (def) {
+      if (def.vestir) {
+        donde = 'vestir';
+        const t2 = def.vestir(r, K, ctx);
+        donde = 'traje';
+        tocado = typeof t2 === 'string' ? t2 : ctx.tocado;
+      } else tocado = K.generico(r, {}, ctx);
+      if (n0) { const n3 = cuentaRig(r); traje = { piezas: n1[0] - n0[0] + n3[0] - n2[0], pivotes: n1[1] - n0[1] + n3[1] - n2[1], sueltas: n1[2] - n0[2] + n3[2] - n2[2] }; }
+    } else tocado = vestirSkin(r, R0, cpo, tocado);
+  } catch (e) {
+    if (!def) throw e;
+    // El traje fallo: se apunta y el duende se arma de nuevo con el aspecto de reserva.
+    anotarErrorTraje(idSkin, donde, e);
+    return crearDuende(Object.assign({}, o, { _sinTraje: true }));
+  }
   // Pelo y rasgos de la cara (una malla cada uno, fuera de la medida de alto).
   const colorPelo = hx(APARIENCIA.colorPelo[lk.colorPelo] || APARIENCIA.colorPelo[1]);
   const pelo = tocado === 'peluca' ? [] : partesPelo(lk.pelo, tocado);
   if (pelo.length) fuera(MF(r.cabeza, pelo, colorPelo, null, null, r.H));
   const cara = partesCara(lk.cara, colorPelo);
   if (cara.length) fuera(MF(r.cabeza, cara, null, null, null, r.H));
-  formaDuende(r, R0, lk, colorPelo);
+  formaDuende(r, R0, lk, colorPelo, oh.L);
   // Arma: los de vara (mago, sacerdote) llevan baston.
-  const gr = Math.max(0, Math.min(3, grado | 0)), cg = gr >= 2 && colorGrado ? colorGrado : '#ffe6b8';
   const G2 = gr ? { gr, cg } : {};
   if (cl && CLASES[cl].basico === 'vara') {
     const gb = baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
@@ -1397,9 +1525,11 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   else espada(r.manoD, Object.assign({ largo: 0.75, guarda: ARMAS.katana.color, ...G2 }, gr >= 2 ? { filo: cg, r } : {}));   // forja 2-3: funda que late (se ve en el celular)
   if (brilla) auraSuelo(r, sk.color, 0.55);
   else if (gr >= 3) auraSuelo(r, cg, ligero ? 0.4 : 0.45);   // equipo legendario o forja alta: aura en el suelo (tambien en calidad baja, mas chica)
-  const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]) + (gr ? '#g' + gr + cg + (ligero ? 'l' : '') : ''));
+  // Clave de la fusion compartida: todo lo que cambia las piezas (si aun asi no coinciden, tomarFusion hornea una propia).
+  const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]) + (gr ? '#g' + gr + cg : '') + (ligero ? '#l' : '') + (atuendo ? '#a' + atuendo : '') + (o._sinTraje ? '#r' : ''));
   m.tipo = 'duende';
   m.look = lk;
+  if (traje) m.traje = traje;
   return m;
 }
 

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+  <path id="a" d="M32 5 L37.5 14.5 H26.5 Z"/>
+  <path id="b" d="M32 8.5 L37 15 H27 Z"/>
+</defs>
+<g fill="#000" stroke="#000" stroke-width="1.5" stroke-linejoin="round">
+  <use href="#a"/><use href="#a" transform="rotate(90 32 32)"/><use href="#a" transform="rotate(180 32 32)"/><use href="#a" transform="rotate(270 32 32)"/>
+  <use href="#b" transform="rotate(45 32 32)"/><use href="#b" transform="rotate(135 32 32)"/><use href="#b" transform="rotate(225 32 32)"/><use href="#b" transform="rotate(315 32 32)"/>
+</g>
+<circle cx="32" cy="32" r="13" fill="#000"/>
+</svg>

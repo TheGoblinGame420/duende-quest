@@ -1,0 +1,245 @@
+{
+ "lote": "lote-09",
+ "tema": "Criaturas, monturas y oficios",
+ "nota": "Animales del mundo andino en silueta de perfil (mirando a la derecha), rasgo distintivo exagerado. Jefes y muerte, de frente.",
+ "glifos": [
+  {
+   "nombre": "calavera",
+   "cps": [
+    "1F480",
+    "2620"
+   ],
+   "caracteres": "💀☠",
+   "significado": "Jefe en el mapa, jugador muerto, mazmorra.",
+   "dibuja": "Calavera de frente: cráneo ancho, cuencas inclinadas talladas, nariz en cuña y mandíbula con dos cortes de dientes.",
+   "usos": 12,
+   "ctx": [
+    "mundo/js/mundo.js: tado' : x.k !== '~3d' ? ' · en el 2D' : x.muerto ? ' · ☠' : ''}${aDonde(x)}</small>` + (x.on ? `<div clas…",
+    "mundo/js/mundo.js: tter-spacing:.5px;line-height:1.15'; l1.textContent = '☠ ' + (dj.nombre || k) + (dj.nivel ? ' · Nv ' + dj.nivel…",
+    "mmo/js/client.js: olorNivel(o.nv)); ponTxt($('o-nivel'), def.jefe ? '☠' : String(o.nv)); ponTxt($('o-tipo'), def.jefe ? '…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "ogro-jefe",
+   "cps": [
+    "1F479",
+    "1F47E",
+    "1F43B"
+   ],
+   "caracteres": "👹👾🐻",
+   "significado": "Jefe mundial en la arena.",
+   "dibuja": "Máscara de demonio andino (diablada): dos cuernos curvos, cejas pesadas, ojos tallados y colmillos hacia arriba.",
+   "usos": 13,
+   "otros": "👾 y 🐻 (arcade) son alias",
+   "ctx": [
+    "mundo/js/mundo.js: .padStart(2, '0') : ''; txtJefe = mundial3.vivo ? `👹 ¡${def.nombre} en el ${ARENA3D.nombre}! ${mmss}` : ms …",
+    "mundo/js/mundo.js: ENA3D.nombre}! ${mmss}` : ms > 0 && ms < 30 * 60000 ? `👹 ${def.nombre}: ${mmss}` : ''; } const txt = [txtHf…",
+    "mundo/js/mundo.js: SO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |se marchó del…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "llama",
+   "cps": [
+    "1F999",
+    "1F42A"
+   ],
+   "caracteres": "🦙🐪",
+   "significado": "Caravana (Viajera Illari) y la llama del juego.",
+   "dibuja": "Llama de perfil: cuello largo y erguido, orejas en punta, cuerpo lanudo con una alforja tallada.",
+   "usos": 4,
+   "otros": "🐪 camello pasa a llama",
+   "ctx": [
+    "mundo/js/mundo.js: Amaru': '🌿', 'Herrera Coya': '⚒️', 'Viajera Illari': '🐪', 'Espía Kantu': '🗡️', 'Guardián Inti': '☀️', 'Minera …",
+    "mundo/js/vecinos.js: mbre: 'Viajera Illari', hoja: 'goblin_normal', emoji: '🐪', rol: '🐪 Caravana', zona: 'desierto', x: -485, z: -32…",
+    "mundo/js/vecinos.js: …jera Illari', hoja: 'goblin_normal', emoji: '🐪', rol: '🐪 Caravana', zona: 'desierto', x: -485, z: -32, lo"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "caballo",
+   "cps": [
+    "1F40E"
+   ],
+   "caracteres": "🐎",
+   "significado": "Montar (botón táctil) y monturas.",
+   "dibuja": "Cabeza y cuello de caballo de perfil con crin en tres mechones y brida tallada.",
+   "usos": 2,
+   "ctx": [
+    "mundo/index.html: y:32px;} body.movil #tactil #t-montar::before{content:'🐎';} body.movil #tactil #t-obj{--cx:186px;--cy:84px;} bo…",
+    "functions/mmo/world.js: tualizarYo(s); return this.enviar(s, { t: 'toast', m: `🐎 Ahora usas: ${mo.nombre}.`, ok: true }); } if (m…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "condor",
+   "cps": [
+    "1F985"
+   ],
+   "caracteres": "🦅",
+   "significado": "Volar (botón táctil) y Sabia Mama Ocllo.",
+   "dibuja": "Cóndor de frente con las alas abiertas en M ancha, plumas de la punta separadas y collar blanco tallado.",
+   "usos": 4,
+   "ctx": [
+    "mundo/index.html: cy:94px;} body.movil #tactil #t-volar::before{content:'🦅';} body.movil #tactil #t-usar,body.movil #tactil #t-ba…",
+    "mundo/js/mundo.js: sta': '⛏️', 'Farera Quilla': '🏮', 'Sabia Mama Ocllo': '🦅', 'Mama Asiri': '🥤', 'Guardia Tito': '🛡', 'Mercader Gr…",
+    "mundo/js/vecinos.js: mbre: 'Sabia Mama Ocllo', hoja: 'goblin_mage', emoji: '🦅', rol: '🦅 Mirador', zona: 'acantilados', x: -489, z: 4…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "murcielago",
+   "cps": [
+    "1F987"
+   ],
+   "caracteres": "🦇",
+   "significado": "Montura del Abismo.",
+   "dibuja": "Murciélago de frente, alas desplegadas con borde inferior festoneado en tres picos y orejas en punta.",
+   "usos": 4,
+   "ctx": [
+    "mundo/js/mundo.js: r. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |s…",
+    "mmo/js/client.js: n style=\"color:${lleva ? 'var(--ok)' : 'var(--txt2)'}\">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? 'conseguida'…",
+    "functions/mmo/mazmorras.js: → Monturas.` }); this.aTodos({ t: 'aviso', m: `🦇 ${c.nombre} ganó el ${MONTURAS.abismo.nombre} en la ba…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "lagarto",
+   "cps": [
+    "1F98E",
+    "1F438"
+   ],
+   "caracteres": "🦎🐸",
+   "significado": "Lagarto de la Torre (montura).",
+   "dibuja": "Lagarto visto desde arriba, cuerpo en S, cuatro patas abiertas y cola larga curvada.",
+   "usos": 4,
+   "otros": "🐸 es alias",
+   "ctx": [
+    "mundo/js/mundo.js: const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |se …",
+    "mmo/js/data.js: scota que solo se consigue pescando (muy rara).', '🦎 Lagarto de la Torre: una montura que solo se gana supe…",
+    "functions/mmo/torre.js: r → Monturas.` }); this.aTodos({ t: 'aviso', m: `🦎 ${c.nombre} ganó el Lagarto de la Torre (piso ${TORRE.…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pez",
+   "cps": [
+    "1F41F",
+    "1F41A"
+   ],
+   "caracteres": "🐟🐚",
+   "significado": "Pesca y especies.",
+   "dibuja": "Pez de perfil mirando a la derecha: cuerpo en almendra, cola en horquilla, ojo y agalla tallados.",
+   "usos": 8,
+   "otros": "🐚 es alias",
+   "ctx": [
+    "mundo/js/ventanas.js: );border:1px solid rgba(255,216,74,.4);font-size:12px\">🐟 <b>${esc(ESPECIES[l])}</b> <span class=\"vv-ok\">x${fmt(…",
+    "mundo/js/ventanas.js: ed rgba(255,255,255,.2);font-size:12px\" class=\"vv-dim\">🐟 ???<br><span style=\"font-size:11px\">en ${esc(zona)}</s…",
+    "mmo/js/client.js: case 'pica': castYo = { id: 'pica', nombre: '🐟 ¡PICA!', ini: performance.now(), fin: performance.now(…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "huella-pata",
+   "cps": [
+    "1F43E",
+    "1F407"
+   ],
+   "caracteres": "🐾🐇",
+   "significado": "Mascotas y monturas ganadas.",
+   "dibuja": "Una huella de pata: almohadilla grande y cuatro dedos ovalados.",
+   "usos": 7,
+   "otros": "🐇 es alias",
+   "ctx": [
+    "mundo/js/mundo.js: 🧭 Volvió la expedición|Nueva montura|🎨 Tu nombre ahora|🐾 .+ te acompaña)| mejorada a \\+\\d+\\./.test(m.m || '') &…",
+    "mundo/js/mundo.js: tes.push(`<span style=\"color:${ma.color || '#ffd84a'}\">🐾 ${esc(ma.nombre)}</span>`); const claveLk = partes.j…",
+    "mmo/js/data.js: ] }, { n: 110, fecha: '1 nov 2026', items: [ '🐾 Tu mascota ahora te sigue también en ORIGINS 3D y los …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "ala",
+   "cps": [
+    "1FABD",
+    "1F98B"
+   ],
+   "caracteres": "🪽🦋",
+   "significado": "Alas (equipo para planear).",
+   "dibuja": "Un ala de ave desplegada hacia la derecha con tres hileras de plumas separadas por cortes.",
+   "usos": 6,
+   "otros": "🦋 hoy etiqueta las alas",
+   "ctx": [
+    "mmo/js/regalo.js: 14px ${esc(color)})\">` : `<span class=\"rg-emo\">${al ? '🪽' : m.oro ? '🪙' : '🎁'}</span>`; let chispas = '';…",
+    "functions/mmo/cueva3d.js: '); this.enviar(s, { t: 'toast', ok: true, m: `🪽 ¡Ganaste las ${ALAS.cueva.nombre}! Póntelas en el Merc…",
+    "functions/mmo/world.js: tualizarYo(s); return this.enviar(s, { t: 'toast', m: `🪽 Ahora llevas: ${al.nombre}.`, ok: true }); } if …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "llave-inglesa",
+   "cps": [
+    "1F527"
+   ],
+   "caracteres": "🔧",
+   "significado": "Mantenimiento del juego y reparar equipo.",
+   "dibuja": "Tenazas de herrero cerradas en diagonal (dos brazos y remache tallado).",
+   "usos": 3,
+   "ctx": [
+    "functions/mmo/copias.js: ate.now() + MANT_MS; this.aTodos({ t: 'aviso', m: '🔧 Actualizando Duende Quest: tu progreso ya está guardad…",
+    "functions/mmo/mundo3d.js: > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { use…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "hilo",
+   "cps": [
+    "1F9F5"
+   ],
+   "caracteres": "🧵",
+   "significado": "Artesana Lila.",
+   "dibuja": "Huso de hilar andino (pushka): varilla vertical con tortera y ovillo en rombo, hilo suelto a un lado.",
+   "usos": 3,
+   "ctx": [
+    "mundo/js/mundo.js: Grumo': '💰', 'Sabio Hechicero': '📖', 'Artesana Lila': '🧵' }; // Retrato pixelado de cada narrador (hoja de HOJA…",
+    "mundo/js/mundo.js: bio Hechicero': ['📖', 'hechicero'], 'Artesana Lila': ['🧵', 'goblin_mage'], 'Rey Goblin': ['👑', ''] }).forEach((…",
+    "mmo/js/caso.js: a6', zona: 'amanecer', nv: 10, tipo: 'Huella', emoji: '🧵', titulo: 'Hilo morado', texto: 'Del poncho de la Guar…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "paleta",
+   "cps": [
+    "1F3A8"
+   ],
+   "caracteres": "🎨",
+   "significado": "Colores de nombre y tintes.",
+   "dibuja": "Cuenco de tinte de perfil con un pincel grueso apoyado en diagonal y una gota.",
+   "usos": 12,
+   "ctx": [
+    "mundo/js/mundo.js: caste|🔨 Reforjado|🧭 Volvió la expedición|Nueva montura|🎨 Tu nombre ahora|🐾 .+ te acompaña)| mejorada a \\+\\d+\\./…",
+    "mmo/js/data.js: lunes y su propio ranking semanal.', '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).', …",
+    "mmo/js/data.js: { id: cid, nombre: `Color de nombre «${col}»`, emoji: '🎨', costo: 80, una: true, premio: { tinte: cid } }, …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "tambor",
+   "cps": [
+    "1F941",
+    "1F3B6"
+   ],
+   "caracteres": "🥁🎶",
+   "significado": "Gran Invasión (llamada de guerra); música.",
+   "dibuja": "Tinya (tambor andino) en tres cuartos con tensores en zigzag tallados y una baqueta cruzada.",
+   "usos": 13,
+   "otros": "🎶 es alias",
+   "ctx": [
+    "mundo/js/mundo.js: o lo que le pasa al jugador. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|ll…",
+    "mundo/js/mundo.js: n ''; const tx = '🌙 Esta noche: ⚡ Hora Feliz 20:00 · 🥁 Gran Invasión 21:00' + (p ? ' (hora de Perú)' : ''); …",
+    "mundo/js/mundo.js: lid #ff9a3c;padding-left:6px\"><b style=\"color:#ffb072\">🥁 ${invPre3.gran ? 'GRAN Invasión' : 'Invasión'} en ${mm…"
+   ],
+   "hecho": false
+  }
+ ]
+}

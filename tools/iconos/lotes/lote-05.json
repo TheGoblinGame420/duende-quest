@@ -1,0 +1,285 @@
+{
+ "lote": "lote-05",
+ "tema": "Mapa, viaje y avisos",
+ "nota": "Lugares del mundo y marcas del mapa. Arquitectura con escalonado andino (almenas, terrazas), nunca castillos de cuento.",
+ "glifos": [
+  {
+   "nombre": "mapa",
+   "cps": [
+    "1F5FA"
+   ],
+   "caracteres": "🗺",
+   "significado": "Mapa del mundo (botón M).",
+   "dibuja": "Mapa plegado en tres paños en zigzag, pliegues tallados, con un aspa de destino y tres puntos de ruta tallados.",
+   "usos": 22,
+   "ctx": [
+    "mundo/index.html: movil #mini::after,body.compacto #mini::after{content:'🗺';position:absolute;left:-3px;top:-3px;width:22px;heigh…",
+    "mundo/index.html: \" id=\"b-mapa\" title=\"Mapa del mundo (M)\" data-l=\"Mapa\">🗺️</button> <button class=\"bt extra\" id=\"b-herm\" title…",
+    "mundo/js/mundo.js: [zk] + ' ' : '') + 'El mapa de la zona se reveló: abre 🗺', 'ok'); } // Vencer al jefe de la zon…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "brujula",
+   "cps": [
+    "1F9ED"
+   ],
+   "caracteres": "🧭",
+   "significado": "Encargos y rumbo a la misión (fila de misiones).",
+   "dibuja": "Brújula: aro grueso y aguja en rombo inclinada al noreste, con el eje tallado.",
+   "usos": 37,
+   "ctx": [
+    "mundo/js/lore.js: liquia la guarda el jefe de su zona. Mira tus encargos 🧭: ahí sabrás a quién buscar.', 'Cuando un jefe junta po…",
+    "mundo/js/mundo.js: statsJugador } from '/mmo/js/data.js?v=369'; // fila 🧭 de las misiones; VERSION: la del cliente frente a la d…",
+    "mundo/js/mundo.js: ada|Recompensa|Caza del día)|⚗️ Fabricaste|🔨 Reforjado|🧭 Volvió la expedición|Nueva montura|🎨 Tu nombre ahora|🐾…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "chincheta",
+   "cps": [
+    "1F4CD"
+   ],
+   "caracteres": "📍",
+   "significado": "Marca de destino en el mapa y pilar de luz.",
+   "dibuja": "Marcador de mapa en gota invertida, macizo, con el círculo central tallado.",
+   "usos": 34,
+   "ctx": [
+    "mundo/index.html: 4ade80\">▲</i> Tú y hacia dónde miras</li> <li><i>📍</i> Tu destino: tócalo otra vez para quitarlo</li> …",
+    "mundo/js/mundo.js: miId) SON.tocar('clic', { vol: 0.6 }); } // ── MARCAS 📍: pilar de luz de 6 s (sin texto libre) para tu grupo y…",
+    "mundo/js/mundo.js: ibó casi muerto queda herido 90 s; al revivir se marca 📍. let revancha3 = null; const TXT_REVANCHA = ': está he…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "portal",
+   "cps": [
+    "1F300"
+   ],
+   "caracteres": "🌀",
+   "significado": "Portal a mazmorras, cueva y otras zonas.",
+   "dibuja": "Espiral de dos brazos gruesos (trazo 6) girando en sentido horario dentro de un círculo implícito.",
+   "usos": 9,
+   "ctx": [
+    "mundo/index.html: <ul> <li><i>🏘️</i> Pueblo</li> <li><i>🌀</i> Portal (mazmorras, cueva y Abismo)</li> <li>…",
+    "mundo/js/mundo.js: pin(ux + (portal.x * e) * k, uz + (portal.z * e) * k, '🌀', '#c084fc'); } if (e >= 2) { x.fillStyle = '#e5e7…",
+    "mmo/js/client.js: ' + '<p style=\"margin:10px 0 4px;font-size:13px\">🌀 Viajar a:</p><div style=\"display:flex;gap:6px;flex-wra…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pueblo",
+   "cps": [
+    "1F3D8"
+   ],
+   "caracteres": "🏘",
+   "significado": "El pueblo (zona segura).",
+   "dibuja": "Dos casas de adobe juntas, una alta y una baja, tejados a dos aguas, una puerta tallada.",
+   "usos": 3,
+   "ctx": [
+    "mundo/index.html: > <summary>Leyenda</summary> <ul> <li><i>🏘️</i> Pueblo</li> <li><i>🌀</i> Portal (mazmorras,…",
+    "mundo/js/mundo.js: .nombre, nx, nz - 11, '#e5e7eb'); } } pin(ux, uz, '🏘️', '#86efac', rI + 2); placa([['Pueblo Duende', '#…",
+    "mundo/js/mundo.js: = ahora; aviso(zonaEn(P.x, P.z) === 'pueblo' ? '🏘 En el pueblo no hay monstruos: sal y sigue la luz amar…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "castillo",
+   "cps": [
+    "1F3F0"
+   ],
+   "caracteres": "🏰",
+   "significado": "Asedio y Núcleo de la hermandad.",
+   "dibuja": "Fortaleza: dos torres almenadas y lienzo central más bajo, con portón en arco tallado.",
+   "usos": 19,
+   "ctx": [
+    "mundo/js/mundo.js: pan>` : 'sin dueño'; if (!asedio.activo) return `<br>🏰 Núcleo: ${dn} · <small>próximo asedio en ${fmtT(asedio…",
+    "mundo/js/mundo.js: jugador. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido…",
+    "mmo/js/client.js: lor:var(--txt2);margin-top:8px\">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "torre",
+   "cps": [
+    "1F5FC"
+   ],
+   "caracteres": "🗼",
+   "significado": "La Torre (pisos).",
+   "dibuja": "Torre alta y esbelta que se estrecha hacia arriba, coronada con almenas, con tres ventanas talladas en vertical.",
+   "usos": 18,
+   "ctx": [
+    "mundo/js/mundo.js: onst AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en |se ma…",
+    "mundo/js/ventanas.js: {}).t || 0}/${BANDA_MONTURA}`) : mo.torre ? etq(`🗼 Piso ${y.torreMax || 0}/${TORRE.montura}`) : pre…",
+    "mmo/js/client.js: (torreInfo && torreInfo.mejor) || 0)) ofrecerPresumir(`🗼 ¡Llegué al piso ${m.mejor} de la Torre del Duende! ¿Me…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "telescopio",
+   "cps": [
+    "1F52D"
+   ],
+   "caracteres": "🔭",
+   "significado": "Mirador descubierto.",
+   "dibuja": "Catalejo macizo en diagonal sobre trípode, con una junta tallada.",
+   "usos": 3,
+   "ctx": [
+    "mundo/index.html: <li><i>⚔️</i> Arena del jefe mundial</li> <li><i>🔭</i> Mirador descubierto</li> <li><i style=\"color…",
+    "mundo/js/mundo.js: for (const hi of MV.hitos) pin(sx(hi.x), sz(hi.z), '🔭', '#fde047'); // Arena del jefe mundial. { const a…",
+    "mundo/js/mundo.js: F2]]; if (z.total && !z.mira && e >= 0.7) l.push(['🔭 encuentra su hito', '#93c5fd', F2]); placa(l, sx(z…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "abismo",
+   "cps": [
+    "1F30C"
+   ],
+   "caracteres": "🌌",
+   "significado": "El Abismo (islas flotantes sobre el vacío).",
+   "dibuja": "Dos islas flotantes macizas (plana arriba, roca en punta hacia abajo) a distinta altura, con dos destellos pequeños.",
+   "usos": 19,
+   "ctx": [
+    "mundo/js/mundo.js: ; autoAtk = false; pintarBarra(); if (m.abismo) aviso('🌌 Entre las islas solo se pasa volando (' + K('V', 'VOLA…",
+    "mundo/js/mundo.js: dor. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al |ha aparecido en …",
+    "mundo/js/mundo.js: primer talento (lo activas a Nv 10)'], [ABISMO.nvMin, '🌌 el Abismo de Éter'], [5, '⛏ la Cueva de los Goblins (p…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "farol",
+   "cps": [
+    "1F3EE"
+   ],
+   "caracteres": "🏮",
+   "significado": "Farera Quilla y el Faro.",
+   "dibuja": "Farol colgante de seis lados con asa, cristales tallados y llama maciza dentro.",
+   "usos": 4,
+   "ctx": [
+    "mundo/js/mundo.js: n Inti': '☀️', 'Minera Ñusta': '⛏️', 'Farera Quilla': '🏮', 'Sabia Mama Ocllo': '🦅', 'Mama Asiri': '🥤', 'Guardia…",
+    "mundo/js/vecinos.js: mbre: 'Farera Quilla', hoja: 'goblin_samurai', emoji: '🏮', rol: '🏮 Faro', zona: 'abismo', x: 21, z: 474, look: …",
+    "mundo/js/vecinos.js: …era Quilla', hoja: 'goblin_samurai', emoji: '🏮', rol: '🏮 Faro', zona: 'abismo', x: 21, z: 474, look: { co"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "atado",
+   "cps": [
+    "1F9F3"
+   ],
+   "caracteres": "🧳",
+   "significado": "El ambulante y «tu duende viajó contigo».",
+   "dibuja": "Quipe: manta andina anudada en bulto redondo con el nudo arriba y dos franjas talladas.",
+   "usos": 8,
+   "ctx": [
+    "mundo/js/mundo.js: onst viajo = () => { const avisar = () => (yo ? aviso('🧳 Tu duende viajó contigo. ¡Sigue la aventura!', 'ok') :…",
+    "mundo/js/ventanas.js: <p class=\"vv-p\" style=\"margin-bottom:10px\">${activo ? '🧳 <b class=\"vv-ok\">El ambulante está aquí este fin de se…",
+    "mundo/js/ventanas.js: ok\">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el doming…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "huellas",
+   "cps": [
+    "1F463",
+    "1F6B6"
+   ],
+   "caracteres": "👣🚶",
+   "significado": "«Acércate a…» y pista de huellas.",
+   "dibuja": "Dos huellas de pie descalzo desfasadas en diagonal, dedos como puntos separados.",
+   "usos": 2,
+   "ctx": [
+    "mmo/js/caso.js: : 's4', zona: 'selva', nv: 14, tipo: 'Huella', emoji: '👣', titulo: 'Huellas desparejas', texto: 'El testigo vio…",
+    "mundo/js/mundo.js: 2) { abrirNpc(n.tipo); return; } if (dN < 45) { aviso('🚶 Acércate a ' + n.nombre + ' para hablar'); return; } }…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "globo",
+   "cps": [
+    "1F310",
+    "1F30D",
+    "1F4F6",
+    "1F4E1"
+   ],
+   "caracteres": "🌐🌍📶📡",
+   "significado": "Jugar online, sitio web; sin conexión.",
+   "dibuja": "Globo: círculo macizo con un meridiano elíptico y dos paralelos tallados.",
+   "usos": 16,
+   "otros": "📶 y 📡 (sin internet / no cargó) son alias",
+   "ctx": [
+    "mmo/js/data.js: os. Desde el arcade puedes saltar al juego online con «🌍 JUGAR ONLINE».', ] }, { n: 105, fecha: '1 nov 2026…",
+    "functions/mmo/amigos.js: n grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: urlAmigo } }]] } …",
+    "functions/mmo/retencion.js: const volver = uid.startsWith('tg:') ? { text: '🌍 Volver al mundo', web_app: { url: c.en3d ? MUNDO_URL :…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "aviso",
+   "cps": [
+    "26A0"
+   ],
+   "caracteres": "⚠",
+   "significado": "Advertencia y reportar un abuso.",
+   "dibuja": "Triángulo macizo de vértices redondeados con el signo de exclamación tallado.",
+   "usos": 30,
+   "otros": "hoy es amarillo",
+   "ctx": [
+    "mundo/index.html: rep\" title=\"Avisar al equipo de un abuso o una estafa\">⚠️ Reportar</button></div> </div> <div class=\"caja\" id=\"…",
+    "mundo/js/mundo.js: (); if (Date.now() - avisoXP_t < 60000) avisoXP = '⚠ Desde nivel 10, morir te quita un poco de XP (5 % del …",
+    "mundo/js/ventanas.js: k\">▲ Mejor</span>' : dif > 0 ? ' <span class=\"vv-warn\">⚠ rompe tu conjunto</span>' : ''; const comp = puest…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "prohibido",
+   "cps": [
+    "26D4"
+   ],
+   "caracteres": "⛔",
+   "significado": "Moderación y baneados.",
+   "dibuja": "Círculo macizo con una barra horizontal ancha tallada.",
+   "usos": 3,
+   "ctx": [
+    "mmo/js/client.js: x.estado !== 'esperando_pago').length + ')'], ['mod', '⛔ MODERACIÓN'], ['copias', '💾 COPIAS']] .filter(([k]…",
+    "mmo/js/client.js: { h += '<p style=\"margin:8px 0 4px;font-size:13px\">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div…",
+    "functions/mmo/dios.js: ing(m.motivo).slice(0, 80) : '.')); return ok('⛔ Baneado.'); } case 'desbanear': { …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "auxilio",
+   "cps": [
+    "1F198"
+   ],
+   "caracteres": "🆘",
+   "significado": "Pedir ayuda, hablar con el creador, soporte.",
+   "dibuja": "Bengala de auxilio: mano cerrada que alza una antorcha con llama, maciza.",
+   "usos": 13,
+   "ctx": [
+    "mundo/index.html: /div> <div class=\"fila\" style=\"flex-wrap:wrap\"><span>🆘 Habla con el creador del juego</span><b><a class=\"btn …",
+    "mundo/js/mundo.js: e cerca, ir (azul) = // 6 m delante, caido (blanco) = «🆘 Pedir ayuda» desde la pantalla de muerte. const MARCA_…",
+    "mundo/js/mundo.js: b || enCueva(P.x) || (m && m.inst) ? 'none' : ''; // 🆘 Pedir ayuda: marca blanca 'caido' en tu sitio para tu …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "megafono",
+   "cps": [
+    "1F4E2",
+    "1F4E3"
+   ],
+   "caracteres": "📢📣",
+   "significado": "Comunidad oficial, «busca grupo», invitar a un amigo.",
+   "dibuja": "Pututu (caracola-trompeta andina) de perfil con la boca a la derecha y tres rayas de sonido cortas.",
+   "usos": 23,
+   "ctx": [
+    "mundo/index.html: 51 916 778 731</a></b></div> <div class=\"fila\"><span>📢 Comunidad oficial</span><b style=\"display:flex;gap:6px…",
+    "mundo/js/mundo.js: d.style.pointerEvents = 'auto'; d.textContent = `📢 ${m.n} (Nv ${m.nv}) busca grupo para la ${m.nombre || …",
+    "mundo/js/mundo.js: (--sans);pointer-events:auto;'; t.innerHTML = '<span>📢 Únete al canal oficial para enterarte de eventos</span…"
+   ],
+   "hecho": false
+  }
+ ]
+}

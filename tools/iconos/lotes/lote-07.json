@@ -1,0 +1,270 @@
+{
+ "lote": "lote-07",
+ "tema": "Misiones, historia, mensajes y tiempo",
+ "nota": "La leyenda del Cántaro, las pistas del misterio y los relojes del juego. Papel y barro: bordes algo irregulares pero limpios.",
+ "glifos": [
+  {
+   "nombre": "pergamino",
+   "cps": [
+    "1F4DC"
+   ],
+   "caracteres": "📜",
+   "significado": "Misiones y la leyenda del Cántaro.",
+   "dibuja": "Pergamino vertical desplegado con rollo arriba y abajo y tres renglones tallados.",
+   "usos": 23,
+   "ctx": [
+    "mundo/index.html: tton class=\"btn sec\" id=\"b-leyenda\" style=\"width:100%\">📜 La leyenda del Cántaro (la historia del juego)</button…",
+    "mundo/js/mundo.js: on class=\"btn sec\" id=\"chi-leyenda\" style=\"width:100%\">📜 La leyenda del Cántaro</button>`; $('diario-c').inne…",
+    "mundo/js/mundo.js: y style=\"cursor:pointer;color:#fde68a;font-weight:700\">📜 Los capítulos: ' + Math.min(cur.n, CAPITULOS.length) +…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "libro",
+   "cps": [
+    "1F4D6",
+    "1F4D2"
+   ],
+   "caracteres": "📖📒",
+   "significado": "Libro de talentos (botón P), bestiario y libro de cuentas.",
+   "dibuja": "Libro abierto visto de frente: dos páginas macizas que suben hacia los lados, lomo tallado y dos renglones por página.",
+   "usos": 39,
+   "ctx": [
+    "mundo/index.html: bro\" title=\"Habilidades y talentos (P)\" data-l=\"Libro\">📖</button> <button class=\"bt extra\" id=\"b-logros\" titl…",
+    "mundo/js/mundo.js: o. Puedes cambiar de clase gratis hasta Nv 9 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Clase.', 'ok', 1); setTimeo…",
+    "mundo/js/mundo.js: …e clase gratis hasta Nv 9 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Clase.', 'ok', 1); setTimeout(o"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "investigador",
+   "cps": [
+    "1F575"
+   ],
+   "caracteres": "🕵",
+   "significado": "Pistas del misterio.",
+   "dibuja": "Busto de investigador: sombrero de ala ancha macizo y cuello del poncho levantado, cara en sombra (hueco tallado en franja).",
+   "usos": 12,
+   "ctx": [
+    "mundo/js/caso.js: p>`; h += `<p class=\"vv-p\" style=\"margin:0 0 4px\"><b>🕵 Pistas: ${n}/${PISTAS.length}</b></p><div style=\"heigh…",
+    "mundo/js/mundo.js: th + ': ' + q.titulo + '.', q.texto, q.efecto + '.'], '🕵', false, 'Premio: +' + (m.oro || q.oro) + ' oro' + Obj…",
+    "mundo/js/mundo.js: 1 ? ' pista' : ' pistas') + ' y +' + m.oro + ' oro.', '🕵', false, 'Míralo en La Leyenda: El Caso del Traidor.')…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "vela",
+   "cps": [
+    "1F56F"
+   ],
+   "caracteres": "🕯",
+   "significado": "El misterio (narración).",
+   "dibuja": "Vela gruesa y baja en palmatoria con asa, llama maciza y una gota de cera tallada.",
+   "usos": 3,
+   "ctx": [
+    "mundo/js/mundo.js: p class=\"vv-p\" style=\"margin:6px 0 0;color:#fde68a\"><b>🕯 El misterio:</b> <i>' + esc(g.texto) + '</i><br><small…",
+    "mmo/js/caso.js: s no señala solo a Grumo' }, { mision: 'a8', emoji: '🕯️', titulo: 'Cantaba en el camposanto', texto: 'La Abue…",
+    "mmo/js/data.js: alas, cámara más abierta y polvo al aterrizar.', \"🕯️ En la T'anta Wawa hay velas encendidas entre los pane…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cantaro",
+   "cps": [
+    "1F3FA"
+   ],
+   "caracteres": "🏺",
+   "significado": "Reliquias del Cántaro (el corazón de la historia).",
+   "dibuja": "Cántaro andino (aríbalo): base en punta roma, panza ancha, cuello largo que se abre y dos asas bajas; una greca escalonada tallada en la panza.",
+   "usos": 4,
+   "ctx": [
+    "mundo/js/mundo.js: '] === true).length; setTimeout(() => aviso(`🏺 Reliquia del Cántaro ${n}/10: ${LORE_ZONAS[zk].pedazo}…",
+    "mundo/js/mundo.js: el 60. if (n === 10) setTimeout(() => aviso(`🏺✨ ¡Las 10 reliquias reunidas! El Cántaro Eterno solo es…",
+    "mundo/js/mundo.js: y style=\"cursor:pointer;color:#c084fc;font-weight:700\">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).f…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "hoja",
+   "cps": [
+    "1F4C4",
+    "1F9FE"
+   ],
+   "caracteres": "📄🧾",
+   "significado": "Carta, página arrancada, recibo (pistas).",
+   "dibuja": "Hoja con la esquina superior derecha doblada y tres renglones tallados.",
+   "usos": 3,
+   "ctx": [
+    "mmo/js/caso.js: 'a5', zona: 'amanecer', nv: 9, tipo: 'Recibo', emoji: '🧾', titulo: 'Cuarenta costales', texto: 'Maíz de Grumo, …",
+    "functions/mmo/world.js: ng(pd.jugador || '').replace(/[^\\p{L}\\p{N} ]/gu, '')}\\n🧾 Operación: ${op}\\n\\n⚠️ Míralo en tu app: monto *exacto…",
+    "mmo/js/caso.js: n: 's6', zona: 'selva', nv: 16, tipo: 'Carta', emoji: '📄', titulo: 'La página arrancada', texto: 'Cómo se rompe…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "piedra",
+   "cps": [
+    "1FAA8"
+   ],
+   "caracteres": "🪨",
+   "significado": "Pizarra de piedra (pista).",
+   "dibuja": "Laja de piedra irregular de cinco lados con dos grietas talladas.",
+   "usos": 1,
+   "ctx": [
+    "mmo/js/caso.js: v3', zona: 'cavernas', nv: 47, tipo: 'Objeto', emoji: '🪨', titulo: 'La pizarra de Sami', texto: '«Sami, nueve a…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "calendario",
+   "cps": [
+    "1F4C5",
+    "1F5D3",
+    "1F4C6"
+   ],
+   "caracteres": "📅🗓📆",
+   "significado": "Misiones del día y de la semana.",
+   "dibuja": "Hoja de calendario maciza con dos anillas arriba, cabecera separada por un filete y cuatro casillas talladas.",
+   "usos": 10,
+   "ctx": [
+    "mundo/js/mundo.js: s solo se veia \"Semana 0/2\"). `<div class=\"q\"><b>📅 Misiones de la semana ${hs}/${T.sem.l.length}</b>` + T…",
+    "mundo/js/ventanas.js: :0 0 10px\"><div style=\"font-weight:700;margin:0 0 6px\">📅 Una tarea por día · hoy +${premioDiaFiesta(tp, hoy)} $…",
+    "mmo/js/client.js: = '<p style=\"margin-top:6px\"><b style=\"display:inline\">📅 Una tarea por día</b> (hoy +' + premioDiaFiesta(tp, ho…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "reloj-arena",
+   "cps": [
+    "23F3",
+    "231B"
+   ],
+   "caracteres": "⏳⌛",
+   "significado": "Tiempo que queda (la semana cierra, invasión).",
+   "dibuja": "Reloj de arena: dos triángulos macizos unidos por el cuello entre dos tapas, con la arena de arriba a medio tallar.",
+   "usos": 39,
+   "ctx": [
+    "mundo/js/mundo.js: if (rankTab === 'sem' && fin) s += `<p class=\"vv-p\">⏳ La semana cierra en <b style=\"color:#f87171\">${dd} d $…",
+    "mmo/js/client.js: ? ' · ' + M.nombre : '') + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : '')); …",
+    "mmo/js/client.js: ado', por_verificar: '🔎 Por revisar', esperando_pago: '⏳ Esperando pago' }; if (!D.pedidos.length) h += '<p…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cronometro",
+   "cps": [
+    "23F1",
+    "23F0"
+   ],
+   "caracteres": "⏱⏰",
+   "significado": "Mejor tiempo, contrarreloj, «último día».",
+   "dibuja": "Cronómetro redondo con botón arriba, esfera tallada y una aguja maciza a las dos.",
+   "usos": 10,
+   "otros": "⏰ es alias",
+   "ctx": [
+    "mundo/js/mundo.js: !cv.bloq) s += `<p class=\"vv-p\" style=\"font-size:12px\">⏱ Mejor tiempo de la semana contra el Rey Goblin, solo e…",
+    "mundo/js/mundo.js: nfo.hecha; const relojC = cuevaT0 && !hechaC ? ` · ⏱ ${fmtT(Date.now() - cuevaT0)}` : ''; const recC = …",
+    "mmo/js/client.js: to.nombre + (aqui ? '' : ' · ' + zona)); ponTxt(t2, '⏱ ' + reloj + ' · ' + (evento.fase === 'capitan' ? 'Derr…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "bombilla",
+   "cps": [
+    "1F4A1"
+   ],
+   "caracteres": "💡",
+   "significado": "Consejo en la pantalla de carga.",
+   "dibuja": "Lámpara de aceite de barro (candil) de perfil con llama: la «idea» del juego. Nada de bombilla eléctrica.",
+   "usos": 12,
+   "ctx": [
+    "mundo/index.html: tElementById('carga');function p(){if(c)c.textContent='💡 '+L[i++%L.length];}var G={jefe:'Sigue la luz amarilla:…",
+    "mundo/index.html: search)||[])[1]||'';}catch(e){}if(gk&&c)c.textContent='💡 '+G[gk];else p();var t=setInterval(function(){if(!g||g…",
+    "mundo/js/mundo.js: ta ? ';cursor:pointer' : ''}\"><b style=\"color:#4ade80\">💡 ${COMPACTO ? '' : 'Paso '}${tuto3.i + 1}/${TUTO3.lengt…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "portapapeles",
+   "cps": [
+    "1F4CB"
+   ],
+   "caracteres": "📋",
+   "significado": "Enlace o mensaje copiado.",
+   "dibuja": "Tablilla con pinza arriba y dos renglones tallados más un visto tallado.",
+   "usos": 9,
+   "ctx": [
+    "mmo/js/client.js: de oro') + ' ' + enlWa(m.ref)).then(() => aviso(TG ? '📋 Enlace copiado' : '📋 Mensaje y enlace copiados: pégalo…",
+    "mmo/js/client.js: …Wa(m.ref)).then(() => aviso(TG ? '📋 Enlace copiado' : '📋 Mensaje y enlace copiados: pégalos en",
+    "mmo/js/client.js: y { navigator.clipboard.writeText(t).then(() => aviso('📋 Copiado', 'ok'), () => aviso('No se pudo copiar: cópia…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "sobre",
+   "cps": [
+    "1F4E7",
+    "1F4E8",
+    "2709",
+    "1F4EC",
+    "1F4E4"
+   ],
+   "caracteres": "📧📨✉📬📤",
+   "significado": "Crear cuenta con correo, invitar, carta, «mientras no estabas», compartir.",
+   "dibuja": "Sobre cerrado apaisado macizo con la solapa en V tallada.",
+   "usos": 18,
+   "ctx": [
+    "mundo/js/mundo.js: Presúmelo en tu historia · +' + oroAmigo() + ' oro' : '📨 Presúmelo a un amigo · ganan los dos +' + oroAmigo() +…",
+    "mundo/js/mundo.js: round:#25d366;border-color:#25d366;color:#fff\">${TG ? '📨 Invitar por Telegram' : '📲 Invitar por WhatsApp'} · ga…",
+    "functions/mmo/chicha.js: de este mes está lleno, le toca en ${mesTxt}.` : ''}\\n📨 Contacto: ${enTg ? `[abrir chat](tg://user?id=${tgId})…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "bocadillo",
+   "cps": [
+    "1F4AC"
+   ],
+   "caracteres": "💬",
+   "significado": "Chat.",
+   "dibuja": "Globo de diálogo redondeado macizo con el pico abajo a la izquierda y tres puntos tallados.",
+   "usos": 7,
+   "ctx": [
+    "mundo/index.html: ss=\"bt\" id=\"b-chat\" title=\"Chat (Enter)\" data-l=\"Chat\">💬</button> <button class=\"bt\" id=\"b-gestos\" title=\"Ges…",
+    "mmo/index.html: ty{background:none;padding:0;} /* Con el chat abierto (💬) se despliega el historial (con fondo para leerlo). */…",
+    "mmo/index.html: //t.me/duendesolana420\" target=\"_blank\" rel=\"noopener\">💬 Grupo</a></span></p> </div> </div> <!-- mTON / wall…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "dado",
+   "cps": [
+    "1F3B2"
+   ],
+   "caracteres": "🎲",
+   "significado": "Aspecto al azar, otros nombres.",
+   "dibuja": "Dado de frente con esquinas radio 6 y cinco puntos tallados.",
+   "usos": 3,
+   "ctx": [
+    "mundo/index.html: x\"><button class=\"btn sec\" id=\"lk-azar\" style=\"flex:1\">🎲 Al azar</button><button class=\"btn sec\" id=\"lk-cancela…",
+    "mundo/js/mundo.js: le=\"flex:1;min-height:40px\" aria-label=\"Otros nombres\">🎲 Otros</button><button type=\"button\" class=\"btn sec tb-…",
+    "index.html: TICLES const EM=['✨','💎','🌙','🔥','🚀','⭐','💚','⚔️','🏰','🎲','🧿','👾']; const pc=document.getElementById('particles…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "bandera",
+   "cps": [
+    "1F3C1"
+   ],
+   "caracteres": "🏁",
+   "significado": "Meta, «te faltaron…».",
+   "dibuja": "Banderín triangular macizo en asta, ondeando a la derecha.",
+   "usos": 1,
+   "ctx": [
+    "js/engine.js: .maxHp * 100) + '%</b> de vida'); } else out.push('🏁 Te faltaron <b>' + Math.max(1, Math.ceil((tot - waveTi…"
+   ],
+   "hecho": false
+  }
+ ]
+}

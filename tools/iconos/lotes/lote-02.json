@@ -1,0 +1,300 @@
+{
+ "lote": "lote-02",
+ "tema": "Interfaz y sistema",
+ "nota": "Botones del HUD y del menú nuevo (ajustes, gráficos, controles, salir). Deben distinguirse entre sí a 16 px dentro de una misma barra.",
+ "glifos": [
+  {
+   "nombre": "engranaje",
+   "cps": [
+    "2699"
+   ],
+   "caracteres": "⚙",
+   "significado": "Ajustes / menú del juego (interfaz nueva).",
+   "dibuja": "Engranaje de 8 dientes trapezoidales con agujero central tallado amplio.",
+   "usos": 0,
+   "ctx": [],
+   "hecho": true
+  },
+  {
+   "nombre": "puerta",
+   "cps": [
+    "1F6AA"
+   ],
+   "caracteres": "🚪",
+   "significado": "Salir del juego (menú nuevo) y la Puerta del asedio.",
+   "dibuja": "Vano de piedra con arco y la hoja de la puerta entreabierta en perspectiva (trapecio macizo) con el tirador tallado.",
+   "usos": 2,
+   "ctx": [
+    "mundo/js/mundo.js: > ${fmtT(asedio.fin - Date.now())} · ${dn}` + `<br>🚪 Puerta ${asedio.puerta ? (hp.p ?? 100) + '%' : '<b sty…",
+    "game.html: \"> <button class=\"ob red\" onclick=\"authLogout()\">🚪 CERRAR SESIÓN</button> <button class=\"ob sec\" on…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "candado",
+   "cps": [
+    "1F512",
+    "26D3"
+   ],
+   "caracteres": "🔒⛓",
+   "significado": "Bloqueado: contenido por nivel, premio sin cobrar, hermandad cerrada.",
+   "dibuja": "Candado cerrado: cuerpo macizo de esquinas suaves, arco grueso y ojo de cerradura tallado.",
+   "usos": 45,
+   "otros": "⛓ cadenas (pista del misterio) es alias",
+   "ctx": [
+    "mundo/js/mundo.js: // puntos de chicha else if (m.chl) partes.push('🔒 🥤 Nv ' + CHICHA.nvPuntos + (soyInvitado ? ' con cuenta…",
+    "mundo/js/mundo.js: -pase=\"${i}\">Cobrar</button>` : cob ? '<i>✔</i>' : '<i>🔒</i>'}</div>`; } $('pase-c').innerHTML = h + '</div…",
+    "mundo/js/mundo.js: , 12].map((u, i) => (cof > i ? '✅' : pts >= u ? '🎁' : '🔒') + ' ' + u).join(' · ')} · ${cof >= 3 ? '¡3 cofres ab…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "candado-abierto",
+   "cps": [
+    "1F513"
+   ],
+   "caracteres": "🔓",
+   "significado": "Desbloqueado / hermandad abierta a todos.",
+   "dibuja": "El mismo candado con el arco girado y suelto por la izquierda (un extremo en el aire).",
+   "usos": 3,
+   "ctx": [
+    "mundo/js/mundo.js: const ab = `<p class=\"vv-p\" style=\"margin-top:4px\"><b>🔓 Hermandades que buscan gente</b></p>` + (!hermAb ? '<p…",
+    "mundo/js/mundo.js: ierta ? 'checked' : ''} style=\"width:20px;height:20px\">🔓 Abierta a todos <small style=\"color:var(--txt3)\">(cual…",
+    "functions/mmo/hermandades.js: await this.guardarHerm(h); this.avisarHerm(h, v ? `🔓 ${s.c.nombre} abrió la hermandad: cualquiera puede uni…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pantalla",
+   "cps": [
+    "1F5A5"
+   ],
+   "caracteres": "🖥",
+   "significado": "Gráficos (menú nuevo); servidores en la página de apoyo.",
+   "dibuja": "Monitor ancho macizo con la pantalla tallada dejando un marco de 4, pie corto y base; dentro, una montaña escalonada maciza (el paisaje).",
+   "usos": 1,
+   "ctx": [
+    "index.html: <div class=\"apoyo-usos\"> <div class=\"apoyo-uso\"><b>🖥️</b>Servidores del juego y del MMO en línea</div> …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "mando",
+   "cps": [
+    "1F3AE",
+    "1F579"
+   ],
+   "caracteres": "🎮🕹",
+   "significado": "Controles (menú nuevo), Jugar, Arcade.",
+   "dibuja": "Mando de dos empuñaduras macizo con cruceta tallada a la izquierda y dos botones tallados a la derecha.",
+   "usos": 5,
+   "ctx": [
+    "game.html: <button class=\"ob sec\" onclick=\"closeAuthModal()\">🎮 JUGAR SIN CUENTA</button> </div> </div> <!-- …",
+    "telegram/index.html: age\" onclick=\"irTab('jugar')\"><span aria-hidden=\"true\">🎮</span>JUGAR</button> <button type=\"button\" data-…",
+    "telegram/index.html: '💡 Tu skin vale en $DUENDE CLASSIC y $DUENDE ORIGINS','🎮 El juego completo es gratis: las skins son opcionales'…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "teclado",
+   "cps": [
+    "2328"
+   ],
+   "caracteres": "⌨",
+   "significado": "Reasignar teclas.",
+   "dibuja": "Teclado bajo y ancho macizo, con dos filas de teclas cuadradas talladas y una barra espaciadora tallada.",
+   "usos": 3,
+   "ctx": [
+    "mundo/index.html: </script> <div class=\"fila\" id=\"fila-teclas\"><span>⌨️ Teclas (abajo, las de fábrica)</span><b><button type=…",
+    "mundo/js/mundo.js: ACC_T.find(a => a[0] === otra); if (pisada) aviso(`⌨️ ${pisada[1]} pasa a la tecla ${nomTecla(antes)}.`, 'o…",
+    "game.html: <details id=\"ctl-teclado\" open> <summary>⌨️ Teclado y ratón</summary> <ul> <li>…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "ojo",
+   "cps": [
+    "1F441",
+    "1F440"
+   ],
+   "caracteres": "👁👀",
+   "significado": "Interfaz/ver (menú nuevo); probar una skin, inspeccionar.",
+   "dibuja": "Un solo ojo almendrado macizo con el iris tallado en aro y la pupila maciza.",
+   "usos": 10,
+   "ctx": [
+    "mundo/js/mundo.js: p:4px;min-height:40px;font-size:12px;padding:8px 10px\">👀 Probar su skin</button>' : ''); const b = lk.query…",
+    "mundo/js/mundo.js: flow:hidden;text-overflow:ellipsis;white-space:nowrap\">👀 ${esc(sk.nombre)}</b><span id=\"probador3-t\" style=\"fon…",
+    "mundo/js/ventanas.js: nst acc2 = !tiene && H && H.probarMontura ? acc + btn('👀 Probar', 'probarMontura', { id }, 'sec') : acc; h …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "menu",
+   "cps": [
+    "2630"
+   ],
+   "caracteres": "☰",
+   "significado": "Menú (interfaz nueva).",
+   "dibuja": "Tres barras horizontales gruesas iguales, extremos rectos.",
+   "usos": 0,
+   "texto": true,
+   "ancho": 56,
+   "ctx": [],
+   "hecho": true
+  },
+  {
+   "nombre": "casa-inicio",
+   "cps": [
+    "2302"
+   ],
+   "caracteres": "⌂",
+   "significado": "Volver al inicio de la web / al pueblo.",
+   "dibuja": "Casa de adobe: tejado a dos aguas con alero ancho y cuerpo macizo, puerta tallada en arco.",
+   "usos": 10,
+   "texto": true,
+   "ctx": [
+    "mundo/index.html: ss=\"bt\" href=\"/inicio/\" title=\"Inicio: elige tu juego\">⌂</a> <button class=\"bt\" id=\"b-compartir\" title=\"Invit…",
+    "mundo/js/mundo.js: n.hash.match(/[#&]f=([\\w-]+)/) || [])[1]) || ''; // El ⌂ (inicio web) va al menu de la Mini App, como en CLASSI…",
+    "mundo/js/mundo.js: recuperas tu duende en otro navegador o celular (${K('⌂ Inicio', '⋯ → ? → Inicio')} → código de rescate).</p> …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "altavoz",
+   "cps": [
+    "1F50A",
+    "1F508"
+   ],
+   "caracteres": "🔊🔈",
+   "significado": "Sonido activado.",
+   "dibuja": "Altavoz macizo (caja + cono) mirando a la derecha con dos ondas en arco de trazo 4.",
+   "usos": 19,
+   "ctx": [
+    "mundo/index.html: ra\" id=\"b-son\" title=\"Música y sonido\" data-l=\"Sonido\">🔊</button> <button class=\"bt\" id=\"b-amigos\" title=\"Ami…",
+    "mundo/js/mundo.js: ction pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; } $('b-son').onclick = () => { sonido = !sonid…",
+    "mundo/js/mundo.js: > { bss.textContent = sonido ? '🔇 Jugar sin sonido' : '🔊 Activar sonido'; }; pintarBss(); bss.addEventL…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "silencio",
+   "cps": [
+    "1F507",
+    "1F515"
+   ],
+   "caracteres": "🔇🔕",
+   "significado": "Sin sonido; Ignorar a un jugador; no más avisos.",
+   "dibuja": "El mismo altavoz con un aspa de trazo 5 a la derecha en lugar de las ondas.",
+   "usos": 20,
+   "otros": "🔕 es alias",
+   "ctx": [
+    "mundo/index.html: 12px;font:inherit;font-size:13px;pointer-events:auto\">🔇 Jugar sin sonido</button> <p class=\"consejo-carga\" i…",
+    "mundo/index.html: btn sec\" id=\"op-ign\" title=\"Dejar de ver sus mensajes\">🔇 Ignorar</button><button class=\"btn sec\" id=\"op-rep\" ti…",
+    "mundo/js/mundo.js: pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; } $('b-son').onclick = () => { sonido = !sonido; try…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "campana",
+   "cps": [
+    "1F514"
+   ],
+   "caracteres": "🔔",
+   "significado": "Avisos (por Telegram, a pedido).",
+   "dibuja": "Campana maciza de boca ancha con badajo separado por un filete tallado y asa pequeña arriba.",
+   "usos": 8,
+   "ctx": [
+    "mundo/index.html: on></b></div> <div class=\"fila\" id=\"fila-avtg\"><span>🔔 Avisos por Telegram</span><b><button type=\"button\" cla…",
+    "mundo/js/mundo.js: arentElement); if (f) f.style.display = 'none'; } } /* 🔔 Avisos por Telegram a pedido (web y navegador de FB/IG…",
+    "mundo/js/mundo.js: \" data-noche=\"tg\" style=\"color:#7dd3fc;font-size:12px\">🔔 ¿Quieres un recordatorio por Telegram? (como máximo un…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "lupa",
+   "cps": [
+    "1F50E",
+    "1F50D"
+   ],
+   "caracteres": "🔎🔍",
+   "significado": "Buscar, próxima pista, inspeccionar a otro jugador.",
+   "dibuja": "Lupa: aro grueso (trazo 6) con cristal vacío y mango macizo hacia abajo a la derecha.",
+   "usos": 6,
+   "ctx": [
+    "mundo/js/caso.js: 3,230,138,.10);border:1px solid rgba(253,230,138,.35)\">🔎 <b>Próxima pista:</b> ${esc(zonaNombre(sig.zona))}, ${…",
+    "mmo/js/client.js: 'b-buscar').onclick = () => { sfx('boton', .3); aviso('🔎 Buscando tu pago en la red…', 'ok'); mandar({ t: 'pedi…",
+    "mmo/js/client.js: const estado = { pagado: '💰 Pagado', por_verificar: '🔎 Por revisar', esperando_pago: '⏳ Esperando pago' }; …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "lapiz",
+   "cps": [
+    "270F",
+    "2712"
+   ],
+   "caracteres": "✏✒",
+   "significado": "Poner o cambiar el nombre del duende.",
+   "dibuja": "Pluma de ave para escribir en diagonal (punta abajo a la izquierda), cañón macizo, barbas con dos cortes tallados.",
+   "usos": 6,
+   "otros": "✒ es alias",
+   "ctx": [
+    "mundo/js/mundo.js: 'btn sec'; bn.style.width = '100%'; bn.textContent = '✏️ Ponle nombre a tu duende (gratis, 1 vez)'; const fi…",
+    "mundo/js/mundo.js: /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre …",
+    "mmo/js/client.js: 'btn sec'; bn.style.width = '100%'; bn.textContent = '✏️ Ponle nombre a tu duende (gratis, 1 vez)'; const …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "guardar",
+   "cps": [
+    "1F4BE"
+   ],
+   "caracteres": "💾",
+   "significado": "Tu progreso guardado / copias de seguridad.",
+   "dibuja": "Tablilla de guardado: cuadrado macizo con la esquina superior derecha en chaflán, ventana tallada arriba y etiqueta tallada abajo.",
+   "usos": 6,
+   "ctx": [
+    "mundo/js/mundo.js: navegador de la app) const f4 = soyInvitado ? fila('💾', 'Tu duende vive solo en este navegador.<br><button t…",
+    "mmo/js/client.js: ').length + ')'], ['mod', '⛔ MODERACIÓN'], ['copias', '💾 COPIAS']] .filter(([k]) => dueno || (k !== 'pedido…",
+    "mmo/js/client.js: :wrap;margin:6px 0\"><button class=\"btn\" id=\"d-copiaya\">💾 Hacer copia ahora</button><button class=\"btn sec\" id=\"…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "enlace",
+   "cps": [
+    "1F517",
+    "1FAA2"
+   ],
+   "caracteres": "🔗🪢",
+   "significado": "Enlace copiado, cuenta vinculada.",
+   "dibuja": "Dos eslabones de cadena alargados enlazados en diagonal, trazo 6.",
+   "usos": 12,
+   "otros": "🪢 nudo (pista del misterio) es alias",
+   "ctx": [
+    "mundo/js/mundo.js: cod, forzar: true }); break; case 'vincOk': aviso('🔗 ¡Listo! Entrando con ' + m.nombre + '…', 'ok', 1); set…",
+    "mundo/js/mundo.js: ard.writeText(TXT_GRUPO + ' ' + url).then(() => aviso('🔗 Enlace copiado: tu amigo lo toca y le llega tu invitac…",
+    "mundo/js/mundo.js: ipboard.writeText(txtWa + ' ' + web).then(() => aviso('🔗 Enlace copiado: pégalo en tu historia o mensaje para q…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "celular",
+   "cps": [
+    "1F4F1",
+    "1F4F2"
+   ],
+   "caracteres": "📱📲",
+   "significado": "Llevar mi duende a otro dispositivo, invitar a mi grupo, novedades del celular.",
+   "dibuja": "Celular vertical macizo con la pantalla tallada y una flecha maciza entrando por la derecha hasta el centro de la pantalla.",
+   "usos": 33,
+   "ctx": [
+    "mundo/js/mundo.js: rigen && window.dqOrigen().ref) || undefined; })(); // 📲 «Invitar a mi grupo»: startapp=g_codigo en Telegram o …",
+    "mundo/js/mundo.js: orage.setItem('dq_vcod', m.cod); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', …",
+    "mundo/js/mundo.js: \"margin-top:4px;width:100%;padding:4px;font-size:10px\">📲 Invitar a mi grupo</button>' : '') + '<button clas…"
+   ],
+   "hecho": false
+  }
+ ]
+}

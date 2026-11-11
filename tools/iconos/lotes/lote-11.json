@@ -1,0 +1,233 @@
+{
+ "lote": "lote-11",
+ "tema": "Chicha, comida y fiestas",
+ "nota": "La chicha morada es la marca del juego: el vaso manda. Ingredientes del recetario con silueta propia; fiestas del calendario peruano.",
+ "glifos": [
+  {
+   "nombre": "vaso-chicha",
+   "cps": [
+    "1F964"
+   ],
+   "caracteres": "🥤",
+   "significado": "La chicha morada: puntos de chicha, el premio real del nivel 60, Mama Asiri.",
+   "dibuja": "Vaso ancho y cónico sin pajita: boca hueca en contorno, la chicha maciza hasta tres cuartos y dos dados de fruta tallados.",
+   "usos": 79,
+   "ctx": [
+    "mundo/index.html: \" aria-label=\"Premio de chicha morada\" data-l=\"Chicha\">🥤</button> <button class=\"bt\" id=\"b-mas\" title=\"Más\" a…",
+    "mundo/index.html: real: 2 litros de chicha morada al llegar a nivel 60\">🥤 Nv 60 = 2 L de chicha morada real</button> <div class=…",
+    "mundo/index.html: /div> <div class=\"fila\" style=\"flex-wrap:wrap\"><span>🥤 Dudas sobre la chicha</span><b><a class=\"btn sec\" href…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "maiz",
+   "cps": [
+    "1F33D"
+   ],
+   "caracteres": "🌽",
+   "significado": "Recetario y maíz morado.",
+   "dibuja": "Mazorca vertical con granos en rejilla tallada y dos hojas (panca) abiertas abajo.",
+   "usos": 12,
+   "ctx": [
+    "mundo/js/mundo.js: etTimeout(() => avisar(i + 1), 1000); return; } aviso('🌽 Recetario ' + n + '/' + INGREDIENTES.length + ': ' + i…",
+    "mundo/js/mundo.js: style=\"flex:1;min-height:44px;margin:0;font-size:13px\">🌽 Recetario</button><button type=\"button\" class=\"btn\" da…",
+    "mundo/js/mundo.js: `<div class=\"q\"><b style=\"color:#f0abfc\">${qs.ingr ? '🌽' : '📖'} ${esc(qs.nombre)}</b>${esc(vs.pide)}${vs.pend …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pan",
+   "cps": [
+    "1F35E",
+    "1F956"
+   ],
+   "caracteres": "🍞🥖",
+   "significado": "Evento del pan y el Horno.",
+   "dibuja": "Hogaza redonda (pan chuta) vista en tres cuartos con tres cortes tallados.",
+   "usos": 11,
+   "ctx": [
+    "mundo/js/mundo.js: PORADA (data TEMPORADAS) ── // Pildora bajo el marco: «🍞 34/50 · 3 d» (lo juntado, la meta del siguiente // tit…",
+    "mmo/js/data.js: a T'anta Wawa sale en tu caja de misiones y la píldora 🍞 abre el calendario.\", 'En el celular, la caja de m…",
+    "mmo/js/data.js: ] }, { n: 107, fecha: '1 nov 2026', items: [ \"🍞 Desde el 3 de noviembre, en ORIGINS el pueblo se llena…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "uvas",
+   "cps": [
+    "1F347"
+   ],
+   "caracteres": "🍇",
+   "significado": "Vendimia (evento).",
+   "dibuja": "Racimo en triángulo invertido de seis uvas separadas por filetes, con hoja arriba.",
+   "usos": 2,
+   "ctx": [
+    "mmo/js/data.js: te.UTC(2027, 2, 22), hasta: '21 de marzo', emoji: '🍇', deco: '🍇', cosas: 'uvas', campo: 'uvas', color: '#a7…",
+    "mmo/js/data.js: …, 2, 22), hasta: '21 de marzo', emoji: '🍇', deco: '🍇', cosas: 'uvas', campo: 'uvas', color: '#a78bfa"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "fruta",
+   "cps": [
+    "1F34E",
+    "1F350",
+    "1F34B"
+   ],
+   "caracteres": "🍎🍐🍋",
+   "significado": "Manzana, membrillo y limón del recetario.",
+   "dibuja": "Fruto redondo con hendidura arriba, rabito y una hoja; brillo tallado.",
+   "usos": 3,
+   "otros": "🍐 y 🍋 son alias",
+   "ctx": [
+    "mmo/js/secundarias.js: vir.' }, { id: 'manzana', nombre: 'Manzana', emoji: '🍎', zona: 'cavernas', mision: 'v3', dato: 'Se hierve con…",
+    "mmo/js/secundarias.js: ' }, { id: 'membrillo', nombre: 'Membrillo', emoji: '🍐', zona: 'amanecer', mision: 'a3', dato: 'Se hierve ent…",
+    "mmo/js/secundarias.js: s basta.' }, { id: 'limon', nombre: 'Limón', emoji: '🍋', zona: 'desierto', mision: 'd3', dato: 'Va al final, …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pina",
+   "cps": [
+    "1F34D"
+   ],
+   "caracteres": "🍍",
+   "significado": "Piña del recetario.",
+   "dibuja": "Piña: cuerpo ovalado con rombos tallados y corona de cinco hojas en punta.",
+   "usos": 1,
+   "ctx": [
+    "mmo/js/secundarias.js: n cáscara.' }, { id: 'pina', nombre: 'Piña', emoji: '🍍', zona: 'abismo', mision: 'm3', dato: 'Se usa también …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "especia",
+   "cps": [
+    "1F330",
+    "1F342"
+   ],
+   "caracteres": "🌰🍂",
+   "significado": "Clavo de olor y canela del recetario.",
+   "dibuja": "Dos ramas de canela enrolladas cruzadas con un clavo de olor encima.",
+   "usos": 2,
+   "ctx": [
+    "mmo/js/secundarias.js: ' }, { id: 'clavo', nombre: 'Clavo de olor', emoji: '🌰', zona: 'tormenta', mision: 't3', dato: 'Con pocos bas…",
+    "mmo/js/secundarias.js: gusto.' }, { id: 'canela', nombre: 'Canela', emoji: '🍂', zona: 'cumbres', mision: 'u3', dato: 'En rama, para …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "chancaca",
+   "cps": [
+    "1F36F"
+   ],
+   "caracteres": "🍯",
+   "significado": "Chancaca del recetario.",
+   "dibuja": "Tapa de chancaca: tronco de cono macizo con una porción cortada y separada.",
+   "usos": 1,
+   "ctx": [
+    "mmo/js/secundarias.js: a.' }, { id: 'chancaca', nombre: 'Chancaca', emoji: '🍯', zona: 'castillo', mision: 'c3', dato: 'Dulzor de cañ…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "olla",
+   "cps": [
+    "1F372"
+   ],
+   "caracteres": "🍲",
+   "significado": "Cocina de la Artesana.",
+   "dibuja": "Olla de barro panzuda con dos asas y tres volutas de vapor.",
+   "usos": 1,
+   "ctx": [
+    "mmo/js/data.js: cada zona. Lanza el sedal y TIRA cuando pique.', '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sud…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "fiesta",
+   "cps": [
+    "1F389",
+    "1FA81",
+    "1F680"
+   ],
+   "caracteres": "🎉🪁🚀",
+   "significado": "Fiesta, huayno grupal, celebración.",
+   "dibuja": "Banderines de fiesta: guirnalda en arco con cinco banderines triangulares y dos serpentinas.",
+   "usos": 21,
+   "otros": "🪁 y 🚀 son alias",
+   "ctx": [
+    "mundo/js/mundo.js: z) + 3.6, z, cerca.length >= 3 && gid === 'bailar' ? '🎉 ¡Huayno grupal!' : '🎉 ¡Fiesta!', '#ffd54a', true); S…",
+    "mundo/js/mundo.js: …ngth >= 3 && gid === 'bailar' ? '🎉 ¡Huayno grupal!' : '🎉 ¡Fiesta!', '#ffd54a', true); SON.t",
+    "mundo/js/mundo.js: imera caza (ms desde el clic en entrar) aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + (m.item.nombre || no…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "fuegos",
+   "cps": [
+    "1F386"
+   ],
+   "caracteres": "🎆",
+   "significado": "Cuenta atrás y fuegos artificiales.",
+   "dibuja": "Estallido de fuegos: doce rayos cortos en dos coronas alrededor de un centro vacío, con estela abajo.",
+   "usos": 8,
+   "ctx": [
+    "mundo/js/mundo.js: nterior y nunca se encola (saldria tarde). if (/^🎆 \\d+…$/.test(m.m || '')) { for (const c of [...avisos.c…",
+    "mundo/js/mundo.js: || '')) { for (const c of [...avisos.children]) if (/^🎆 \\d+…$/.test(c.textContent)) c.remove(); if (!avisoTapa…",
+    "mundo/js/mundo.js: so(tr[0]); } if (!cabe || antes) { if (/^🎆 \\d+…$/.test(txt)) return; // la cuenta atras no se a…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "calabaza",
+   "cps": [
+    "1F383"
+   ],
+   "caracteres": "🎃",
+   "significado": "Noche de Duendes (evento).",
+   "dibuja": "Calabaza tallada: cuerpo ancho con tallo, ojos triangulares y boca dentada en negativo.",
+   "usos": 11,
+   "ctx": [
+    "mundo/js/mundo.js: = true; setTimeout(() => despuesMision1(() => aviso('🎃 Noche de Duendes: el pueblo se llenó de calabazas y de…",
+    "mundo/js/ventanas.js: 5;font-size:11px\">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'compra…",
+    "mmo/js/client.js: oLocaleString('es', { useGrouping: 'always' }) + '</s> 🎃 ' : ''}${pr.toLocaleString('es', { useGrouping: 'alway…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "mascara",
+   "cps": [
+    "1F3AD"
+   ],
+   "caracteres": "🎭",
+   "significado": "Carnaval; las skins dan poderes.",
+   "dibuja": "Máscara de carnaval andino de frente (media cara) con ojos almendrados tallados y tres plumas arriba.",
+   "usos": 4,
+   "ctx": [
+    "mmo/js/data.js: 0 (hora de Perú): +50% de experiencia por caza.', '🎭 Las skins dan más poderes (crítico, defensa, experienc…",
+    "mmo/js/data.js: .UTC(2027, 1, 15), hasta: '14 de febrero', emoji: '🎭', deco: '🎭', cosas: 'máscaras', campo: 'mascaras', col…",
+    "mmo/js/data.js: …1, 15), hasta: '14 de febrero', emoji: '🎭', deco: '🎭', cosas: 'máscaras', campo: 'mascaras', color:"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "amuleto-iman",
+   "cps": [
+    "1F9F2",
+    "1F531"
+   ],
+   "caracteres": "🧲🔱",
+   "significado": "Imán y tridente del modo arcade.",
+   "dibuja": "Imán de herradura macizo con las dos puntas separadas por un filete.",
+   "usos": 5,
+   "otros": "solo arcade (web)",
+   "ctx": [
+    "js/engine.js: + 40); updateHpHUD(); } }, { id: 'iman', icono: '🧲', nombre: 'IMAN', desc: 'Atrae monedas de lej…",
+    "js/engine.js: ctivos (frames) const PU_TYPES = { magnet: { emoji: '🧲', color: '#00eeff', rgb: '0,238,255', dur: 360, label:…",
+    "js/engine.js: color: '#00eeff', rgb: '0,238,255', dur: 360, label: '🧲 IMÁN DE MONEDAS!' }, double: { emoji: '✖️2', color: …"
+   ],
+   "hecho": false
+  }
+ ]
+}

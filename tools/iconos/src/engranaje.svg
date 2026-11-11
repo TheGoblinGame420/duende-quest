@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs><path id="d" d="M27.5 4.5 h9 l2 10 h-13 z"/></defs>
+<g fill="#000">
+  <circle cx="32" cy="32" r="20"/>
+  <use href="#d"/><use href="#d" transform="rotate(45 32 32)"/><use href="#d" transform="rotate(90 32 32)"/><use href="#d" transform="rotate(135 32 32)"/>
+  <use href="#d" transform="rotate(180 32 32)"/><use href="#d" transform="rotate(225 32 32)"/><use href="#d" transform="rotate(270 32 32)"/><use href="#d" transform="rotate(315 32 32)"/>
+</g>
+<circle cx="32" cy="32" r="8.5" fill="#fff"/>
+</svg>

@@ -1,0 +1,234 @@
+{
+ "lote": "lote-10",
+ "tema": "Naturaleza, clima y recolección",
+ "nota": "Cielo y clima de la sierra y la costa. Formas simples y macizas: son los iconos que más pequeños se ven (barra de hora y clima).",
+ "glifos": [
+  {
+   "nombre": "sol",
+   "cps": [
+    "2600",
+    "1F31E",
+    "1F305"
+   ],
+   "caracteres": "☀🌞🌅",
+   "significado": "Día, amanecer, facción Luz, misión diaria, Guardián Inti.",
+   "dibuja": "Inti: disco macizo con ocho rayos triangulares cortos alternando recto y diagonal, separados del disco por un filete.",
+   "usos": 24,
+   "ctx": [
+    "mundo/js/mundo.js: ae la noche: +10% de experiencia hasta el amanecer' : '☀ Amanece: termina el +10% de experiencia nocturna', 'ok…",
+    "mundo/js/mundo.js: st larga3 = (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ? ' +10% XP' : '') + clima3 …",
+    "mundo/js/mundo.js: a Illari': '🐪', 'Espía Kantu': '🗡️', 'Guardián Inti': '☀️', 'Minera Ñusta': '⛏️', 'Farera Quilla': '🏮', 'Sabia …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "luna",
+   "cps": [
+    "1F319"
+   ],
+   "caracteres": "🌙",
+   "significado": "Noche (+10 % de experiencia).",
+   "dibuja": "Luna creciente gruesa abierta a la derecha.",
+   "usos": 16,
+   "ctx": [
+    "mundo/js/mundo.js: BonoAnt && !fijo && !avisoTapado()) aviso(bonoNoche ? '🌙 Cae la noche: +10% de experiencia hasta el amanecer' :…",
+    "mundo/js/mundo.js: inal (los corta el \"…\") const larga3 = (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ?…",
+    "mundo/js/mundo.js: …) const larga3 = (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ? ' +"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "luna-nueva",
+   "cps": [
+    "1F311"
+   ],
+   "caracteres": "🌑",
+   "significado": "Facción Sombra y elemento sombra.",
+   "dibuja": "Disco macizo con una media luna fina tallada por dentro a la izquierda (eclipse).",
+   "usos": 8,
+   "ctx": [
+    "mundo/js/mundo.js: ─ let temp3 = null; const ICO_F = { luz: '☀', sombra: '🌑' }; const fmtN = n => (n || 0).toLocaleString('es'); /…",
+    "mundo/js/mundo.js: e=\"color:${FACCIONES.sombra.color}\">${fmtN(ss)} Sombra 🌑</b></div>`; h += `<div style=\"height:10px;border-rad…",
+    "mundo/js/mundo.js: ize:11px;margin-top:4px\">Miembros: ☀ ${T.n.luz || 0} · 🌑 ${T.n.sombra || 0} · Asedios ganados: ☀ ${T.as.luz || …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "nube",
+   "cps": [
+    "2601",
+    "1F32B"
+   ],
+   "caracteres": "☁🌫",
+   "significado": "Clima; progreso pasado a la nube.",
+   "dibuja": "Nube maciza de tres lóbulos con base recta.",
+   "usos": 5,
+   "otros": "🌫 niebla es alias",
+   "ctx": [
+    "mmo/js/client.js: re); } } catch (e) {} } if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); tr…",
+    "mmo/js/client.js: slice(x.indexOf('|') + 1)); if (pron.length) l.push(`☁️ <b>Clima</b> (con lluvia el Pez Dorado sale el doble)…",
+    "game.html: if(typeof showPUNotif==='function')showPUNotif('☁️ Progreso recuperado de la nube: '+cloudCoins.toLocale…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "lluvia",
+   "cps": [
+    "1F327",
+    "26C8"
+   ],
+   "caracteres": "🌧⛈",
+   "significado": "Lluvia y tormenta.",
+   "dibuja": "La nube más pequeña arriba y tres trazos de lluvia inclinados debajo.",
+   "usos": 3,
+   "otros": "⛈ es alias",
+   "ctx": [
+    "mundo/js/mundo.js: ja' }); const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', nie…",
+    "mmo/js/data.js: , ] }, { n: 8, fecha: '22 oct 2026', items: [ '🌧️ Clima: algunas horas llueve o nieva en ciertas zonas;…",
+    "mundo/js/mundo.js: LIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "viento",
+   "cps": [
+    "1F32C",
+    "1F32A"
+   ],
+   "caracteres": "🌬🌪",
+   "significado": "Corriente de viento (recarga las alas), tormenta de arena.",
+   "dibuja": "Tres corrientes horizontales de trazo 5 que acaban en voluta, la del centro más larga.",
+   "usos": 2,
+   "otros": "🌪 es alias",
+   "ctx": [
+    "mundo/js/mundo.js: break; case 'corriente': P.alas = ALAS_MAX; aviso('🌬 Corriente de viento: ¡alas recargadas!', 'ok'); sfxK('…",
+    "mundo/js/mundo.js: rmenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' }; // Para probar: ?clima=lluvia|to…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "copo",
+   "cps": [
+    "2744"
+   ],
+   "caracteres": "❄",
+   "significado": "Nieve y elemento hielo.",
+   "dibuja": "Cristal de hielo de seis brazos con una horquilla en cada punta, trazo 5.",
+   "usos": 3,
+   "ctx": [
+    "mundo/js/mundo.js: ', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de aren…",
+    "mundo/js/ventanas.js: las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale una habilidad del elemento justo, la Ch…",
+    "mmo/js/data.js: PO_HAB) export const DEBIL_EMO = { fuego: '🔥', hielo: '❄️', luz: '✨', sombra: '🌑', rayo: '⚡' }; export const MO…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "gota",
+   "cps": [
+    "1F4A7",
+    "1F4A6",
+    "1F30A",
+    "1F3D6"
+   ],
+   "caracteres": "💧💦🌊🏖",
+   "significado": "Agua (ingrediente), salpicadura al pescar.",
+   "dibuja": "Gota de agua simétrica maciza con un brillo curvo tallado abajo a la izquierda.",
+   "usos": 7,
+   "otros": "🌊 (arcade) es alias",
+   "ctx": [
+    "js/achievements.js: o derrotado', reward: 10 }, { id: 'wave5', icon: '🌊', desc: 'Llega a la WAVE 5', reward: 25 }, { i…",
+    "js/achievements.js: WAVE 5', reward: 25 }, { id: 'wave10', icon: '🌊', desc: 'Llega a la WAVE 10', reward: 60 }, { i…",
+    "js/engine.js: wave); achEvent('onWave', wave); showPUNotif('🌊 WAVE ' + wave + ' — VELOCIDAD UP!'); shake(6); …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "hierba",
+   "cps": [
+    "1F33F",
+    "1F331",
+    "1F33E",
+    "1F338",
+    "1F335",
+    "1F344"
+   ],
+   "caracteres": "🌿🌱🌾🌸🌵🍄",
+   "significado": "Hierbas para recoger, Chamán Amaru, chacra, semillas.",
+   "dibuja": "Rama con cinco hojas en punta, nervio central tallado en la hoja mayor.",
+   "usos": 17,
+   "otros": "🌱🌾🌸🌵🍄 son alias",
+   "ctx": [
+    "mundo/js/lore.js: n que te hago uno bonito.', 'Por el camino hay hierbas 🌿 y minerales ⛏. Recógelos y tráemelos, que todo se apro…",
+    "mundo/js/mundo.js: uela Sisa': '👵', 'Tayta Mallku': '👴', 'Chamán Amaru': '🌿', 'Herrera Coya': '⚒️', 'Viajera Illari': '🐪', 'Espía …",
+    "mundo/js/mundo.js: >`).join(' · '); cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (${K('tecla E', 'botón RECO…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "trebol",
+   "cps": [
+    "1F340"
+   ],
+   "caracteres": "🍀",
+   "significado": "Suerte del duende.",
+   "dibuja": "Trébol de cuatro hojas en corazón con tallo corto curvo.",
+   "usos": 3,
+   "ctx": [
+    "mundo/js/mundo.js: th.max(1, 26 - yo.secaEp); h += `<div class=\"q\"><small>🍀 Suerte del duende: ${'▮'.repeat(sl)}${'▯'.repeat(5 - s…",
+    "mmo/js/client.js: style=\"font-size:12px;margin-top:6px;color:var(--ok)\">🍀 Suerte del duende: Épico asegurado en ${Math.max(1, 26…",
+    "mmo/js/data.js: ] }, { n: 118, fecha: '2 nov 2026', items: [ '🍀 Suerte del duende: si pasas muchas cazas sin equipo es…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pino",
+   "cps": [
+    "1F332",
+    "1F384"
+   ],
+   "caracteres": "🌲🎄",
+   "significado": "El Bosque.",
+   "dibuja": "Árbol de tres pisos triangulares escalonados con tronco corto.",
+   "usos": 3,
+   "otros": "🎄 es alias",
+   "ctx": [
+    "mmo/js/data.js: 27, 0, 7), hasta: '6 de enero', emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80'…",
+    "mmo/js/data.js: 28, 0, 7), hasta: '6 de enero', emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80'…",
+    "mmo/js/data.js: { bosque: { nombre: 'Bosque', a: 'al Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', a: 'a la Mi…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cana-pescar",
+   "cps": [
+    "1F3A3"
+   ],
+   "caracteres": "🎣",
+   "significado": "Pescar.",
+   "dibuja": "Caña en arco con el sedal en vertical y un anzuelo grueso en el extremo.",
+   "usos": 11,
+   "ctx": [
+    "mundo/js/mundo.js: case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar…",
+    "mundo/js/mundo.js: ) > 2000) { hablar.esperaT = performance.now(); aviso('🎣 Espera a que pique: el botón se pondrá ¡TIRAR!'); } re…",
+    "mundo/js/ventanas.js: + `<div style=\"text-align:center;margin-bottom:6px\">🎣 <b>Libreta de pesca</b> · Especies <b style=\"color:var…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "pico",
+   "cps": [
+    "26CF"
+   ],
+   "caracteres": "⛏",
+   "significado": "Minerales, Minera Ñusta.",
+   "dibuja": "Pico de minero en diagonal: cabeza curva de dos puntas y mango grueso.",
+   "usos": 14,
+   "ctx": [
+    "mundo/js/lore.js: uno bonito.', 'Por el camino hay hierbas 🌿 y minerales ⛏. Recógelos y tráemelos, que todo se aprovecha.', 'Un b…",
+    "mundo/js/mundo.js: Kantu': '🗡️', 'Guardián Inti': '☀️', 'Minera Ñusta': '⛏️', 'Farera Quilla': '🏮', 'Sabia Mama Ocllo': '🦅', 'Mam…",
+    "mundo/js/mundo.js: ); cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (${K('tecla E', 'botón RECOGER')} junto a…"
+   ],
+   "hecho": false
+  }
+ ]
+}

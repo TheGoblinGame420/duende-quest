@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+  <path id="h" d="M32 -4 L37.5 4 V43 H26.5 V4 Z"/>
+  <g id="e">
+    <use href="#h"/>
+    <rect x="18" y="43" width="28" height="7" rx="2"/>
+    <rect x="28.5" y="50" width="7" height="11"/>
+    <circle cx="32" cy="63" r="5.5"/>
+  </g>
+</defs>
+<use href="#e" transform="rotate(-45 32 32)" fill="#000"/>
+<use href="#h" transform="rotate(45 32 32)" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="miter"/>
+<use href="#e" transform="rotate(45 32 32)" fill="#000"/>
+</svg>

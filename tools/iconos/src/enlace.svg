@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+<rect id="a" x="3" y="22.5" width="44" height="19" rx="9.5"/>
+<rect id="b" x="17" y="22.5" width="44" height="19" rx="9.5"/>
+<clipPath id="c"><rect x="-10" y="32" width="84" height="40"/></clipPath>
+</defs>
+<g transform="rotate(-45 32 32)" fill="none">
+<use href="#a" stroke="#000" stroke-width="8"/>
+<use href="#b" stroke="#fff" stroke-width="14"/>
+<use href="#b" stroke="#000" stroke-width="8"/>
+<g clip-path="url(#c)">
+<use href="#a" stroke="#fff" stroke-width="14"/>
+<use href="#a" stroke="#000" stroke-width="8"/>
+</g>
+</g>
+</svg>

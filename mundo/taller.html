@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1600">
+<meta name="robots" content="noindex">
+<title>Taller de skins 3D</title>
+<!--
+  TALLER DE SKINS (herramienta interna, no se publica: .assetsignore).
+  Dibuja UNA skin del duende 3D junto a su imagen 2D, con la luz del juego de dia,
+  para compararlas y afinar el traje (mundo/js/skins/<id>.js). Guia: mundo/js/skins/LEEME.md
+
+    /mundo/taller.html?skin=pirata&clase=guerrero&arma=katana&estado=quieto&accion=ataca&cara=0
+  Mas parametros: pelo, cuerpo, colorPelo, altura, disfraz (look), atuendo, grado, ligero=1,
+  ref=/ruta/imagen.png (otra imagen de referencia), archivo=/ruta/traje.js (otro archivo de traje), paquete=1 (no carga el archivo suelto:
+  usa el traje empaquetado en skins3d.js), sinFusion=1.
+  Captura sin ventana: node tools/foto_taller.mjs <skin> <salida.png>
+-->
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1600px;height:900px;overflow:hidden;background:#5d6b7c;color:#f4f6fa;font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#lienzo{position:absolute;left:0;top:0;width:1600px;height:900px}
+#ref{position:absolute;left:8px;top:34px;width:264px;height:470px;object-fit:contain;background:#4b5868;border-radius:6px}
+#ref.pixel{image-rendering:pixelated}
+.rot{position:absolute;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#dfe6ef;background:rgba(20,28,40,.55);padding:2px 7px;border-radius:4px;white-space:nowrap}
+#titulo{position:absolute;left:8px;top:6px;font-size:15px;font-weight:700}
+#datos{position:absolute;left:8px;top:510px;width:264px;font:11px/1.45 ui-monospace,Consolas,monospace;color:#e6ecf4;white-space:pre-wrap}
+#datos .pasa{color:#ffd27a}
+#error{position:absolute;left:290px;top:40px;right:20px;display:none;background:#3a0a10;border:3px solid #ff3b4a;color:#ff8f98;font:700 17px/1.4 ui-monospace,Consolas,monospace;padding:14px 16px;border-radius:8px;white-space:pre-wrap;z-index:5}
+</style>
+</head>
+<body>
+<canvas id="lienzo" width="1600" height="900"></canvas>
+<div id="titulo"></div>
+<img id="ref" alt="">
+<div id="datos"></div>
+<div id="error"></div>
+<script type="module">
+import * as THREE from 'three';
+import { SKINS, CLASES, ARMAS, LOOK_BASE } from '/mmo/js/data.js?v=369';
+
+const Q = new URLSearchParams(location.search);
+const skin = SKINS[Q.get('skin')] ? Q.get('skin') : 'comun';
+const clase = CLASES[Q.get('clase')] ? Q.get('clase') : null;
+const arma = ARMAS[Q.get('arma')] ? Q.get('arma') : 'katana';
+const estado = Q.get('estado') || 'quieto';
+const accion = Q.get('accion') || 'ataca';
+const num = (k, d) => (Q.get(k) != null && Q.get(k) !== '' && isFinite(+Q.get(k)) ? +Q.get(k) : d);
+const look = Object.assign({}, LOOK_BASE, { cara: num('cara', LOOK_BASE.cara), pelo: num('pelo', LOOK_BASE.pelo), cuerpo: num('cuerpo', LOOK_BASE.cuerpo), colorPelo: num('colorPelo', LOOK_BASE.colorPelo), altura: num('altura', LOOK_BASE.altura), disfraz: num('disfraz', LOOK_BASE.disfraz) });
+const opciones = { skin, clase, arma, look, atuendo: Q.get('atuendo') || '', grado: num('grado', 0), ligero: Q.get('ligero') === '1' };
+
+const errores = [];
+const cajaError = document.getElementById('error');
+function fallo(donde, e) {
+  const txt = donde + ': ' + (e && (e.stack || e.message) || e);
+  errores.push(txt);
+  console.error('TALLER ' + txt);
+  cajaError.style.display = 'block';
+  cajaError.textContent = 'ERROR EN EL TRAJE\n' + errores.map(x => x.split('\n').slice(0, 4).join('\n')).join('\n\n');
+}
+addEventListener('error', e => fallo('pagina', e.error || e.message));
+addEventListener('unhandledrejection', e => fallo('promesa', e.reason));
+
+const W = 1600, H = 900, IZQ = 280, FONDO = 0x5d6b7c;
+const lienzo = document.getElementById('lienzo');
+const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, preserveDrawingBuffer: true });
+render.setPixelRatio(1);
+render.setSize(W, H, false);
+render.outputColorSpace = THREE.SRGBColorSpace;      // como el juego (mundo.js)
+render.setClearColor(FONDO, 1);
+render.setScissorTest(true);
+
+// La luz del juego de dia (mundo.js: hemisferio 1.0 + sol 1.0 desde (120, 200, 80)).
+const escena = new THREE.Scene();
+escena.add(new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.0));
+const sol = new THREE.DirectionalLight(0xfff2dd, 1.0);
+sol.position.set(120, 200, 80);
+escena.add(sol, sol.target);
+const suelo = new THREE.Mesh(new THREE.CircleGeometry(0.62, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x4f5c6c }));
+suelo.position.y = -0.004;
+escena.add(suelo);
+
+document.getElementById('titulo').textContent = `${SKINS[skin].nombre} · ${skin}`;
+// Imagen 2D de la skin (o la de ?ref=).
+const ref = document.getElementById('ref');
+const imgLista = new Promise(ok => { ref.onload = ok; ref.onerror = ok; setTimeout(ok, 4000); });
+// La skin comun es la mascota: su imagen buena es la del duende con la chicha, no el pixel art viejo.
+const REF_MEJOR = { comun: '/assets/lore/duende-chicha.webp' };
+ref.src = Q.get('ref') || REF_MEJOR[skin] || `/assets/skins/${SKINS[skin].img}.png`;
+ref.onload = () => { if (ref.naturalHeight <= 300) ref.classList.add('pixel'); };
+if (!Q.get('ref') && !REF_MEJOR[skin] && SKINS[skin].anim) ref.style.filter = `hue-rotate(${SKINS[skin].hue || 0}deg) saturate(${SKINS[skin].sat || 1})`;
+
+let MOD = null, m = null, origen = 'camino de siempre';
+try {
+  MOD = await import('./js/modelos.js?v=369');
+  if (MOD.registrarSkin3D) {
+    if (MOD.depurarSkins3D) MOD.depurarSkins3D(true);
+    if (Q.get('paquete') === '1') origen = 'paquete skins3d.js';
+    else {
+      // Solo el archivo suelto de ESTA skin, sin cache, por encima del paquete.
+      try {
+        const ruta = Q.get('archivo') || `./js/skins/${skin}.js`;
+        const suelto = await import(`${ruta}?t=${Date.now()}`);
+        if (!suelto.default || typeof suelto.default !== 'object') throw new Error('el archivo no tiene «export default { ... }»');
+        if (!MOD.registrarSkin3D(skin, suelto.default)) throw new Error('registrarSkin3D lo rechaza: base debe ser un objeto y cabeza/vestir funciones');
+        origen = Q.get('archivo') ? 'archivo de prueba (--archivo)' : `skins/${skin}.js`;
+      } catch (e) { fallo(`skins/${skin}.js no carga`, e); origen = 'paquete (el archivo suelto falla)'; }
+    }
+  }
+  m = MOD.crearDuende(opciones);
+  if (MOD.erroresSkin3D) for (const e of MOD.erroresSkin3D()) fallo('traje ' + e.id + ' (' + e.donde + ')', e.error);
+} catch (e) { fallo('crearDuende', e); }
+
+const VISTAS = [
+  // [nombre, x, y, ancho, alto, giro del duende, encuadre, estado]
+  ['frente', IZQ, 0, 330, 540, 0, 'cuerpo'],
+  ['tres cuartos', IZQ + 330, 0, 330, 540, -0.75, 'cuerpo'],
+  ['perfil', IZQ + 660, 0, 330, 540, -Math.PI / 2, 'cuerpo'],
+  ['espalda', IZQ + 990, 0, 330, 540, Math.PI, 'cuerpo'],
+  ['busto', IZQ, 540, 440, 360, 0, 'busto'],
+  ['busto tres cuartos', IZQ + 440, 540, 440, 360, 0.7, 'busto'],
+  ['acción: ' + accion, IZQ + 880, 540, 440, 360, -0.6, 'accion'],
+  ['como en el juego', 0, 700, IZQ, 200, Math.PI, 'juego'],
+];
+for (const [nombre, x, y] of VISTAS) {
+  const d = document.createElement('div'); d.className = 'rot'; d.textContent = nombre;
+  d.style.left = (x + 6) + 'px'; d.style.top = (y + 6) + 'px';
+  if (nombre === 'frente') d.style.top = '6px';
+  document.body.appendChild(d);
+}
+
+const cam = new THREE.PerspectiveCamera(26, 1, 0.05, 200);
+const caja = new THREE.Box3(), centro = new THREE.Vector3(), tam = new THREE.Vector3(), v3 = new THREE.Vector3();
+function posar(est, te, t) { m.fase = 0; m.animar(est, te, t); m.obj.updateMatrixWorld(true); }
+function dibujar() {
+  render.setViewport(0, 0, W, H); render.setScissor(0, 0, W, H); render.clear();
+  if (!m) return;
+  escena.add(m.obj);
+  // Encuadre de cuerpo entero: la caja del modelo en reposo, sombrero y arma incluidos.
+  m.obj.rotation.y = 0;
+  posar('quieto', 0, 0);
+  caja.setFromObject(m.obj);
+  caja.getCenter(centro); caja.getSize(tam);
+  const radio = Math.max(Math.abs(caja.min.x), caja.max.x, Math.abs(caja.min.z), caja.max.z);
+  const cabY = m.r && m.r.cabeza ? m.r.cabeza.getWorldPosition(v3).y : m.alto * 0.62;
+  for (const [, x, y, w, h, giro, tipo] of VISTAS) {
+    m.obj.rotation.y = giro;
+    if (tipo === 'accion') {
+      if (accion === 'ataca') posar('ataca', (m.r.tAtk || 0.35) * 0.7, 1);
+      else posar(accion, 0.3, 1.27);
+    } else if (tipo === 'juego') posar('corre', 0.3, 1.27);
+    else if (estado === 'ataca') posar('ataca', (m.r.tAtk || 0.35) * 0.5, 0);
+    else posar(estado, estado === 'quieto' ? 0 : 0.3, estado === 'quieto' ? 0 : 1.27);
+    cam.aspect = w / h;
+    if (tipo === 'juego') {
+      // Camara del juego: por detras y arriba, lejos (asi se ve casi siempre al jugador).
+      cam.fov = 60; cam.position.set(0, 2.3, 3.0); cam.lookAt(0, 1.0, 0);
+    } else {
+      cam.fov = 26;
+      const tg = Math.tan(cam.fov * Math.PI / 360);
+      let altoV, ancho, cy;
+      if (tipo === 'busto') { altoV = m.alto * 0.92; ancho = 0; cy = cabY + m.alto * 0.13; }
+      else { altoV = tam.y * 1.1; ancho = radio * 2 * 1.06; cy = centro.y; if (tipo === 'accion') { altoV *= 1.12; ancho *= 1.12; } }
+      const dist = Math.max(altoV / 2 / tg, ancho / 2 / (tg * cam.aspect));
+      cam.position.set(0, cy + dist * 0.08, dist);
+      cam.lookAt(0, cy, 0);
+    }
+    cam.updateProjectionMatrix();
+    render.setViewport(x, H - y - h, w, h);
+    render.setScissor(x, H - y - h, w, h);
+    render.render(escena, cam);
+  }
+}
+
+function datos() {
+  const d = document.getElementById('datos');
+  if (!m) { d.textContent = 'sin modelo'; return; }
+  let tri = 0;
+  for (const me of m.mallas) { const g = me.geometry; tri += (g.index ? g.index.count : g.attributes.position.count) / 3; }
+  const tj = m.traje || null;
+  const lin = [
+    `clase ${clase || 'ninguna'} · arma ${arma} · cara ${look.cara}${opciones.ligero ? ' · LIGERO' : ''}`,
+    `traje: ${origen}`,
+    `mallas (draw calls): ${m.mallas.length}`,
+    `triángulos: ${Math.round(tri)}`,
+    `pivotes animados: ${m.r.piv.length}`,
+  ];
+  window.datosTaller = { skin, clase, arma, origen, mallas: m.mallas.length, triangulos: Math.round(tri), pivotes: m.r.piv.length, traje: tj, errores };
+  d.textContent = lin.join('\n');
+  if (tj) {
+    const s = document.createElement('div');
+    const pasa = tj.piezas > 120 || tj.pivotes > 4 || tj.sueltas > 3;
+    if (pasa) s.className = 'pasa';
+    s.textContent = `del traje: ${tj.piezas} piezas (máx. 120) · ${tj.pivotes} pivotes (máx. 4) · ${tj.sueltas} mallas sueltas (máx. 3)${pasa ? '  ← SE PASA' : ''}`;
+    d.appendChild(s);
+  }
+}
+
+await imgLista;
+try { dibujar(); datos(); } catch (e) { fallo('dibujar', e); }
+requestAnimationFrame(() => requestAnimationFrame(() => { try { dibujar(); } catch (e) { fallo('dibujar', e); } window.listo = true; }));
+</script>
+</body>
+</html>

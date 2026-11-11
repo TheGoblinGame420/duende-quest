@@ -1,0 +1,307 @@
+{
+ "lote": "lote-06",
+ "tema": "Dinero, tienda y premios",
+ "nota": "Riqueza y recompensas. Aquí manda el oro: formas rotundas, simétricas, con un solo detalle tallado.",
+ "glifos": [
+  {
+   "nombre": "moneda",
+   "cps": [
+    "1FA99",
+    "1F4B8"
+   ],
+   "caracteres": "🪙💸",
+   "significado": "Oro, comprar $DUENDE, premio en oro; retiro.",
+   "dibuja": "Moneda de frente: disco macizo con filete interior tallado y una chakana tallada en el centro.",
+   "usos": 58,
+   "otros": "💸 es alias",
+   "ctx": [
+    "mundo/index.html: lass=\"fila\" id=\"fila-token\" style=\"display:none\"><span>🪙 Comprar $DUENDE al creador</span><b><a class=\"btn sec\"…",
+    "mundo/js/mundo.js: === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`; } h …",
+    "mundo/js/ventanas.js: = 12 ? '🌙 Noche · ' + hh + ' h' : hh + ' h'}<br><small>🪙 ${fmt(pr.oro)}</small>`, 'exped', { h: hh, d: dest }, …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "gema",
+   "cps": [
+    "1F48E"
+   ],
+   "caracteres": "💎",
+   "significado": "Tienda premium y rango diamante.",
+   "dibuja": "Diamante tallado de frente (corona trapezoidal y pabellón en punta) con las facetas en negativo.",
+   "usos": 41,
+   "ctx": [
+    "mundo/index.html: olor:var(--txt);} /* Tienda siempre a la vista (v325): 💎 con acento dorado y punto rojo mientras no hayas visto…",
+    "mundo/index.html: ins, alas y packs\" aria-label=\"Tienda\" data-l=\"Tienda\">💎</button> <button class=\"bt\" id=\"b-libro\" title=\"Habi…",
+    "mundo/js/mundo.js: al', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "corona",
+   "cps": [
+    "1F451"
+   ],
+   "caracteres": "👑",
+   "significado": "Líder de grupo o hermandad, Rey Goblin.",
+   "dibuja": "Corona de tres puntas con remates redondos y banda inferior separada por un filete.",
+   "usos": 29,
+   "ctx": [
+    "mundo/js/mundo.js: \"color:${cl ? cl.color : '#fff'}\">${x.uid === lider ? '👑 ' : ''}${esc(x.n)}</b> <small>Nv${x.lv || '?'}${!x.on …",
+    "mundo/js/mundo.js: 'Artesana Lila': ['🧵', 'goblin_mage'], 'Rey Goblin': ['👑', ''] }).forEach(([q, [em, hj]]) => { if (!NPC_EMOJI[q…",
+    "mundo/js/mundo.js: no && lx >= 35 && z > 84) { cuevaSes.trono = 1; aviso('👑 El Rey: sal del círculo rojo de sus pisotones. Al 50 %…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "trofeo",
+   "cps": [
+    "1F3C6"
+   ],
+   "caracteres": "🏆",
+   "significado": "Logros y ranking; el premio del nivel 60.",
+   "dibuja": "Copa de dos asas con pie y peana, y una estrella tallada en el cuenco.",
+   "usos": 51,
+   "otros": "🏁 es alias",
+   "ctx": [
+    "mundo/index.html: xtra\" id=\"b-logros\" title=\"Logros (L)\" data-l=\"Logros\">🏆</button> <button class=\"bt extra\" id=\"b-look\" title=…",
+    "mundo/js/mundo.js: (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => { const g = …",
+    "mundo/js/mundo.js: + ' de tu clase' : ''), 'ok'); else if (m.pos) aviso('🏆 Puesto #' + m.pos + ' de ' + m.tot + ' de tu clase est…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "mochila",
+   "cps": [
+    "1F392"
+   ],
+   "caracteres": "🎒",
+   "significado": "Inventario (botón I).",
+   "dibuja": "Mochila de frente: cuerpo redondeado, asa arriba, tapa con hebilla y bolsillo tallados.",
+   "usos": 8,
+   "ctx": [
+    "mundo/index.html: bt\" id=\"b-inv\" title=\"Inventario (I)\" data-l=\"Mochila\">🎒</button> <button class=\"bt\" id=\"b-premium\" title=\"Ti…",
+    "mundo/js/mundo.js: ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok'); if (m.item && !m.ite…",
+    "mundo/js/mundo.js: th && !vista) || ent > entVistas)); } // Punto rojo en 🎒: hay en la bolsa una pieza mejor que la puesta, o la b…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "bolsa-oro",
+   "cps": [
+    "1F4B0"
+   ],
+   "caracteres": "💰",
+   "significado": "Botín, Duende Ladrón, mucho oro.",
+   "dibuja": "Bolsa de cuero panzuda atada con cordón, cuello fruncido, con un sol de 8 rayos tallado.",
+   "usos": 19,
+   "ctx": [
+    "mundo/js/mundo.js: { vol: 0.8 }); aviso(m.m, 'err'); break; } if (/^💰 ¡Un Duende Ladrón huye/.test(m.m)) { sfxK('monedas', 0…",
+    "mundo/js/mundo.js: ue le pasa al jugador. const AVISO_MUNDO3 = /^(?:🥁|★|💨|💰 El Duende|⚔|🏰|🎖|🌌|🦇|🦎|🗼|⭐|🏆|⚡|👹|🔥 ¡Defensa|⌛)|llega al…",
+    "mundo/js/mundo.js: a Asiri': '🥤', 'Guardia Tito': '🛡', 'Mercader Grumo': '💰', 'Sabio Hechicero': '📖', 'Artesana Lila': '🧵' }; // R…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "regalo",
+   "cps": [
+    "1F381"
+   ],
+   "caracteres": "🎁",
+   "significado": "Pack de bienvenida, regalos y premios por cobrar.",
+   "dibuja": "Caja maciza con tapa más ancha, cinta vertical tallada y lazo de dos bucles arriba.",
+   "usos": 42,
+   "ctx": [
+    "mundo/index.html: .q:not([style*=\"sticky\"])>b{display:none;} /* con el 🎁 de una linea arriba, la segunda es el avance (Goblin 0…",
+    "mundo/js/mundo.js: e-space:normal;line-height:1.3'; ch.textContent = '🎁 Tu Pack de bienvenida (10 pociones) sigue disponible';…",
+    "mundo/js/mundo.js: m('dq_bienv_pend'); } catch (e) {} if (inv) aviso('🎁 Pack de bienvenida: crea tu cuenta gratis para pedirlo…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "cofre",
+   "cps": [
+    "1F4E6",
+    "1F9F0"
+   ],
+   "caracteres": "📦🧰",
+   "significado": "Cofre del día, cofre semanal y cofres del mundo.",
+   "dibuja": "Cofre de tesoro de tapa curva, cerrado, con herrajes tallados y cerradura central.",
+   "usos": 24,
+   "ctx": [
+    "mundo/index.html: apa{visibility:hidden !important;} </style> <style> /* 📦 Cofre del dia / semanal: tarjeta que se abre con un to…",
+    "mundo/js/mundo.js: sorpresa). if (/^(Semana|Día) completo\\. Bono:|^📦 Cofre semanal \\d\\/3 abierto/.test(m.m || '')) { cofreS…",
+    "mundo/js/mundo.js: test(m.m || '')) { cofreSemTxt = (m.m || '').replace(/^📦 /, ''); clearTimeout(cofreSemTxtT); cofreSemTxtT =setT…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "medalla",
+   "cps": [
+    "1F3C5",
+    "1F396"
+   ],
+   "caracteres": "🏅🎖",
+   "significado": "Ranking y puntos de asedio.",
+   "dibuja": "Medalla redonda colgando de una cinta en V, con una estrella tallada.",
+   "usos": 22,
+   "ctx": [
+    "mundo/index.html: bt extra\" id=\"b-rank\" title=\"Ranking\" data-l=\"Ranking\">🏅</button> <button class=\"bt\" id=\"b-pase\" title=\"Pase …",
+    "mundo/js/mundo.js: ' de ' + m.tot + ' de tu clase esta semana · míralo en 🏅', 'ok'); pintarMisiones(); break; case 'logro': av…",
+    "mundo/js/mundo.js: k'); pintarMisiones(); break; case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocale…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "medalla-1",
+   "cps": [
+    "1F947"
+   ],
+   "caracteres": "🥇",
+   "significado": "Medalla de oro (invasión, ranking).",
+   "dibuja": "La misma medalla con un «1» tallado.",
+   "usos": 19,
+   "otros": "el color (oro) era el mensaje: se distingue por el número",
+   "ctx": [
+    "mundo/js/mundo.js: n > 1) {} else if (antes < 6 && n >= 6) { aviso('🥇 ¡Subiste a ORO!', 'ok'); SON.tocar('logro'); } e…",
+    "mundo/js/mundo.js: ) { const iv = m.inv || {}, md = { b: '🥉', p: '🥈', o: '🥇' }[iv.med]; setTimeout(() => ofrecerPresumir('¡Defendi…",
+    "mundo/js/mundo.js: 'hoy' : ''}\"><small>${x.n}</small><span>${['🥉', '🥈', '🥇', '💎'][i]}</span><em>${fmtN(x.pa)} PA</em></div>`).joi…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "medalla-2",
+   "cps": [
+    "1F948"
+   ],
+   "caracteres": "🥈",
+   "significado": "Medalla de plata.",
+   "dibuja": "La misma medalla con un «2» tallado.",
+   "usos": 19,
+   "ctx": [
+    "mundo/js/mundo.js: ogro'); } else if (antes < 3 && n >= 3) { aviso('🥈 ¡Subiste a PLATA en la invasión!', 'ok'); SON.tocar('l…",
+    "mundo/js/mundo.js: || ''))) { const iv = m.inv || {}, md = { b: '🥉', p: '🥈', o: '🥇' }[iv.med]; setTimeout(() => ofrecerPresumir('…",
+    "mundo/js/mundo.js: + 1 ? 'hoy' : ''}\"><small>${x.n}</small><span>${['🥉', '🥈', '🥇', '💎'][i]}</span><em>${fmtN(x.pa)} PA</em></div>`…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "medalla-3",
+   "cps": [
+    "1F949"
+   ],
+   "caracteres": "🥉",
+   "significado": "Medalla de bronce.",
+   "dibuja": "La misma medalla con un «3» tallado.",
+   "usos": 20,
+   "ctx": [
+    "mundo/js/mundo.js: test(m.m || ''))) { const iv = m.inv || {}, md = { b: '🥉', p: '🥈', o: '🥇' }[iv.med]; setTimeout(() => ofrecerPr…",
+    "mundo/js/mundo.js: tier + 1 ? 'hoy' : ''}\"><small>${x.n}</small><span>${['🥉', '🥈', '🥇', '💎'][i]}</span><em>${fmtN(x.pa)} PA</em></…",
+    "mundo/js/mundo.js: ? 'yo' : ''}\"><span class=\"pos\">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b>${ICO_F[x.f] || ''} ${esc(x.n)}…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "tienda",
+   "cps": [
+    "1F6D2"
+   ],
+   "caracteres": "🛒",
+   "significado": "Tienda, «ver en tienda».",
+   "dibuja": "Puesto de mercado: toldo de franjas (talladas) sobre dos postes y mostrador macizo. Nada de carrito de supermercado.",
+   "usos": 10,
+   "ctx": [
+    "mundo/js/mundo.js: chichera: '🥤 Chichería', guia: '📜 Misiones', tienda: '🛒 Tienda', ranking: '🏆 Ranking', artesania: '⚒️ Fabricar…",
+    "mundo/js/mundo.js: on class=\"btn sec\" data-pr-tienda data-id=\"${esc(id)}\">🛒 Ver en tienda</button>` : ''; el.innerHTML = `<div s…",
+    "mundo/js/mundo.js: UEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "tarjeta",
+   "cps": [
+    "1F4B3"
+   ],
+   "caracteres": "💳",
+   "significado": "Pagar con dinero, pedido pendiente.",
+   "dibuja": "Tarjeta apaisada maciza con banda tallada arriba y un recuadro pequeño tallado abajo.",
+   "usos": 5,
+   "ctx": [
+    "mundo/js/ventanas.js: return btn(principal ? '🛒 Comprar (cuenta gratis)' : '💳 Con dinero · cuenta gratis', 'cuenta', { id: pid }, 's…",
+    "mundo/js/ventanas.js: x.estado === 'comprobando').length; const txt = p ? `💳 Pedido #${p.codigo} pendiente: ver datos` : enCamino ?…",
+    "mmo/js/data.js: o.', '✨ Vitrina de skins junto al Mercader.', '💳 En la web, las skins se pueden pagar escaneando un QR …"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "billetera",
+   "cps": [
+    "1F45B",
+    "1F47B"
+   ],
+   "caracteres": "👛👻",
+   "significado": "Wallet conectada.",
+   "dibuja": "Billetera de cuero cerrada, apaisada, con solapa y broche redondo tallado.",
+   "usos": 14,
+   "otros": "👻 es el botón de la wallet Phantom en la web: aquí se dibuja billetera",
+   "ctx": [
+    "game.html: e\" id=\"phantom-connect-btn\" onclick=\"connectPhantom()\">👻 PHANTOM WALLET</button> </div> <p class=\"aviso…",
+    "game.html: nclick=\"connectPhantomForSkins()\" id=\"web-phantom-btn\">👻 CONECTAR PHANTOM</button> <button class=\"ob sec\"…",
+    "game.html: q-wallet-addr\" id=\"wallet-sol-addr\">No conectada — usa 👻 Phantom</div> <div class=\"dq-sub\" id=\"wallet-sol…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "boleto",
+   "cps": [
+    "1F39F",
+    "1F3F7"
+   ],
+   "caracteres": "🎟🏷",
+   "significado": "Pase de temporada; etiqueta de título.",
+   "dibuja": "Boleto apaisado con dos muescas semicirculares a los lados, línea de corte punteada tallada y una estrella tallada.",
+   "usos": 8,
+   "otros": "🏷 es alias",
+   "ctx": [
+    "mundo/index.html: tle=\"Pase de temporada (premios gratis)\" data-l=\"Pase\">🎟️</button> <button class=\"bt extra\" id=\"b-son\" title=…",
+    "mmo/js/client.js: []).filter(n => n <= nv).length; if (sin > 0) l.push(`🎟️ Cobra ${sin} premio${sin > 1 ? 's' : ''} del pase (má…",
+    "mmo/js/data.js: , retrocede).', 'Pase de temporada en el 3D (botón 🎟): 20 niveles de premios gratis que se reinician cada m…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "llave",
+   "cps": [
+    "1F5DD",
+    "1F511"
+   ],
+   "caracteres": "🗝🔑",
+   "significado": "Bóveda semanal, clave de entrega, cuenta.",
+   "dibuja": "Llave antigua en diagonal: anilla en aro arriba a la izquierda y paletón de dos dientes abajo a la derecha.",
+   "usos": 12,
+   "ctx": [
+    "mmo/js/client.js: } } else if (++n > 45) { clearInterval(t); aviso('🗝️ Tu Bóveda semanal te espera: ábrela en el portal de m…",
+    "mmo/js/client.js: st sig = BOVEDA_UMBRALES.find(u => b.n < u); return `🗝️ <span style=\"font-weight:700;color:var(--txt)\">Bóveda…",
+    "mmo/js/client.js: utton class=\"btn\" id=\"b-boveda\" style=\"margin-top:8px\">🗝️ Abrir la Bóveda</button>' : ''}</div>`; // Torre de…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "estadisticas",
+   "cps": [
+    "1F4C8",
+    "1F4CA"
+   ],
+   "caracteres": "📈📊",
+   "significado": "Estadísticas y «te faltan N XP».",
+   "dibuja": "Tres barras macizas de altura creciente sobre una base.",
+   "usos": 3,
+   "ctx": [
+    "functions/mmo/retencion.js: .sort((a, b) => a.nv - b.nv)[0] : null; let t = `📈 Te faltan ${fmt(falta)} XP para el nivel ${c.nivel + 1…",
+    "functions/mmo/salud.js: pctTxt = Math.round(p * 100); this.avisarAdmin(`📈 Cupo de escrituras del MMO al ${pctTxt}% (${(m.w + m.d…",
+    "mmo/js/data.js: amigos con aviso al conectarse e Inspeccionar.', '📊 Tus estadísticas en el inventario.', ] }, { n: 3, …"
+   ],
+   "hecho": false
+  }
+ ]
+}

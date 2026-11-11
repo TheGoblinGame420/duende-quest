@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs><rect id="r" x="8" y="32.500" width="48" height="13" rx="2"/></defs>
+<path fill="#000" d="M32 27.500 L28.500 18.500 L23 15.500 L27 12.500 a5.500 5.500 0 1 1 10 0 L41 15.500 L35.500 18.500 Z"/>
+<use href="#r" transform="rotate(32 32 39)" fill="#000"/>
+<path transform="rotate(32 32 39)" fill="none" stroke="#fff" stroke-width="3.2" d="M15 39 H49"/>
+<use href="#r" transform="rotate(-32 32 39)" fill="#fff" stroke="#fff" stroke-width="6"/>
+<use href="#r" transform="rotate(-32 32 39)" fill="#000"/>
+<path transform="rotate(-32 32 39)" fill="none" stroke="#fff" stroke-width="3.2" d="M15 39 H49"/>
+</svg>

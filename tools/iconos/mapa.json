@@ -1,0 +1,1625 @@
+[
+ {
+  "nombre": "espadas-cruzadas",
+  "cps": [
+   "2694"
+  ],
+  "significado": "Combate, atacar, retar a duelo, fuerza (stat). El icono más usado del juego.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "escudo",
+  "cps": [
+   "1F6E1"
+  ],
+  "significado": "Defensa (stat), escudos de protección y Hermandad (gremio).",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "daga",
+  "cps": [
+   "1F5E1"
+  ],
+  "significado": "Clase pícaro y Espía Kantu.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "arco",
+  "cps": [
+   "1F3F9"
+  ],
+  "significado": "Monstruo que dispara a distancia.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "martillo",
+  "cps": [
+   "1F528",
+   "2692"
+  ],
+  "significado": "Reforjar equipo, puesto «Martillo» en la invasión y Fabricar/Artesanía (Herrera Coya).",
+  "lote": "lote-01",
+  "otros": "⚒ (martillo y pico) usa este mismo glifo"
+ },
+ {
+  "nombre": "diana",
+  "cps": [
+   "1F3AF"
+  ],
+  "significado": "Marcar objetivo / botón de objetivo en el celular.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "impacto",
+  "cps": [
+   "1F4A5"
+  ],
+  "significado": "Golpe divino, estallido, crítico.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "esquivar",
+  "cps": [
+   "1F4A8"
+  ],
+  "significado": "Esquivar (botón de combate), ráfaga de velocidad, el Duende Ladrón que huye.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "rayo",
+  "cps": [
+   "26A1"
+  ],
+  "significado": "Hora Feliz (+50 % XP), velocidad, elemento rayo, energía.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "fuego",
+  "cps": [
+   "1F525",
+   "1F30B"
+  ],
+  "significado": "Racha de días, elemento fuego, ¡Defensa!; afijo «Volcánico».",
+  "lote": "lote-01",
+  "otros": "🌋 (afijo Volcánico) es alias"
+ },
+ {
+  "nombre": "gota-sangre",
+  "cps": [
+   "1FA78"
+  ],
+  "significado": "Afijo «Sanguinario» y robo de vida.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "corazon",
+  "cps": [
+   "2764",
+   "1F496",
+   "1F49C",
+   "1F49B",
+   "1F49A"
+  ],
+  "significado": "Vida máxima (stat), revivir y agradecimientos.",
+  "lote": "lote-01",
+  "otros": "los corazones de color (💖💜💛💚) son alias: su color hay que darlo por CSS"
+ },
+ {
+  "nombre": "pocion",
+  "cps": [
+   "1F9EA",
+   "2697",
+   "1F37E"
+  ],
+  "significado": "Pociones de vida, elixires y lo fabricado por alquimia.",
+  "lote": "lote-01",
+  "otros": "⚗ alambique y 🍾 botella (pista del misterio) son alias"
+ },
+ {
+  "nombre": "orbe-magia",
+  "cps": [
+   "1F52E"
+  ],
+  "significado": "Un enemigo lanza un hechizo (barra de casteo).",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "amuleto-protector",
+  "cps": [
+   "1F9FF"
+  ],
+  "significado": "Protector de racha (salva tu racha un día).",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "dormido",
+  "cps": [
+   "1F4A4",
+   "1F634"
+  ],
+  "significado": "Descanso x2 de experiencia, guardián dormido.",
+  "lote": "lote-01"
+ },
+ {
+  "nombre": "engranaje",
+  "cps": [
+   "2699"
+  ],
+  "significado": "Ajustes / menú del juego (interfaz nueva).",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "puerta",
+  "cps": [
+   "1F6AA"
+  ],
+  "significado": "Salir del juego (menú nuevo) y la Puerta del asedio.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "candado",
+  "cps": [
+   "1F512",
+   "26D3"
+  ],
+  "significado": "Bloqueado: contenido por nivel, premio sin cobrar, hermandad cerrada.",
+  "lote": "lote-02",
+  "otros": "⛓ cadenas (pista del misterio) es alias"
+ },
+ {
+  "nombre": "candado-abierto",
+  "cps": [
+   "1F513"
+  ],
+  "significado": "Desbloqueado / hermandad abierta a todos.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "pantalla",
+  "cps": [
+   "1F5A5"
+  ],
+  "significado": "Gráficos (menú nuevo); servidores en la página de apoyo.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "mando",
+  "cps": [
+   "1F3AE",
+   "1F579"
+  ],
+  "significado": "Controles (menú nuevo), Jugar, Arcade.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "teclado",
+  "cps": [
+   "2328"
+  ],
+  "significado": "Reasignar teclas.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "ojo",
+  "cps": [
+   "1F441",
+   "1F440"
+  ],
+  "significado": "Interfaz/ver (menú nuevo); probar una skin, inspeccionar.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "menu",
+  "cps": [
+   "2630"
+  ],
+  "significado": "Menú (interfaz nueva).",
+  "lote": "lote-02",
+  "texto": true,
+  "ancho": 56
+ },
+ {
+  "nombre": "casa-inicio",
+  "cps": [
+   "2302"
+  ],
+  "significado": "Volver al inicio de la web / al pueblo.",
+  "lote": "lote-02",
+  "texto": true
+ },
+ {
+  "nombre": "altavoz",
+  "cps": [
+   "1F50A",
+   "1F508"
+  ],
+  "significado": "Sonido activado.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "silencio",
+  "cps": [
+   "1F507",
+   "1F515"
+  ],
+  "significado": "Sin sonido; Ignorar a un jugador; no más avisos.",
+  "lote": "lote-02",
+  "otros": "🔕 es alias"
+ },
+ {
+  "nombre": "campana",
+  "cps": [
+   "1F514"
+  ],
+  "significado": "Avisos (por Telegram, a pedido).",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "lupa",
+  "cps": [
+   "1F50E",
+   "1F50D"
+  ],
+  "significado": "Buscar, próxima pista, inspeccionar a otro jugador.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "lapiz",
+  "cps": [
+   "270F",
+   "2712"
+  ],
+  "significado": "Poner o cambiar el nombre del duende.",
+  "lote": "lote-02",
+  "otros": "✒ es alias"
+ },
+ {
+  "nombre": "guardar",
+  "cps": [
+   "1F4BE"
+  ],
+  "significado": "Tu progreso guardado / copias de seguridad.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "enlace",
+  "cps": [
+   "1F517",
+   "1FAA2"
+  ],
+  "significado": "Enlace copiado, cuenta vinculada.",
+  "lote": "lote-02",
+  "otros": "🪢 nudo (pista del misterio) es alias"
+ },
+ {
+  "nombre": "celular",
+  "cps": [
+   "1F4F1",
+   "1F4F2"
+  ],
+  "significado": "Llevar mi duende a otro dispositivo, invitar a mi grupo, novedades del celular.",
+  "lote": "lote-02"
+ },
+ {
+  "nombre": "flecha-derecha",
+  "cps": [
+   "2192",
+   "27A1",
+   "279C"
+  ],
+  "significado": "Paso siguiente, «lleva a», ruta de menú.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-izquierda",
+  "cps": [
+   "2190",
+   "2B05"
+  ],
+  "significado": "Volver.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-arriba",
+  "cps": [
+   "2191",
+   "2B06"
+  ],
+  "significado": "Arriba, subir, «sigue la luz».",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-abajo",
+  "cps": [
+   "2193",
+   "2B07",
+   "1F447"
+  ],
+  "significado": "Abajo, instalar, bajar de rango, «mira aquí abajo».",
+  "lote": "lote-03",
+  "texto": true,
+  "otros": "👇 (dedo que señala abajo) es alias"
+ },
+ {
+  "nombre": "flecha-ne",
+  "cps": [
+   "2197"
+  ],
+  "significado": "Rumbo de la brújula hacia el objetivo.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-se",
+  "cps": [
+   "2198"
+  ],
+  "significado": "Rumbo de la brújula.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-so",
+  "cps": [
+   "2199"
+  ],
+  "significado": "Rumbo de la brújula.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-no",
+  "cps": [
+   "2196"
+  ],
+  "significado": "Rumbo de la brújula.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "flecha-doble",
+  "cps": [
+   "2194",
+   "21C4"
+  ],
+  "significado": "Ida y vuelta entre dos zonas; cambio TON ⇄ $DUENDE.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "recargar",
+  "cps": [
+   "21BA",
+   "21BB",
+   "1F504",
+   "1F501",
+   "267B"
+  ],
+  "significado": "Revivir, actualizar, reintentar, cambiar una misión, repetir.",
+  "lote": "lote-03",
+  "texto": true
+ },
+ {
+  "nombre": "triangulo-derecha",
+  "cps": [
+   "25B6",
+   "25B8",
+   "27A4"
+  ],
+  "significado": "Siguiente (selector de aspecto), «Seguir», enviar mensaje, reproducir.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 48
+ },
+ {
+  "nombre": "triangulo-izquierda",
+  "cps": [
+   "25C0",
+   "25C2"
+  ],
+  "significado": "Anterior, volver.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 48
+ },
+ {
+  "nombre": "triangulo-arriba",
+  "cps": [
+   "25B2",
+   "25B4"
+  ],
+  "significado": "Tú en el mapa, mejora de equipo, plegar.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 48
+ },
+ {
+  "nombre": "triangulo-abajo",
+  "cps": [
+   "25BE"
+  ],
+  "significado": "Desplegar.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 48
+ },
+ {
+  "nombre": "doble-arriba",
+  "cps": [
+   "23EB"
+  ],
+  "significado": "Botón de salto en el celular.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 56
+ },
+ {
+  "nombre": "doble-abajo",
+  "cps": [
+   "23EC"
+  ],
+  "significado": "Botón de bajar (vuelo) en el celular.",
+  "lote": "lote-03",
+  "texto": true,
+  "ancho": 56
+ },
+ {
+  "nombre": "visto",
+  "cps": [
+   "2713",
+   "2714"
+  ],
+  "significado": "Hecho, correcto, confirmado.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 60
+ },
+ {
+  "nombre": "casilla-marcada",
+  "cps": [
+   "2705"
+  ],
+  "significado": "Tarea cumplida, compra realizada (hace pareja con la casilla vacía).",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 56,
+  "otros": "hoy es verde: color por CSS si importa"
+ },
+ {
+  "nombre": "casilla-vacia",
+  "cps": [
+   "2B1C",
+   "25AB"
+  ],
+  "significado": "Tarea pendiente.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 56
+ },
+ {
+  "nombre": "equis",
+  "cps": [
+   "2715",
+   "2716",
+   "2717",
+   "274C"
+  ],
+  "significado": "Cerrar, error, rechazado, multiplicador.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 52,
+  "otros": "❌ hoy es rojo: color por CSS"
+ },
+ {
+  "nombre": "estrella",
+  "cps": [
+   "2B50",
+   "2605",
+   "1F31F",
+   "1F320",
+   "2604"
+  ],
+  "significado": "Maestría, amigo, favorito, talento, valoración.",
+  "lote": "lote-04",
+  "texto": true,
+  "otros": "🌠 y ☄ (estrella fugaz, cometa) son alias"
+ },
+ {
+  "nombre": "estrella-hueca",
+  "cps": [
+   "2606"
+  ],
+  "significado": "Hito del bestiario aún no logrado.",
+  "lote": "lote-04",
+  "texto": true
+ },
+ {
+  "nombre": "destellos",
+  "cps": [
+   "2728",
+   "2726",
+   "271D"
+  ],
+  "significado": "Novedad, hito de historia, clase sacerdote, revivir por un sacerdote.",
+  "lote": "lote-04",
+  "otros": "✦ y ✝ son alias"
+ },
+ {
+  "nombre": "punto",
+  "cps": [
+   "25CF",
+   "1F7E2",
+   "1F7E1",
+   "1F7E3",
+   "1F534"
+  ],
+  "significado": "Punto de leyenda del mapa, paso completado, «en línea».",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44,
+  "otros": "🟢🟡🟣🔴: el color era el mensaje, hay que darlo por CSS"
+ },
+ {
+  "nombre": "aro",
+  "cps": [
+   "25CB",
+   "26AA",
+   "2B55",
+   "25CE"
+  ],
+  "significado": "Paso pendiente, «desconectado», círculo a esquivar.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44,
+  "otros": "⭕ «esquiva el círculo rojo»: color por CSS"
+ },
+ {
+  "nombre": "cuadrado",
+  "cps": [
+   "25A0"
+  ],
+  "significado": "Cofre en la leyenda del mapa.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44
+ },
+ {
+  "nombre": "rombo",
+  "cps": [
+   "25C6"
+  ],
+  "significado": "Conjunto de equipo.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44
+ },
+ {
+  "nombre": "barra-llena",
+  "cps": [
+   "25AE"
+  ],
+  "significado": "Segmento lleno de la barra de suerte.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 22
+ },
+ {
+  "nombre": "barra-hueca",
+  "cps": [
+   "25AF"
+  ],
+  "significado": "Segmento vacío de la barra de suerte.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 22
+ },
+ {
+  "nombre": "pausa",
+  "cps": [
+   "23F8"
+  ],
+  "significado": "Pausa (arcade).",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44
+ },
+ {
+  "nombre": "mas",
+  "cps": [
+   "2795"
+  ],
+  "significado": "Añadir, subir un valor (menú nuevo).",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 52
+ },
+ {
+  "nombre": "menos",
+  "cps": [
+   "2796"
+  ],
+  "significado": "Quitar, bajar un valor (menú nuevo).",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 52
+ },
+ {
+  "nombre": "ayuda",
+  "cps": [
+   "2753",
+   "2754"
+  ],
+  "significado": "Ayuda; monstruo o dato aún desconocido («???»).",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 44
+ },
+ {
+  "nombre": "exclamacion",
+  "cps": [
+   "2757"
+  ],
+  "significado": "Monstruo de tu misión.",
+  "lote": "lote-04",
+  "texto": true,
+  "ancho": 28
+ },
+ {
+  "nombre": "mapa",
+  "cps": [
+   "1F5FA"
+  ],
+  "significado": "Mapa del mundo (botón M).",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "brujula",
+  "cps": [
+   "1F9ED"
+  ],
+  "significado": "Encargos y rumbo a la misión (fila de misiones).",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "chincheta",
+  "cps": [
+   "1F4CD"
+  ],
+  "significado": "Marca de destino en el mapa y pilar de luz.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "portal",
+  "cps": [
+   "1F300"
+  ],
+  "significado": "Portal a mazmorras, cueva y otras zonas.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "pueblo",
+  "cps": [
+   "1F3D8"
+  ],
+  "significado": "El pueblo (zona segura).",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "castillo",
+  "cps": [
+   "1F3F0"
+  ],
+  "significado": "Asedio y Núcleo de la hermandad.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "torre",
+  "cps": [
+   "1F5FC"
+  ],
+  "significado": "La Torre (pisos).",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "telescopio",
+  "cps": [
+   "1F52D"
+  ],
+  "significado": "Mirador descubierto.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "abismo",
+  "cps": [
+   "1F30C"
+  ],
+  "significado": "El Abismo (islas flotantes sobre el vacío).",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "farol",
+  "cps": [
+   "1F3EE"
+  ],
+  "significado": "Farera Quilla y el Faro.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "atado",
+  "cps": [
+   "1F9F3"
+  ],
+  "significado": "El ambulante y «tu duende viajó contigo».",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "huellas",
+  "cps": [
+   "1F463",
+   "1F6B6"
+  ],
+  "significado": "«Acércate a…» y pista de huellas.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "globo",
+  "cps": [
+   "1F310",
+   "1F30D",
+   "1F4F6",
+   "1F4E1"
+  ],
+  "significado": "Jugar online, sitio web; sin conexión.",
+  "lote": "lote-05",
+  "otros": "📶 y 📡 (sin internet / no cargó) son alias"
+ },
+ {
+  "nombre": "aviso",
+  "cps": [
+   "26A0"
+  ],
+  "significado": "Advertencia y reportar un abuso.",
+  "lote": "lote-05",
+  "otros": "hoy es amarillo"
+ },
+ {
+  "nombre": "prohibido",
+  "cps": [
+   "26D4"
+  ],
+  "significado": "Moderación y baneados.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "auxilio",
+  "cps": [
+   "1F198"
+  ],
+  "significado": "Pedir ayuda, hablar con el creador, soporte.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "megafono",
+  "cps": [
+   "1F4E2",
+   "1F4E3"
+  ],
+  "significado": "Comunidad oficial, «busca grupo», invitar a un amigo.",
+  "lote": "lote-05"
+ },
+ {
+  "nombre": "moneda",
+  "cps": [
+   "1FA99",
+   "1F4B8"
+  ],
+  "significado": "Oro, comprar $DUENDE, premio en oro; retiro.",
+  "lote": "lote-06",
+  "otros": "💸 es alias"
+ },
+ {
+  "nombre": "gema",
+  "cps": [
+   "1F48E"
+  ],
+  "significado": "Tienda premium y rango diamante.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "corona",
+  "cps": [
+   "1F451"
+  ],
+  "significado": "Líder de grupo o hermandad, Rey Goblin.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "trofeo",
+  "cps": [
+   "1F3C6"
+  ],
+  "significado": "Logros y ranking; el premio del nivel 60.",
+  "lote": "lote-06",
+  "otros": "🏁 es alias"
+ },
+ {
+  "nombre": "mochila",
+  "cps": [
+   "1F392"
+  ],
+  "significado": "Inventario (botón I).",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "bolsa-oro",
+  "cps": [
+   "1F4B0"
+  ],
+  "significado": "Botín, Duende Ladrón, mucho oro.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "regalo",
+  "cps": [
+   "1F381"
+  ],
+  "significado": "Pack de bienvenida, regalos y premios por cobrar.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "cofre",
+  "cps": [
+   "1F4E6",
+   "1F9F0"
+  ],
+  "significado": "Cofre del día, cofre semanal y cofres del mundo.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "medalla",
+  "cps": [
+   "1F3C5",
+   "1F396"
+  ],
+  "significado": "Ranking y puntos de asedio.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "medalla-1",
+  "cps": [
+   "1F947"
+  ],
+  "significado": "Medalla de oro (invasión, ranking).",
+  "lote": "lote-06",
+  "otros": "el color (oro) era el mensaje: se distingue por el número"
+ },
+ {
+  "nombre": "medalla-2",
+  "cps": [
+   "1F948"
+  ],
+  "significado": "Medalla de plata.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "medalla-3",
+  "cps": [
+   "1F949"
+  ],
+  "significado": "Medalla de bronce.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "tienda",
+  "cps": [
+   "1F6D2"
+  ],
+  "significado": "Tienda, «ver en tienda».",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "tarjeta",
+  "cps": [
+   "1F4B3"
+  ],
+  "significado": "Pagar con dinero, pedido pendiente.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "billetera",
+  "cps": [
+   "1F45B",
+   "1F47B"
+  ],
+  "significado": "Wallet conectada.",
+  "lote": "lote-06",
+  "otros": "👻 es el botón de la wallet Phantom en la web: aquí se dibuja billetera"
+ },
+ {
+  "nombre": "boleto",
+  "cps": [
+   "1F39F",
+   "1F3F7"
+  ],
+  "significado": "Pase de temporada; etiqueta de título.",
+  "lote": "lote-06",
+  "otros": "🏷 es alias"
+ },
+ {
+  "nombre": "llave",
+  "cps": [
+   "1F5DD",
+   "1F511"
+  ],
+  "significado": "Bóveda semanal, clave de entrega, cuenta.",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "estadisticas",
+  "cps": [
+   "1F4C8",
+   "1F4CA"
+  ],
+  "significado": "Estadísticas y «te faltan N XP».",
+  "lote": "lote-06"
+ },
+ {
+  "nombre": "pergamino",
+  "cps": [
+   "1F4DC"
+  ],
+  "significado": "Misiones y la leyenda del Cántaro.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "libro",
+  "cps": [
+   "1F4D6",
+   "1F4D2"
+  ],
+  "significado": "Libro de talentos (botón P), bestiario y libro de cuentas.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "investigador",
+  "cps": [
+   "1F575"
+  ],
+  "significado": "Pistas del misterio.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "vela",
+  "cps": [
+   "1F56F"
+  ],
+  "significado": "El misterio (narración).",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "cantaro",
+  "cps": [
+   "1F3FA"
+  ],
+  "significado": "Reliquias del Cántaro (el corazón de la historia).",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "hoja",
+  "cps": [
+   "1F4C4",
+   "1F9FE"
+  ],
+  "significado": "Carta, página arrancada, recibo (pistas).",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "piedra",
+  "cps": [
+   "1FAA8"
+  ],
+  "significado": "Pizarra de piedra (pista).",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "calendario",
+  "cps": [
+   "1F4C5",
+   "1F5D3",
+   "1F4C6"
+  ],
+  "significado": "Misiones del día y de la semana.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "reloj-arena",
+  "cps": [
+   "23F3",
+   "231B"
+  ],
+  "significado": "Tiempo que queda (la semana cierra, invasión).",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "cronometro",
+  "cps": [
+   "23F1",
+   "23F0"
+  ],
+  "significado": "Mejor tiempo, contrarreloj, «último día».",
+  "lote": "lote-07",
+  "otros": "⏰ es alias"
+ },
+ {
+  "nombre": "bombilla",
+  "cps": [
+   "1F4A1"
+  ],
+  "significado": "Consejo en la pantalla de carga.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "portapapeles",
+  "cps": [
+   "1F4CB"
+  ],
+  "significado": "Enlace o mensaje copiado.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "sobre",
+  "cps": [
+   "1F4E7",
+   "1F4E8",
+   "2709",
+   "1F4EC",
+   "1F4E4"
+  ],
+  "significado": "Crear cuenta con correo, invitar, carta, «mientras no estabas», compartir.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "bocadillo",
+  "cps": [
+   "1F4AC"
+  ],
+  "significado": "Chat.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "dado",
+  "cps": [
+   "1F3B2"
+  ],
+  "significado": "Aspecto al azar, otros nombres.",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "bandera",
+  "cps": [
+   "1F3C1"
+  ],
+  "significado": "Meta, «te faltaron…».",
+  "lote": "lote-07"
+ },
+ {
+  "nombre": "grupo",
+  "cps": [
+   "1F465"
+  ],
+  "significado": "Amigos en línea, grupo, jugadores conectados.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "usuario",
+  "cps": [
+   "1F464"
+  ],
+  "significado": "Aspecto del personaje (look), perfil.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "cabeza-duende",
+  "cps": [
+   "1F9DD",
+   "1F9CC"
+  ],
+  "significado": "La marca: Duende Quest, tu duende.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "cara-feliz",
+  "cps": [
+   "1F600",
+   "1F642",
+   "1F602"
+  ],
+  "significado": "Gestos y frases rápidas; reír.",
+  "lote": "lote-08",
+  "otros": "😂 y 🙂 son alias"
+ },
+ {
+  "nombre": "cara-llanto",
+  "cps": [
+   "1F62D"
+  ],
+  "significado": "«Se me escapó…».",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "furia",
+  "cps": [
+   "1F621"
+  ],
+  "significado": "Afijo «Furioso».",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "anciano",
+  "cps": [
+   "1F475",
+   "1F474"
+  ],
+  "significado": "Abuela Sisa y Tayta Mallku (retratos de NPC).",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "apreton",
+  "cps": [
+   "1F91D"
+  ],
+  "significado": "Ayni (ayudar a otro), equipo.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "gracias",
+  "cps": [
+   "1F64F"
+  ],
+  "significado": "Dar las gracias a otro jugador.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "saludo",
+  "cps": [
+   "1F44B",
+   "270B",
+   "1F44F"
+  ],
+  "significado": "Gestos (/saludar), alto, aplaudir.",
+  "lote": "lote-08",
+  "otros": "✋ y 👏 son alias"
+ },
+ {
+  "nombre": "pulgar",
+  "cps": [
+   "1F44D"
+  ],
+  "significado": "Decir que sí.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "tocar",
+  "cps": [
+   "1F446",
+   "261D"
+  ],
+  "significado": "Usar / interactuar (botón táctil), «toca aquí».",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "baile",
+  "cps": [
+   "1F483"
+  ],
+  "significado": "Bailar (huayno).",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "camara",
+  "cps": [
+   "1F4F8",
+   "1F3A5",
+   "1F3AC"
+  ],
+  "significado": "Presumir (foto), modo cine para grabar.",
+  "lote": "lote-08",
+  "otros": "🎥 y 🎬 son alias"
+ },
+ {
+  "nombre": "poncho",
+  "cps": [
+   "1F455",
+   "1F9E3",
+   "1F3A9"
+  ],
+  "significado": "Ropa, colección de atuendos, prendas.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "bota",
+  "cps": [
+   "1F462",
+   "1F45F"
+  ],
+  "significado": "Expulsar de la hermandad; botas veloces.",
+  "lote": "lote-08"
+ },
+ {
+  "nombre": "calavera",
+  "cps": [
+   "1F480",
+   "2620"
+  ],
+  "significado": "Jefe en el mapa, jugador muerto, mazmorra.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "ogro-jefe",
+  "cps": [
+   "1F479",
+   "1F47E",
+   "1F43B"
+  ],
+  "significado": "Jefe mundial en la arena.",
+  "lote": "lote-09",
+  "otros": "👾 y 🐻 (arcade) son alias"
+ },
+ {
+  "nombre": "llama",
+  "cps": [
+   "1F999",
+   "1F42A"
+  ],
+  "significado": "Caravana (Viajera Illari) y la llama del juego.",
+  "lote": "lote-09",
+  "otros": "🐪 camello pasa a llama"
+ },
+ {
+  "nombre": "caballo",
+  "cps": [
+   "1F40E"
+  ],
+  "significado": "Montar (botón táctil) y monturas.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "condor",
+  "cps": [
+   "1F985"
+  ],
+  "significado": "Volar (botón táctil) y Sabia Mama Ocllo.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "murcielago",
+  "cps": [
+   "1F987"
+  ],
+  "significado": "Montura del Abismo.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "lagarto",
+  "cps": [
+   "1F98E",
+   "1F438"
+  ],
+  "significado": "Lagarto de la Torre (montura).",
+  "lote": "lote-09",
+  "otros": "🐸 es alias"
+ },
+ {
+  "nombre": "pez",
+  "cps": [
+   "1F41F",
+   "1F41A"
+  ],
+  "significado": "Pesca y especies.",
+  "lote": "lote-09",
+  "otros": "🐚 es alias"
+ },
+ {
+  "nombre": "huella-pata",
+  "cps": [
+   "1F43E",
+   "1F407"
+  ],
+  "significado": "Mascotas y monturas ganadas.",
+  "lote": "lote-09",
+  "otros": "🐇 es alias"
+ },
+ {
+  "nombre": "ala",
+  "cps": [
+   "1FABD",
+   "1F98B"
+  ],
+  "significado": "Alas (equipo para planear).",
+  "lote": "lote-09",
+  "otros": "🦋 hoy etiqueta las alas"
+ },
+ {
+  "nombre": "llave-inglesa",
+  "cps": [
+   "1F527"
+  ],
+  "significado": "Mantenimiento del juego y reparar equipo.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "hilo",
+  "cps": [
+   "1F9F5"
+  ],
+  "significado": "Artesana Lila.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "paleta",
+  "cps": [
+   "1F3A8"
+  ],
+  "significado": "Colores de nombre y tintes.",
+  "lote": "lote-09"
+ },
+ {
+  "nombre": "tambor",
+  "cps": [
+   "1F941",
+   "1F3B6"
+  ],
+  "significado": "Gran Invasión (llamada de guerra); música.",
+  "lote": "lote-09",
+  "otros": "🎶 es alias"
+ },
+ {
+  "nombre": "sol",
+  "cps": [
+   "2600",
+   "1F31E",
+   "1F305"
+  ],
+  "significado": "Día, amanecer, facción Luz, misión diaria, Guardián Inti.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "luna",
+  "cps": [
+   "1F319"
+  ],
+  "significado": "Noche (+10 % de experiencia).",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "luna-nueva",
+  "cps": [
+   "1F311"
+  ],
+  "significado": "Facción Sombra y elemento sombra.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "nube",
+  "cps": [
+   "2601",
+   "1F32B"
+  ],
+  "significado": "Clima; progreso pasado a la nube.",
+  "lote": "lote-10",
+  "otros": "🌫 niebla es alias"
+ },
+ {
+  "nombre": "lluvia",
+  "cps": [
+   "1F327",
+   "26C8"
+  ],
+  "significado": "Lluvia y tormenta.",
+  "lote": "lote-10",
+  "otros": "⛈ es alias"
+ },
+ {
+  "nombre": "viento",
+  "cps": [
+   "1F32C",
+   "1F32A"
+  ],
+  "significado": "Corriente de viento (recarga las alas), tormenta de arena.",
+  "lote": "lote-10",
+  "otros": "🌪 es alias"
+ },
+ {
+  "nombre": "copo",
+  "cps": [
+   "2744"
+  ],
+  "significado": "Nieve y elemento hielo.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "gota",
+  "cps": [
+   "1F4A7",
+   "1F4A6",
+   "1F30A",
+   "1F3D6"
+  ],
+  "significado": "Agua (ingrediente), salpicadura al pescar.",
+  "lote": "lote-10",
+  "otros": "🌊 (arcade) es alias"
+ },
+ {
+  "nombre": "hierba",
+  "cps": [
+   "1F33F",
+   "1F331",
+   "1F33E",
+   "1F338",
+   "1F335",
+   "1F344"
+  ],
+  "significado": "Hierbas para recoger, Chamán Amaru, chacra, semillas.",
+  "lote": "lote-10",
+  "otros": "🌱🌾🌸🌵🍄 son alias"
+ },
+ {
+  "nombre": "trebol",
+  "cps": [
+   "1F340"
+  ],
+  "significado": "Suerte del duende.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "pino",
+  "cps": [
+   "1F332",
+   "1F384"
+  ],
+  "significado": "El Bosque.",
+  "lote": "lote-10",
+  "otros": "🎄 es alias"
+ },
+ {
+  "nombre": "cana-pescar",
+  "cps": [
+   "1F3A3"
+  ],
+  "significado": "Pescar.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "pico",
+  "cps": [
+   "26CF"
+  ],
+  "significado": "Minerales, Minera Ñusta.",
+  "lote": "lote-10"
+ },
+ {
+  "nombre": "vaso-chicha",
+  "cps": [
+   "1F964"
+  ],
+  "significado": "La chicha morada: puntos de chicha, el premio real del nivel 60, Mama Asiri.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "maiz",
+  "cps": [
+   "1F33D"
+  ],
+  "significado": "Recetario y maíz morado.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "pan",
+  "cps": [
+   "1F35E",
+   "1F956"
+  ],
+  "significado": "Evento del pan y el Horno.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "uvas",
+  "cps": [
+   "1F347"
+  ],
+  "significado": "Vendimia (evento).",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "fruta",
+  "cps": [
+   "1F34E",
+   "1F350",
+   "1F34B"
+  ],
+  "significado": "Manzana, membrillo y limón del recetario.",
+  "lote": "lote-11",
+  "otros": "🍐 y 🍋 son alias"
+ },
+ {
+  "nombre": "pina",
+  "cps": [
+   "1F34D"
+  ],
+  "significado": "Piña del recetario.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "especia",
+  "cps": [
+   "1F330",
+   "1F342"
+  ],
+  "significado": "Clavo de olor y canela del recetario.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "chancaca",
+  "cps": [
+   "1F36F"
+  ],
+  "significado": "Chancaca del recetario.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "olla",
+  "cps": [
+   "1F372"
+  ],
+  "significado": "Cocina de la Artesana.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "fiesta",
+  "cps": [
+   "1F389",
+   "1FA81",
+   "1F680"
+  ],
+  "significado": "Fiesta, huayno grupal, celebración.",
+  "lote": "lote-11",
+  "otros": "🪁 y 🚀 son alias"
+ },
+ {
+  "nombre": "fuegos",
+  "cps": [
+   "1F386"
+  ],
+  "significado": "Cuenta atrás y fuegos artificiales.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "calabaza",
+  "cps": [
+   "1F383"
+  ],
+  "significado": "Noche de Duendes (evento).",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "mascara",
+  "cps": [
+   "1F3AD"
+  ],
+  "significado": "Carnaval; las skins dan poderes.",
+  "lote": "lote-11"
+ },
+ {
+  "nombre": "amuleto-iman",
+  "cps": [
+   "1F9F2",
+   "1F531"
+  ],
+  "significado": "Imán y tridente del modo arcade.",
+  "lote": "lote-11",
+  "otros": "solo arcade (web)"
+ }
+]

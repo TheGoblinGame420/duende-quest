@@ -1,0 +1,3119 @@
+{
+ "fuente": "dq-iconos.woff2",
+ "bytes": 25304,
+ "glifos": 176,
+ "puntosDeCodigo": 292,
+ "bytesPorGlifo": 144,
+ "hechos": [
+  {
+   "tinta": 35.1,
+   "gris": 0.28,
+   "caja": [
+    4.6,
+    6.6,
+    59.4,
+    59.4
+   ],
+   "nombre": "espadas-cruzadas",
+   "cps": [
+    "2694"
+   ],
+   "lote": "lote-01",
+   "puntos": 106,
+   "contornos": 2
+  },
+  {
+   "tinta": 35.1,
+   "gris": 0.33,
+   "caja": [
+    8.0,
+    4.0,
+    56.0,
+    60.0
+   ],
+   "nombre": "escudo",
+   "cps": [
+    "1F6E1"
+   ],
+   "lote": "lote-01",
+   "puntos": 171,
+   "contornos": 5
+  },
+  {
+   "tinta": 29.6,
+   "gris": 0.26,
+   "caja": [
+    4.8,
+    4.1,
+    59.9,
+    59.2
+   ],
+   "nombre": "daga",
+   "cps": [
+    "1F5E1"
+   ],
+   "lote": "lote-01",
+   "puntos": 65,
+   "contornos": 2
+  },
+  {
+   "tinta": 29.1,
+   "gris": 0.19,
+   "caja": [
+    5.1,
+    4.0,
+    59.9,
+    60.0
+   ],
+   "nombre": "arco",
+   "cps": [
+    "1F3F9"
+   ],
+   "lote": "lote-01",
+   "puntos": 69,
+   "contornos": 1
+  },
+  {
+   "tinta": 26.4,
+   "gris": 0.19,
+   "caja": [
+    4.4,
+    8.4,
+    59.9,
+    59.6
+   ],
+   "nombre": "martillo",
+   "cps": [
+    "1F528",
+    "2692"
+   ],
+   "lote": "lote-01",
+   "puntos": 29,
+   "contornos": 2
+  },
+  {
+   "tinta": 28.1,
+   "gris": 0.26,
+   "caja": [
+    5.1,
+    5.1,
+    58.9,
+    58.9
+   ],
+   "nombre": "diana",
+   "cps": [
+    "1F3AF"
+   ],
+   "lote": "lote-01",
+   "puntos": 171,
+   "contornos": 5
+  },
+  {
+   "tinta": 27.9,
+   "gris": 0.2,
+   "caja": [
+    5.4,
+    4.4,
+    58.1,
+    59.6
+   ],
+   "nombre": "impacto",
+   "cps": [
+    "1F4A5"
+   ],
+   "lote": "lote-01",
+   "puntos": 61,
+   "contornos": 2
+  },
+  {
+   "tinta": 34.1,
+   "gris": 0.18,
+   "caja": [
+    4.0,
+    6.1,
+    57.4,
+    58.9
+   ],
+   "nombre": "esquivar",
+   "cps": [
+    "1F4A8"
+   ],
+   "lote": "lote-01",
+   "puntos": 52,
+   "contornos": 5
+  },
+  {
+   "tinta": 24.8,
+   "gris": 0.11,
+   "caja": [
+    8.0,
+    4.0,
+    56.0,
+    60.0
+   ],
+   "nombre": "rayo",
+   "cps": [
+    "26A1"
+   ],
+   "lote": "lote-01",
+   "puntos": 27,
+   "contornos": 1
+  },
+  {
+   "tinta": 32.1,
+   "gris": 0.19,
+   "caja": [
+    11.0,
+    4.0,
+    53.0,
+    60.0
+   ],
+   "nombre": "fuego",
+   "cps": [
+    "1F525",
+    "1F30B"
+   ],
+   "lote": "lote-01",
+   "puntos": 109,
+   "contornos": 2
+  },
+  {
+   "tinta": 30.5,
+   "gris": 0.16,
+   "caja": [
+    11.0,
+    4.0,
+    53.0,
+    60.0
+   ],
+   "nombre": "gota-sangre",
+   "cps": [
+    "1FA78"
+   ],
+   "lote": "lote-01",
+   "puntos": 80,
+   "contornos": 2
+  },
+  {
+   "tinta": 45.1,
+   "gris": 0.17,
+   "caja": [
+    4.7,
+    6.6,
+    59.3,
+    59.0
+   ],
+   "nombre": "corazon",
+   "cps": [
+    "2764",
+    "1F496",
+    "1F49C",
+    "1F49B",
+    "1F49A"
+   ],
+   "lote": "lote-01",
+   "puntos": 92,
+   "contornos": 2
+  },
+  {
+   "tinta": 30.0,
+   "gris": 0.15,
+   "caja": [
+    11.0,
+    4.0,
+    53.0,
+    60.0
+   ],
+   "nombre": "pocion",
+   "cps": [
+    "1F9EA",
+    "2697",
+    "1F37E"
+   ],
+   "lote": "lote-01",
+   "puntos": 162,
+   "contornos": 4
+  },
+  {
+   "tinta": 40.8,
+   "gris": 0.24,
+   "caja": [
+    10.0,
+    5.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "orbe-magia",
+   "cps": [
+    "1F52E"
+   ],
+   "lote": "lote-01",
+   "puntos": 126,
+   "contornos": 4
+  },
+  {
+   "tinta": 30.6,
+   "gris": 0.2,
+   "caja": [
+    11.5,
+    4.0,
+    52.5,
+    60.0
+   ],
+   "nombre": "amuleto-protector",
+   "cps": [
+    "1F9FF"
+   ],
+   "lote": "lote-01",
+   "puntos": 134,
+   "contornos": 3
+  },
+  {
+   "tinta": 27.1,
+   "gris": 0.05,
+   "caja": [
+    5.0,
+    5.0,
+    60.0,
+    59.0
+   ],
+   "nombre": "dormido",
+   "cps": [
+    "1F4A4",
+    "1F634"
+   ],
+   "lote": "lote-01",
+   "puntos": 20,
+   "contornos": 2
+  },
+  {
+   "tinta": 41.3,
+   "gris": 0.23,
+   "caja": [
+    4.5,
+    4.5,
+    59.5,
+    59.5
+   ],
+   "nombre": "engranaje",
+   "cps": [
+    "2699"
+   ],
+   "lote": "lote-02",
+   "puntos": 69,
+   "contornos": 2
+  },
+  {
+   "tinta": 44.2,
+   "gris": 0.14,
+   "caja": [
+    10.0,
+    5.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "puerta",
+   "cps": [
+    "1F6AA"
+   ],
+   "lote": "lote-02",
+   "puntos": 74,
+   "contornos": 2
+  },
+  {
+   "tinta": 37.6,
+   "gris": 0.12,
+   "caja": [
+    11.0,
+    5.0,
+    53.0,
+    59.0
+   ],
+   "nombre": "candado",
+   "cps": [
+    "1F512",
+    "26D3"
+   ],
+   "lote": "lote-02",
+   "puntos": 118,
+   "contornos": 3
+  },
+  {
+   "tinta": 38.1,
+   "gris": 0.12,
+   "caja": [
+    5.0,
+    4.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "candado-abierto",
+   "cps": [
+    "1F513"
+   ],
+   "lote": "lote-02",
+   "puntos": 116,
+   "contornos": 2
+  },
+  {
+   "tinta": 32.0,
+   "gris": 0.02,
+   "caja": [
+    5.0,
+    8.0,
+    59.0,
+    58.0
+   ],
+   "nombre": "pantalla",
+   "cps": [
+    "1F5A5"
+   ],
+   "lote": "lote-02",
+   "puntos": 73,
+   "contornos": 2
+  },
+  {
+   "tinta": 41.8,
+   "gris": 0.21,
+   "caja": [
+    4.0,
+    11.0,
+    60.0,
+    54.5
+   ],
+   "nombre": "mando",
+   "cps": [
+    "1F3AE",
+    "1F579"
+   ],
+   "lote": "lote-02",
+   "puntos": 145,
+   "contornos": 4
+  },
+  {
+   "tinta": 36.3,
+   "gris": 0.02,
+   "caja": [
+    4.0,
+    13.0,
+    60.0,
+    51.0
+   ],
+   "nombre": "teclado",
+   "cps": [
+    "2328"
+   ],
+   "lote": "lote-02",
+   "puntos": 66,
+   "contornos": 10
+  },
+  {
+   "tinta": 33.6,
+   "gris": 0.22,
+   "caja": [
+    4.0,
+    11.5,
+    60.0,
+    52.5
+   ],
+   "nombre": "ojo",
+   "cps": [
+    "1F441",
+    "1F440"
+   ],
+   "lote": "lote-02",
+   "puntos": 155,
+   "contornos": 3
+  },
+  {
+   "tinta": 23.5,
+   "gris": 0.01,
+   "caja": [
+    9.0,
+    14.5,
+    55.0,
+    53.5
+   ],
+   "nombre": "menu",
+   "cps": [
+    "2630"
+   ],
+   "lote": "lote-02",
+   "puntos": 51,
+   "contornos": 3
+  },
+  {
+   "tinta": 39.6,
+   "gris": 0.07,
+   "caja": [
+    4.0,
+    9.0,
+    60.0,
+    58.0
+   ],
+   "nombre": "casa-inicio",
+   "cps": [
+    "2302"
+   ],
+   "lote": "lote-02",
+   "puntos": 46,
+   "contornos": 1
+  },
+  {
+   "tinta": 29.1,
+   "gris": 0.16,
+   "caja": [
+    5.0,
+    8.0,
+    58.4,
+    56.0
+   ],
+   "nombre": "altavoz",
+   "cps": [
+    "1F50A",
+    "1F508"
+   ],
+   "lote": "lote-02",
+   "puntos": 88,
+   "contornos": 3
+  },
+  {
+   "tinta": 28.0,
+   "gris": 0.06,
+   "caja": [
+    5.0,
+    8.0,
+    59.8,
+    56.0
+   ],
+   "nombre": "silencio",
+   "cps": [
+    "1F507",
+    "1F515"
+   ],
+   "lote": "lote-02",
+   "puntos": 38,
+   "contornos": 2
+  },
+  {
+   "tinta": 36.0,
+   "gris": 0.1,
+   "caja": [
+    7.0,
+    4.0,
+    57.0,
+    60.0
+   ],
+   "nombre": "campana",
+   "cps": [
+    "1F514"
+   ],
+   "lote": "lote-02",
+   "puntos": 91,
+   "contornos": 2
+  },
+  {
+   "tinta": 26.1,
+   "gris": 0.23,
+   "caja": [
+    5.5,
+    5.5,
+    59.5,
+    59.5
+   ],
+   "nombre": "lupa",
+   "cps": [
+    "1F50E",
+    "1F50D"
+   ],
+   "lote": "lote-02",
+   "puntos": 142,
+   "contornos": 2
+  },
+  {
+   "tinta": 30.9,
+   "gris": 0.19,
+   "caja": [
+    5.1,
+    4.1,
+    59.9,
+    58.9
+   ],
+   "nombre": "lapiz",
+   "cps": [
+    "270F",
+    "2712"
+   ],
+   "lote": "lote-02",
+   "puntos": 65,
+   "contornos": 1
+  },
+  {
+   "tinta": 46.2,
+   "gris": 0.0,
+   "caja": [
+    5.0,
+    5.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "guardar",
+   "cps": [
+    "1F4BE"
+   ],
+   "lote": "lote-02",
+   "puntos": 32,
+   "contornos": 4
+  },
+  {
+   "tinta": 28.6,
+   "gris": 0.19,
+   "caja": [
+    4.7,
+    4.8,
+    59.3,
+    59.2
+   ],
+   "nombre": "enlace",
+   "cps": [
+    "1F517",
+    "1FAA2"
+   ],
+   "lote": "lote-02",
+   "puntos": 154,
+   "contornos": 2
+  },
+  {
+   "tinta": 30.2,
+   "gris": 0.06,
+   "caja": [
+    5.0,
+    4.0,
+    59.0,
+    60.0
+   ],
+   "nombre": "celular",
+   "cps": [
+    "1F4F1",
+    "1F4F2"
+   ],
+   "lote": "lote-02",
+   "puntos": 69,
+   "contornos": 3
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.1,
+   "caja": [
+    8.0,
+    16.6,
+    56.9,
+    51.4
+   ],
+   "nombre": "flecha-derecha",
+   "cps": [
+    "2192",
+    "27A1",
+    "279C"
+   ],
+   "lote": "lote-03",
+   "puntos": 11,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.1,
+   "caja": [
+    7.1,
+    16.6,
+    56.0,
+    51.4
+   ],
+   "nombre": "flecha-izquierda",
+   "cps": [
+    "2190",
+    "2B05"
+   ],
+   "lote": "lote-03",
+   "puntos": 10,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.1,
+   "caja": [
+    14.6,
+    9.1,
+    49.4,
+    58.0
+   ],
+   "nombre": "flecha-arriba",
+   "cps": [
+    "2191",
+    "2B06"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.1,
+   "caja": [
+    14.6,
+    10.0,
+    49.4,
+    58.9
+   ],
+   "nombre": "flecha-abajo",
+   "cps": [
+    "2193",
+    "2B07",
+    "1F447"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.21,
+   "caja": [
+    12.6,
+    16.4,
+    49.6,
+    53.4
+   ],
+   "nombre": "flecha-ne",
+   "cps": [
+    "2197"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.21,
+   "caja": [
+    12.6,
+    14.6,
+    49.6,
+    51.6
+   ],
+   "nombre": "flecha-se",
+   "cps": [
+    "2198"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.21,
+   "caja": [
+    14.4,
+    14.6,
+    51.4,
+    51.6
+   ],
+   "nombre": "flecha-so",
+   "cps": [
+    "2199"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.6,
+   "gris": 0.21,
+   "caja": [
+    14.4,
+    16.4,
+    51.4,
+    53.4
+   ],
+   "nombre": "flecha-no",
+   "cps": [
+    "2196"
+   ],
+   "lote": "lote-03",
+   "puntos": 9,
+   "contornos": 1
+  },
+  {
+   "tinta": 17.5,
+   "gris": 0.17,
+   "caja": [
+    6.1,
+    18.6,
+    57.9,
+    49.4
+   ],
+   "nombre": "flecha-doble",
+   "cps": [
+    "2194",
+    "21C4"
+   ],
+   "lote": "lote-03",
+   "puntos": 15,
+   "contornos": 1
+  },
+  {
+   "tinta": 18.6,
+   "gris": 0.19,
+   "caja": [
+    9.5,
+    10.6,
+    54.5,
+    56.4
+   ],
+   "nombre": "recargar",
+   "cps": [
+    "21BA",
+    "21BB",
+    "1F504",
+    "1F501",
+    "267B"
+   ],
+   "lote": "lote-03",
+   "puntos": 113,
+   "contornos": 1
+  },
+  {
+   "tinta": 17.7,
+   "gris": 0.06,
+   "caja": [
+    18.0,
+    14.0,
+    52.0,
+    54.0
+   ],
+   "nombre": "triangulo-derecha",
+   "cps": [
+    "25B6",
+    "25B8",
+    "27A4"
+   ],
+   "lote": "lote-03",
+   "puntos": 18,
+   "contornos": 1
+  },
+  {
+   "tinta": 17.7,
+   "gris": 0.06,
+   "caja": [
+    12.0,
+    14.0,
+    46.0,
+    54.0
+   ],
+   "nombre": "triangulo-izquierda",
+   "cps": [
+    "25C0",
+    "25C2"
+   ],
+   "lote": "lote-03",
+   "puntos": 18,
+   "contornos": 1
+  },
+  {
+   "tinta": 18.2,
+   "gris": 0.06,
+   "caja": [
+    12.0,
+    16.0,
+    52.0,
+    51.0
+   ],
+   "nombre": "triangulo-arriba",
+   "cps": [
+    "25B2",
+    "25B4"
+   ],
+   "lote": "lote-03",
+   "puntos": 17,
+   "contornos": 1
+  },
+  {
+   "tinta": 18.2,
+   "gris": 0.06,
+   "caja": [
+    12.0,
+    18.0,
+    52.0,
+    53.0
+   ],
+   "nombre": "triangulo-abajo",
+   "cps": [
+    "25BE"
+   ],
+   "lote": "lote-03",
+   "puntos": 19,
+   "contornos": 1
+  },
+  {
+   "tinta": 19.9,
+   "gris": 0.03,
+   "caja": [
+    11.2,
+    9.4,
+    52.8,
+    55.8
+   ],
+   "nombre": "doble-arriba",
+   "cps": [
+    "23EB"
+   ],
+   "lote": "lote-03",
+   "puntos": 12,
+   "contornos": 2
+  },
+  {
+   "tinta": 19.9,
+   "gris": 0.03,
+   "caja": [
+    11.2,
+    12.2,
+    52.8,
+    58.6
+   ],
+   "nombre": "doble-abajo",
+   "cps": [
+    "23EC"
+   ],
+   "lote": "lote-03",
+   "puntos": 16,
+   "contornos": 2
+  },
+  {
+   "tinta": 13.0,
+   "gris": 0.08,
+   "caja": [
+    6.2,
+    14.3,
+    57.9,
+    55.8
+   ],
+   "nombre": "visto",
+   "cps": [
+    "2713",
+    "2714"
+   ],
+   "lote": "lote-04",
+   "puntos": 8,
+   "contornos": 1
+  },
+  {
+   "tinta": 49.2,
+   "gris": 0.12,
+   "caja": [
+    8.0,
+    10.0,
+    56.0,
+    58.0
+   ],
+   "nombre": "casilla-marcada",
+   "cps": [
+    "2705"
+   ],
+   "lote": "lote-04",
+   "puntos": 45,
+   "contornos": 2
+  },
+  {
+   "tinta": 20.2,
+   "gris": 0.04,
+   "caja": [
+    8.0,
+    10.0,
+    56.0,
+    58.0
+   ],
+   "nombre": "casilla-vacia",
+   "cps": [
+    "2B1C",
+    "25AB"
+   ],
+   "lote": "lote-04",
+   "puntos": 56,
+   "contornos": 2
+  },
+  {
+   "tinta": 17.2,
+   "gris": 0.03,
+   "caja": [
+    12.2,
+    14.2,
+    51.8,
+    53.8
+   ],
+   "nombre": "equis",
+   "cps": [
+    "2715",
+    "2716",
+    "2717",
+    "274C"
+   ],
+   "lote": "lote-04",
+   "puntos": 15,
+   "contornos": 1
+  },
+  {
+   "tinta": 26.4,
+   "gris": 0.16,
+   "caja": [
+    5.3,
+    6.0,
+    58.7,
+    56.9
+   ],
+   "nombre": "estrella",
+   "cps": [
+    "2B50",
+    "2605",
+    "1F31F",
+    "1F320",
+    "2604"
+   ],
+   "lote": "lote-04",
+   "puntos": 41,
+   "contornos": 1
+  },
+  {
+   "tinta": 17.1,
+   "gris": 0.23,
+   "caja": [
+    6.4,
+    7.1,
+    57.6,
+    55.8
+   ],
+   "nombre": "estrella-hueca",
+   "cps": [
+    "2606"
+   ],
+   "lote": "lote-04",
+   "puntos": 23,
+   "contornos": 2
+  },
+  {
+   "tinta": 26.8,
+   "gris": 0.19,
+   "caja": [
+    4.6,
+    4.6,
+    59.4,
+    59.4
+   ],
+   "nombre": "destellos",
+   "cps": [
+    "2728",
+    "2726",
+    "271D"
+   ],
+   "lote": "lote-04",
+   "puntos": 105,
+   "contornos": 3
+  },
+  {
+   "tinta": 17.3,
+   "gris": 0.08,
+   "caja": [
+    17.0,
+    19.0,
+    47.0,
+    49.0
+   ],
+   "nombre": "punto",
+   "cps": [
+    "25CF",
+    "1F7E2",
+    "1F7E1",
+    "1F7E3",
+    "1F534"
+   ],
+   "lote": "lote-04",
+   "puntos": 64,
+   "contornos": 1
+  },
+  {
+   "tinta": 9.6,
+   "gris": 0.14,
+   "caja": [
+    17.0,
+    19.0,
+    47.0,
+    49.0
+   ],
+   "nombre": "aro",
+   "cps": [
+    "25CB",
+    "26AA",
+    "2B55",
+    "25CE"
+   ],
+   "lote": "lote-04",
+   "puntos": 109,
+   "contornos": 2
+  },
+  {
+   "tinta": 19.1,
+   "gris": 0.01,
+   "caja": [
+    18.0,
+    20.0,
+    46.0,
+    48.0
+   ],
+   "nombre": "cuadrado",
+   "cps": [
+    "25A0"
+   ],
+   "lote": "lote-04",
+   "puntos": 20,
+   "contornos": 1
+  },
+  {
+   "tinta": 13.1,
+   "gris": 0.07,
+   "caja": [
+    17.0,
+    17.0,
+    47.0,
+    51.0
+   ],
+   "nombre": "rombo",
+   "cps": [
+    "25C6"
+   ],
+   "lote": "lote-04",
+   "puntos": 20,
+   "contornos": 1
+  },
+  {
+   "tinta": 10.5,
+   "gris": 0.0,
+   "caja": [
+    26.0,
+    16.0,
+    38.0,
+    52.0
+   ],
+   "nombre": "barra-llena",
+   "cps": [
+    "25AE"
+   ],
+   "lote": "lote-04",
+   "puntos": 18,
+   "contornos": 1
+  },
+  {
+   "tinta": 7.0,
+   "gris": 0.0,
+   "caja": [
+    26.0,
+    16.0,
+    38.0,
+    52.0
+   ],
+   "nombre": "barra-hueca",
+   "cps": [
+    "25AF"
+   ],
+   "lote": "lote-04",
+   "puntos": 8,
+   "contornos": 2
+  },
+  {
+   "tinta": 14.0,
+   "gris": 0.01,
+   "caja": [
+    19.0,
+    18.0,
+    45.0,
+    50.0
+   ],
+   "nombre": "pausa",
+   "cps": [
+    "23F8"
+   ],
+   "lote": "lote-04",
+   "puntos": 32,
+   "contornos": 2
+  },
+  {
+   "tinta": 14.1,
+   "gris": 0.0,
+   "caja": [
+    12.0,
+    14.0,
+    52.0,
+    54.0
+   ],
+   "nombre": "mas",
+   "cps": [
+    "2795"
+   ],
+   "lote": "lote-04",
+   "puntos": 12,
+   "contornos": 1
+  },
+  {
+   "tinta": 7.8,
+   "gris": 0.0,
+   "caja": [
+    12.0,
+    30.0,
+    52.0,
+    38.0
+   ],
+   "nombre": "menos",
+   "cps": [
+    "2796"
+   ],
+   "lote": "lote-04",
+   "puntos": 4,
+   "contornos": 1
+  },
+  {
+   "tinta": 12.8,
+   "gris": 0.09,
+   "caja": [
+    17.0,
+    8.0,
+    47.0,
+    55.5
+   ],
+   "nombre": "ayuda",
+   "cps": [
+    "2753",
+    "2754"
+   ],
+   "lote": "lote-04",
+   "puntos": 86,
+   "contornos": 2
+  },
+  {
+   "tinta": 7.3,
+   "gris": 0.06,
+   "caja": [
+    27.0,
+    10.0,
+    37.0,
+    53.5
+   ],
+   "nombre": "exclamacion",
+   "cps": [
+    "2757"
+   ],
+   "lote": "lote-04",
+   "puntos": 8,
+   "contornos": 2
+  },
+  {
+   "tinta": 44.2,
+   "gris": 0.12,
+   "caja": [
+    6.0,
+    8.0,
+    58.0,
+    56.0
+   ],
+   "nombre": "mapa",
+   "cps": [
+    "1F5FA"
+   ],
+   "lote": "lote-05",
+   "puntos": 57,
+   "contornos": 6
+  },
+  {
+   "tinta": 27.7,
+   "gris": 0.35,
+   "caja": [
+    4.5,
+    4.5,
+    59.5,
+    59.5
+   ],
+   "nombre": "brujula",
+   "cps": [
+    "1F9ED"
+   ],
+   "lote": "lote-05",
+   "puntos": 163,
+   "contornos": 4
+  },
+  {
+   "tinta": 31.1,
+   "gris": 0.16,
+   "caja": [
+    12.5,
+    4.5,
+    51.5,
+    59.9
+   ],
+   "nombre": "chincheta",
+   "cps": [
+    "1F4CD"
+   ],
+   "lote": "lote-05",
+   "puntos": 89,
+   "contornos": 2
+  },
+  {
+   "tinta": 30.7,
+   "gris": 0.35,
+   "caja": [
+    4.4,
+    9.1,
+    59.6,
+    54.9
+   ],
+   "nombre": "portal",
+   "cps": [
+    "1F300"
+   ],
+   "lote": "lote-05",
+   "puntos": 220,
+   "contornos": 2
+  },
+  {
+   "tinta": 37.4,
+   "gris": 0.09,
+   "caja": [
+    4.0,
+    8.0,
+    60.0,
+    58.0
+   ],
+   "nombre": "pueblo",
+   "cps": [
+    "1F3D8"
+   ],
+   "lote": "lote-05",
+   "puntos": 66,
+   "contornos": 4
+  },
+  {
+   "tinta": 49.6,
+   "gris": 0.04,
+   "caja": [
+    4.0,
+    8.0,
+    60.0,
+    58.0
+   ],
+   "nombre": "castillo",
+   "cps": [
+    "1F3F0"
+   ],
+   "lote": "lote-05",
+   "puntos": 75,
+   "contornos": 3
+  },
+  {
+   "tinta": 35.9,
+   "gris": 0.07,
+   "caja": [
+    15.0,
+    4.0,
+    49.0,
+    60.0
+   ],
+   "nombre": "torre",
+   "cps": [
+    "1F5FC"
+   ],
+   "lote": "lote-05",
+   "puntos": 57,
+   "contornos": 4
+  },
+  {
+   "tinta": 24.6,
+   "gris": 0.28,
+   "caja": [
+    8.2,
+    5.9,
+    57.1,
+    60.0
+   ],
+   "nombre": "telescopio",
+   "cps": [
+    "1F52D"
+   ],
+   "lote": "lote-05",
+   "puntos": 81,
+   "contornos": 3
+  },
+  {
+   "tinta": 29.7,
+   "gris": 0.17,
+   "caja": [
+    4.0,
+    6.1,
+    60.0,
+    59.0
+   ],
+   "nombre": "abismo",
+   "cps": [
+    "1F30C"
+   ],
+   "lote": "lote-05",
+   "puntos": 86,
+   "contornos": 3
+  },
+  {
+   "tinta": 30.6,
+   "gris": 0.08,
+   "caja": [
+    12.0,
+    4.0,
+    52.0,
+    60.0
+   ],
+   "nombre": "farol",
+   "cps": [
+    "1F3EE"
+   ],
+   "lote": "lote-05",
+   "puntos": 107,
+   "contornos": 4
+  },
+  {
+   "tinta": 37.4,
+   "gris": 0.33,
+   "caja": [
+    9.0,
+    5.0,
+    55.0,
+    59.0
+   ],
+   "nombre": "atado",
+   "cps": [
+    "1F9F3"
+   ],
+   "lote": "lote-05",
+   "puntos": 152,
+   "contornos": 3
+  },
+  {
+   "tinta": 27.5,
+   "gris": 0.3,
+   "caja": [
+    4.6,
+    4.4,
+    59.4,
+    59.6
+   ],
+   "nombre": "huellas",
+   "cps": [
+    "1F463",
+    "1F6B6"
+   ],
+   "lote": "lote-05",
+   "puntos": 359,
+   "contornos": 10
+  },
+  {
+   "tinta": 34.9,
+   "gris": 0.29,
+   "caja": [
+    6.0,
+    6.1,
+    58.0,
+    57.9
+   ],
+   "nombre": "globo",
+   "cps": [
+    "1F310",
+    "1F30D",
+    "1F4F6",
+    "1F4E1"
+   ],
+   "lote": "lote-05",
+   "puntos": 174,
+   "contornos": 9
+  },
+  {
+   "tinta": 32.0,
+   "gris": 0.14,
+   "caja": [
+    6.0,
+    7.0,
+    58.0,
+    56.0
+   ],
+   "nombre": "aviso",
+   "cps": [
+    "26A0"
+   ],
+   "lote": "lote-05",
+   "puntos": 65,
+   "contornos": 3
+  },
+  {
+   "tinta": 42.2,
+   "gris": 0.15,
+   "caja": [
+    6.0,
+    6.0,
+    58.0,
+    58.0
+   ],
+   "nombre": "prohibido",
+   "cps": [
+    "26D4"
+   ],
+   "lote": "lote-05",
+   "puntos": 82,
+   "contornos": 2
+  },
+  {
+   "tinta": 29.1,
+   "gris": 0.12,
+   "caja": [
+    15.0,
+    4.0,
+    49.0,
+    60.0
+   ],
+   "nombre": "auxilio",
+   "cps": [
+    "1F198"
+   ],
+   "lote": "lote-05",
+   "puntos": 95,
+   "contornos": 2
+  },
+  {
+   "tinta": 29.6,
+   "gris": 0.34,
+   "caja": [
+    5.0,
+    9.5,
+    60.0,
+    58.7
+   ],
+   "nombre": "megafono",
+   "cps": [
+    "1F4E2",
+    "1F4E3"
+   ],
+   "lote": "lote-05",
+   "puntos": 141,
+   "contornos": 7
+  },
+  {
+   "tinta": 43.1,
+   "gris": 0.3,
+   "caja": [
+    8.0,
+    5.0,
+    56.0,
+    59.0
+   ],
+   "nombre": "moneda",
+   "cps": [
+    "1FA99",
+    "1F4B8"
+   ],
+   "lote": "lote-06",
+   "puntos": 159,
+   "contornos": 4
+  },
+  {
+   "tinta": 31.8,
+   "gris": 0.2,
+   "caja": [
+    4.0,
+    10.0,
+    60.0,
+    58.0
+   ],
+   "nombre": "gema",
+   "cps": [
+    "1F48E"
+   ],
+   "lote": "lote-06",
+   "puntos": 46,
+   "contornos": 3
+  },
+  {
+   "tinta": 38.8,
+   "gris": 0.16,
+   "caja": [
+    4.0,
+    5.5,
+    60.0,
+    57.0
+   ],
+   "nombre": "corona",
+   "cps": [
+    "1F451"
+   ],
+   "lote": "lote-06",
+   "puntos": 110,
+   "contornos": 2
+  },
+  {
+   "tinta": 35.8,
+   "gris": 0.15,
+   "caja": [
+    6.8,
+    6.0,
+    57.2,
+    59.0
+   ],
+   "nombre": "trofeo",
+   "cps": [
+    "1F3C6"
+   ],
+   "lote": "lote-06",
+   "puntos": 117,
+   "contornos": 4
+  },
+  {
+   "tinta": 33.7,
+   "gris": 0.17,
+   "caja": [
+    12.0,
+    5.5,
+    52.0,
+    58.0
+   ],
+   "nombre": "mochila",
+   "cps": [
+    "1F392"
+   ],
+   "lote": "lote-06",
+   "puntos": 171,
+   "contornos": 5
+  },
+  {
+   "tinta": 38.2,
+   "gris": 0.25,
+   "caja": [
+    6.0,
+    5.0,
+    58.0,
+    59.0
+   ],
+   "nombre": "bolsa-oro",
+   "cps": [
+    "1F4B0"
+   ],
+   "lote": "lote-06",
+   "puntos": 169,
+   "contornos": 12
+  },
+  {
+   "tinta": 45.4,
+   "gris": 0.12,
+   "caja": [
+    6.0,
+    5.1,
+    58.0,
+    59.0
+   ],
+   "nombre": "regalo",
+   "cps": [
+    "1F381"
+   ],
+   "lote": "lote-06",
+   "puntos": 146,
+   "contornos": 5
+  },
+  {
+   "tinta": 44.5,
+   "gris": 0.09,
+   "caja": [
+    6.0,
+    8.0,
+    58.0,
+    57.0
+   ],
+   "nombre": "cofre",
+   "cps": [
+    "1F4E6",
+    "1F9F0"
+   ],
+   "lote": "lote-06",
+   "puntos": 154,
+   "contornos": 8
+  },
+  {
+   "tinta": 37.0,
+   "gris": 0.27,
+   "caja": [
+    10.0,
+    4.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "medalla",
+   "cps": [
+    "1F3C5",
+    "1F396"
+   ],
+   "lote": "lote-06",
+   "puntos": 98,
+   "contornos": 3
+  },
+  {
+   "tinta": 38.0,
+   "gris": 0.21,
+   "caja": [
+    10.0,
+    4.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "medalla-1",
+   "cps": [
+    "1F947"
+   ],
+   "lote": "lote-06",
+   "puntos": 93,
+   "contornos": 3
+  },
+  {
+   "tinta": 35.1,
+   "gris": 0.3,
+   "caja": [
+    10.0,
+    4.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "medalla-2",
+   "cps": [
+    "1F948"
+   ],
+   "lote": "lote-06",
+   "puntos": 155,
+   "contornos": 3
+  },
+  {
+   "tinta": 35.2,
+   "gris": 0.26,
+   "caja": [
+    10.0,
+    4.0,
+    54.0,
+    60.0
+   ],
+   "nombre": "medalla-3",
+   "cps": [
+    "1F949"
+   ],
+   "lote": "lote-06",
+   "puntos": 148,
+   "contornos": 3
+  },
+  {
+   "tinta": 44.9,
+   "gris": 0.13,
+   "caja": [
+    4.0,
+    6.0,
+    60.0,
+    59.0
+   ],
+   "nombre": "tienda",
+   "cps": [
+    "1F6D2"
+   ],
+   "lote": "lote-06",
+   "puntos": 76,
+   "contornos": 2
+  },
+  {
+   "tinta": 37.8,
+   "gris": 0.03,
+   "caja": [
+    5.0,
+    13.0,
+    59.0,
+    51.0
+   ],
+   "nombre": "tarjeta",
+   "cps": [
+    "1F4B3"
+   ],
+   "lote": "lote-06",
+   "puntos": 54,
+   "contornos": 3
+  },
+  {
+   "tinta": 43.3,
+   "gris": 0.1,
+   "caja": [
+    5.0,
+    12.0,
+    60.0,
+    53.0
+   ],
+   "nombre": "billetera",
+   "cps": [
+    "1F45B",
+    "1F47B"
+   ],
+   "lote": "lote-06",
+   "puntos": 131,
+   "contornos": 4
+  },
+  {
+   "tinta": 37.9,
+   "gris": 0.12,
+   "caja": [
+    4.0,
+    15.0,
+    60.0,
+    49.0
+   ],
+   "nombre": "boleto",
+   "cps": [
+    "1F39F",
+    "1F3F7"
+   ],
+   "lote": "lote-06",
+   "puntos": 87,
+   "contornos": 5
+  },
+  {
+   "tinta": 24.7,
+   "gris": 0.19,
+   "caja": [
+    4.0,
+    4.0,
+    55.1,
+    59.3
+   ],
+   "nombre": "llave",
+   "cps": [
+    "1F5DD",
+    "1F511"
+   ],
+   "lote": "lote-06",
+   "puntos": 105,
+   "contornos": 2
+  },
+  {
+   "tinta": 34.1,
+   "gris": 0.01,
+   "caja": [
+    5.0,
+    6.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "estadisticas",
+   "cps": [
+    "1F4C8",
+    "1F4CA"
+   ],
+   "lote": "lote-06",
+   "puntos": 32,
+   "contornos": 4
+  },
+  {
+   "tinta": 47.3,
+   "gris": 0.16,
+   "caja": [
+    8.0,
+    5.0,
+    56.0,
+    59.0
+   ],
+   "nombre": "pergamino",
+   "cps": [
+    "1F4DC"
+   ],
+   "lote": "lote-07",
+   "puntos": 102,
+   "contornos": 4
+  },
+  {
+   "tinta": 45.0,
+   "gris": 0.21,
+   "caja": [
+    6.0,
+    9.0,
+    58.0,
+    57.0
+   ],
+   "nombre": "libro",
+   "cps": [
+    "1F4D6",
+    "1F4D2"
+   ],
+   "lote": "lote-07",
+   "puntos": 71,
+   "contornos": 6
+  },
+  {
+   "tinta": 43.4,
+   "gris": 0.12,
+   "caja": [
+    5.0,
+    5.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "investigador",
+   "cps": [
+    "1F575"
+   ],
+   "lote": "lote-07",
+   "puntos": 81,
+   "contornos": 3
+  },
+  {
+   "tinta": 31.6,
+   "gris": 0.13,
+   "caja": [
+    4.0,
+    4.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "vela",
+   "cps": [
+    "1F56F"
+   ],
+   "lote": "lote-07",
+   "puntos": 127,
+   "contornos": 3
+  },
+  {
+   "tinta": 35.4,
+   "gris": 0.15,
+   "caja": [
+    5.8,
+    5.0,
+    58.2,
+    59.0
+   ],
+   "nombre": "cantaro",
+   "cps": [
+    "1F3FA"
+   ],
+   "lote": "lote-07",
+   "puntos": 152,
+   "contornos": 4
+  },
+  {
+   "tinta": 40.8,
+   "gris": 0.05,
+   "caja": [
+    13.0,
+    5.0,
+    51.0,
+    59.0
+   ],
+   "nombre": "hoja",
+   "cps": [
+    "1F4C4",
+    "1F9FE"
+   ],
+   "lote": "lote-07",
+   "puntos": 33,
+   "contornos": 5
+  },
+  {
+   "tinta": 41.5,
+   "gris": 0.22,
+   "caja": [
+    7.0,
+    6.0,
+    58.0,
+    58.0
+   ],
+   "nombre": "piedra",
+   "cps": [
+    "1FAA8"
+   ],
+   "lote": "lote-07",
+   "puntos": 35,
+   "contornos": 2
+  },
+  {
+   "tinta": 43.0,
+   "gris": 0.04,
+   "caja": [
+    8.0,
+    5.0,
+    56.0,
+    59.0
+   ],
+   "nombre": "calendario",
+   "cps": [
+    "1F4C5",
+    "1F5D3",
+    "1F4C6"
+   ],
+   "lote": "lote-07",
+   "puntos": 81,
+   "contornos": 6
+  },
+  {
+   "tinta": 32.7,
+   "gris": 0.1,
+   "caja": [
+    11.0,
+    5.0,
+    53.0,
+    59.0
+   ],
+   "nombre": "reloj-arena",
+   "cps": [
+    "23F3",
+    "231B"
+   ],
+   "lote": "lote-07",
+   "puntos": 54,
+   "contornos": 2
+  },
+  {
+   "tinta": 31.0,
+   "gris": 0.29,
+   "caja": [
+    9.0,
+    4.0,
+    56.2,
+    59.0
+   ],
+   "nombre": "cronometro",
+   "cps": [
+    "23F1",
+    "23F0"
+   ],
+   "lote": "lote-07",
+   "puntos": 192,
+   "contornos": 4
+  },
+  {
+   "tinta": 30.4,
+   "gris": 0.14,
+   "caja": [
+    5.0,
+    5.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "bombilla",
+   "cps": [
+    "1F4A1"
+   ],
+   "lote": "lote-07",
+   "puntos": 95,
+   "contornos": 3
+  },
+  {
+   "tinta": 40.5,
+   "gris": 0.13,
+   "caja": [
+    12.0,
+    5.0,
+    52.0,
+    59.0
+   ],
+   "nombre": "portapapeles",
+   "cps": [
+    "1F4CB"
+   ],
+   "lote": "lote-07",
+   "puntos": 91,
+   "contornos": 5
+  },
+  {
+   "tinta": 40.3,
+   "gris": 0.11,
+   "caja": [
+    6.0,
+    14.0,
+    58.0,
+    50.0
+   ],
+   "nombre": "sobre",
+   "cps": [
+    "1F4E7",
+    "1F4E8",
+    "2709",
+    "1F4EC",
+    "1F4E4"
+   ],
+   "lote": "lote-07",
+   "puntos": 40,
+   "contornos": 2
+  },
+  {
+   "tinta": 43.9,
+   "gris": 0.15,
+   "caja": [
+    6.0,
+    8.0,
+    58.0,
+    57.0
+   ],
+   "nombre": "bocadillo",
+   "cps": [
+    "1F4AC"
+   ],
+   "lote": "lote-07",
+   "puntos": 143,
+   "contornos": 4
+  },
+  {
+   "tinta": 45.9,
+   "gris": 0.16,
+   "caja": [
+    8.0,
+    8.0,
+    56.0,
+    56.0
+   ],
+   "nombre": "dado",
+   "cps": [
+    "1F3B2"
+   ],
+   "lote": "lote-07",
+   "puntos": 196,
+   "contornos": 6
+  },
+  {
+   "tinta": 28.2,
+   "gris": 0.09,
+   "caja": [
+    7.0,
+    5.0,
+    59.0,
+    59.0
+   ],
+   "nombre": "bandera",
+   "cps": [
+    "1F3C1"
+   ],
+   "lote": "lote-07",
+   "puntos": 57,
+   "contornos": 1
+  },
+  {
+   "tinta": 42.2,
+   "gris": 0.19,
+   "caja": [
+    4.0,
+    8.5,
+    60.0,
+    55.5
+   ],
+   "nombre": "grupo",
+   "cps": [
+    "1F465"
+   ],
+   "lote": "lote-08",
+   "puntos": 174,
+   "contornos": 6
+  },
+  {
+   "tinta": 40.7,
+   "gris": 0.09,
+   "caja": [
+    7.0,
+    6.0,
+    57.0,
+    59.0
+   ],
+   "nombre": "usuario",
+   "cps": [
+    "1F464"
+   ],
+   "lote": "lote-08",
+   "puntos": 72,
+   "contornos": 2
+  },
+  {
+   "tinta": 38.6,
+   "gris": 0.11,
+   "caja": [
+    4.0,
+    10.0,
+    60.0,
+    54.0
+   ],
+   "nombre": "cabeza-duende",
+   "cps": [
+    "1F9DD",
+    "1F9CC"
+   ],
+   "lote": "lote-08",
+   "puntos": 59,
+   "contornos": 4
+  },
+  {
+   "tinta": 35.3,
+   "gris": 0.19,
+   "caja": [
+    4.0,
+    10.0,
+    60.0,
+    54.0
+   ],
+   "nombre": "cara-feliz",
+   "cps": [
+    "1F600",
+    "1F642",
+    "1F602"
+   ],
+   "lote": "lote-08",
+   "puntos": 127,
+   "contornos": 4
+  },
+  {
+   "tinta": 36.5,
+   "gris": 0.21,
+   "caja": [
+    4.0,
+    10.0,
+    60.0,
+    54.0
+   ],
+   "nombre": "cara-llanto",
+   "cps": [
+    "1F62D"
+   ],
+   "lote": "lote-08",
+   "puntos": 135,
+   "contornos": 6
+  },
+  {
+   "tinta": 35.8,
+   "gris": 0.2,
+   "caja": [
+    5.0,
+    6.1,
+    59.0,
+    54.0
+   ],
+   "nombre": "furia",
+   "cps": [
+    "1F621"
+   ],
+   "lote": "lote-08",
+   "puntos": 65,
+   "contornos": 4
+  },
+  {
+   "tinta": 35.3,
+   "gris": 0.12,
+   "caja": [
+    4.0,
+    4.5,
+    60.0,
+    60.0
+   ],
+   "nombre": "anciano",
+   "cps": [
+    "1F475",
+    "1F474"
+   ],
+   "lote": "lote-08",
+   "puntos": 69,
+   "contornos": 4
+  },
+  {
+   "tinta": 30.8,
+   "gris": 0.07,
+   "caja": [
+    4.0,
+    13.7,
+    60.0,
+    51.0
+   ],
+   "nombre": "apreton",
+   "cps": [
+    "1F91D"
+   ],
+   "lote": "lote-08",
+   "puntos": 101,
+   "contornos": 3
+  },
+  {
+   "tinta": 32.3,
+   "gris": 0.1,
+   "caja": [
+    8.0,
+    6.0,
+    56.0,
+    60.0
+   ],
+   "nombre": "gracias",
+   "cps": [
+    "1F64F"
+   ],
+   "lote": "lote-08",
+   "puntos": 67,
+   "contornos": 4
+  },
+  {
+   "tinta": 32.6,
+   "gris": 0.14,
+   "caja": [
+    4.5,
+    6.0,
+    59.5,
+    58.0
+   ],
+   "nombre": "saludo",
+   "cps": [
+    "1F44B",
+    "270B",
+    "1F44F"
+   ],
+   "lote": "lote-08",
+   "puntos": 129,
+   "contornos": 3
+  },
+  {
+   "tinta": 37.1,
+   "gris": 0.14,
+   "caja": [
+    5.0,
+    5.1,
+    55.0,
+    59.0
+   ],
+   "nombre": "pulgar",
+   "cps": [
+    "1F44D"
+   ],
+   "lote": "lote-08",
+   "puntos": 84,
+   "contornos": 2
+  },
+  {
+   "tinta": 26.6,
+   "gris": 0.16,
+   "caja": [
+    12.6,
+    4.2,
+    51.0,
+    60.0
+   ],
+   "nombre": "tocar",
+   "cps": [
+    "1F446",
+    "261D"
+   ],
+   "lote": "lote-08",
+   "puntos": 130,
+   "contornos": 3
+  },
+  {
+   "tinta": 31.2,
+   "gris": 0.25,
+   "caja": [
+    6.1,
+    4.5,
+    60.0,
+    60.0
+   ],
+   "nombre": "baile",
+   "cps": [
+    "1F483"
+   ],
+   "lote": "lote-08",
+   "puntos": 103,
+   "contornos": 3
+  },
+  {
+   "tinta": 42.1,
+   "gris": 0.16,
+   "caja": [
+    6.0,
+    11.0,
+    58.0,
+    55.0
+   ],
+   "nombre": "camara",
+   "cps": [
+    "1F4F8",
+    "1F3A5",
+    "1F3AC"
+   ],
+   "lote": "lote-08",
+   "puntos": 139,
+   "contornos": 4
+  },
+  {
+   "tinta": 43.9,
+   "gris": 0.07,
+   "caja": [
+    4.0,
+    7.0,
+    60.0,
+    59.0
+   ],
+   "nombre": "poncho",
+   "cps": [
+    "1F455",
+    "1F9E3",
+    "1F3A9"
+   ],
+   "lote": "lote-08",
+   "puntos": 62,
+   "contornos": 3
+  },
+  {
+   "tinta": 34.9,
+   "gris": 0.03,
+   "caja": [
+    15.0,
+    5.0,
+    59.0,
+    60.0
+   ],
+   "nombre": "bota",
+   "cps": [
+    "1F462",
+    "1F45F"
+   ],
+   "lote": "lote-08",
+   "puntos": 52,
+   "contornos": 3
+  },
+  {
+   "tinta": 38.7,
+   "gris": 0.16,
+   "caja": [
+    8.0,
+    5.0,
+    56.0,
+    59.0
+   ],
+   "nombre": "calavera",
+   "cps": [
+    "1F480",
+    "2620"
+   ],
+   "lote": "lote-09",
+   "puntos": 116,
+   "contornos": 4
+  },
+  {
+   "tinta": 34.7,
+   "gris": 0.2,
+   "caja": [
+    5.9,
+    4.1,
+    58.1,
+    60.0
+   ],
+   "nombre": "ogro-jefe",
+   "cps": [
+    "1F479",
+    "1F47E",
+    "1F43B"
+   ],
+   "lote": "lote-09",
+   "puntos": 111,
+   "contornos": 4
+  },
+  {
+   "tinta": 29.8,
+   "gris": 0.06,
+   "caja": [
+    5.0,
+    4.0,
+    57.0,
+    60.0
+   ],
+   "nombre": "llama",
+   "cps": [
+    "1F999",
+    "1F42A"
+   ],
+   "lote": "lote-09",
+   "puntos": 72,
+   "contornos": 2
+  },
+  {
+   "tinta": 38.9,
+   "gris": 0.24,
+   "caja": [
+    8.0,
+    4.0,
+    58.8,
+    60.0
+   ],
+   "nombre": "caballo",
+   "cps": [
+    "1F40E"
+   ],
+   "lote": "lote-09",
+   "puntos": 118,
+   "contornos": 2
+  },
+  {
+   "tinta": 41.2,
+   "gris": 0.12,
+   "caja": [
+    5.0,
+    6.5,
+    59.0,
+    59.0
+   ],
+   "nombre": "condor",
+   "cps": [
+    "1F985"
+   ],
+   "lote": "lote-09",
+   "puntos": 83,
+   "contornos": 1
+  },
+  {
+   "tinta": 41.1,
+   "gris": 0.17,
+   "caja": [
+    4.0,
+    6.0,
+    60.0,
+    57.0
+   ],
+   "nombre": "murcielago",
+   "cps": [
+    "1F987"
+   ],
+   "lote": "lote-09",
+   "puntos": 153,
+   "contornos": 3
+  },
+  {
+   "tinta": 34.1,
+   "gris": 0.26,
+   "caja": [
+    7.8,
+    4.4,
+    58.8,
+    60.0
+   ],
+   "nombre": "lagarto",
+   "cps": [
+    "1F98E",
+    "1F438"
+   ],
+   "lote": "lote-09",
+   "puntos": 177,
+   "contornos": 1
+  },
+  {
+   "tinta": 29.7,
+   "gris": 0.22,
+   "caja": [
+    4.0,
+    8.0,
+    60.0,
+    54.9
+   ],
+   "nombre": "pez",
+   "cps": [
+    "1F41F",
+    "1F41A"
+   ],
+   "lote": "lote-09",
+   "puntos": 110,
+   "contornos": 3
+  },
+  {
+   "tinta": 33.0,
+   "gris": 0.28,
+   "caja": [
+    4.7,
+    6.6,
+    59.3,
+    57.6
+   ],
+   "nombre": "huella-pata",
+   "cps": [
+    "1F43E",
+    "1F407"
+   ],
+   "lote": "lote-09",
+   "puntos": 190,
+   "contornos": 5
+  },
+  {
+   "tinta": 41.2,
+   "gris": 0.26,
+   "caja": [
+    4.3,
+    4.0,
+    60.0,
+    57.0
+   ],
+   "nombre": "ala",
+   "cps": [
+    "1FABD",
+    "1F98B"
+   ],
+   "lote": "lote-09",
+   "puntos": 168,
+   "contornos": 1
+  },
+  {
+   "tinta": 24.0,
+   "gris": 0.22,
+   "caja": [
+    4.6,
+    6.6,
+    57.4,
+    59.4
+   ],
+   "nombre": "llave-inglesa",
+   "cps": [
+    "1F527"
+   ],
+   "lote": "lote-09",
+   "puntos": 97,
+   "contornos": 2
+  },
+  {
+   "tinta": 25.9,
+   "gris": 0.09,
+   "caja": [
+    13.0,
+    4.0,
+    58.9,
+    60.1
+   ],
+   "nombre": "hilo",
+   "cps": [
+    "1F9F5"
+   ],
+   "lote": "lote-09",
+   "puntos": 96,
+   "contornos": 3
+  },
+  {
+   "tinta": 33.5,
+   "gris": 0.19,
+   "caja": [
+    6.0,
+    5.9,
+    58.0,
+    59.0
+   ],
+   "nombre": "paleta",
+   "cps": [
+    "1F3A8"
+   ],
+   "lote": "lote-09",
+   "puntos": 90,
+   "contornos": 4
+  },
+  {
+   "tinta": 32.3,
+   "gris": 0.35,
+   "caja": [
+    8.0,
+    4.5,
+    57.5,
+    56.0
+   ],
+   "nombre": "tambor",
+   "cps": [
+    "1F941",
+    "1F3B6"
+   ],
+   "lote": "lote-09",
+   "puntos": 173,
+   "contornos": 5
+  },
+  {
+   "tinta": 26.0,
+   "gris": 0.27,
+   "caja": [
+    4.2,
+    4.2,
+    59.8,
+    59.8
+   ],
+   "nombre": "sol",
+   "cps": [
+    "2600",
+    "1F31E",
+    "1F305"
+   ],
+   "lote": "lote-10",
+   "puntos": 193,
+   "contornos": 9
+  },
+  {
+   "tinta": 26.2,
+   "gris": 0.16,
+   "caja": [
+    4.0,
+    6.0,
+    52.7,
+    58.0
+   ],
+   "nombre": "luna",
+   "cps": [
+    "1F319"
+   ],
+   "lote": "lote-10",
+   "puntos": 81,
+   "contornos": 1
+  },
+  {
+   "tinta": 45.7,
+   "gris": 0.25,
+   "caja": [
+    6.0,
+    6.0,
+    58.0,
+    58.0
+   ],
+   "nombre": "luna-nueva",
+   "cps": [
+    "1F311"
+   ],
+   "lote": "lote-10",
+   "puntos": 129,
+   "contornos": 2
+  },
+  {
+   "tinta": 37.6,
+   "gris": 0.11,
+   "caja": [
+    7.0,
+    12.5,
+    60.0,
+    52.0
+   ],
+   "nombre": "nube",
+   "cps": [
+    "2601",
+    "1F32B"
+   ],
+   "lote": "lote-10",
+   "puntos": 74,
+   "contornos": 1
+  },
+  {
+   "tinta": 34.9,
+   "gris": 0.22,
+   "caja": [
+    8.0,
+    5.5,
+    56.5,
+    59.1
+   ],
+   "nombre": "lluvia",
+   "cps": [
+    "1F327",
+    "26C8"
+   ],
+   "lote": "lote-10",
+   "puntos": 94,
+   "contornos": 4
+  },
+  {
+   "tinta": 29.8,
+   "gris": 0.14,
+   "caja": [
+    5.0,
+    6.5,
+    59.5,
+    59.5
+   ],
+   "nombre": "viento",
+   "cps": [
+    "1F32C",
+    "1F32A"
+   ],
+   "lote": "lote-10",
+   "puntos": 158,
+   "contornos": 3
+  },
+  {
+   "tinta": 30.7,
+   "gris": 0.32,
+   "caja": [
+    7.2,
+    5.0,
+    56.8,
+    59.0
+   ],
+   "nombre": "copo",
+   "cps": [
+    "2744"
+   ],
+   "lote": "lote-10",
+   "puntos": 75,
+   "contornos": 1
+  },
+  {
+   "tinta": 33.9,
+   "gris": 0.15,
+   "caja": [
+    12.0,
+    5.0,
+    52.0,
+    60.0
+   ],
+   "nombre": "gota",
+   "cps": [
+    "1F4A7",
+    "1F4A6",
+    "1F30A",
+    "1F3D6"
+   ],
+   "lote": "lote-10",
+   "puntos": 80,
+   "contornos": 2
+  },
+  {
+   "tinta": 27.2,
+   "gris": 0.38,
+   "caja": [
+    4.8,
+    5.8,
+    58.2,
+    59.2
+   ],
+   "nombre": "hierba",
+   "cps": [
+    "1F33F",
+    "1F331",
+    "1F33E",
+    "1F338",
+    "1F335",
+    "1F344"
+   ],
+   "lote": "lote-10",
+   "puntos": 137,
+   "contornos": 2
+  },
+  {
+   "tinta": 36.5,
+   "gris": 0.27,
+   "caja": [
+    9.4,
+    6.4,
+    54.6,
+    60.2
+   ],
+   "nombre": "trebol",
+   "cps": [
+    "1F340"
+   ],
+   "lote": "lote-10",
+   "puntos": 169,
+   "contornos": 1
+  },
+  {
+   "tinta": 32.4,
+   "gris": 0.1,
+   "caja": [
+    7.0,
+    4.5,
+    57.0,
+    60.0
+   ],
+   "nombre": "pino",
+   "cps": [
+    "1F332",
+    "1F384"
+   ],
+   "lote": "lote-10",
+   "puntos": 51,
+   "contornos": 1
+  },
+  {
+   "tinta": 24.7,
+   "gris": 0.19,
+   "caja": [
+    9.1,
+    5.4,
+    54.8,
+    58.2
+   ],
+   "nombre": "cana-pescar",
+   "cps": [
+    "1F3A3"
+   ],
+   "lote": "lote-10",
+   "puntos": 89,
+   "contornos": 1
+  },
+  {
+   "tinta": 26.8,
+   "gris": 0.3,
+   "caja": [
+    4.1,
+    6.4,
+    57.6,
+    59.9
+   ],
+   "nombre": "pico",
+   "cps": [
+    "26CF"
+   ],
+   "lote": "lote-10",
+   "puntos": 58,
+   "contornos": 1
+  },
+  {
+   "tinta": 36.2,
+   "gris": 0.2,
+   "caja": [
+    10.0,
+    6.0,
+    54.0,
+    58.0
+   ],
+   "nombre": "vaso-chicha",
+   "cps": [
+    "1F964"
+   ],
+   "lote": "lote-11",
+   "puntos": 94,
+   "contornos": 4
+  },
+  {
+   "tinta": 28.4,
+   "gris": 0.19,
+   "caja": [
+    7.0,
+    4.0,
+    57.0,
+    59.0
+   ],
+   "nombre": "maiz",
+   "cps": [
+    "1F33D"
+   ],
+   "lote": "lote-11",
+   "puntos": 133,
+   "contornos": 11
+  },
+  {
+   "tinta": 35.2,
+   "gris": 0.21,
+   "caja": [
+    6.0,
+    13.0,
+    58.0,
+    52.0
+   ],
+   "nombre": "pan",
+   "cps": [
+    "1F35E",
+    "1F956"
+   ],
+   "lote": "lote-11",
+   "puntos": 79,
+   "contornos": 4
+  },
+  {
+   "tinta": 27.9,
+   "gris": 0.29,
+   "caja": [
+    6.8,
+    4.0,
+    57.2,
+    59.2
+   ],
+   "nombre": "uvas",
+   "cps": [
+    "1F347"
+   ],
+   "lote": "lote-11",
+   "puntos": 222,
+   "contornos": 6
+  },
+  {
+   "tinta": 38.9,
+   "gris": 0.21,
+   "caja": [
+    9.0,
+    5.2,
+    55.0,
+    59.0
+   ],
+   "nombre": "fruta",
+   "cps": [
+    "1F34E",
+    "1F350",
+    "1F34B"
+   ],
+   "lote": "lote-11",
+   "puntos": 129,
+   "contornos": 3
+  },
+  {
+   "tinta": 28.4,
+   "gris": 0.38,
+   "caja": [
+    11.0,
+    4.0,
+    53.0,
+    60.0
+   ],
+   "nombre": "pina",
+   "cps": [
+    "1F34D"
+   ],
+   "lote": "lote-11",
+   "puntos": 133,
+   "contornos": 3
+  },
+  {
+   "tinta": 24.4,
+   "gris": 0.45,
+   "caja": [
+    8.9,
+    4.7,
+    55.1,
+    56.5
+   ],
+   "nombre": "especia",
+   "cps": [
+    "1F330",
+    "1F342"
+   ],
+   "lote": "lote-11",
+   "puntos": 99,
+   "contornos": 5
+  },
+  {
+   "tinta": 34.6,
+   "gris": 0.11,
+   "caja": [
+    5.0,
+    14.2,
+    57.0,
+    50.0
+   ],
+   "nombre": "chancaca",
+   "cps": [
+    "1F36F"
+   ],
+   "lote": "lote-11",
+   "puntos": 40,
+   "contornos": 3
+  },
+  {
+   "tinta": 34.0,
+   "gris": 0.28,
+   "caja": [
+    5.2,
+    4.8,
+    58.8,
+    59.0
+   ],
+   "nombre": "olla",
+   "cps": [
+    "1F372"
+   ],
+   "lote": "lote-11",
+   "puntos": 230,
+   "contornos": 5
+  },
+  {
+   "tinta": 24.7,
+   "gris": 0.29,
+   "caja": [
+    6.4,
+    7.8,
+    57.6,
+    59.1
+   ],
+   "nombre": "fiesta",
+   "cps": [
+    "1F389",
+    "1FA81",
+    "1F680"
+   ],
+   "lote": "lote-11",
+   "puntos": 117,
+   "contornos": 3
+  },
+  {
+   "tinta": 23.9,
+   "gris": 0.39,
+   "caja": [
+    8.0,
+    4.0,
+    56.0,
+    58.8
+   ],
+   "nombre": "fuegos",
+   "cps": [
+    "1F386"
+   ],
+   "lote": "lote-11",
+   "puntos": 65,
+   "contornos": 12
+  },
+  {
+   "tinta": 37.6,
+   "gris": 0.3,
+   "caja": [
+    6.0,
+    5.0,
+    58.0,
+    59.0
+   ],
+   "nombre": "calabaza",
+   "cps": [
+    "1F383"
+   ],
+   "lote": "lote-11",
+   "puntos": 100,
+   "contornos": 4
+  },
+  {
+   "tinta": 37.3,
+   "gris": 0.36,
+   "caja": [
+    5.0,
+    4.0,
+    59.0,
+    56.0
+   ],
+   "nombre": "mascara",
+   "cps": [
+    "1F3AD"
+   ],
+   "lote": "lote-11",
+   "puntos": 238,
+   "contornos": 6
+  },
+  {
+   "tinta": 32.3,
+   "gris": 0.08,
+   "caja": [
+    10.0,
+    6.0,
+    54.0,
+    58.0
+   ],
+   "nombre": "amuleto-iman",
+   "cps": [
+    "1F9F2",
+    "1F531"
+   ],
+   "lote": "lote-11",
+   "puntos": 64,
+   "contornos": 3
+  }
+ ],
+ "faltan": [],
+ "errores": []
+}

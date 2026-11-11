@@ -1,0 +1,337 @@
+{
+ "lote": "lote-04",
+ "tema": "Símbolos de texto",
+ "nota": "Marcas, formas y signos que van dentro de frases y listas. Peso de letra en negrita, centrados en y=34. Las formas llenas y huecas van en pareja.",
+ "glifos": [
+  {
+   "nombre": "visto",
+   "cps": [
+    "2713",
+    "2714"
+   ],
+   "caracteres": "✓✔",
+   "significado": "Hecho, correcto, confirmado.",
+   "dibuja": "Marca de visto de trazo 8, brazo corto a la izquierda y largo a la derecha, extremos rectos.",
+   "usos": 96,
+   "texto": true,
+   "ancho": 60,
+   "ctx": [
+    "mundo/js/caso.js: 2,252,.5);margin-bottom:10px\"><b style=\"color:#f0abfc\">✓ Caso resuelto</b>${VERDAD.map(t => `<p class=\"vv-p\" st…",
+    "mundo/js/caso.js: px;padding:4px;font-size:12px;margin-top:5px\">${mio ? '✓ Tu sospecha' : 'Sospecho'}</button>` : '') + '</…",
+    "mundo/js/mundo.js: enviado' ? `🥤 ${CHICHA.litros60} L de chicha en camino ✓` : `🥤 ${CHICHA.litros60} L de chicha reclamados ✓`) : …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "casilla-marcada",
+   "cps": [
+    "2705"
+   ],
+   "caracteres": "✅",
+   "significado": "Tarea cumplida, compra realizada (hace pareja con la casilla vacía).",
+   "dibuja": "Cuadrado macizo de esquinas radio 5 con el visto tallado en negativo.",
+   "usos": 65,
+   "texto": true,
+   "ancho": 56,
+   "otros": "hoy es verde: color por CSS si importa",
+   "ctx": [
+    "mundo/js/mundo.js: a', { vol: 0.6 }); vib('light'); } if (m.ok && /^✅ Caza del día/.test(m.m || '')) { clearTimeout(tarjetaN…",
+    "mundo/js/mundo.js: a diaria: tarjeta «Listo por hoy» if (m.ok && /^(✅ (Compra realizada|Recompensa|Caza del día)|⚗️ Fabricas…",
+    "mundo/js/mundo.js: ), h60 = Math.round(CHICHA.min60 / 60), si = b => b ? '✅' : '⬜'; h += `<p class=\"vv-p\" style=\"font-size:12px;…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "casilla-vacia",
+   "cps": [
+    "2B1C",
+    "25AB"
+   ],
+   "caracteres": "⬜▫",
+   "significado": "Tarea pendiente.",
+   "dibuja": "El mismo cuadrado solo en contorno (trazo 5).",
+   "usos": 4,
+   "texto": true,
+   "ancho": 56,
+   "ctx": [
+    "mundo/js/mundo.js: = Math.round(CHICHA.min60 / 60), si = b => b ? '✅' : '⬜'; h += `<p class=\"vv-p\" style=\"font-size:12px;line-h…",
+    "mundo/js/objetivos.js: = granMeta(y, c.soyInvitado()), si = b => (b ? '✅' : '⬜'); let h = `<div class=\"ob-fila ob-morado\"><b styl…",
+    "mmo/js/client.js: = Math.floor((ch.mj || 0) / 60), si = b => b ? '✅' : '⬜'; h += `<div class=\"mis-caja\" style=\"font-size:12p…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "equis",
+   "cps": [
+    "2715",
+    "2716",
+    "2717",
+    "274C"
+   ],
+   "caracteres": "✕✖✗❌",
+   "significado": "Cerrar, error, rechazado, multiplicador.",
+   "dibuja": "Aspa de trazo 8 a 45°, extremos rectos.",
+   "usos": 78,
+   "texto": true,
+   "ancho": 52,
+   "otros": "❌ hoy es rojo: color por CSS",
+   "ctx": [
+    "mundo/index.html: barra (daltonicos) */ #avisos div.err::before{content:'✕ ';color:#ff5a6a;font-weight:800;} @keyframes entra{fro…",
+    "mundo/index.html: dth:30px;height:30px;} /* El titulo no se mete bajo la ✕ (\"MERCADER GRUMO\" chocaba en el movil) y la ✕ se acier…",
+    "mundo/index.html: … bajo la ✕ (\"MERCADER GRUMO\" chocaba en el movil) y la ✕ se acierta c"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "estrella",
+   "cps": [
+    "2B50",
+    "2605",
+    "1F31F",
+    "1F320",
+    "2604"
+   ],
+   "caracteres": "⭐★🌟🌠☄",
+   "significado": "Maestría, amigo, favorito, talento, valoración.",
+   "dibuja": "Estrella de 5 puntas maciza, algo gruesa (radio interior 0,41).",
+   "usos": 119,
+   "texto": true,
+   "otros": "🌠 y ☄ (estrella fugaz, cometa) son alias",
+   "ctx": [
+    "mundo/index.html: a duelo</button><button class=\"btn sec\" id=\"op-amigo\">⭐ Amigo</button><button class=\"btn sec\" id=\"op-herm\" sty…",
+    "mundo/js/mundo.js: break; case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, '…",
+    "mundo/js/mundo.js: txt = (tPreN ? `Nv ${TALENTO_NIVEL}: activa tu talento ⭐${tPreN}` : textoProximo(p[1], p[0])) + ' · ' + (n === …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "estrella-hueca",
+   "cps": [
+    "2606"
+   ],
+   "caracteres": "☆",
+   "significado": "Hito del bestiario aún no logrado.",
+   "dibuja": "La misma estrella en contorno de trazo 5.",
+   "usos": 5,
+   "texto": true,
+   "ctx": [
+    "mundo/js/mundo.js: .find(h => n < h); const est = '★'.repeat(hechos) + '☆'.repeat(BESTIARIO_HITOS.length - hechos); const txt …",
+    "mundo/js/ventanas.js: var(--oro);letter-spacing:1px\">${'★'.repeat(hechos)}${'☆'.repeat(BESTIARIO_HITOS.length - hechos)}</span>`; …",
+    "mmo/js/client.js: .repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</s…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "destellos",
+   "cps": [
+    "2728",
+    "2726",
+    "271D"
+   ],
+   "caracteres": "✨✦✝",
+   "significado": "Novedad, hito de historia, clase sacerdote, revivir por un sacerdote.",
+   "dibuja": "Tres destellos de 4 puntas cóncavas: uno grande y dos pequeños en diagonal.",
+   "usos": 52,
+   "otros": "✦ y ✝ son alias",
+   "ctx": [
+    "mundo/js/mundo.js: 000) return; const nv = NOVEDADES[0]; if (nv) { aviso('✨ ¡Juego actualizado! ' + textoNov(nv, 90), 'ok'); try {…",
+    "mundo/js/mundo.js: ) {} revelarNieblaZona(zk); aviso('✨ ' + (LORE_HITOS[zk] ? LORE_HITOS[zk] + ' ' : '') + 'El…",
+    "mundo/js/mundo.js: l 60. if (n === 10) setTimeout(() => aviso(`🏺✨ ¡Las 10 reliquias reunidas! El Cántaro Eterno solo esp…"
+   ],
+   "hecho": false
+  },
+  {
+   "nombre": "punto",
+   "cps": [
+    "25CF",
+    "1F7E2",
+    "1F7E1",
+    "1F7E3",
+    "1F534"
+   ],
+   "caracteres": "●🟢🟡🟣🔴",
+   "significado": "Punto de leyenda del mapa, paso completado, «en línea».",
+   "dibuja": "Círculo macizo de diámetro 30.",
+   "usos": 9,
+   "texto": true,
+   "ancho": 44,
+   "otros": "🟢🟡🟣🔴: el color era el mensaje, hay que darlo por CSS",
+   "ctx": [
+    "mundo/index.html: >?</span> guía</li> <li><i style=\"color:#7dd3fc\">●</i> Tu grupo</li> <li><i style=\"color:#4ade80\">▲…",
+    "mundo/js/mundo.js: `Sala ${nS}/4 · ${nomS} <span style=\"color:#ffd84a\">${'●'.repeat(nS)}${'○'.repeat(4 - nS)}</span>${relojC}<br><…",
+    "index.html: > <span style=\"font-size:12px;color:var(--txt2)\">● En vivo</span> </div> <!-- Filas reales: las p…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "aro",
+   "cps": [
+    "25CB",
+    "26AA",
+    "2B55",
+    "25CE"
+   ],
+   "caracteres": "○⚪⭕◎",
+   "significado": "Paso pendiente, «desconectado», círculo a esquivar.",
+   "dibuja": "Aro de diámetro 30 y trazo 5.",
+   "usos": 7,
+   "texto": true,
+   "ancho": 44,
+   "otros": "⭕ «esquiva el círculo rojo»: color por CSS",
+   "ctx": [
+    "functions/mmo/world.js: .actualizarYo(s); this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\\n…",
+    "index.html: \" class=\"soc pump\"><span class=\"si\" aria-hidden=\"true\">◎</span>Pump.fun</a> </div> <div class=\"creador-box\"…",
+    "index.html: <div class=\"d-wallet\"> <span class=\"w-chain\">◎ SOL</span> <span class=\"w-addr\" id=\"sol-addr…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "cuadrado",
+   "cps": [
+    "25A0"
+   ],
+   "caracteres": "■",
+   "significado": "Cofre en la leyenda del mapa.",
+   "dibuja": "Cuadrado macizo de lado 28, esquinas radio 2.",
+   "usos": 4,
+   "texto": true,
+   "ancho": 44,
+   "ctx": [
+    "mundo/index.html: or descubierto</li> <li><i style=\"color:#d6a35c\">■</i> Cofre <span style=\"color:#c084fc\">■</span> épico <…",
+    "mundo/index.html: …color:#d6a35c\">■</i> Cofre <span style=\"color:#c084fc\">■</span> épico <span",
+    "mundo/index.html: …or:#c084fc\">■</span> épico <span style=\"color:#ffd84a\">■</span> legendar"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "rombo",
+   "cps": [
+    "25C6"
+   ],
+   "caracteres": "◆",
+   "significado": "Conjunto de equipo.",
+   "dibuja": "Rombo macizo de 32 de alto.",
+   "usos": 2,
+   "texto": true,
+   "ancho": 44,
+   "ctx": [
+    "mundo/js/ventanas.js: ; h += `<p class=\"vv-cj\" style=\"color:${cj.color}\">◆ ${esc(cj.nombre)} ${pz[cid]}/5 — ${pz[cid] >= 4 ? 'bon…",
+    "mmo/js/client.js: style=\"margin:4px 0;font-size:12px;color:${cj.color}\">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? 'bono …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "barra-llena",
+   "cps": [
+    "25AE"
+   ],
+   "caracteres": "▮",
+   "significado": "Segmento lleno de la barra de suerte.",
+   "dibuja": "Rectángulo vertical macizo de 12×36.",
+   "usos": 1,
+   "texto": true,
+   "ancho": 22,
+   "ctx": [
+    "mundo/js/mundo.js: ); h += `<div class=\"q\"><small>🍀 Suerte del duende: ${'▮'.repeat(sl)}${'▯'.repeat(5 - sl)} · ${fz === 1 ? '¡el …"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "barra-hueca",
+   "cps": [
+    "25AF"
+   ],
+   "caracteres": "▯",
+   "significado": "Segmento vacío de la barra de suerte.",
+   "dibuja": "El mismo rectángulo en contorno de trazo 3,5.",
+   "usos": 1,
+   "texto": true,
+   "ancho": 22,
+   "ctx": [
+    "mundo/js/mundo.js: ss=\"q\"><small>🍀 Suerte del duende: ${'▮'.repeat(sl)}${'▯'.repeat(5 - sl)} · ${fz === 1 ? '¡el próximo objeto qu…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "pausa",
+   "cps": [
+    "23F8"
+   ],
+   "caracteres": "⏸",
+   "significado": "Pausa (arcade).",
+   "dibuja": "Dos barras verticales macizas.",
+   "usos": 1,
+   "texto": true,
+   "ancho": 44,
+   "ctx": [
+    "game.html: e\"> <div class=\"ov-title\" style=\"color:var(--txt)\">⏸ PAUSA</div> <div class=\"shop-coins\">🪙 <span id=\"sh…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "mas",
+   "cps": [
+    "2795"
+   ],
+   "caracteres": "➕",
+   "significado": "Añadir, subir un valor (menú nuevo).",
+   "dibuja": "Signo más de trazo 8.",
+   "usos": 0,
+   "texto": true,
+   "ancho": 52,
+   "ctx": [],
+   "hecho": true
+  },
+  {
+   "nombre": "menos",
+   "cps": [
+    "2796"
+   ],
+   "caracteres": "➖",
+   "significado": "Quitar, bajar un valor (menú nuevo).",
+   "dibuja": "Signo menos de trazo 8.",
+   "usos": 0,
+   "texto": true,
+   "ancho": 52,
+   "ctx": [],
+   "hecho": true
+  },
+  {
+   "nombre": "ayuda",
+   "cps": [
+    "2753",
+    "2754"
+   ],
+   "caracteres": "❓❔",
+   "significado": "Ayuda; monstruo o dato aún desconocido («???»).",
+   "dibuja": "Signo de interrogación de trazo 8 con punto cuadrado.",
+   "usos": 9,
+   "texto": true,
+   "ancho": 44,
+   "ctx": [
+    "mundo/js/caso.js: argin-bottom:5px\"><b style=\"font-size:13px;opacity:.7\">❔ ???</b><p class=\"vv-p\" style=\"margin:3px 0;font-size:1…",
+    "mundo/js/ventanas.js: lemento justo, la Chispa ⚡, o caza 25 y lo aprenderás\">❔</span>') : ''; h += `<div style=\"min-height:44px…",
+    "mundo/js/ventanas.js: cazas con premio de oro. A las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale una habilidad…"
+   ],
+   "hecho": true
+  },
+  {
+   "nombre": "exclamacion",
+   "cps": [
+    "2757"
+   ],
+   "caracteres": "❗",
+   "significado": "Monstruo de tu misión.",
+   "dibuja": "Signo de exclamación: cuña maciza que se estrecha hacia abajo y punto cuadrado.",
+   "usos": 8,
+   "texto": true,
+   "ancho": 28,
+   "ctx": [
+    "mundo/js/mundo.js: ></span>`, 70); } const kMis = tipoMision(); // '❗' solo en el monstruo de mision vivo mas cercano; etiqu…",
+    "mundo/js/mundo.js: : ''}${mis ? '<b style=\"color:#ffd84a;font-size:15px\">❗</b>' : ''}${o.ra ? (o.la ? '💰 ' : '★ ') + esc(o.ra) + …",
+    "mundo/js/mundo.js: á tu misión: derrota ${falta} ${nom} (los marcados con ❗). Acércate y ${MOVIL ? 'toca ATACAR' : 'pulsa 1 o Z'} …"
+   ],
+   "hecho": true
+  }
+ ]
+}
