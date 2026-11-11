@@ -1314,7 +1314,7 @@ function alasPropias() {
 // Sombra en el suelo: se achica cuando la figura salta o vuela (base = tamano en tierra).
 function ponerSombra(s, base, x, y, z) {
   const suelo = alturaEn(x, z), h = Math.max(0, y - suelo), k = 1 / (1 + h * 0.35);
-  s.position.set(x, suelo + 0.05, z); s.scale.setScalar(base * k);
+  s.x = x; s.y = suelo + 0.05; s.z = z; s.k = base * k;
 }
 // Alas en la espalda (ry = hacia donde mira; con sprites, hacia la camara).
 // modo: 'planea' = alas abiertas casi quietas, 'sube' = aleteo rapido, '' = aleteo normal.
@@ -1329,8 +1329,8 @@ class Figura {
     this.g = new THREE.PlaneGeometry(ancho, alto); this.g.translate(0, alto / 2, 0);
     this.m = new THREE.Mesh(this.g, mat);
     this.cols = cols; this.filas = filas; this.izq = false; this.f = 1; this.ultimo = '';
-    this.sombra = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6).rotateX(-Math.PI / 2), sombraTex);
-    escena.add(this.m, this.sombra);
+    this.sombra = new SombraDisco(1.6);
+    escena.add(this.m);
   }
   cuadro(col, fila, mirandoDer) {
     const k = col + ',' + fila + ',' + mirandoDer;
@@ -1348,7 +1348,7 @@ class Figura {
     if (escala) this.m.scale.set(escala[0], escala[1], 1);
     ponerSombra(this.sombra, 1, x, y, z);
   }
-  quitar() { escena.remove(this.m, this.sombra); this.g.dispose(); this.sombra.geometry.dispose(); }
+  quitar() { escena.remove(this.m); this.g.dispose(); this.sombra.quitar(); }
 }
 // ── MODELOS 3D (mundo/js/modelos.js) ──
 // Figura3D tiene la misma interfaz que Figura (poner, quitar y 'm' para
@@ -1358,6 +1358,29 @@ try { if (/[?&]sprites=1/.test(location.search) || localStorage.getItem('dq3_spr
 const golpeGeo = new THREE.CylinderGeometry(1, 1, 1, 8).translate(0, 0.5, 0);
 const golpeMat = new THREE.MeshBasicMaterial({ visible: false });
 const sombraGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+// Sombras-disco de todas las figuras en UNA malla instanciada (antes, una malla y una llamada de dibujo por figura:
+// 40-60 en el pueblo). Cada figura guarda solo donde va su sombra; empacarSombras() las vuelca antes de dibujar.
+const SOMBRAS_MAX = 320, sombrasVivas = [];
+const sombrasIM = new THREE.InstancedMesh(sombraGeo, sombraTex, SOMBRAS_MAX);
+sombrasIM.instanceMatrix.setUsage(THREE.DynamicDrawUsage); sombrasIM.count = 0; sombrasIM.frustumCulled = false; sombrasIM.renderOrder = -1;
+sombrasIM.matrixAutoUpdate = false; sombrasIM.matrixWorldAutoUpdate = false; sombrasIM.instanceMatrix.array.fill(0);
+escena.add(sombrasIM);
+class SombraDisco {
+  constructor(tam) { this.x = 0; this.y = 0; this.z = 0; this.k = 1; this.tam = tam; this.visible = true; sombrasVivas.push(this); }
+  quitar() { const i = sombrasVivas.indexOf(this); if (i >= 0) sombrasVivas.splice(i, 1); }
+}
+function empacarSombras() {
+  const a = sombrasIM.instanceMatrix.array;
+  let n = 0;
+  for (let i = 0; i < sombrasVivas.length && n < SOMBRAS_MAX; i++) {
+    const s = sombrasVivas[i]; if (!s.visible) continue;
+    const o = n * 16, k = s.k * s.tam;
+    a[o] = k; a[o + 5] = k; a[o + 10] = k; a[o + 12] = s.x; a[o + 13] = s.y; a[o + 14] = s.z; a[o + 15] = 1;
+    n++;
+  }
+  if (n || sombrasIM.count) sombrasIM.instanceMatrix.needsUpdate = true;
+  sombrasIM.count = n;
+}
 const vSilla = new THREE.Vector3();
 class Figura3D {
   constructor(modelo, escala) {
@@ -1368,11 +1391,11 @@ class Figura3D {
     const r = Math.max(0.45, modelo.alto * 0.32);
     this.m = new THREE.Mesh(golpeGeo, golpeMat); this.m.scale.set(r, modelo.alto, r); this.raiz.add(this.m);
     this.sombraBase = Math.max(1.2, this.alto * 0.8);
-    this.sombra = new THREE.Mesh(sombraGeo, sombraTex); this.sombra.scale.setScalar(this.sombraBase);
+    this.sombra = new SombraDisco(1); this.sombra.k = this.sombraBase;
     this.lean = 0; this.leanV = 0; this.cab = 0; this.cabV = 0; this.raiz.rotation.order = 'YXZ';
     this.est = 'quieto'; this.tE = 0; this.montura = null; this.mId = '';
     if (Q.sombras) { modelo.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); this.sombra.visible = false; }
-    escena.add(this.raiz, this.sombra);
+    escena.add(this.raiz);
   }
   estado(e, t, forzar) { if (e !== this.est || forzar) { this.est = e; this.tE = t; } }
   // Montura bajo el jinete (id de MONTURAS o '').
@@ -1447,7 +1470,7 @@ class Figura3D {
     if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
     ponerSombra(this.sombra, this.sombraBase, x, y, z);
   }
-  quitar() { this.montar(''); escena.remove(this.raiz, this.sombra); this.modelo.dispose(); }
+  quitar() { this.montar(''); escena.remove(this.raiz); this.sombra.quitar(); this.modelo.dispose(); }
 }
 function figuraModelo(crear, escala) {
   if (!USAR_MODELOS) return null;
@@ -9269,6 +9292,7 @@ function cuadroBucle(t) {
   }
   guardaNaN();
   vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
+  empacarSombras();
   PERF.b();
   if (composer) composer.render(dt); else render.render(escena, camara);
   PERF.c();
@@ -9359,6 +9383,9 @@ async function inicio() {
     } catch (e) {}
   }, 90000);
   PERF.ini(render, escena);
+  // La escena no se mueve: con su matriz fija three deja de forzar el recalculo de TODOS los objetos en cada cuadro
+  // (4 800 multiplicaciones de matrices); solo se recalcula lo que de verdad cambia.
+  escena.matrixAutoUpdate = false;
   requestAnimationFrame(bucle);
   // Lo que llego del servidor durante la carga, en orden (un mensaje roto no corta los demas).
   arteListo = true;
