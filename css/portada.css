@@ -164,10 +164,9 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 .util-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--borde);border-radius:18px;background:var(--panel);box-shadow:var(--sombra);}
 .util-card>picture,.util-card>img,.util-skins{display:block;width:100%;aspect-ratio:16/10;background:#0c0820;}
 .util-card>picture img,.util-card>img{display:block;width:100%;height:100%;object-fit:cover;aspect-ratio:16/10;}
-.util-card>picture img{image-rendering:pixelated;}
-.util-skins{display:flex;align-items:flex-end;justify-content:center;gap:4%;padding:8% 6% 0;background:radial-gradient(closest-side at 50% 85%,rgba(124,58,237,.4),transparent),#0c0820;}
-.util-skins img{width:27%;height:auto;image-rendering:pixelated;}
-.util-skins img:nth-child(2){width:33%;}
+.util-skins{display:flex;align-items:flex-end;justify-content:center;gap:3%;padding:5% 5% 0;overflow:hidden;background:radial-gradient(closest-side at 50% 85%,rgba(124,58,237,.4),transparent),#0c0820;}
+.util-skins img{width:28%;height:auto;filter:drop-shadow(0 8px 10px rgba(3,1,12,.6));}
+.util-skins img:nth-child(2){width:36%;}
 .util-txt{display:flex;flex-direction:column;gap:.5rem;padding:1.3rem 1.3rem 1.4rem;flex:1;}
 .util-txt h3{font-family:var(--titulo);font-weight:800;font-size:20px;line-height:1.2;letter-spacing:.02em;color:var(--txt);}
 .util-txt p{font-size:15px;line-height:1.55;color:var(--txt2);flex:1;}
@@ -200,9 +199,9 @@ footer{background:#06040f;border-top-color:rgba(196,181,253,.14);padding:3rem 1.
   .hero-arte{order:-1;min-height:0;height:170px;}
   .hero-arte::before{width:250px;}
   .hero-arte::after{width:200px;}
-  .arte-foto{display:none!important;}
+  .hero-arte picture{display:none!important;}
   .arte-duende{left:50%;bottom:0;width:auto;height:166px;transform:translateX(-50%);}
-  .arte-juego{width:112px;}
+  .arte-juego{width:auto;height:158px;top:auto;bottom:4px;transform:translateX(-50%) rotate(2deg);border-radius:14px;}
   .hero-arte .hero-coin{right:calc(50% - 118px);top:6px;width:44px;height:44px;}
   .hero-nuevo{margin:0 auto .7rem;font-size:12px;max-width:100%;}
   .hero-nuevo #nuevo-temp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}

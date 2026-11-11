@@ -10,7 +10,7 @@
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
 <style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate,html.anuncio #roadmap,html.anuncio .soc.pump,html.anuncio a[href*="duendesolana420"]{display:none!important;}</style>
 <!-- .solo-anuncio: lo contrario de .solo-cripto (texto del juego que reemplaza al del token en modo anuncio) -->
-<style>.solo-anuncio{display:none!important;}html.anuncio .solo-anuncio{display:revert!important;}html.anuncio #utilidad,html.anuncio #como-comprar,html.anuncio .franja-token{display:none!important;}</style>
+<style>.solo-anuncio{display:none!important;}html.anuncio .solo-anuncio{display:inline!important;}html.anuncio img.solo-anuncio{display:block!important;}html.anuncio #utilidad,html.anuncio #como-comprar,html.anuncio .franja-token{display:none!important;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
@@ -33,7 +33,7 @@
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
-<meta name="theme-color" content="#0b0f17">
+<meta name="theme-color" content="#090615">
 <link rel="manifest" href="/inicio/manifest.json">
 <script src="/js/pwa.js?v=372" defer></script>
 <script src="/js/portada-orden.js?v=372" defer></script>
@@ -165,8 +165,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- El poster del trailer es lo mas grande de la primera pantalla: que baje ya, sin esperar al <video> -->
-<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
+<!-- Lo más grande de la primera pantalla es la mascota (su <img> lleva fetchpriority="high"); el póster del tráiler ya va más abajo -->
 <!-- Fuente de títulos (Cinzel, la misma de ORIGINS) sin bloquear el primer pintado: display=swap usa la serif del sistema mientras carga -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet"></noscript>
@@ -844,7 +843,7 @@ section[id]{scroll-margin-top:72px;}
       </ul>
     </div>
     <div class="hero-arte">
-      <img class="arte-foto solo-cripto" src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende, junto a maíz morado, en la playa de Chancay">
+      <picture class="solo-cripto"><source type="image/webp" srcset="assets/lore/chicha-duende-playa.webp"><img class="arte-foto" src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende, junto a maíz morado, en la playa de Chancay"></picture>
       <img class="arte-duende solo-cripto" src="assets/lore/duende-chicha.webp" width="200" height="300" decoding="async" fetchpriority="high" alt="El Duende, la mascota de $DUENDE, brinda con un vaso de chicha morada">
       <img class="arte-juego solo-anuncio" src="/assets/video/promo3d-poster.jpg" width="540" height="960" loading="lazy" decoding="async" alt="Duende Quest en 3D: el mundo abierto del juego">
       <img class="hero-coin" src="assets/ui/coin.png" alt="" id="hero-coin" width="88" height="88">
@@ -887,7 +886,7 @@ section[id]{scroll-margin-top:72px;}
       <a href="/mundo/" class="btn-main juego-btn">🌌 Jugar ORIGINS</a>
     </article>
     <article class="juego classic">
-      <div class="juego-media"><picture><source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados.webp"><img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" decoding="async" alt="Captura de Duende Quest CLASSIC: jefes en grupo en pixel art"></picture><span class="juego-tag">2D · PIXEL ART</span></div>
+      <div class="juego-media"><picture><source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados.webp"><img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" loading="lazy" decoding="async" alt="Captura de Duende Quest CLASSIC: jefes en grupo en pixel art"></picture><span class="juego-tag">2D · PIXEL ART</span></div>
       <h3>$DUENDE CLASSIC</h3>
       <ul><li>El MMO 2D de siempre, en pixel art</li><li>6 mazmorras, la Torre y la banda del Titán</li><li>4 clases, 10 zonas hasta el nivel 60</li></ul>
       <a href="/mmo/" class="btn-tg juego-btn">⚔️ Jugar CLASSIC</a>
@@ -908,8 +907,8 @@ section[id]{scroll-margin-top:72px;}
   <div class="util-grid">
     <article class="util-card">
       <picture>
-        <source type="image/webp" srcset="assets/capturas/mmo-pueblo-jugadores-640.webp">
-        <img src="assets/capturas/mmo-pueblo-jugadores.png" width="1160" height="720" loading="lazy" decoding="async" alt="Jugadores reunidos en el pueblo de Duende Quest Online">
+        <source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados-640.webp">
+        <img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" loading="lazy" decoding="async" alt="Un grupo de jugadores pelea contra un jefe en Duende Quest">
       </picture>
       <div class="util-txt">
         <h3>Un juego que ya funciona</h3>
@@ -930,7 +929,7 @@ section[id]{scroll-margin-top:72px;}
       </div>
     </article>
     <article class="util-card">
-      <img src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende">
+      <picture><source type="image/webp" srcset="assets/lore/chicha-duende-playa.webp"><img src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende"></picture>
       <div class="util-txt">
         <h3>La chicha morada $DUENDE</h3>
         <p>El premio del juego es real: 2 litros de chicha morada al llegar a nivel 60, con 14 días y 30 horas de juego. Es gratis, no es un sorteo y se envía dentro del Perú.</p>
