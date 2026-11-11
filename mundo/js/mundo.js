@@ -2652,6 +2652,10 @@ async function agregarOtro(p) {
 // pj3 seguidos; se arman 3 por cuadro (los mas cercanos primero) en vez de todas de golpe.
 const colaFig = [];
 function armarColaFig() {
+  if (colaMon.length) {
+    if (colaMon.length > 2) { for (const o of colaMon) o._dc = (o.x - P.x) * (o.x - P.x) + (o.z - P.z) * (o.z - P.z); colaMon.sort((a, b) => a._dc - b._dc); }
+    for (let i = 0; i < 2 && colaMon.length; i++) { const o = colaMon.shift(); if (mons.get(o.id) === o && !o.fig && o._d) figuraMon(o); }
+  }
   if (!colaFig.length) return;
   if (colaFig.length > 3) colaFig.sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z));
   for (let i = 0; i < 3 && colaFig.length; i++) { const o = colaFig.shift(); if (otros.get(o.id) === o && !o.fig) rehacerFiguraOtro(o); }
@@ -2678,6 +2682,13 @@ async function agregarMon(d) {
     solidosExtra = solidosExtra.filter(x => x.id !== d.id).concat([-2.2, 0, 2.2].map(dz => ({ x: d.x, z: d.z + dz, r: 1.5, id: d.id })));
     return;
   }
+  // El modelo no se crea aqui: una foto con 10 monstruos nuevos eran 60-100 ms de golpe (un tiron al entrar
+  // en un campamento). Se encola y bucle() arma 2 por cuadro, los mas cercanos primero.
+  o._d = d; colaMon.push(o);
+}
+const colaMon = [];
+async function figuraMon(o) {
+  const d = o._d, def = MONSTRUOS[d.k], st = statsMonstruo(d.k, d.nv); o._d = null;
   const esc3 = d.mu ? 2.4 : d.ra ? 1.35 : d.j ? 1.15 : 1;
   // Élite raro: el mismo aura de suelo que los jefes, en su color (algo mas ancha).
   o.fig = figuraModelo(() => { const m = crearMonstruo(d.k); if (d.ra && !m.jefe && m._aura) { m._aura(d.ti || '#ffd84a'); const me = m.mallas[m.mallas.length - 1]; if (me) { me.scale.multiplyScalar(1.15); me.userData.reposo[2] = me.scale.clone(); } } return m; }, esc3) || await figuraHoja(def.hoja, st.alto * esc3);
