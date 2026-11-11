@@ -75,6 +75,7 @@ const hz = n => 440 * Math.pow(2, (n - 69) / 12);
 // rasgueos, quena sin capa de ruido y menos chajchas en combate. M.ligera(v) lo cambia.
 export function crearMusica(opc = {}) {
   let ligera = !!opc.ligera;
+  let volJ = opc.vol == null ? 1 : Math.max(0, Math.min(1, +opc.vol || 0)), volG = null;   // volumen que elige el jugador (menu → Sonido)
   const curvas = new Map();   // vibrato por duracion (decimas de s): no se crea un Float32Array por nota
   const bucles = {};          // ruidos en bucle (lluvia, viento): se paran si llevan rato en silencio
   let ctx = null, maestro = null, salida = null, eco = null, lluviaG = null, vivo = false, activo = true;
@@ -98,7 +99,8 @@ export function crearMusica(opc = {}) {
     // Compresor a la salida: muchas capas juntas (o un trueno) nunca saturan el altavoz.
     salida = ctx.createDynamicsCompressor();
     salida.threshold.value = -16; salida.knee.value = 10; salida.ratio.value = 4; salida.attack.value = 0.004; salida.release.value = 0.3;
-    salida.connect(ctx.destination);
+    volG = ctx.createGain(); volG.gain.value = volJ;
+    salida.connect(volG); volG.connect(ctx.destination);
     maestro = ctx.createGain(); maestro.gain.value = 0;
     peligroF = ctx.createBiquadFilter(); peligroF.type = 'lowpass'; peligroF.frequency.value = 20000 - peligroK * 19000; peligroF.Q.value = 0.7;
     maestro.connect(peligroF); peligroF.connect(salida);
@@ -518,6 +520,7 @@ export function crearMusica(opc = {}) {
     remate, descubrir, agachar, peligro,
     // Modo ligero (moviles flojos / resolucion dinamica): menos nodos de audio por segundo.
     ligera(v) { ligera = !!v; },
+    volumenJugador(v) { volJ = Math.max(0, Math.min(1, +v || 0)); if (volG && ctx) { try { volG.gain.setTargetAtTime(volJ, ctx.currentTime, 0.05); } catch (e) { volG.gain.value = volJ; } } },
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,

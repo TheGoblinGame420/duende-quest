@@ -933,6 +933,19 @@ body.movil #joy .pista-joy.grande{transform:scale(1.15);}
  body.movil #barra{bottom:calc(6px + env(safe-area-inset-bottom));width:min(352px,calc(60vw - 80px - env(safe-area-inset-right)));justify-content:flex-end;}   /* del joystick a ATACAR, sin meterse bajo ATACAR */
  body.movil.mano-der #barra{width:min(352px,calc(60vw - 80px - env(safe-area-inset-left)));justify-content:flex-start;}
 }
+/* ── Menu del juego (mundo/js/menu.js) ── El ⚙ (#b-menu) va siempre a la vista; el «?» de antes vive dentro del menu.
+   Celular acostado y pantallas anchas: cuarto boton de la fila. Celular en vertical (menos de 420 px no caben 4 entre
+   el marco y el minimapa): el ⚙ va solo, bajo el minimapa (o bajo la fila cuando esta ya va bajo el minimapa). */
+#b-ayuda{display:none!important;}
+body:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(4,40px);}
+@media (max-width:419px) and (orientation:portrait){
+ body:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(3,40px);}
+ body:is(.movil,.compacto) #botones:not(.abierto) #b-menu{position:absolute;top:calc(clamp(96px,27vw,104px) + 6px);right:calc(-1px - clamp(96px,27vw,104px));}
+}
+@media (max-width:359px){body:is(.movil,.compacto) #botones:not(.abierto) #b-menu{top:calc(100% + 2px);right:0;}}
+@media (orientation:landscape) and (max-height:500px){
+ body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:max(120px,min(300px,calc(100vw - 396px - env(safe-area-inset-left) - env(safe-area-inset-right))));}   /* la fila tiene un boton mas (40 px) */
+}
 </style>
 <style id="css-avisos-movil">
 /* Movil: avisos en franja legible bajo el HUD (--av-top lo mide mundo.js colocarAvisos), por encima de etiquetas y botones */
@@ -1111,6 +1124,7 @@ html body:not(.movil):not(.compacto) #chat{width:min(380px,42vw,max(220px,calc(5
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-compartir" title="Invitar a un amigo: cuando llegue a Nv 10, los dos ganan oro" aria-label="Invitar a un amigo">📣<small>+oro</small></button>
   <button class="bt extra" id="b-chicha" title="Premio real de chicha morada" aria-label="Premio de chicha morada" data-l="Chicha">🥤</button>
+  <button class="bt" id="b-menu" type="button" title="Menú: gráficos, sonido y salir (Esc)" aria-label="Menú del juego" data-l="Menú">⚙</button>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
 <div class="caja" id="misiones"></div>
