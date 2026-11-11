@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 369;
+export const VERSION = 372;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 138, fecha: '11 nov 2026', solo3d: true, items: [
+    '⚙ Menú del juego nuevo (Esc o el botón ⚙): gráficos de Mínima a Ultra que se aplican al instante, sonido, controles y Salir.',
+    '⚔ Enemigos con carácter: embestidores, barredores, tiradores y curanderos avisan su ataque en el suelo. Sal de la zona roja o corta el cántico.',
+    '✨ Remates: golpea a un enemigo aturdido, enraizado o silenciado y pegas más fuerte; con un compañero, ¡SINERGIA!',
+    '🧝 Tu duende y las 17 skins se rehicieron en 3D a partir del arte original: poncho andino, sombreros, capas y accesorios.',
+    '🎯 Iconos nuevos en todo el juego, y los demás jugadores y monstruos se mueven sin tirones.',
+  ] },
   { n: 137, fecha: '4 nov 2026', items: [
     '🥤 Premio de chicha más seguro: al reclamar ves una clave de entrega que solo aparece en tu cuenta. Dásela únicamente al +51 916 778 731.',
     '📋 La cola del premio ahora es clara: ves tu puesto y el mes estimado de tu envío.',

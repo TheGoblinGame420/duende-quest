@@ -38,7 +38,7 @@ html,body{width:1600px;height:900px;overflow:hidden;background:#5d6b7c;color:#f4
 <div id="error"></div>
 <script type="module">
 import * as THREE from 'three';
-import { SKINS, CLASES, ARMAS, LOOK_BASE } from '/mmo/js/data.js?v=369';
+import { SKINS, CLASES, ARMAS, LOOK_BASE } from '/mmo/js/data.js?v=372';
 
 const Q = new URLSearchParams(location.search);
 const skin = SKINS[Q.get('skin')] ? Q.get('skin') : 'comun';
@@ -93,7 +93,7 @@ if (!Q.get('ref') && !REF_MEJOR[skin] && SKINS[skin].anim) ref.style.filter = `h
 
 let MOD = null, m = null, origen = 'camino de siempre';
 try {
-  MOD = await import('./js/modelos.js?v=369');
+  MOD = await import('./js/modelos.js?v=372');
   if (MOD.registrarSkin3D) {
     if (MOD.depurarSkins3D) MOD.depurarSkins3D(true);
     if (Q.get('paquete') === '1') origen = 'paquete skins3d.js';

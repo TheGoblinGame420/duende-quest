@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=369';
-import { LORE_MONSTRUOS } from './lore.js?v=369';
+} from '/mmo/js/data.js?v=372';
+import { LORE_MONSTRUOS } from './lore.js?v=372';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
