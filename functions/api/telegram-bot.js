@@ -4,6 +4,7 @@
 
 import { supabaseQuery, isFirstPurchase } from './lib.js';
 import { textoPagoRecibido, ENTREGA } from '../../mmo/js/data.js';
+import { grupoWebhook } from './grupo.js';
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
@@ -1101,6 +1102,9 @@ async function onRequestPost(context) {
       }
       return new Response('OK');
     }
+
+    // Grupo oficial (functions/api/grupo.js): /grupo, bienvenida y antiespam.
+    if (await grupoWebhook(body, context)) return new Response('OK');
 
     // Anti-abuso: quien manda demasiadas actualizaciones seguidas se ignora un
     // rato (el admin nunca; pre-checkout y pagos ya respondieron arriba).
