@@ -639,6 +639,7 @@ async function pruebas() {
   await pruebasAsedio3d();
   await pruebasJusticia3d();
   await pruebasEncargos3d();
+  await (await import('./arnes_rituales.mjs')).pruebasRituales({ mundo, chequear, entrar3d, entrar, entrarTg, dejar, calma, avanzar, ponerNivel });   // rituales.js: amanecer, noche y recordatorios
 }
 
 // ── ALAS (vuelo de AION) ──

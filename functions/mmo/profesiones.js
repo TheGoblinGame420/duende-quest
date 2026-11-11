@@ -157,6 +157,7 @@ export const Profesiones = {
     this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n, ...(perfecto ? { perfecto: 1 } : {}) });
     this.enviar(s, { t: 'toast', m: txt, ok: true });
     this.progresoTarea && this.progresoTarea(s, 'pescar');
+    this.ritualPesca && this.ritualPesca(s);   // rituales.js: intencion de pesca
     this.puntoGesta && this.puntoGesta(s, 'pesca');
     this.revisarLogros(s);
     this.actualizarYo(s);

@@ -53,6 +53,7 @@ import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
 import { Torre } from './torre.js';
 import { Expediciones } from './expediciones.js';
+import { Rituales } from './rituales.js';
 import { Dios } from './dios.js';
 import { Viajes } from './viajes.js';
 import { Mundo3D } from './mundo3d.js';
@@ -512,6 +513,7 @@ export class MmoWorld {
       case 'mazmorra': return this.entrarMazmorra(s, m);
       case 'torre': return this.entrarTorre(s, m);
       case 'exped': return this.expedicion(s, m);
+      case 'rit': return this.ritual(s, m);   // rituales.js: amanecer y ritual de la noche
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
       case 'hermResp': return this.respuestaHerm(s, m);
@@ -2796,6 +2798,7 @@ export class MmoWorld {
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }
     if (primero && c.nivel === 1) xp = Math.max(xp, xpParaSubir(1) - c.xp);
+    if (this.ritualCaza) xp = this.ritualCaza(s, xp);   // rituales.js: intencion de caza (+3 % con tope diario)
     const subio = this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
@@ -2952,6 +2955,7 @@ export class MmoWorld {
       const pr = premioDiaria(c.nivel);
       d.ok = true;
       c.oro += pr.oro;
+      if (this.ritualOro) this.ritualOro(s, pr.oro);   // rituales.js: intencion de misiones
       c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pr.pocion);
       this.sumarXp(s, pr.xp);
       this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones. Mañana hay otra.`, ok: true });
@@ -2965,6 +2969,7 @@ export class MmoWorld {
     if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones del Guardia Tito.' });
     if (c.mis.p < q.n) return this.enviar(s, { t: 'toast', m: `Todavía te faltan ${q.n - c.mis.p} para "${q.nombre}".` });
     c.oro += q.oro;
+    if (this.ritualOro) this.ritualOro(s, q.oro);   // rituales.js: intencion de misiones
     for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
     c.mis = { i: c.mis.i + 1, p: 0 };
     if (c.mis.i === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'm1');
@@ -4096,6 +4101,7 @@ Object.assign(MmoWorld.prototype, Pase);
 Object.assign(MmoWorld.prototype, Torre);
 // Expediciones de la mascota: functions/mmo/expediciones.js
 Object.assign(MmoWorld.prototype, Expediciones);
+Object.assign(MmoWorld.prototype, Rituales);
 // Modo Dios del dueño (moderacion) y nombres unicos: functions/mmo/dios.js
 Object.assign(MmoWorld.prototype, Dios);
 // Piedras de viaje entre zonas visitadas: functions/mmo/viajes.js

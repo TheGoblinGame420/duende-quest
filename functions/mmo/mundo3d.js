@@ -183,6 +183,7 @@ export const Mundo3D = {
       // Lo social y lo de cuenta funciona igual que en el 2D (mismo personaje).
       case 'pase': return this.cobrarPase(s, m);
       case 'exped': return this.expedicion(s, m);   // expediciones.js: la mascota sale aunque no juegues
+      case 'rit': return this.ritual(s, m);   // rituales.js: amanecer y ritual de la noche
       case 'cambiarTarea': return this.cambiarTarea(s, m);
       case 'amigos': return this.infoAmigos(s);
       case 'herm': return this.verHerm(s);

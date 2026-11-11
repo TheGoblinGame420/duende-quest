@@ -910,6 +910,8 @@ export const Retencion = {
         if (r.enviados || r.bloqueados) console.log('[MMO avisos ' + h + 'h]', { enviados: r.enviados, bloqueados: r.bloqueados, fallidos: r.fallidos, quedan: r.quedan });
       }
     } catch (e) { console.error('[MMO alarma]', e); }
+    // Recordatorios de la mañana y de la noche que el jugador eligio (rituales.js).
+    try { if (this.avisosRitual) await this.avisosRitual(); } catch (e) { console.error('[MMO avisos ritual]', e); }
     // Lo pendiente del embudo de carga (por si nadie mas lo volco).
     try { await this.evVolcar(); } catch (e) { console.error('[MMO ev volcar]', e); }
     // Copia de seguridad diaria (copias.js).
