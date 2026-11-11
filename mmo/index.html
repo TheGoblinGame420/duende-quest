@@ -488,6 +488,14 @@ body.tactil #lanzar{bottom:16px;}
 .oro-top{text-align:center;font-size:9px;color:var(--oro);margin-bottom:12px;}
 .fila{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;line-height:1.4;padding:7px 4px;border-bottom:1px solid var(--borde);font-variant-numeric:tabular-nums;}
 .fila.yo{color:var(--verde);font-weight:600;}
+/* Ranking de niveles completo: buscador y marca de invitado. */
+.rk-busca{display:flex;align-items:center;gap:6px;margin:2px 0;padding:0 4px 0 10px;border:1px solid var(--borde);border-radius:8px;background:rgba(0,0,0,.3);}
+.rk-busca input{flex:1;min-width:0;height:44px;border:0;background:none;color:var(--txt);font:500 16px var(--sans);outline:0;-webkit-appearance:none;appearance:none;}
+.rk-busca input::-webkit-search-cancel-button{display:none;}
+.rk-busca .bt{position:static;width:44px;height:44px;flex:none;border:0;background:none;box-shadow:none;color:var(--txt2);font-size:14px;}
+.rk-inv{margin-left:4px;font-size:10.5px;font-weight:500;color:var(--txt2);opacity:.8;white-space:nowrap;}
+#rk-l .fila>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#rk-l .fila>span:last-child{flex:none;}
 input.nombre{width:100%;font-family:var(--sans);font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--borde);background:var(--bg);color:var(--txt);text-align:center;margin:14px 0 10px;outline:none;user-select:text;-webkit-user-select:text;}
 input.nombre::placeholder{color:var(--txt3);}
 input.nombre:focus{border-color:var(--pri-txt);}

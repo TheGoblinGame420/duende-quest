@@ -1024,6 +1024,7 @@ function recibir(m) {
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm, m); break;
+    case 'rankNv': recibirRankNv(m); break;
     case 'heredar': preguntarHeredar(m); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de Nv 1 (la sesion de mas de 24 h caduca): se pide reabrir.
@@ -5917,7 +5918,9 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
   if (m.mio) h += `<div class="fila yo" style="display:block;margin-top:4px;line-height:1.35;border:1px solid rgba(250,204,21,.55);border-radius:6px;padding:6px 8px">${esc(textoMioSem(m.mio))}</div><p style="font-size:11px;color:var(--txt2);margin-top:3px">Desde ${(m.mio.min || 2000).toLocaleString('es', { useGrouping: 'always' })} XP todos cobran su liga al entrar el lunes: Oro (top 10 %), Plata (30 %) o Bronce.</p>`;
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p>';
-  h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
+  // Todos los personajes (invitados incluidos) por paginas de 50, con buscador y tu puesto: lo llena pintarRankNv.
+  rkNv.top = r || []; rkNv.rtot = m.rtot | 0; rkNv.rpos = m.rpos | 0;
+  h += `<div class="rk-busca"><input id="rk-q" type="search" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="Buscar por nombre" aria-label="Buscar un duende por nombre" value="${esc(rkNv.q)}"><button class="bt" id="rk-x" title="Borrar la búsqueda" aria-label="Borrar la búsqueda">✕</button></div><p id="rk-cuenta" style="font-size:11px;color:var(--txt2);margin:2px 0 4px"></p><div id="rk-l"></div><button class="btn sec" id="rk-mas" style="display:none;width:100%;margin-top:6px;min-height:44px">Ver más</button><div class="fila yo" id="rk-mio" style="display:none;margin-top:4px;line-height:1.35;border:1px solid rgba(250,204,21,.55);border-radius:6px;padding:6px 8px"></div>`;
   // Desafios de la semana (con sus afijos) y de siempre: el mejor +k de cada uno.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de esta semana</p>';
   if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 1.º ${premioDesSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título · 2.º ${premioDesSem(1).toLocaleString('es', { useGrouping: 'always' })} · 3.º ${premioDesSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
@@ -5935,6 +5938,63 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
   h += (duel && duel.length) ? duel.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.e} · ${x.g} victorias</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha ganado aún un duelo que cuente. Reta a alguien desde su marco (⚔️): con cuenta y desde Nv 10.</p>';
   $('rank-lista').innerHTML = h;
+  prepararRankNv();
+}
+// Ranking de niveles completo: el servidor manda cada pagina con { t:'rankNv' } (50 filas, busqueda y tu puesto).
+// Mientras no llega la primera (o con un servidor viejo) se ve el top 20 del mensaje «ranking».
+const rkNv = { q: '', filas: [], tot: 0, n: 0, mas: false, mio: null, esp: false, listo: false, tm: 0, td: 0, top: [], rtot: 0, rpos: 0 };
+const rkClave = t => { const k = String(t || '').slice(0, 16).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[\s_]+/g, ''); return k.length >= 2 ? k : ''; };
+function pedirRankNv(d) {
+  rkNv.esp = true;
+  const o = { t: 'rankNv', d: d | 0 };
+  if (rkClave(rkNv.q)) o.q = rkNv.q;
+  mandar(o);
+  clearTimeout(rkNv.tm);
+  // El servidor atiende un pedido cada 200 ms: si este se perdio, se repite una vez.
+  rkNv.tm = setTimeout(() => { if (rkNv.esp && $('m-rank').classList.contains('on')) mandar(o); rkNv.esp = false; pintarRankNv(); }, 1500);
+}
+function recibirRankNv(m) {
+  if (!m || !Array.isArray(m.r) || (m.q || '') !== rkClave(rkNv.q)) return;
+  if (!m.d) rkNv.filas = m.r.slice();
+  else if (m.d === rkNv.filas.length) rkNv.filas = rkNv.filas.concat(m.r);
+  else return;
+  rkNv.tot = m.tot | 0; rkNv.n = m.n | 0; rkNv.mas = !!m.mas; rkNv.mio = m.mio || null;
+  rkNv.esp = false; rkNv.listo = true; clearTimeout(rkNv.tm);
+  pintarRankNv();
+}
+function pintarRankNv() {
+  const l = $('rk-l');
+  if (!l) return;
+  const f = n => (n || 0).toLocaleString('es', { useGrouping: 'always' });
+  const busca = !!rkClave(rkNv.q);
+  const L = rkNv.listo ? rkNv.filas : rkNv.top.map((x, i) => ({ ...x, p: i + 1 }));
+  l.innerHTML = L.length ? L.map(x => `<div class="fila ${x.yo ? 'yo' : ''}"><span>#${x.p} ${esc(x.n)}${x.inv ? ' <small class="rk-inv" data-emoji title="Juega como invitado">👤 Invitado</small>' : ''}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : `<p class="centro">${busca && rkNv.listo ? 'Nadie se llama así. Prueba con otra parte del nombre.' : 'Todavía no hay nadie.'}</p>`;
+  const tot = rkNv.listo ? rkNv.tot : rkNv.rtot;
+  $('rk-cuenta').textContent = !tot ? '' : busca && rkNv.listo ? `${f(rkNv.n)} ${rkNv.n === 1 ? 'resultado' : 'resultados'} entre ${f(tot)} duendes` : `${f(tot)} duendes en total · mostrando ${f(L.length)}`;
+  const b = $('rk-mas');
+  b.style.display = rkNv.listo && rkNv.mas ? '' : 'none';
+  b.disabled = rkNv.esp; b.textContent = rkNv.esp ? 'Cargando…' : 'Ver más';
+  const mio = rkNv.listo ? rkNv.mio : rkNv.rpos ? { p: rkNv.rpos, lv: yo && yo.nivel } : null;
+  const mi = $('rk-mio');
+  mi.style.display = mio ? 'block' : 'none';
+  if (mio) mi.textContent = mio.p ? `Tu puesto: #${f(mio.p)} de ${f(tot)}${mio.lv ? ' · Nv ' + mio.lv : ''}${mio.inv ? ' · juegas como invitado' : ''}` : 'Tu puesto: aún no apareces. Sube un nivel y entras.';
+}
+function prepararRankNv() {
+  const q = $('rk-q'), x = $('rk-x');
+  if (!q) return;
+  const buscar = ya => {
+    x.style.visibility = q.value ? 'visible' : 'hidden';
+    clearTimeout(rkNv.td);
+    rkNv.td = setTimeout(() => { if (rkClave(q.value) === rkClave(rkNv.q) && rkNv.listo) { rkNv.q = q.value; return; } rkNv.q = q.value; pedirRankNv(0); }, ya ? 0 : 450);
+  };
+  x.style.visibility = q.value ? 'visible' : 'hidden';
+  q.oninput = () => buscar(false);
+  q.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); buscar(true); q.blur(); } };
+  x.onclick = () => { q.value = ''; buscar(true); };
+  $('rk-mas').onclick = () => { if (!rkNv.esp) { pedirRankNv(rkNv.filas.length); pintarRankNv(); } };
+  pintarRankNv();
+  // Cada vez que se abre el ranking se pide la primera pagina (con la busqueda que hubiera).
+  pedirRankNv(0);
 }
 
 // Resumen de la muerte: quien te mato, los ultimos golpes y un consejo.
