@@ -2893,33 +2893,105 @@ function arana(c) {
 }
 
 // ── CANGREJO ──
+// Cangrejo de cristal: caparazon bajo con una roca de prismas encima (los mayores
+// brillan), ojos en pedunculo, una pinza mas grande que la otra con el dedo de abajo
+// articulado y seis patas de dos tramos acabadas en punta.
 function cangrejo(c) {
-  const r = nuevoRig('cuadrupedo'), R = r.raiz, carne = principal(c, '#8a0a8a'), m = mc(c, carne);
+  const r = nuevoRig('cuadrupedo'), R = r.raiz, lig = !!c.ligero, carne = principal(c, '#8a0a8a');
+  const k1 = hx(carne), k2 = hx(osc(carne, 0.62)), k3 = hx(mez(carne, '#ffffff', 0.32));
+  const cristal = c.color ? hx(mez(c.color, '#6090d8', 0.55)) : '#6090d8', roca = c.color ? hx(mez(c.color, '#2a3a78', 0.7)) : '#3a5ab8';
+  const brillo = mat(c.color ? mez(c.color, '#ffffff', 0.45) : '#9cc8ff', { e: 0.75 });
   r.paso = 12; r.ampPatas = 0.5; r.caer = 'panza'; r.hundir = 0.5;
   const cu = r.cuerpo = piv(r, G(R, [0, 0.38, 0]));
-  M(cu, 'esfera', m, [0, 0, 0], [0.42, 0.2, 0.34]);
-  const concha = [['semi', '#3a5ab8', [0, 0.06, -0.06], [0.4, 0.34, 0.34]]];
-  for (const [x, z, h] of [[0, -0.05, 0.3], [0.2, 0.0, 0.22], [-0.2, 0.0, 0.22], [0.1, -0.25, 0.22], [-0.1, -0.25, 0.22], [0, 0.18, 0.18]]) {
-    concha.push(['cono4', '#6090d8', [x, 0.2 + (0.3 - h) * 0.3, z], [0.07, h + 0.12, 0.07], [-z * 0.8, 0, -x * 1.5]]);
+  const B = [
+    ['esfera', k1, [0, 0, 0], [0.44, 0.2, 0.36]],
+    ['esferaB', k3, [0, -0.07, 0.08], [0.36, 0.14, 0.3]],                // vientre claro
+    ['cuna', k2, [0, 0.02, 0.24], [0.56, 0.15, 0.16]],                   // visera del caparazon
+    ['semi', roca, [0, 0.06, -0.06], [0.4, 0.28, 0.34]],                 // roca
+  ];
+  const prismas = [[0, -0.06, 0.5, 0.11], [0.2, 0.02, 0.36, 0.09], [-0.21, -0.02, 0.4, 0.09], [0.1, -0.26, 0.36, 0.08], [-0.12, -0.27, 0.3, 0.08], [0.02, 0.17, 0.26, 0.07], [0.31, -0.16, 0.22, 0.06], [-0.31, -0.14, 0.24, 0.06]];
+  prismas.forEach(([x, z, h, g], i) => {
+    const pos = [x, 0.2 + (0.3 - h) * 0.2, z], esc = [g, h, g], rot = [z * 1.1, x * 3, -x * 1.6];
+    if (i < 3) M(cu, 'cono4', brillo, pos, esc, rot);          // los tres mayores brillan (van fundidos: no son dibujos de mas)
+    else if (!lig || i < 6) B.push(['cono4', cristal, pos, esc, rot]);
+  });
+  MF(cu, B);
+  const cb = r.cabeza = piv(r, G(cu, [0, 0.1, 0.3]));
+  const C = [['caja', '#2a0020', [0, -0.07, 0.07], [0.16, 0.06, 0.05]]];
+  for (const s of [-1, 1]) {
+    C.push(['caja', k1, [s * 0.11, 0.07, 0], [0.04, 0.17, 0.04]], ['caja', '#1b1430', [s * 0.11, 0.17, 0.05], [0.03, 0.05, 0.02]]);
+    C.push(['cono4', k2, [s * 0.05, -0.04, 0.1], [0.025, 0.1, 0.025], [PI, 0, s * 0.3]]);     // palpos
   }
-  MF(cu, concha);
-  const cb = r.cabeza = piv(r, G(cu, [0, 0.1, 0.26]));
-  MF(cb, [['cil', hx(carne), [-0.1, 0.06, 0], [0.02, 0.14, 0.02]], ['cil', hx(carne), [0.1, 0.06, 0], [0.02, 0.14, 0.02]], ['esferaB', '#ffe14a', [-0.1, 0.15, 0], 0.045], ['esferaB', '#ffe14a', [0.1, 0.15, 0], 0.045], ['esferaB', '#2a0020', [0, -0.07, 0.06], [0.1, 0.04, 0.03]]]);
-  const pinza = hx(c.color ? c.color : '#a80078');
+  MF(cb, C);
+  const ojo = mat('#ffe14a', { e: 1 });
+  for (const s of [-1, 1]) M(cb, 'icos', ojo, [s * 0.11, 0.17, 0], 0.052);
   for (const s of [1, -1]) {
-    const brazo = piv(r, G(cu, [s * 0.36, 0, 0.18], [0, s * 0.5, 0]));
-    MF(brazo, [['cilT', pinza, [0, 0, 0], [0.05, 0.25, 0.05], [-PI / 2, 0, 0]], ['caja', pinza, [0, 0.03, 0.36], [0.15, 0.11, 0.21]]]);
-    const inf = piv(r, G(brazo, [0, -0.02, 0.28]));
-    M(inf, 'caja', mat(pinza), [0, -0.04, 0.09], [0.1, 0.05, 0.18]);
+    const brazo = piv(r, G(cu, [s * 0.38, 0, 0.18], [0, s * 0.5, 0]));
+    const Q = [
+      ['miembro', k1, [0, 0, 0], [0.07, 0.26, 0.07], [-PI / 2, 0, 0]],
+      ['esferaB', k1, [0, 0.03, 0.36], [0.13, 0.12, 0.17]],                 // mano de la pinza
+      ['cuna', k1, [0, 0.07, 0.44], [0.11, 0.1, 0.23]],                     // dedo fijo
+    ];
+    if (!lig) Q.push(['cono4', k3, [0, 0.035, 0.52], [0.022, 0.05, 0.022], [PI, 0, 0]], ['cono4', k3, [0, 0.035, 0.6], [0.02, 0.045, 0.02], [PI, 0, 0]]);
+    MF(brazo, Q);
+    const inf = piv(r, G(brazo, [0, -0.02, 0.4], [0.28, 0, 0]));
+    M(inf, 'cuna', k2, [0, -0.025, 0], [0.09, 0.06, 0.24]);
     r.pinzas.push(inf);
+    if (s < 0) brazo.scale.setScalar(1.12);                                 // la pinza derecha, de machacar
     for (let i = 0; i < 3; i++) {
       const a = -0.5 + i * 0.5, giro = s > 0 ? a : PI - a;
       const p = piv(r, G(R, [s * 0.3, 0.36, 0.08 - i * 0.14], [0, giro, 0]));
-      M(p, 'cilT', pinza, [0, 0, 0], [0.03, 0.53, 0.03], [0, 0, 0.85]);
+      MF(p, [['miembro', k1, [0, 0, 0], [0.045, 0.28, 0.045], [0, 0, 2.0]], ['cono', k2, [0.255, 0.117, 0], [0.04, 0.5, 0.04], [0, 0, PI + 0.25]]]);
       r.patas.push([p, (i % 2 ? PI : 0) + (s > 0 ? 0 : PI), 'y', i === 0]);
     }
   }
   r.lomo = cu; r.H = 0.6; r.topeCabeza = 0.32;
+  return r;
+}
+
+// Pez Ogro (y el Leviatan): pez abisal panzudo de mandibula saliente llena de dientes,
+// ceño, branquias, cresta de puas, un farolillo que cuelga delante y aletas macizas.
+function pezOgro(c) {
+  const r = nuevoRig('pez'), R = r.raiz, lig = !!c.ligero, piel = principal(c, '#183048');
+  const p1 = hx(piel), p2 = hx(osc(piel, 0.62)), panza = c.color ? hx(mez(c.color, '#ffffff', 0.5)) : '#1c5a70', aleta = c.color ? hx(osc(c.color, 0.5)) : '#2a9a48', diente = '#f4efd8';
+  const sx = 0.42, sy = 0.42, sz = 0.5;
+  r.caer = 'panza'; r.hundir = 0.3; r.colaAmp = 0; r.vuela = true;
+  const cu = r.cuerpo = piv(r, G(R, [0, sy + 0.05, 0]));
+  const B = [
+    ['esfera', p1, [0, 0, 0.02], [sx, sy, sz]],
+    ['esferaB', panza, [0, -sy * 0.32, 0.1], [sx * 0.8, sy * 0.62, sz * 0.72]],
+    ['tronco', p1, [0, 0.02, -sz * 0.55], [sx * 0.52, sz * 0.6, sy * 0.6], [-PI / 2, 0, 0]],          // pedunculo de la cola
+    ['caja', '#1a0810', [0, -sy * 0.2, sz * 0.74], [sx * 1.0, sy * 0.16, sz * 0.3]],                   // boca por dentro
+  ];
+  for (const s of [-1, 1]) {
+    B.push(['caja', p2, [s * sx * 0.5, sy * 0.44, sz * 0.66], [sx * 0.55, 0.07, 0.16], [0.3, 0, s * 0.38]]);     // ceño
+    B.push(['caja', '#0c1420', [s * sx * 0.58, sy * 0.28, sz * 0.76], [0.13, 0.11, 0.08], [0, s * 0.6, 0]]);     // cuenca
+    if (!lig) B.push(['caja', '#0c1420', [s * sx * 0.95, 0, sz * 0.22], [0.03, sy * 0.5, 0.04]], ['caja', '#0c1420', [s * sx * 0.97, 0, sz * 0.05], [0.03, sy * 0.42, 0.04]], ['icos', '#d87830', [s * sx * 0.78, sy * 0.3, -sz * 0.3], 0.05], ['icos', '#d87830', [s * sx * 0.7, -sy * 0.1, -sz * 0.55], 0.04]);
+  }
+  for (const [x, a] of [[-0.24, 0.25], [-0.09, 0.08], [0.09, -0.08], [0.24, -0.25]]) B.push(['cono4', diente, [x, -sy * 0.14, sz * 0.9 - Math.abs(x) * 0.25], [0.035, 0.13, 0.03], [PI, 0, a]]);   // dientes de arriba
+  [[0.26, 0.3], [0, 0.4], [-0.26, 0.3], [-0.48, 0.2]].forEach(([z, h]) => B.push(['cono4', aleta, [0, sy * 0.88, z], [0.06, h, 0.11], [-0.45, 0, 0]]));   // cresta
+  MF(cu, B);
+  const ojo = mat('#ff3030', { e: 1 });
+  for (const s of [-1, 1]) M(cu, 'icos', ojo, [s * sx * 0.6, sy * 0.28, sz * 0.82], 0.06);
+  // Farolillo de pez abisal: cuelga delante de la boca, se mece y late.
+  const far = piv(r, G(cu, [0, sy * 0.86, sz * 0.5], [0.5, 0, 0]));
+  M(far, 'caja', p2, [0, 0.17, 0], [0.03, 0.34, 0.03]);
+  M(far, 'caja', p2, [0, 0.36, 0.07], [0.025, 0.03, 0.18], [0.5, 0, 0]);
+  M(far, 'icos', mat(c.color ? mez(c.color, '#ffffff', 0.5) : '#ffe27a', { e: 1 }), [0, 0.32, 0.17], 0.06);
+  fuera(far); (r.cuelgan || (r.cuelgan = [])).push([far, 'x', 0.1, 0.18, 1.7]);
+  const cola = r.cola = piv(r, G(cu, [0, 0.02, -sz * 1.1]));
+  M(cola, 'colaPez', mat(aleta, { ds: true }), [0, 0, 0], [1, sy * 1.05, sz * 0.62]);
+  r.aletas = [];
+  for (const s of [1, -1]) {
+    const p = piv(r, G(cu, [sx * 0.9 * s, -sy * 0.2, sz * 0.15]));
+    M(p, 'cuna', aleta, [0, 0, 0], [0.3, 0.04, 0.3], [0, s * (PI / 2 + 0.7), 0]);
+    r.aletas.push(p);
+  }
+  const mj = r.mandibula = piv(r, G(cu, [0, -sy * 0.3, sz * 0.62]));
+  const J = [['caja', p2, [0, -0.035, sz * 0.14], [sx * 1.15, sy * 0.22, sz * 0.44]]];
+  for (const [x, h] of [[-0.2, 0.15], [-0.1, 0.1], [0, 0.09], [0.1, 0.1], [0.2, 0.15]]) J.push(['cono4', diente, [x, sy * 0.05, sz * 0.32 - Math.abs(x) * 0.2], [0.035, h, 0.03]]);
+  MF(mj, J);
+  r.cabeza = cu; r.H = 0.6; r.topeCabeza = sy;
   return r;
 }
 
@@ -2983,34 +3055,67 @@ function pulpo(c) {
 }
 
 // ── DRAGON ──
+// Ala de dragon maciza (membrana con grosor) para cada lado: asi se funde con los huesos
+// del ala en una sola malla. D = hacia +x, I = hacia -x.
+const PUNTOS_ALA = [[0, -0.1], [0.55, -0.12], [1, 0.05], [0.85, 0.35], [0.62, 0.22], [0.45, 0.55], [0.26, 0.3], [0, 0.45]];
+Object.assign(FABRICA, {
+  alaD: () => new THREE.ExtrudeGeometry(forma(PUNTOS_ALA), { depth: 0.02, bevelEnabled: false }).rotateX(-PI / 2),
+  alaI: () => new THREE.ExtrudeGeometry(forma(PUNTOS_ALA.map(([x, y]) => [-x, y]).reverse()), { depth: 0.02, bevelEnabled: false }).rotateX(-PI / 2),
+});
+// Dragon ancestral: pecho ancho con placas en el vientre, cuello con cresta, cabeza de
+// hocico en cuña con cuernos echados atras y dientes, patas de bestia con garras, alas de
+// membrana con sus dedos y cola en dos tramos con punta de lanza.
 function dragon(c) {
-  const r = nuevoRig('cuadrupedo'), R = r.raiz, piel = principal(c, '#1c1c70'), m = mc(c, piel);
-  const cuerno = '#c8c8e8';
-  r.paso = 6; r.vuela = !!c.vuela; r.aleteo = 4.5; r.amplAla = 0.55; r.caer = 'lado'; r.hundir = 0.45; r.tAtk = 0.5; r.colaAmp = 0.25;
+  const r = nuevoRig('cuadrupedo'), R = r.raiz, lig = !!c.ligero, piel = principal(c, '#1c1c70');
+  const p1 = hx(piel), p2 = hx(osc(piel, 0.62)), vientre = c.color ? hx(mez(c.color, '#ffffff', 0.4)) : '#2a7aa8', cuerno = '#c8c8e8', memb = c.color ? hx(osc(c.color, 0.55)) : '#4a1a40';
+  r.paso = 6; r.vuela = !!c.vuela; r.aleteo = 4.5; r.amplAla = 0.55; r.caer = 'lado'; r.hundir = 0.45; r.tAtk = 0.5; r.colaAmp = 0.25; r.zarpa = !c.montura;
   const cu = r.cuerpo = piv(r, G(R, [0, 1.1, 0]));
-  M(cu, 'esfera', m, [0, 0, 0], [0.55, 0.5, 1.0]);
-  M(cu, 'esfera', c.color ? mez(c.color, '#ffffff', 0.4) : '#186090', [0, -0.15, 0.1], [0.45, 0.4, 0.8]);
-  puas(cu, cuerno, c.montura ? [[0, 0.36, -0.7]] : [[0, 0.41, 0.5], [0, 0.48, 0.1], [0, 0.46, -0.3], [0, 0.34, -0.7]], 1.2);
-  const cuello = piv(r, G(cu, [0, 0.3, 0.75], [0.55, 0, 0]));
-  M(cuello, 'tronco', m, [0, 0, 0], [0.24, 0.85, 0.24]);
+  const B = [['esfera', p1, [0, 0, 0], [0.55, 0.5, 1.0]], ['esferaB', p1, [0, 0.08, 0.52], [0.5, 0.48, 0.52]]];
+  for (let i = 0; i < 4; i++) B.push(['caja', vientre, [0, -0.4 + Math.abs(i - 1.3) * 0.045, 0.62 - i * 0.37], [0.5 - Math.abs(i - 1.3) * 0.07, 0.1, 0.34], [(i - 1.3) * 0.16, 0, 0]]);   // placas del vientre
+  for (const [y, z, k] of c.montura ? [[0.36, -0.7, 1]] : [[0.5, 0.52, 1.25], [0.5, 0.12, 1.4], [0.46, -0.3, 1.2], [0.36, -0.7, 1]]) B.push(['cono4', cuerno, [0, y, z], [0.07 * k, 0.26 * k, 0.1 * k], [-0.45, 0, 0]]);
+  MF(cu, B);
+  const cuello = piv(r, G(cu, [0, 0.3, 0.78], [0.55, 0, 0]));
+  const N = [['tronco', p1, [0, 0, 0], [0.27, 0.9, 0.27]], ['caja', vientre, [0, 0.4, 0.14], [0.2, 0.7, 0.1], [-0.12, 0, 0]]];
+  if (!lig) for (const y of [0.25, 0.5, 0.72]) N.push(['cono4', cuerno, [0, y, -0.2 + y * 0.1], [0.05, 0.18, 0.07], [-1.1, 0, 0]]);
+  MF(cuello, N);
   const cb = r.cabeza = piv(r, G(cuello, [0, 0.85, 0], [-0.55, 0, 0]));
-  M(cb, 'esfera', m, [0, 0, 0.12], [0.28, 0.24, 0.4]);
-  MF(cb, [
-    ['caja', hx(piel), [0, -0.04, 0.48], [0.24, 0.16, 0.32]],
-    ['cono', cuerno, [-0.13, 0.15, -0.1], [0.05, 0.35, 0.05], [-1.0, 0, 0.25]], ['cono', cuerno, [0.13, 0.15, -0.1], [0.05, 0.35, 0.05], [-1.0, 0, -0.25]],
-  ]);
-  ojos(cb, '#ffd84a', 0.15, 0.07, 0.32, 0.045);
-  const mj = r.mandibula = piv(r, G(cb, [0, -0.13, 0.2]));
-  M(mj, 'caja', osc(piel, 0.7), [0, 0, 0.2], [0.2, 0.06, 0.42]);
-  const mAla = mat(c.color ? osc(c.color, 0.6) : '#4a1a40', { ds: true });
+  const C = [
+    ['esferaB', p1, [0, 0.02, 0.06], [0.27, 0.23, 0.3]],
+    ['cuna', p1, [0, -0.02, 0.18], [0.32, 0.25, 0.56]],                                    // hocico
+    ['caja', p2, [0, 0.07, 0.6], [0.16, 0.05, 0.1]],                                       // narices
+  ];
+  for (const s of [-1, 1]) {
+    C.push(['cono', cuerno, [s * 0.14, 0.16, -0.1], [0.06, 0.46, 0.06], [-1.05, 0, -s * 0.3]]);           // cuerno
+    C.push(['cono4', cuerno, [s * 0.24, -0.02, -0.02], [0.04, 0.2, 0.04], [-1.2, 0, -s * 1.1]]);          // pua de la mejilla
+    C.push(['caja', p2, [s * 0.14, 0.15, 0.2], [0.16, 0.05, 0.16], [0.2, 0, s * 0.35]]);                 // ceño
+    if (!lig) C.push(['cono4', '#f4efd8', [s * 0.11, -0.09, 0.42], [0.025, 0.1, 0.025], [PI, 0, 0]], ['cono4', '#f4efd8', [s * 0.07, -0.07, 0.58], [0.022, 0.08, 0.022], [PI, 0, 0]]);
+  }
+  MF(cb, C);
+  const ojo = mat('#ffd84a', { e: 1 });
+  for (const s of [-1, 1]) M(cb, 'icos', ojo, [s * 0.16, 0.09, 0.28], 0.045);
+  const mj = r.mandibula = piv(r, G(cb, [0, -0.13, 0.16]));
+  MF(mj, [['cuna', p2, [0, -0.01, 0], [0.26, 0.1, 0.54]], ['caja', '#b02a3a', [0, 0.03, 0.2], [0.1, 0.02, 0.3]], ['cono4', '#f4efd8', [0.09, 0.01, 0.3], [0.025, 0.09, 0.025]], ['cono4', '#f4efd8', [-0.09, 0.01, 0.3], [0.025, 0.09, 0.025]]]);
   for (const s of [1, -1]) {
     const p = piv(r, G(cu, [0.35 * s, 0.4, 0.25], [0, 0, 0.45 * s]));
-    M(p, 'ala', mAla, [0, 0, 0], [2.2 * s, 1, 1.6], [-0.35, 0, 0]);
+    const g = G(p, [0, 0, 0], [-0.35, 0, 0]);
+    // Membrana (2,2 x 1,6) y, encima, el brazo del ala y dos dedos.
+    const W = [[s > 0 ? 'alaD' : 'alaI', memb, [0, 0, 0], [2.2, 1, 1.6]], ['caja', p1, [s * 1.1, 0.03, 0.05], [2.2, 0.07, 0.09], [0, s * 0.11, 0]], ['cono4', cuerno, [s * 1.2, 0.03, 0.17], [0.05, 0.2, 0.05], [PI / 2, 0, 0]]];
+    if (!lig) W.push(['caja', p1, [s * 1.6, 0.03, -0.24], [0.06, 0.05, 0.72], [0, -s * 0.72, 0]], ['caja', p1, [s * 1.16, 0.03, -0.38], [0.06, 0.05, 1.05], [0, s * 0.3, 0]]);
+    MF(g, W);
     if (s > 0) r.alaP = p; else r.alaN = p;
   }
   const cola = r.cola = piv(r, G(cu, [0, -0.05, -0.95]));
-  MF(cola, [['tronco', hx(piel), [0, 0, 0], [0.28, 1.9, 0.2], [-1.75, 0, 0]], ['cono4', cuerno, [-0, -0.34, -1.87], [0.15, 0.3, 0.05], [-1.75, 0, 0]]]);
-  cuatroPatas(r, 0.42, 0.95, 0.55, -0.5, 0.85, 0.18, m, osc(piel, 0.6));
+  MF(cola, [
+    ['tronco', p1, [0, 0, 0], [0.3, 1.0, 0.24], [-1.75, 0, 0]],
+    ['cono', p1, [0, -0.18, -0.98], [0.165, 1.0, 0.13], [-1.6, 0, 0]],
+    ['cuna', cuerno, [0, -0.21, -1.86], [0.34, 0.05, 0.3], [0, PI, 0]],
+    ['cono4', cuerno, [0, 0.14, -0.4], [0.05, 0.2, 0.07], [-0.6, 0, 0]], ['cono4', cuerno, [0, 0.04, -0.85], [0.045, 0.17, 0.06], [-0.6, 0, 0]],
+  ]);
+  const o = { g: 0.14, c1: p1, c2: p2 };
+  pataB(r, R, [0.42, 0.95, 0.55], { ...o, largo: 0.95, del: true, ph: 0, garras: !lig });
+  pataB(r, R, [-0.42, 0.95, 0.55], { ...o, largo: 0.95, del: true, ph: PI, garras: !lig });
+  pataB(r, R, [0.42, 0.98, -0.5], { ...o, largo: 0.98, ph: PI });
+  pataB(r, R, [-0.42, 0.98, -0.5], { ...o, largo: 0.98, ph: 0 });
   if (c.montura) silla(r, cu, [0, 0.5, 0.05], 0.3);
   r.lomo = cu; r.H = 1; r.topeCabeza = 0.24;
   return r;
@@ -3041,7 +3146,7 @@ const ARQ = {
   arana, cangrejo,
   pez: c => pez(c, 'pez'),
   pez_dardo: c => pez(c, 'pez_dardo'),
-  pez_grande: c => pez(c, 'pez_grande'),
+  pez_grande: pezOgro,
   pulpo, dragon,
 };
 
