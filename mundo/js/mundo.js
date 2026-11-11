@@ -2773,7 +2773,7 @@ async function figuraMon(o) {
   const d = o._d, def = MONSTRUOS[d.k], st = statsMonstruo(d.k, d.nv); o._d = null;
   const esc3 = d.mu ? 2.4 : d.ra ? 1.35 : d.j ? 1.15 : 1;
   // Élite raro: el mismo aura de suelo que los jefes, en su color (algo mas ancha).
-  o.fig = figuraModelo(() => { const m = crearMonstruo(d.k); if (d.ra && !m.jefe && m._aura) { m._aura(d.ti || '#ffd84a'); const me = m.mallas[m.mallas.length - 1]; if (me) { me.scale.multiplyScalar(1.15); me.userData.reposo[2] = me.scale.clone(); } } return m; }, esc3) || await figuraHoja(def.hoja, st.alto * esc3);
+  o.fig = figuraModelo(() => { const m = crearMonstruo(d.k, { ligero: POBRE || CAL === 'baja' }); if (d.ra && !m.jefe && m._aura) { m._aura(d.ti || '#ffd84a'); const me = m.mallas[m.mallas.length - 1]; if (me) { me.scale.multiplyScalar(1.15); me.userData.reposo[2] = me.scale.clone(); } } return m; }, esc3) || await figuraHoja(def.hoja, st.alto * esc3);
   if (mons.get(d.id) !== o) { if (o.fig) { o.fig.quitar(); o.fig = null; } return; }   // llegó otro con el mismo id mientras cargaba: este se descarta sin dejar fantasma
   if (d.noct && mons.get(d.id) === o) { tenirNocturno(o); avisoNocturno(); }
 }
