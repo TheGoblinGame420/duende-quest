@@ -103,7 +103,7 @@ function mat(color, o) {
   if (m) return m;
   const op = o.op || 1;
   if (o.aura) {
-    m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, forceSinglePass: true });   /* aditiva: sale igual en una pasada (antes, dos dibujos y programa rehecho en cada cuadro) */
   } else {
     m = new THREE.MeshLambertMaterial({
       color: c, flatShading: true, transparent: op < 1, opacity: op, depthWrite: op >= 1,

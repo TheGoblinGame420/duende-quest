@@ -23,7 +23,10 @@ uniform float uT; uniform float uEsc; uniform float uMaxPx;
 varying vec3 vCol; varying float vA; varying float vF; varying vec2 vDir; varying float vW;
 void main() {
   float edad = uT - dat.x;            // dat: nacimiento, vida, tamaño, gravedad
-  float k = edad / dat.y;
+  // max(): las particulas nunca usadas tienen vida 0; sin el, k = infinito, el tamaño y el alfa salian NaN y en
+  // Windows (ANGLE) se dibujaban como puntos enormes en el origen del mundo (la plaza): sobredibujo y, en calidad
+  // alta, pantalla negra (el NaN entra al resplandor del post-proceso).
+  float k = edad / max(dat.y, 0.001);
   vec3 v = vel + vec3(0.0, -dat.w * edad, 0.0);
   vec3 p = position + vel * edad + vec3(0.0, -0.5 * dat.w * edad * edad, 0.0);
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
