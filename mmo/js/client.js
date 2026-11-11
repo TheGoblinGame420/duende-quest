@@ -20,6 +20,7 @@ import {
 } from './data.js?v=372';
 import { iniciarRegalo } from './regalo.js?v=372';
 import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=372';
+import { marioneta, dibujarMarioneta } from './marioneta.js?v=372';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4856,8 +4857,15 @@ function dibujarDuende(q, esYo) {
   } else {
     // Skins de pago: una sola imagen, animada por codigo (respira, rebota al
     // andar, se inclina al golpear) igual que en el arcade.
-    const img = IMG[SKINS[skin] ? SKINS[skin].img : 'skin_hero'];
-    if (img && img.naturalWidth) {
+    const kImg = SKINS[skin] ? SKINS[skin].img : 'skin_hero';
+    const img = IMG[kImg];
+    // Marioneta articulada (marioneta.js): piezas recortadas del mismo PNG. Sin mapa o sin imagen, la figura fija de abajo.
+    const mar = img && img.naturalWidth ? marioneta(kImg, img) : null;
+    if (mar) {
+      g.translate(x, pies);
+      if (f < 0) g.scale(-1, 1);
+      dibujarMarioneta(g, mar, q, 66, frame, anda && !mo, enAire && !mo, atk > 0 ? Math.min(1, atk / 14) : 0, herido, muerto);
+    } else if (img && img.naturalWidth) {
       const h = 66, w = Math.min(h * img.naturalWidth / img.naturalHeight, 110);
       const rebote = anda ? Math.abs(Math.sin(frame * .25)) * 4 : Math.sin(frame * .06) * 1.2;
       const incl = atk > 0 ? .18 : anda ? Math.sin(frame * .25) * .04 : 0;
