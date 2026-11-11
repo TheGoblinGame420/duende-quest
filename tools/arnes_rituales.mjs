@@ -223,6 +223,16 @@ export async function pruebasRituales({ mundo, chequear, entrar3d, entrar, entra
       chequear(!salidos.some(x => String(x.chat_id) === '4199'), 'y respeta el /avisos off de ese chat');
       delete idx['tg:4199'];
     } else await dejar(w);
+    // Por la alarma de cada hora (retencion.js alarm): el elegido va primero y ese día no se suma el aviso de vuelta.
+    irLima(R.diaLima(), 21);
+    const p6 = con(await entrarTg('PorAlarma', 4106)); await calma(); ponerNivel(p6, 12, 'guerrero');
+    idx['tg:4106'].si = 1;
+    await p6.mandar({ t: 'rit', a: 'aviso', n: R.horaLima() }); await calma(); await dejar(p6);
+    const hA = R.horaLima(), dAl = R.diaLima() + 1;
+    irLima(dAl, hA); salidos.length = 0;
+    await mundo.alarm();
+    const m6 = salidos.filter(x => String(x.chat_id) === '4106');
+    chequear(hA >= 18 && m6.length === 1 && /antes de dormir/.test(m6[0].text), 'alarm(): a su hora habitual recibe solo el recordatorio que eligió, no dos mensajes (' + m6.length + ')');
     chequear(R.textoAvisoRitual({ nombre: 'X', nivel: 1 }, 'm') === null && R.textoAvisoRitual({ nombre: 'X', nivel: 20, rit: { am: R.diaLima() } }, 'm') === null, 'sin nada real que decir (novato, o amanecer ya cobrado) no hay texto');
   } finally { mundo.tgEnviar = tgReal; mundo.temporadaAviso = tempReal; mundo.dormir = dormirReal; }
 }
