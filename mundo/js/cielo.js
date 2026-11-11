@@ -425,7 +425,8 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
       const p = cam.position, k = listo ? Math.min(1, dt * 0.8) : 1, seg = t / 1000;
       listo = true;
       m.position.copy(p);
-      u.uHor.value.copy(hor); u.uTop.value.copy(top); u.uNoche.value = nocheK; u.uOcaK.value = ocaK;
+      u.uHor.value.copy(hor); u.uTop.value.copy(oculto ? hor : top); u.uNoche.value = nocheK; u.uOcaK.value = ocaK;   /* en la cueva no hay cielo: todo del color de su penumbra */
+      if (oculto) u.dqNub.value = u.uVia.value = 0;
       u.uBruma.value += (brumaObj - u.uBruma.value) * Math.min(1, dt);
       u.uSol.value.copy(solV); u.uLuna.value.copy(lunaV); u.uLuzD.value.copy(luzD);
       u.uSolK.value += (solK - u.uSolK.value) * k; u.uLunaK.value += (lunaK - u.uLunaK.value) * k;

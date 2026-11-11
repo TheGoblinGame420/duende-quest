@@ -520,7 +520,7 @@ function ambiente(z) {
   if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
-  estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.5) * 2, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
+  estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.78) * 4.5, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
   if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
