@@ -8,6 +8,14 @@
 //
 // Lo llama telegram-bot.js con UNA linea: si devuelve true, la actualizacion
 // ya esta atendida.
+//
+// allowed_updates: el webhook se registro SIN esa lista (SECURITY-SETUP.md), o
+// sea con la de Telegram por defecto, que ya trae message (con
+// new_chat_members), edited_message, callback_query, my_chat_member y los
+// pagos. No hace falta volver a registrarlo. chat_member NO viene por defecto:
+// solo hace falta si el grupo oculta los mensajes de «X se unió». Si algun dia
+// se pide, la lista debe llevar TODO lo que usa el bot o se cortan los pagos:
+//   ["message","edited_message","callback_query","pre_checkout_query","my_chat_member","chat_member"]
 // ═══════════════════════════════════════════════════════
 
 import { motivoSpam } from '../mmo/grupo.js';

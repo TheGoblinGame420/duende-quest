@@ -192,7 +192,7 @@ export function textoBienvenida(nombres, titulo) {
   const n = (nombres || []).filter(Boolean);
   const quien = n.length ? ', ' + lista(n.map(x => '<b>' + esc(x) + '</b>'), 5) : '';
   const lugar = titulo ? ' a ' + esc(soloLetras(titulo, 40)) : '';
-  return `👋 ¡${n.length > 1 ? 'Bienvenidos' : 'Te damos la bienvenida'}${quien}${lugar}!\n` +
+  return `👋 ¡${n.length > 1 ? 'Bienvenidos' : 'Te damos la bienvenida'}${lugar}${quien}!\n` +
     'DUENDE QUEST es un RPG de duendes gratis y sin descargas: toca Jugar y entra en un minuto.\n\n' +
     '🔒 Regla de seguridad: nunca pedimos contraseñas ni frases semilla, y nadie del equipo te escribe primero por privado.';
 }
@@ -262,7 +262,8 @@ export function textoNoche(t = Date.now(), res, saludo) {
   if (r.racha && r.racha.n >= 2) { algo = true; l.push(`🔥 Mejor racha: ${esc(r.racha.nombre)}, ${r.racha.n} días seguidos.`); }
   for (const x of (r.extra || []).slice(0, 3)) { algo = true; l.push(x); }
   if (!algo) l.push('Hoy el pueblo estuvo tranquilo. Mañana, a cazar con calma.');
-  const man = t + 24 * 3600000;
+  // Mañana a las 8:00 de Lima: la tarea de la fiesta y el dia de la semana se miran a esa hora.
+  const man = Date.parse(diaJuego(t + 24 * 3600000)) + (HORA_MANANA + 5) * 3600000;
   l.push('', '<b>Mañana:</b>', `🎯 ${esc(DIARIA.nombre)} nueva desde la medianoche.`, ...lineasEvento(man, 'de mañana'), '', 'Descansen. 🧌');
   return l.join('\n');
 }
