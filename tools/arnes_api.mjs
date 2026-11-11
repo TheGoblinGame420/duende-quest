@@ -45,6 +45,7 @@ globalThis.fetch = async (url, op = {}) => {
 
 // Durable Object falso: modo 'ok', 'caido' (lanza), 'noOk' (responde ok:false) o 'colgado'.
 let modoMmo = 'ok';
+const alertasFalsas = { compras: true, registros: true, cupo: false }, alertasPedidas = [];   // /alertas (functions/mmo/alertas.js)
 const MMO = {
   idFromName: () => 'id',
   get: () => ({
@@ -54,6 +55,11 @@ const MMO = {
       if (modoMmo === 'colgado') return new Promise(() => {});
       if (modoMmo === 'noOk') return new Response(JSON.stringify({ ok: false, error: 'pedido desconocido' }));
       if (accion === 'misCompras') return new Response(JSON.stringify({ ok: true, l: [{ codigo: 'AB12CD', nombre: 'Skin Cósmico', estado: 'pagado', metodo: 'stars', charge: 'cargoMMO1', pagadoEn: Date.now() }] }));
+      if (accion === 'alertas') {
+        const b = JSON.parse(op.body || '{}');
+        if (b.tipo) { alertasPedidas.push(b); alertasFalsas[b.tipo] = b.on; }
+        return new Response(JSON.stringify({ ok: true, tipos: Object.entries(alertasFalsas).map(([id, on]) => ({ id, corto: id, nombre: 'Aviso de ' + id, on })) }));
+      }
       return new Response(JSON.stringify({ ok: true, nombre: 'Skin Cósmico' }));
     },
   }),
@@ -140,6 +146,33 @@ await llamar({ message: { message_id: 3, chat: { id: 555 }, from: { id: 555 }, t
 const mc = enviados.find(e => e.metodo === 'sendMessage' && /Tus compras/.test(e.body.text));
 ok(!!mc && /#AB12CD/.test(mc.body.text) && /En revisión|Acreditado|Por entregar/.test(mc.body.text), '/miscompras lista los pedidos del MMO y del arcade');
 ok(!enviados.some(e => e.metodo === 'refundStarPayment'), 'nadie devuelve ni entrega solo');
+
+console.log('/alertas: qué avisos recibe el dueño');
+const delDueno = t => ({ message: { message_id: 7, chat: { id: Number(ADMIN) }, from: { id: Number(ADMIN) }, text: t } });
+reset(); modoMmo = 'ok';
+await llamar(texto('/alertas'));
+ok(enviados.length === 0 && alertasPedidas.length === 0, '/alertas de alguien que no es el dueño: silencio');
+await llamar(texto('/alertas compras off'));
+ok(enviados.length === 0 && alertasPedidas.length === 0, 'y no puede cambiar nada');
+reset();
+await llamar(delDueno('/alertas'));
+const va = alDueno().find(e => /Tus alertas/.test(e.body.text));
+ok(!!va && /✅ Aviso de compras/.test(va.body.text) && /🔕 Aviso de cupo/.test(va.body.text) && /no se publica solo/.test(va.body.text), '/alertas del dueño: lista con lo encendido y lo apagado');
+ok(!!va && va.body.reply_markup.inline_keyboard.flat().some(b => b.callback_data === 'al:compras:0') && va.body.reply_markup.inline_keyboard.flat().some(b => b.callback_data === 'al:cupo:1'), 'cada aviso trae su botón para cambiarlo');
+reset();
+await llamar(delDueno('/alertas cupo on'));
+ok(alertasPedidas.some(b => b.tipo === 'cupo' && b.on === true) && alDueno().some(e => /✅ Aviso de cupo/.test(e.body.text)), '/alertas cupo on lo enciende y muestra la lista');
+reset();
+await llamar(delDueno('/alertas compras quizas'));
+ok(alDueno().some(e => /^Uso: \/alertas/.test(e.body.text)) && !alertasPedidas.some(b => b.tipo === 'compras'), '/alertas con un valor raro explica el uso y no cambia nada');
+const boton = (de, data) => ({ callback_query: { id: 'cb1', from: { id: de }, data, message: { message_id: 9, chat: { id: de }, text: 'x' } } });
+reset();
+await llamar(boton(555, 'al:compras:0'));
+ok(!alertasPedidas.some(b => b.tipo === 'compras') && !enviados.some(e => e.metodo === 'editMessageText'), 'el botón de otra persona no cambia nada');
+await llamar(boton(Number(ADMIN), 'al:compras:0'));
+const ed = enviados.find(e => e.metodo === 'editMessageText');
+ok(alertasPedidas.some(b => b.tipo === 'compras' && b.on === false) && !!ed && /🔕 Aviso de compras/.test(ed.body.text), 'el botón del dueño apaga el aviso y repinta la lista');
+ok(enviados.every(e => e.metodo !== 'sendMessage' || String(e.body.chat_id) === ADMIN), '/alertas no escribe a nadie más que al dueño');
 
 console.log(`\n${pruebas - fallos}/${pruebas} pruebas bien`);
 process.exit(fallos ? 1 : 0);

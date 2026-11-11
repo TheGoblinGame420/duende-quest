@@ -374,6 +374,18 @@ async function devolverStarsArcade(context, token, cargo, tgAviso) {
   await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, habla con el creador del juego por WhatsApp (+51 900 877 863) o escribe a @ElDuendeOficial.' }).catch(() => {});
   return `↩️ Stars devueltas a tg ${f.telegram_id}.`;
 }
+// ── /alertas: que avisos recibe el dueño en su chat privado (functions/mmo/alertas.js) ──
+// Solo el dueño. No escribe a ningun jugador ni publica nada: solo lee y guarda su preferencia.
+function vistaAlertas(r) {
+  const tipos = (r && Array.isArray(r.tipos)) ? r.tipos : [];
+  const text = '🔔 Tus alertas (solo te llegan a ti, en este chat)\n\n' + tipos.map(t => `${t.on ? '✅' : '🔕'} ${t.nombre}`).join('\n')
+    + '\n\nToca un botón para encender o apagar. También: /alertas cupo on · /alertas defecto'
+    + '\n\nSiempre llegan (son de dinero): el reclamo de un pedido ya pagado, un pago raro de Stars y las compras del arcade.'
+    + '\nEl precio de $DUENDE no se publica solo: solo sale cuando alguien escribe /price.';
+  const filas = [];
+  for (let i = 0; i < tipos.length; i += 2) filas.push(tipos.slice(i, i + 2).map(t => ({ text: (t.on ? '✅ ' : '🔕 ') + (t.corto || t.id), callback_data: `al:${t.id}:${t.on ? 0 : 1}` })));
+  return { text, reply_markup: { inline_keyboard: filas } };
+}
 async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // silencio para no-admins
   const env = context.env;
@@ -463,6 +475,16 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     if (!arg1) return enviar('Uso: ' + cmd + ' CODIGO');
     const r = await mmoInterno(env, cmd === '/pagado' ? 'pagado' : 'rechazar', { id: arg1, tx: cmd === '/pagado' ? arg2 : undefined, trampa: arg2 === 'trampa' });
     return enviar(r.ok ? `✅ Retiro #${r.retiro.id} marcado como ${r.retiro.estado}. Se le avisó al jugador.` : '❌ ' + r.error);
+  }
+  if (cmd === '/alertas') {
+    const [tipo, valor] = payload.trim().toLowerCase().split(/\s+/);
+    const on = /^(on|si|sí|1|encender|activar)$/.test(valor || '') ? true : /^(off|no|0|apagar|quitar)$/.test(valor || '') ? false : null;
+    if (tipo && tipo !== 'defecto' && on === null) return enviar('Uso: /alertas (ver y cambiar con botones)\n/alertas compras off · /alertas cupo on\n/alertas defecto (volver a lo de fábrica)');
+    let r = null;
+    try { r = await mmoInterno(env, 'alertas', tipo ? { tipo, on } : {}); } catch (e) {}
+    if (!r || !r.ok) return enviar('❌ ' + ((r && r.error) || 'No se pudo hablar con el MMO ahora. Prueba otra vez.'));
+    await tg(token, 'sendMessage', { chat_id: chatId, ...vistaAlertas(r) });
+    return;
   }
   if (cmd === '/pedidos') {
     const r = await mmoInterno(env, 'pedidos');
@@ -1134,6 +1156,17 @@ async function onRequestPost(context) {
         return new Response('OK');
       }
 
+      // Botones de /alertas (solo el dueño): enciende o apaga un aviso y repinta la lista.
+      const mAl = /^al:([a-z0-9]{2,12}):([01])$/.exec(data);
+      if (mAl) {
+        if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) return new Response('OK');
+        let r = null;
+        try { r = await mmoInterno(context.env, 'alertas', { tipo: mAl[1], on: mAl[2] === '1' }); } catch (e) {}
+        if (r && r.ok) await tg(token, 'editMessageText', { chat_id: chatId, message_id: messageId, ...vistaAlertas(r) }).catch(() => {});
+        else await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ ' + ((r && r.error) || 'No se pudo guardar ahora. Prueba otra vez.') });
+        return new Response('OK');
+      }
+
       // "⏳ En 1 h / Mañana" del aviso de un pedido del MMO: al jugador le llega
       // una plantilla y al dueño un recordatorio a esa hora. No entrega nada.
       if (/^mmo(1h|man):[A-Z0-9]{4,10}$/.test(data)) {
@@ -1267,7 +1300,7 @@ async function onRequestPost(context) {
         case '/terms': case '/terminos': await handleTerms(token, chatId); break;
         case '/miscompras': case '/compras': await handleMisCompras(token, env, context, chatId, user.id); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/gasto': case '/chicha': case '/chichasin': case '/chichacoord': case '/chichalibera': case '/chichaok': case '/chichano': case '/chichatel': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/alertas': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/gasto': case '/chicha': case '/chichasin': case '/chichacoord': case '/chichalibera': case '/chichaok': case '/chichano': case '/chichatel': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;

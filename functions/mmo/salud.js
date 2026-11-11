@@ -148,7 +148,7 @@ export const Salud = {
       const pctTxt = Math.round(p * 100);
       this.avisarAdmin(`📈 Cupo de escrituras del MMO al ${pctTxt}% (${(m.w + m.del).toLocaleString('es')} de ${this.cupoEscrituras().toLocaleString('es')} hoy, día UTC)\n` +
         (p >= DEGRADADO_PCT ? 'Desde el 80% el servidor guarda cada 3 min, pausa los rankings y no deja entrar invitados nuevos hasta mañana.' : 'Al 80% el servidor pasa a modo ahorro (guardado cada 3 min, rankings pausados, sin invitados nuevos).') +
-        '\nSi pasa seguido: Workers Paid (5 USD) y MMO_CUPO_ESCRITURAS. Detalle en /mmostats.', null, true).catch(() => {});
+        '\nSi pasa seguido: Workers Paid (5 USD) y MMO_CUPO_ESCRITURAS. Detalle en /mmostats.', null, true, 'cupo').catch(() => {});
       this.volcarMet().catch(() => {});
     }
     if (ahora - (this.metT || 0) > VOLCAR_MET_MS) this.volcarMet().catch(() => {});

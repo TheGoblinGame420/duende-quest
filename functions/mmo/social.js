@@ -588,7 +588,7 @@ export const Social = {
     this.reportesAviso = (this.reportesAviso || []).filter(x => ahora - x < 600000);
     const avisar = this.reportesAviso.length < 12;
     if (avisar) this.reportesAviso.push(ahora);
-    if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`, null, true).catch(() => {});
+    if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`, null, true, 'reportes').catch(() => {});
     this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
   // Historial corto del general y de cada hermandad. El del general se guarda

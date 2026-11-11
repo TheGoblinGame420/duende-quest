@@ -49,6 +49,7 @@ import { Chicha } from './chicha.js';
 import { Retencion, diaNum } from './retencion.js';
 import { metaHola, metaEvento } from './meta.js';
 import { Salud } from './salud.js';
+import { Alertas } from './alertas.js';
 import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
 import { Torre } from './torre.js';
@@ -993,6 +994,8 @@ export class MmoWorld {
     if (nuevo && c.invitadoPor) this.alLlegarInvitado(s).catch(e => console.error('[MMO invitado]', e));
     // Ya era Nv 10 de invitado (o confirmo su correo despues): el premio de amigo se paga al entrar con su cuenta.
     else if (c.invitadoPor && !c.refPagado) this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
+    // Aviso al dueño: cuenta nueva o invitado que paso a cuenta (alertas.js). Un invitado anonimo no avisa.
+    if (((nuevo && !porCod) || (heredado && !porCod)) && this.alertaRegistro) this.alertaRegistro(c, heredado);
     if (instGuardada && !s.m3) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     // Lo que se dijo mientras no estaba (social.js), antes del mensaje del dia.
@@ -1203,7 +1206,7 @@ export class MmoWorld {
     this.actualizarYo(s);
     // Solo letras/numeros: un nombre con * _ ` rompia el Markdown del aviso.
     const nom = r.nombre.replace(/[^\p{L}\p{N} ]/gu, '');
-    this.avisarAdmin(`💸 *Retiro #${r.id}* — ${r.ton} TON\n👤 ${nom} · Nv ${r.nivel} · ${r.kills} cazas · personaje de ${r.edadDias} días\n👛 \`${r.amigable}\`\n\nPágalo desde tu wallet y luego: /pagado ${r.id}\nSi es trampa: /rechazar ${r.id}`);
+    this.avisarAdmin(`💸 *Retiro #${r.id}* — ${r.ton} TON\n👤 ${nom} · Nv ${r.nivel} · ${r.kills} cazas · personaje de ${r.edadDias} días\n👛 \`${r.amigable}\`\n\nPágalo desde tu wallet y luego: /pagado ${r.id}\nSi es trampa: /rechazar ${r.id}`, null, false, 'retiros');
   }
 
   // ── TIENDA PREMIUM (Stars / SOL, entrega manual) ──
@@ -1270,7 +1273,7 @@ export class MmoWorld {
       cambio = true;
       const min = Math.round((ahora - x.pagadoEn) / 60000);
       const hace = min < 90 ? min + ' min' : Math.round(min / 60) + ' h';
-      await this.avisarAdmin(`🔔 *Recordatorio:* el pedido #${x.codigo} sigue sin entregar\n${x.nombre} ($${x.usd}) · pagado hace ${hace}${x.estado === 'por_verificar' ? ' · ⚠️ por verificar' : ''}${pedido ? ' · lo pospusiste' : ''}\n👤 ${String(x.jugador || '').replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${x.codigo} · todos: /pedidos`, botonesPedido(x.codigo));
+      await this.avisarAdmin(`🔔 *Recordatorio:* el pedido #${x.codigo} sigue sin entregar\n${x.nombre} ($${x.usd}) · pagado hace ${hace}${x.estado === 'por_verificar' ? ' · ⚠️ por verificar' : ''}${pedido ? ' · lo pospusiste' : ''}\n👤 ${String(x.jugador || '').replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${x.codigo} · todos: /pedidos`, botonesPedido(x.codigo), false, 'pendientes');
     }
     if (cambio) await this.guardarPedidos();
   }
@@ -1462,7 +1465,7 @@ export class MmoWorld {
     this.hitoCompra(c, 'pg', pd);
     await this.guardarPedidos();
     const monto = 'S/ ' + (pd.centimos / 100).toFixed(2);
-    this.avisarAdmin(`🟣 *Pedido #${pd.codigo}* — ${pd.nombre} (${monto} por Yape / Plin)${tarde ? ' · ⏰ pasadas las 24 h' : ''}\n👤 ${String(pd.jugador || '').replace(/[^\p{L}\p{N} ]/gu, '')}\n🧾 Operación: ${op}\n\n⚠️ Míralo en tu app: monto *exacto* ${monto} y nota #${pd.codigo}. Si llegó: /entregar ${pd.codigo} · si no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+    this.avisarAdmin(`🛒 *Compra · pedido #${pd.codigo}* 🟣 — ${pd.nombre} (${monto} por Yape / Plin)${tarde ? ' · ⏰ pasadas las 24 h' : ''}\n👤 ${String(pd.jugador || '').replace(/[^\p{L}\p{N} ]/gu, '')}\n🧾 Operación: ${op}\n\n⚠️ Míralo en tu app: monto *exacto* ${monto} y nota #${pd.codigo}. Si llegó: /entregar ${pd.codigo} · si no: /anular ${pd.codigo}`, botonesPedido(pd.codigo), false, 'compras');
     this.enviar(s, { t: 'toast', ok: 1, yapeOk: pd.codigo, m: '✅ Recibimos tu número de operación. ' + textoPagoRecibido() });
     this.actualizarYo(s);
   }
@@ -1535,14 +1538,14 @@ export class MmoWorld {
     if (cadena.tarde) {
       no('📨 Recibimos tu pago, pero llegó después del plazo del pedido (30 min). El equipo lo revisa y te escribe: si el precio cambió mucho te ofrece la entrega o la devolución.');
       this.actualizarYo(s);
-      this.avisarAdmin(`⏰ *Pedido #${pd.codigo} pagado FUERA DE PLAZO* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 ${monto} al precio de hace más de 30 min\n🔗 https://solscan.io/tx/${firma}\n\nRevisa el precio actual y decide: /entregar ${pd.codigo}, o devuélvelo y /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+      this.avisarAdmin(`🛒 *Compra · pedido #${pd.codigo}* ⏰ *pagado FUERA DE PLAZO* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 ${monto} al precio de hace más de 30 min\n🔗 https://solscan.io/tx/${firma}\n\nRevisa el precio actual y decide: /entregar ${pd.codigo}, o devuélvelo y /anular ${pd.codigo}`, botonesPedido(pd.codigo), false, 'compras');
       return;
     }
     // Entrega MANUAL (27-oct-2026, decision del dueño): el pago verificado le llega por
     // Telegram con los botones Entregar/Anular y el entrega con /entregar o Modo Dios.
     no('📨 Pago confirmado en la cadena. ' + textoPagoRecibido() + (pd.uid.startsWith('tg:') ? ' Te avisamos aquí y por Telegram.' : ' Te avisamos aquí en el juego al entregarlo.'));   // cuenta web: el aviso de entrega no va por Telegram
     this.actualizarYo(s);
-    this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Pagó ${monto} (monto exacto, confirmado en la cadena)\n🔗 https://solscan.io/tx/${firma}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
+    this.avisarAdmin(`🛒 *Compra · pedido #${pd.codigo}* ${esD ? '🍄' : '◎'} — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Pagó ${monto} (monto exacto, confirmado en la cadena)\n🔗 https://solscan.io/tx/${firma}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo), false, 'compras');
   }
   // Ritmo de las operaciones con la red de Solana, por cuenta.
   ritmoSol(uid, tipo, ms) {
@@ -1717,7 +1720,7 @@ export class MmoWorld {
     await this.guardarPedidos();
     // Entrega MANUAL (27-oct-2026, decision del dueño): le llega por Telegram con los
     // botones Entregar/Anular y el entrega con /entregar o Modo Dios.
-    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}${pagador !== pd.uid ? `\n💳 Pagó desde tg ${b.tgId}${deWeb ? ' (pedido hecho en la web)' : ''}` : ''}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
+    this.avisarAdmin(`🛒 *Compra · pedido #${pd.codigo}* ⭐ — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}${pagador !== pd.uid ? `\n💳 Pagó desde tg ${b.tgId}${deWeb ? ' (pedido hecho en la web)' : ''}` : ''}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo), false, 'compras');
     const s = this.porUid.get(pd.uid);
     if (s) this.actualizarYo(s);
     return { ok: true, nombre: pd.nombre };
@@ -1863,7 +1866,9 @@ export class MmoWorld {
   // plano: texto que escribio un jugador (reportes): sin Markdown y sin vista previa de enlaces.
   // Comprueba la respuesta de Telegram: reintenta y, si el Markdown no se
   // pudo leer (un nombre con _ o *), lo manda en texto plano. Devuelve si llego.
-  async avisarAdmin(texto, botones, plano) {
+  // tipo: clase de aviso (alertas.js); si el dueño la apago con /alertas no se envia. Sin tipo, siempre.
+  async avisarAdmin(texto, botones, plano, tipo) {
+    if (tipo && this.alertaActiva && !(await this.alertaActiva(tipo))) return false;
     const env = getEnv({ env: this.env });
     if (!env.BOT_TOKEN || !env.ADMIN_TG_ID) return false;
     for (let i = 0; i < 3; i++) {
@@ -1961,6 +1966,7 @@ export class MmoWorld {
     if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar'), cargos: this.pedidos.filter(x => x.charge).map(x => x.charge) });
     if (accion === 'posponer') return json(await this.posponerPedido(b));
     if (accion === 'ventas') return json(await this.resumenVentas());
+    if (accion === 'alertas') return json(await this.alertasInterno(b));   // /alertas del bot (alertas.js)
     // /yo del bot: el personaje de quien escribe (solo el suyo: el bot manda
     // el id de Telegram del remitente).
     if (accion === 'perfil') {
@@ -2756,6 +2762,8 @@ export class MmoWorld {
     if (subio && nivel0 < NIVEL_MAX && c.nivel >= NIVEL_MAX) this.aTodos({ t: 'aviso', m: `🏆 ${c.nombre} llegó al nivel ${NIVEL_MAX}, el máximo. ¡Una leyenda del Éter!` });
     if (subio && this.hitoEmbudo) { if (nivel0 < 5 && c.nivel >= 5) this.hitoEmbudo(c, 'n5'); if (nivel0 < 10 && c.nivel >= 10) this.hitoEmbudo(c, 'n10'); }
     if (subio && this.avisoTgSubio) this.avisoTgSubio(s, nivel0);
+    // Aviso al dueño (solo a el, una vez por personaje): alertas.js
+    if (subio && nivel0 < 10 && c.nivel >= 10 && this.alertaNivel10) this.alertaNivel10(c);
     if (subio) {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
@@ -3711,6 +3719,7 @@ export class MmoWorld {
         if (this.felizExtraHasta && this.felizExtraHasta <= ahora) { this.felizExtraHasta = 0; this.tgSucio = true; if (!hf) this.aTodos({ t: 'aviso', m: this.felizAno ? '⚡ Terminó la Hora Feliz de Año Nuevo.' : '⚡ Terminó la Hora Feliz de «Entre todos».' }); this.felizAno = false; }
         if (this.retVolcarDias) this.retVolcarDias().catch(e => console.error('[MMO ret]', e));
         this.revisarSalud(ahora);
+        if (this.alertasVolcar) this.alertasVolcar(ahora).catch(e => console.error('[MMO alertas]', e));
       });
     }
     this.paso('mundial', () => this.revisarMundial(ahora));
@@ -4098,6 +4107,8 @@ Object.assign(MmoWorld.prototype, Chicha);
 Object.assign(MmoWorld.prototype, Retencion);
 // Cupo de escrituras, lag y modo ahorro: functions/mmo/salud.js
 Object.assign(MmoWorld.prototype, Salud);
+// Que avisos recibe el dueño (/alertas) y los de registro y nivel 10: functions/mmo/alertas.js
+Object.assign(MmoWorld.prototype, Alertas);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
 // Invasiones, elites raros y cofres del mundo abierto: functions/mmo/eventos.js
 Object.assign(MmoWorld.prototype, Eventos);
