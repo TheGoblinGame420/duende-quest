@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 372;
+export const VERSION = 373;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 139, fecha: '11 nov 2026', items: [
+    '☀ Buenos días y ritual de la noche: un regalo al amanecer, la olla de Mama Asiri que reposa mientras duermes y una intención para mañana. Nada se pierde si faltas.',
+    '🗺 Mapa nuevo: zonas con su nivel, jefes, misiones, leyenda con filtros y cuánto llevas explorado. En el celular, la pantalla va más despejada.',
+    '🌙 Cielo nuevo en ORIGINS: amanecer, atardecer, luna con fases, nubes y cordillera a lo lejos. Monstruos y jefes rehechos.',
+    '🏆 El ranking ahora muestra a todos los duendes, con búsqueda y tu puesto siempre a la vista.',
+    '🧝 En CLASSIC las skins ya se mueven: caminan, atacan y caen.',
+  ] },
   { n: 138, fecha: '11 nov 2026', solo3d: true, items: [
     '⚙ Menú del juego nuevo (Esc o el botón ⚙): gráficos de Mínima a Ultra que se aplican al instante, sonido, controles y Salir.',
     '⚔ Enemigos con carácter: embestidores, barredores, tiradores y curanderos avisan su ataque en el suelo. Sal de la zona roja o corta el cántico.',

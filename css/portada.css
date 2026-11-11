@@ -9,7 +9,7 @@
    ═══════════════════════════════════════════════════════ */
 
 /* Iconos del juego: los símbolos y emojis del texto salen de un solo color, como en ORIGINS */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=372) format("woff2");font-display:swap;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=373) format("woff2");font-display:swap;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 
 /* ── 1. Variables ── */
 :root{
