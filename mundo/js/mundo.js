@@ -36,6 +36,7 @@ const MAQUINAS = maquinasAbismo();
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=369';
 import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=369';
 import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=369';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=369';   // formas de peligro, estados del objetivo y arquetipos
 import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=369';
 import { PISTAS } from '/mmo/js/caso.js?v=369';
 import { htmlCaso } from './caso.js?v=369';
@@ -2183,6 +2184,7 @@ function recibir(m) {
       // Si llega otra vez el mismo id, se quita el anterior (evita el disco rojo fantasma).
       quitarZona3(m.id);
       if (!Number.isFinite(m.r) || !Number.isFinite(m.x) || !Number.isFinite(m.z) || m.r <= 0.5) break;
+      if (m.f === 'k' || m.f === 'l') { zonaForma3(m); break; }   // cono o linea
       geoZona();
       const y = alturaEn(m.x, m.z) + 0.18;
       // Disco unitario compartido (plano XZ tras rotateX): se escala en X y Z con el radio.
@@ -2203,7 +2205,7 @@ function recibir(m) {
       if (dz < m.r + 3) { aviso('¡Pisotón! Sal del círculo rojo.', 'err'); vib(dz <= m.r ? 'heavy' : 'medium'); }
       break;
     }
-    case 'zona3f': quitarZona3(m.id, !m.no); break;   // no:1 = pisoton cancelado (Fase 2), sin explosion
+    case 'zona3f': quitarZona3(m.id, !m.no); if (m.co) { const q = mons.get(m.id); if (q && !q.muereT && Math.hypot(q.x - P.x, q.z - P.z) < 30) numero(q.x, alturaEn(q.x, q.z) + 2.8, q.z, '¡Cortado!', '#7dd3fc', true); } break;   // no:1 = pisoton cancelado (Fase 2), sin explosion
     // Tras el pisoton el jefe queda expuesto (+25 % de daño): etiqueta sobre él para contraatacar.
     case 'expuesto': {
       const o = mons.get(m.id); if (!o || o.muereT) break;
@@ -2458,6 +2460,20 @@ function recibir(m) {
     case 'mcast': {
       const o = mons.get(m.id); if (!o) break;
       const nom = (MONSTRUOS[o.k] || {}).nombre || 'El jefe';
+      // Cantico del curandero (arquetipo): cura a un compañero; se corta pegandole o con la habilidad que interrumpe.
+      if (m.k === 'cura') {
+        const cercaC = objetivo === m.id || objetivo === m.ha || Math.hypot(o.x - P.x, o.z - P.z) < 25;
+        if (m.ms > 0) {
+          o.cast = { ini: performance.now(), fin: performance.now() + m.ms, n: m.n || 'Cántico' };
+          const hi = yo && yo.clase ? habsDe(yo.clase).find(x => x.interrumpe) : null;
+          if (cercaC) aviso(`${nom} canta para curar a los suyos: ¡pégale${hi && (yo.nivel || 1) >= hi.nv ? ' o usa ' + hi.nombre : ''} para cortarlo!`, 'err');
+        } else {
+          o.cast = null;
+          if (m.cortado) { if (cercaC) numero(o.x, alturaEn(o.x, o.z) + 2.8, o.z, '¡Cortado!', '#7dd3fc', true); }
+          else if (m.ha) { const al = mons.get(m.ha); if (al && !al.muereT) { const sube = Math.max(0, (m.hpa || 0) - al.hp); al.hp = m.hpa || al.hp; if (cercaC) { FX.emitir(al.x, alturaEn(al.x, al.z) + 1, al.z, { n: 12, color: '#4ade80', vel: 2, vida: 0.8, grav: -3, radio: 1, tam: 1 }); if (sube > 0) numero(al.x, alturaEn(al.x, al.z) + 2.6, al.z, '+' + Math.round(sube), '#4ade80'); } } }
+        }
+        break;
+      }
       // Como cortarlo segun lo que tienes: tu habilidad que interrumpe si ya la tienes; si no, pegarle fuerte.
       const corte = () => { const h = yo && yo.clase ? habsDe(yo.clase).find(x => x.interrumpe) : null; return h && (yo.nivel || 1) >= h.nv ? `¡Usa ${h.nombre} para cortarlo!` : '¡Pégale fuerte mientras bebe para tirarle el cántaro!'; };
       if (m.ms > 0) { o.cast = { ini: performance.now(), fin: performance.now() + m.ms, n: m.n || 'Hechizo' }; if (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 25) aviso(`🔮 ${nom} lanza ${o.cast.n}: ${corte()}`, 'err'); }
@@ -2645,7 +2661,7 @@ async function agregarMon(d) {
   mons.set(d.id, o);
   if (d.hp <= 0) o.muereT = performance.now() - 800;   // llega ya muriendo: solo el final de la animacion
   fijarDestino(o, d.x, d.z);
-  o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv; o.af = d.af || ''; o.la = !!d.la; o.noct = d.noct ? 1 : 0;
+  o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv; o.af = d.af || ''; o.la = !!d.la; o.noct = d.noct ? 1 : 0; o.aq = d.aq || '';
   if (d.k === 'puerta_nucleo') {
     o.fig = new Figura3D(modeloPuerta(), 1);
     solidosExtra = solidosExtra.filter(x => x.id !== d.id).concat([-2.2, 0, 2.2].map(dz => ({ x: d.x, z: d.z + dz, r: 1.5, id: d.id })));
@@ -2717,10 +2733,10 @@ function foto(m) {
   }
   for (const o of [...otros.values()]) { if (enFoto.has(o.id)) o.falta = 0; else if ((o.falta = (o.falta || 0) + 1) > 10) quitarOtro(o.id); }
   if (m.n) for (const d of m.n) agregarMon(d);
-  for (const [id, x, z, ry, hp, st] of m.m) {
+  for (const [id, x, z, ry, hp, st, tg] of m.m) {
     const o = mons.get(id);
     if (!o) continue;
-    fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st;
+    fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st; o.tgt = tg || 0;   // tg: a quien mira (objetivo del objetivo)
     // st 3 = muriendo en el servidor: si el md3 no nos llego (entro en vista ya muerto), se marca aqui
     if (st === 3 && !o.muereT) { o.muereT = performance.now(); bestDeMuerte(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
   }
@@ -2901,15 +2917,43 @@ function quitarZona3(id, explota) {
   if (zonaDentro[id] && explota) {
     jefeEsq.tot++;
     // El servidor manda el golpe ('ph') antes que zona3f: si acaba de herirte, no fue esquivado (lag).
-    if (!P.muerto && Math.hypot(P.x - z.x, P.z - z.z) > z.r && performance.now() - (P.heridoT || 0) > 400) {
+    if (!P.muerto && !dentroForma(z, P.x, P.z) && performance.now() - (P.heridoT || 0) > 400) {
       jefeEsq.ok++;
       numero(P.x, P.y + 2, P.z, '¡Esquivado!', '#4ade80', true); SON.tocar('esquivado'); vib('light');
     }
     let visto = true; try { visto = !!localStorage.getItem('dq_tip_pisoton'); if (!visto) localStorage.setItem('dq_tip_pisoton', '1'); } catch (e) {}
-    if (!visto) setTimeout(() => aviso('Los jefes marcan el suelo antes de golpear: sal del círculo y contraataca mientras está expuesto', 'ok'), 900);
+    if (!visto) setTimeout(() => aviso('Los jefes marcan el suelo antes de golpear: sal de la zona roja y contraataca mientras está expuesto', 'ok'), 900);
   }
   delete zonaDentro[id];
-  if (explota) { onda(z.x, z.z, z.r, '#ff5a2a'); sacudir = 0.5; sfx('explosion', 0.45); }
+  // Especial de un monstruo normal (no cuenta para el resumen del jefe): si estabas dentro al marcarse y saliste, se dice.
+  if (z.dentro && explota && !P.muerto && !dentroForma(z, P.x, P.z) && performance.now() - (P.heridoT || 0) > 400) { numero(P.x, P.y + 2, P.z, '¡Esquivado!', '#4ade80', true); SON.tocar('esquivado'); vib('light'); }
+  if (explota && z.f) { const cerca = Math.hypot(P.x - z.x, P.z - z.z) < z.r + 8; if (cerca) { sacudir = Math.max(sacudir, z.jefe ? 0.45 : 0.2); sfx('explosion', z.jefe ? 0.45 : 0.25); } }
+  else if (explota) { onda(z.x, z.z, z.r, '#ff5a2a'); sacudir = 0.5; sfx('explosion', 0.45); }
+}
+// Formas de peligro que no son el circulo (mmo/js/combate3d.js): cono ('k') y linea ('l').
+// Mismo codigo de color que el pisoton: huella roja, filo blanco y un relleno que avanza hasta el golpe.
+function zonaForma3(m) {
+  const ry = Number.isFinite(m.ry) ? m.ry : 0, an = clamp(Number.isFinite(m.an) ? m.an : 0.8, 0.2, 3.1), w = clamp(Number.isFinite(m.w) ? m.w : 2.5, 0.5, 12);
+  const sx = Math.sin(ry), sz = Math.cos(ry), cono = m.f === 'k';
+  const y = Math.max(alturaEn(m.x, m.z), alturaEn(m.x + sx * m.r * 0.5, m.z + sz * m.r * 0.5), alturaEn(m.x + sx * m.r, m.z + sz * m.r)) + 0.2;
+  const geo = cono ? new THREE.CircleGeometry(1, 20, -Math.PI / 2 - an, an * 2).rotateX(-Math.PI / 2) : new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0, 0, 0.5);
+  const mat = op => new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
+  const borde = new THREE.Mesh(geo, mat(0.2)), disco = new THREE.Mesh(geo, mat(0.3));
+  const pts = [];
+  if (cono) { pts.push(new THREE.Vector3(0, 0, 0)); for (let i = 0; i <= 16; i++) { const a = -an + 2 * an * i / 16; pts.push(new THREE.Vector3(Math.sin(a), 0, Math.cos(a))); } }
+  else pts.push(new THREE.Vector3(-0.5, 0, 0), new THREE.Vector3(0.5, 0, 0), new THREE.Vector3(0.5, 0, 1), new THREE.Vector3(-0.5, 0, 1));
+  const filo = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false }));
+  const ex = cono ? m.r : w;
+  for (const g of [borde, disco, filo]) { g.rotation.y = ry; g.scale.set(ex, 1, m.r); }
+  borde.position.set(m.x, y, m.z); disco.position.set(m.x, y + 0.01, m.z); filo.position.set(m.x, y + 0.02, m.z);
+  disco.scale.set(cono ? 0.05 : w, 1, 0.05);
+  escena.add(borde, disco, filo);
+  const q = mons.get(m.id), jefe = !!(q && q.j);
+  const z = { disco, borde, filo, anillo: null, f: m.f, x: m.x, z: m.z, r: m.r, ry, an, w, jefe, ini: performance.now(), ms: Number.isFinite(m.ms) && m.ms > 0 ? m.ms : 1200 };
+  zonas3.set(m.id, z);
+  const dentro = !P.muerto && dentroForma(z, P.x, P.z);
+  if (jefe) zonaDentro[m.id] = dentro; else z.dentro = dentro;
+  if (dentro) { aviso(cono ? '¡Tajo en abanico! Sal del cono rojo.' : '¡Embestida! Hazte a un lado de la línea roja.', 'err'); vib(jefe ? 'heavy' : 'medium'); }
 }
 let tocandoSubir = false, tocandoBajar = false;
 // Anillo que se expande (habilidades de area, curas en grupo...).
@@ -2963,6 +3007,14 @@ function efectoHab(m) {
     if (!(ajena && (POBRE || CAL === 'baja'))) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id], true, ajena ? 0.3 : 0.8);
   }
   if (FIRMA[m.id]) { try { efectoFirma(m, de); } catch (e) {} }
+  // Remate / sinergia (pega mas a un enemigo controlado) e «Inmune» (el control no entro): servidor rm / inm.
+  if ((m.rm || m.inm) && (m.p === miId || (m.tg && m.tg === objetivo))) {
+    const q = mons.get(m.tk === 'm' && m.tg ? m.tg : ((m.h || [])[0] || [])[0]);
+    if (q) {
+      if (m.rm) { numero(q.x, alturaEn(q.x, q.z) + 3.1, q.z, m.rm === 2 ? '¡SINERGIA!' : '¡REMATE!', m.rm === 2 ? '#22d3ee' : '#fb923c', true); if (m.p === miId) { sfxK('g_critico', 0.35); vib('medium'); } }
+      else numero(q.x, alturaEn(q.x, q.z) + 3.1, q.z, 'Inmune', '#cbd5e1');
+    }
+  }
   for (const [id, d, tipo, w] of m.h || []) {
     const o = mons.get(id);
     if (!o) continue;
@@ -3591,9 +3643,34 @@ function pintarObjetivo() {
   const bc = $('o-cast'), ahC = performance.now();
   if (o.cast && o.cast.fin > ahC) { bc.style.display = 'block'; bc.firstElementChild.style.transform = `scaleX(${clamp((ahC - o.cast.ini) / (o.cast.fin - o.cast.ini), 0, 1)})`; bc.lastElementChild.textContent = '🔮 ' + o.cast.n; }
   else if (bc.style.display !== 'none') bc.style.display = 'none';
+  // Estados, arquetipo y a quien mira: 4 veces por segundo, no cada cuadro.
+  if (ahC >= cbObjT || cbObjId !== o.id) { cbObjT = ahC + 250; cbObjId = o.id; pintarEstadosObj(o, ahC); }
   anillo.visible = true;
   anillo.position.set(o.x, alturaEn(o.x, o.z) + 0.08, o.z);
   const s = o.j ? 2 : 1; anillo.scale.set(s, s, s);
+}
+// ── Marco del objetivo: estados con su duracion, arquetipo y «objetivo del objetivo» (clases cb-) ──
+let cbObjT = 0, cbObjId = 0;
+const cbArqVisto = (() => { try { return JSON.parse(localStorage.getItem('dq3_arqVisto') || '{}') || {}; } catch (e) { return {}; } })();
+function pintarEstadosObj(o, ahora) {
+  let h = '';
+  if (o.au) for (const a in o.au) {
+    const E = ESTADOS_MON[a], fin = o.au[a];
+    if (!E || !(fin > ahora)) continue;
+    h += `<span class="cb-est" style="--c:${E.c}" title="${E.n}">${E.i}<b>${fin === Infinity ? '' : Math.ceil((fin - ahora) / 1000)}</b></span>`;
+  }
+  const ce = $('o-estados');
+  if (ce && ce._h !== h) { ce.innerHTML = h; ce._h = h; }
+  let t = o.aq && ARQ_NOMBRE[o.aq] ? `<span class="cb-arq" title="${ARQ_PISTA[o.aq]}">${ARQ_NOMBRE[o.aq]}</span>` : '';
+  if (o.tgt && !o.muereT) {
+    const q = o.tgt === miId ? null : otros.get(o.tgt);
+    if (o.tgt === miId) t += (t ? ' · ' : '') + `<span class="cb-yo">🎯 ${MOVIL ? 'Tú' : 'Te mira a ti'}</span>`;
+    else if (q && q.n) t += (t ? ' · ' : '') + '🎯 ' + esc(q.n);
+  }
+  const cm = $('o-mira');
+  if (cm && cm._h !== t) { cm.innerHTML = t; cm._h = t; }
+  // La primera vez que eliges uno de cada arquetipo se explica como se juega contra el.
+  if (o.aq && ARQ_PISTA[o.aq] && !cbArqVisto[o.aq]) { cbArqVisto[o.aq] = 1; try { localStorage.setItem('dq3_arqVisto', JSON.stringify(cbArqVisto)); } catch (e) {} aviso(`${ARQ_NOMBRE[o.aq]}. ${ARQ_PISTA[o.aq]}.`, 'ok'); }
 }
 // En el movil el title no se ve: la primera vez que se toca cada boton de la
 // barra se explica con un aviso (una sola vez, sin frenar el golpe).
@@ -9203,7 +9280,7 @@ function cuadroBucle(t) {
     if (e.t >= 1) { escena.remove(e.m); e.m.material.dispose(); return false; }
     return true;
   });
-  for (const [id, z] of zonas3) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); if (performance.now() - z.ini > z.ms + 1500) { quitarZona3(id); continue; } const kk = Number.isFinite(k) ? k : 0; z.disco.material.opacity = 0.12 + 0.4 * kk; const sd = Math.max(0.05, kk) * z.r; const sdOk = Number.isFinite(sd) ? sd : 0.01; z.disco.scale.set(sdOk, 1, sdOk); if (z.anillo) { const sa = Math.max(0.01, kk * z.r); z.anillo.scale.setScalar(Number.isFinite(sa) ? sa : 0.01); z.anillo.material.opacity = 0.5 + 0.45 * kk; } }
+  for (const [id, z] of zonas3) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); if (performance.now() - z.ini > z.ms + 1500) { quitarZona3(id); continue; } const kk = Number.isFinite(k) ? k : 0; z.disco.material.opacity = 0.12 + 0.4 * kk; const sd = Math.max(0.05, kk) * z.r; const sdOk = Number.isFinite(sd) ? sd : 0.01; z.disco.scale.set(sdOk, 1, sdOk); if (z.f === 'l') z.disco.scale.x = z.w; if (z.anillo) { const sa = Math.max(0.01, kk * z.r); z.anillo.scale.setScalar(Number.isFinite(sa) ? sa : 0.01); z.anillo.material.opacity = 0.5 + 0.45 * kk; } }
   // Sacudida suave (seno con fase, sin ruido): crece algo mas que lineal y con tope, asi los golpes chicos no marean.
   if (sacudir > 0) { sacudir = Math.max(0, Math.min(0.6, sacudir) - dt); const am = sacudir * (0.3 + sacudir * 0.4) * (MENOS_MOV ? 0.15 : 1); camara.position.x += Math.sin(t * 0.09) * am; camara.position.y += Math.cos(t * 0.11) * am; }
   alasMesh.visible = (P.vuela || P.planea) && !!yo;
