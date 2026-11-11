@@ -5255,14 +5255,16 @@ function pintarMini() {
   } else {
     if (COMPACTO) { x.fillStyle = '#16251c'; x.fillRect(0, 0, S, S); }
     x.save(); x.translate(S / 2, S / 2); x.rotate(yawM);
-    x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, -S / 2, -S / 2, S, S);
+    // Con el mapa nitido ya pintado (relieve, agua y limites de zona), el minimapa lo usa: el doble de detalle que la base.
+    if (mapaHD) { const kh = mapaHD.width / N; x.imageSmoothingEnabled = true; x.drawImage(mapaHD, (mx - lado / 2) * kh, (mz - lado / 2) * kh, lado * kh, lado * kh, -S / 2, -S / 2, S, S); }
+    else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, -S / 2, -S / 2, S, S);
     x.restore();
   }
   const esMovil = COMPACTO;
   // Norte en el borde para no perderse al girar y poder comparar con el mapa grande.
   if (esMovil && !enCueva(P.x)) {
     const nx = S / 2 + sM * (S / 2 - 11), nz = S / 2 - cM * (S / 2 - 11);
-    x.font = 'bold 15px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.font = 'bold 15px "DQ Iconos",system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
     x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText('N', nx, nz); x.fillStyle = '#fecaca'; x.fillText('N', nx, nz);
   }
   const punto = (wx, wz, color, r) => { const [px, pz] = aPx(wx, wz); if (px < 0 || pz < 0 || px > S || pz > S) return; if (esMovil && r < 3) r *= 1.25; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); if (esMovil) { x.strokeStyle = 'rgba(0,0,0,.65)'; x.lineWidth = 1; x.stroke(); } };
@@ -5276,7 +5278,7 @@ function pintarMini() {
       const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', d0 = Math.hypot(bx - S / 2, bz - S / 2) || 1;
       // En el celular la distancia va hacia el centro del circulo: en las esquinas se recortaria.
       const ty = esMovil ? bz + (S / 2 - bz) / d0 * (r + 12) : bz < 16 ? bz + r + 9 : bz - r - 7;
-      x.font = esMovil ? 'bold 16px system-ui' : 'bold 9px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.font = esMovil ? 'bold 16px "DQ Iconos",system-ui' : 'bold 9px "DQ Iconos",system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
       const mt = esMovil ? 25 : 16, tx = esMovil ? bx + (S / 2 - bx) / d0 * (r + 18) : Math.max(mt, Math.min(S - mt, bx));
       x.strokeStyle = '#000'; x.lineWidth = esMovil ? 3.5 : 2.5; x.strokeText(t, tx, ty); x.fillStyle = '#fff'; x.fillText(t, tx, ty);
     }
@@ -5301,7 +5303,7 @@ function pintarMini() {
   { x.fillStyle = '#e5e7eb'; x.strokeStyle = '#000'; x.lineWidth = 1; const rn = esMovil ? 3.6 : 2; for (const n of NPCS3D) { const [px, pz] = aPx(n.x, n.z); if (px >= 0 && pz >= 0 && px <= S && pz <= S) { x.fillRect(px - rn, pz - rn, rn * 2, rn * 2); if (esMovil) x.strokeRect(px - rn, pz - rn, rn * 2, rn * 2); } } }
   // Vecinos: mismo cuadrado; con algo para ti, signo dorado. El mas cercano fuera de vista se pega al borde.
   if (!enCueva(P.x) && !enAbismo(P.x)) {
-    const mk = marcasNpc(), rn = esMovil ? 3.6 : 2, signo = (px, pz, k, tam) => { x.font = `900 ${tam}px system-ui`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round'; x.strokeStyle = '#000'; x.lineWidth = 3.5; x.strokeText(k, px, pz); x.fillStyle = '#ffd84a'; x.fillText(k, px, pz); };
+    const mk = marcasNpc(), rn = esMovil ? 3.6 : 2, signo = (px, pz, k, tam) => { x.font = `900 ${tam}px "DQ Iconos",system-ui`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round'; x.strokeStyle = '#000'; x.lineWidth = 3.5; x.strokeText(k, px, pz); x.fillStyle = '#ffd84a'; x.fillText(k, px, pz); };
     let lejos = null, dL = Infinity;
     x.fillStyle = '#e5e7eb'; x.strokeStyle = '#000'; x.lineWidth = 1;
     for (const n of VECINOS) { const [px, pz] = aPx(n.x, n.z); if (px >= 0 && pz >= 0 && px <= S && pz <= S) { x.fillRect(px - rn, pz - rn, rn * 2, rn * 2); if (esMovil) x.strokeRect(px - rn, pz - rn, rn * 2, rn * 2); } }
@@ -5327,10 +5329,10 @@ function pintarMini() {
     if (esMovil) {   // celular: disco grande con el signo dentro, se ve de un vistazo incluso pegado al borde
       x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2.5;
       x.beginPath(); x.arc(px, pz, 11, 0, 7); x.fill(); x.stroke();
-      x.font = 'bold 17px system-ui'; x.fillStyle = '#000'; x.fillText(metaMision.guia ? '?' : '!', px, pz + 1);
+      x.font = 'bold 17px "DQ Iconos",system-ui'; x.fillStyle = '#000'; x.fillText(metaMision.guia ? '?' : '!', px, pz + 1);
     } else {
       x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
-      x.font = 'bold 14px system-ui';
+      x.font = 'bold 14px "DQ Iconos",system-ui';
       x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
     }
   }
@@ -5347,11 +5349,11 @@ function pintarMini() {
         const t = esMovil ? 15 : 9;
         x.save(); x.translate(bx, bz); x.rotate(aD + Math.PI / 2); x.fillStyle = '#ff2d55'; x.strokeStyle = '#fff'; x.lineWidth = esMovil ? 3 : 1.5;
         x.beginPath(); x.moveTo(0, -t); x.lineTo(t * 0.8, t * 0.7); x.lineTo(-t * 0.8, t * 0.7); x.closePath(); x.stroke(); x.fill(); x.restore();
-      } else { x.font = (esMovil ? 34 : 20) + 'px system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', bx, bz - (esMovil ? 14 : 8)); }
+      } else { x.font = (esMovil ? 34 : 20) + 'px "DQ Iconos",system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', bx, bz - (esMovil ? 14 : 8)); }
       const txt = Math.round(dm) + 'm', fT = esMovil ? 16 : 11, mt = esMovil ? 30 : 18;
       // En el celular la distancia va junto a la marca, sin llegar a la flecha del jugador (centro).
       const tx = lejos ? (esMovil ? bx : bx - Math.cos(aD) * 20) : bx, tz = lejos ? (esMovil ? bz + (bz < S / 2 ? 24 : -24) : bz - Math.sin(aD) * 16) : bz + (esMovil ? 14 : 9);
-      x.font = 'bold ' + fT + 'px system-ui'; x.strokeStyle = '#000'; x.lineWidth = esMovil ? 4 : 2.5;
+      x.font = 'bold ' + fT + 'px "DQ Iconos",system-ui'; x.strokeStyle = '#000'; x.lineWidth = esMovil ? 4 : 2.5;
       const txC = clamp(tx, mt, S - mt), tzC = clamp(tz, fT, S - fT);
       x.strokeText(txt, txC, tzC); x.fillStyle = '#fff'; x.fillText(txt, txC, tzC);
     }
@@ -5416,17 +5418,31 @@ const MAPA_TINTE = Object.fromEntries(Object.entries({
 const MAPA_ESC_MAX = 3;   // pixeles por metro con el zoom al maximo
 const MV = { esc: 0, cx: 0, cz: 0, w: 0, h: 0, ptrs: new Map(), toque: null, raf: 0, tic: 0, zonas: [], miradores: [], hitos: [], pc: 0, niebla: null };
 let mapaHD = null, mapaHDEn = false;
+// Filtros de la leyenda: lo apagado no se dibuja. Mision, destino, pueblo, portal y tu flecha van siempre.
+const MAPA_F = { zonas: 1, jefes: 1, vecinos: 1, cofres: 1, miradores: 1, grupo: 1 };
+try { for (const k of JSON.parse(localStorage.getItem('dq_mapa_filtros') || '[]')) if (k in MAPA_F) MAPA_F[k] = 0; } catch (e) {}
+function mapaFiltrosUI() {
+  const ley = $('mapa-ley'); if (!ley) return;
+  let off = 0;
+  for (const c of ley.querySelectorAll('input[data-mf]')) { const on = !!MAPA_F[c.dataset.mf]; c.checked = on; if (!on) off++; }
+  const n = $('mapa-ley-n'); if (n) n.textContent = off ? ' · ' + off + (off === 1 ? ' oculto' : ' ocultos') : '';
+}
+// Nivel recomendado de una zona frente al tuyo: gris = ya la superaste, verde = a tu alcance, amarillo = dificil, rojo = peligro.
+window.dqMapa = { get hdMs() { return MV.hdMs || 0; }, filtros: MAPA_F };   /* para tools/: cuanto tardo en pintarse */
+function colorZonaNv(nv) { const n = yo ? yo.nivel || 1 : 1; return n > nv[1] ? '#b6bcc8' : n >= nv[0] - 1 ? '#86efac' : nv[0] - n <= 6 ? '#ffd84a' : '#ff9a9a'; }
 // Version nitida del terreno: color de la zona, relieve sombreado y limites de zona. Se pinta
 // a trozos la primera vez que se abre (mientras tanto se usa la base del minimapa).
-function pintarMapaHD() {
+function pintarMapaHD(fondo) {
   if (mapaHD || mapaHDEn) return;
   mapaHDEn = true;
+  const hdT0 = performance.now();
   const N = 440, c = document.createElement('canvas'); c.width = c.height = N;
   const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data, col = new THREE.Color(), g = GAMA_MAPA;
   let hA = new Float32Array(N), hN = new Float32Array(N), zA = new Array(N), zN = new Array(N), j = 0;
   const trozo = () => {
     const t0 = performance.now();
-    while (j < N && performance.now() - t0 < 8) {
+    const visto = $('v-mapa').classList.contains('on');   /* en segundo plano, trozos cortos para no robarle cuadros al juego */
+    while (j < N && performance.now() - t0 < (fondo && !visto ? 3 : 8)) {
       const wz = ((j + 0.5) / N - 0.5) * LADO;
       for (let i = 0; i < N; i++) {
         const wx = ((i + 0.5) / N - 0.5) * LADO, h = alturaEn(wx, wz), zid = zonaEn(wx, wz), k = (j * N + i) * 4;
@@ -5435,7 +5451,7 @@ function pintarMapaHD() {
         if (h < MUNDO.agua) { const t = clamp((MUNDO.agua - h) / 9, 0, 1); r = 96 - 56 * t; v = 190 - 70 * t; b = 240 - 40 * t; }
         else {
           colorSuelo(wx, wz, h, col);
-          const ti = MAPA_TINTE[zid] || MAPA_TINTE.castillo, s = clamp(1 + (h - (i && j ? hA[i - 1] : h)) * 0.1, 0.74, 1.22);
+          const ti = MAPA_TINTE[zid] || MAPA_TINTE.castillo, s = clamp(1 + (h - (i && j ? hA[i - 1] : h)) * 0.17, 0.6, 1.32) * (i && j && Math.floor(h / 9) !== Math.floor(hA[i] / 9) ? 0.86 : 1);
           r = (Math.pow(clamp(col.r, 0, 1), g) * 140 + ti[0] * 0.45) * s;
           v = (Math.pow(clamp(col.g, 0, 1), g) * 140 + ti[1] * 0.45) * s;
           b = (Math.pow(clamp(col.b, 0, 1), g) * 140 + ti[2] * 0.45) * s;
@@ -5446,9 +5462,9 @@ function pintarMapaHD() {
       [hA, hN] = [hN, hA]; [zA, zN] = [zN, zA];
       j++;
     }
-    if (j < N) { setTimeout(trozo, 0); return; }
+    if (j < N) { setTimeout(trozo, fondo && !$('v-mapa').classList.contains('on') ? 34 : 0); return; }
     x.putImageData(img, 0, 0);
-    mapaHD = c;
+    mapaHD = c; MV.hdMs = Math.round(performance.now() - hdT0);
     mapaPedir();
   };
   trozo();
@@ -5511,7 +5527,7 @@ function mapaDibujar() {
   x.fillStyle = '#0d1730'; x.fillRect(0, 0, w, h);
   const ox = sx(-LADO / 2), oz = sz(-LADO / 2), T = LADO * e;
   x.drawImage(mapaHD || mapaBase, ox, oz, T, T);
-  if (MV.niebla) { x.globalAlpha = 0.72; x.drawImage(MV.niebla, ox, oz, T, T); x.globalAlpha = 1; }   // se intuye el color de la zona bajo la niebla
+  if (MV.niebla) { x.globalAlpha = 0.62; x.drawImage(MV.niebla, ox, oz, T, T); x.globalAlpha = 1; }   // se intuye el color de la zona bajo la niebla
   x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 1; x.strokeRect(ox, oz, T, T);
   x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
   const rI = clamp(8 + e * 2.5, 10, 15);   // radio de los iconos: crece un poco con el zoom
@@ -5520,12 +5536,12 @@ function mapaDibujar() {
     if (fuera(px, py, r + 2)) return;
     x.fillStyle = 'rgba(12,10,26,.9)'; x.strokeStyle = borde; x.lineWidth = 2;
     x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); x.stroke();
-    x.font = `700 ${Math.round(r * 1.25)}px system-ui`; x.fillStyle = col; x.fillText(ico, px, py + 1);
+    x.font = `700 ${Math.round(r * 1.25)}px "DQ Iconos",system-ui`; x.fillStyle = col; x.fillText(ico, px, py + 1);
   };
-  const texto = (t, px, py, col, f = '700 12px system-ui') => { x.font = f; x.strokeStyle = 'rgba(0,0,0,.85)'; x.lineWidth = 3; x.strokeText(t, px, py); x.fillStyle = col; x.fillText(t, px, py); };
+  const texto = (t, px, py, col, f = '700 12px "DQ Iconos",system-ui') => { x.font = f; x.strokeStyle = 'rgba(0,0,0,.85)'; x.lineWidth = 3; x.strokeText(t, px, py); x.fillStyle = col; x.fillText(t, px, py); };
   // Placa legible (fondo oscuro) con varias lineas: [texto, color, fuente].
   // De lejos, placas mas pequeñas y sin la exploracion: asi las 11 caben sin pisarse.
-  const chico = e < 0.42, AL = chico ? 14 : 16, F1 = chico ? '700 12px system-ui' : '700 13px system-ui', F2 = chico ? '600 11px system-ui' : '600 12px system-ui';
+  const chico = e < 0.42, AL = chico ? 14 : 16, F1 = chico ? '700 12px "DQ Iconos",system-ui' : '700 13px "DQ Iconos",system-ui', F2 = chico ? '600 11px "DQ Iconos",system-ui' : '600 12px "DQ Iconos",system-ui';
   const placas = [], placa = (lineas, px, py) => {
     let an = 0;
     for (const [t, , f] of lineas) { x.font = f; an = Math.max(an, x.measureText(t).width); }
@@ -5541,7 +5557,7 @@ function mapaDibujar() {
   };
   const ah = Date.now();
   // Cofres (solo en zonas con el mirador descubierto), como cofrecitos de color.
-  if (MV.miradores.length) for (const cf of COFRES3) if (MV.miradores.includes(cf.zona)) {
+  if (MAPA_F.cofres && MV.miradores.length) for (const cf of COFRES3) if (MV.miradores.includes(cf.zona)) {
     const cx = sx(cf.x), cz = sz(cf.z); if (fuera(cx, cz, 10)) continue;
     const a = cf.tipo === 'legendario' ? 7 : 6;
     x.fillStyle = cf.listoEn > ah ? '#6b7280' : cf.tipo === 'legendario' ? '#ffd84a' : cf.tipo === 'epico' ? '#c084fc' : '#d6a35c';
@@ -5549,28 +5565,29 @@ function mapaDibujar() {
     x.beginPath(); x.moveTo(cx - a, cz - 0.5); x.lineTo(cx + a, cz - 0.5); x.stroke();
   }
   // Jefes: calavera; con zoom, su nivel debajo.
-  for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) {
+  if (MAPA_F.jefes) for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) {
     const px = sx(cp.x), pz = sz(cp.z); pin(px, pz, '💀', '#ff6b6b');
     const mo = MONSTRUOS[cp.k];
     if (e >= 0.9 && mo && mo.nivel && !fuera(px, pz, 30)) texto('Nv ' + mo.nivel, px, pz + rI + 8, '#fecaca');
   }
-  for (const hi of MV.hitos) pin(sx(hi.x), sz(hi.z), '🔭', '#fde047');
+  if (MAPA_F.miradores) for (const hi of MV.hitos) pin(sx(hi.x), sz(hi.z), '🔭', '#fde047');
   // Arena del jefe mundial.
-  { const ax = sx(ARENA3D.x), az = sz(ARENA3D.z), viva = mundial3 && mundial3.vivo; pin(ax, az, '⚔️', viva ? '#ff6b3d' : '#c4a484'); if (!fuera(ax, az, 80)) texto(ARENA3D.nombre, ax, az - rI - 8, viva ? '#ff9a7a' : '#f1e3d3'); }
+  if (MAPA_F.jefes || (mundial3 && mundial3.vivo)) { const ax = sx(ARENA3D.x), az = sz(ARENA3D.z), viva = mundial3 && mundial3.vivo; pin(ax, az, '⚔', viva ? '#ff6b3d' : '#c4a484'); if (!fuera(ax, az, 80)) texto(ARENA3D.nombre, ax, az - rI - 8, viva ? '#ff9a7a' : '#f1e3d3'); }
   // Pueblo y portal: de lejos el portal se separa del pueblo lo justo para que se distingan.
   { const ux = sx(0), uz = sz(0);
     if (portal) { const dd = Math.hypot(portal.x, portal.z) * e, k = dd < 28 ? 28 / dd : 1; pin(ux + (portal.x * e) * k, uz + (portal.z * e) * k, '🌀', '#c084fc'); }
-    if (e >= 2) { x.fillStyle = '#e5e7eb'; for (const n of NPCS3D) { const nx = sx(n.x), nz = sz(n.z); if (fuera(nx, nz, 60)) continue; x.fillRect(nx - 3, nz - 3, 6, 6); texto(n.nombre, nx, nz - 11, '#e5e7eb'); } }
-    pin(ux, uz, '🏘️', '#86efac', rI + 2);
+    if (e >= 2 && MAPA_F.vecinos) { x.fillStyle = '#e5e7eb'; for (const n of NPCS3D) { const nx = sx(n.x), nz = sz(n.z); if (fuera(nx, nz, 60)) continue; x.fillRect(nx - 3, nz - 3, 6, 6); texto(n.nombre, nx, nz - 11, '#e5e7eb'); } }
+    pin(ux, uz, '⌂', '#86efac', rI + 2);
     placa([['Pueblo Duende', '#fff', F1], ['Zona segura', '#86efac', F2]], ux, uz + rI + 5); }
   // Nombre de cada zona, nivel recomendado y exploracion.
-  for (const z of MV.zonas) {
-    const l = [[z.nombre, '#fff', F1], ['Nv ' + z.nv[0] + '-' + z.nv[1] + (z.total && !chico ? ` · 🧭 ${z.hechos}/${z.total}` : ''), z.total && z.hechos >= z.total ? '#86efac' : '#ffd84a', F2]];
+  const nvYo = yo ? yo.nivel || 1 : 1;
+  if (MAPA_F.zonas) for (const z of MV.zonas) {
+    const l = [[z.nombre, '#fff', F1], [(nvYo >= z.nv[0] && nvYo <= z.nv[1] ? '⭐ ' : '') + 'Nv ' + z.nv[0] + '-' + z.nv[1] + (z.total && !chico ? ` · ✓ ${z.hechos}/${z.total}` : ''), colorZonaNv(z.nv), F2]];
     if (z.total && !z.mira && e >= 0.7) l.push(['🔭 encuentra su hito', '#93c5fd', F2]);
     placa(l, sx(z.x), sz(z.z) - 18);
   }
   // Grupo.
-  if (grupo3 && grupo3.m) for (const g of grupo3.m) {
+  if (MAPA_F.grupo && grupo3 && grupo3.m) for (const g of grupo3.m) {
     if (!g.on || g.id === miId) continue;
     const o = otros.get(g.id), wx = o ? o.x : Array.isArray(g.p3) ? g.p3[0] : null, wz = o ? o.z : Array.isArray(g.p3) ? g.p3[1] : null;
     if (wx == null || enAbismo(wx) || enCueva(wx)) continue;
@@ -5585,6 +5602,7 @@ function mapaDibujar() {
     const mk = marcasNpc(), oro = '#ffd84a'; let sP = '';
     for (const n of TODOS_NPC) {
       const k = mk.get(n.nombre), enPueblo = zonaEn(n.x, n.z) === 'pueblo';
+      if (!MAPA_F.vecinos && !k) continue;   /* los que tienen algo para ti (! o ?) salen aunque apagues los vecinos */
       if (enPueblo && e < 2) { if (k && sP !== '?') sP = k; continue; }
       const nx = sx(n.x), nz = sz(n.z);
       if (fuera(nx, nz, 60)) continue;
@@ -5594,14 +5612,15 @@ function mapaDibujar() {
     }
     if (sP) pin(ux + rI * 1.5, uz - rI * 1.2, sP, oro, Math.max(10, rI * 0.75), oro);
   }
-  // Mision o guia.
+  // Mision o guia: ruta punteada dorada desde ti y su signo.
+  if (metaMision && mapaEnMundo()) { x.save(); x.strokeStyle = metaMision.guia ? 'rgba(74,222,128,.75)' : 'rgba(255,216,74,.75)'; x.lineWidth = 2; x.setLineDash([3, 7]); x.lineCap = 'round'; x.beginPath(); x.moveTo(sx(P.x), sz(P.z)); x.lineTo(sx(metaMision.x), sz(metaMision.z)); x.stroke(); x.restore(); }
   if (metaMision) pin(sx(metaMision.x), sz(metaMision.z), metaMision.guia ? '?' : '!', metaMision.guia ? '#4ade80' : '#ffd84a', rI + 2, metaMision.guia ? '#4ade80' : '#ffd84a');
   const enM = mapaEnMundo(), yx = sx(P.x), yz = sz(P.z);
   // Destino personal: linea punteada desde ti y su 📍 con la punta justo en el punto tocado.
   if (destino3) {
     const dx = sx(destino3.x), dz = sz(destino3.z);
     if (enM) { x.save(); x.strokeStyle = '#ff5c7a'; x.lineWidth = 2.5; x.setLineDash([7, 7]); x.beginPath(); x.moveTo(yx, yz); x.lineTo(dx, dz); x.stroke(); x.restore(); }
-    x.font = '30px system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', dx, dz - 14);
+    x.font = '30px "DQ Iconos",system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', dx, dz - 14);
   }
   // Tu flecha: hacia donde mira el duende (misma cuenta que el minimapa).
   if (enM) {
@@ -5639,7 +5658,7 @@ function abrirMapa() {
   MV.w = cv.clientWidth; MV.h = cv.clientHeight;
   // Al abrir: el alto completo del mundo en pantalla (o mas cerca si ya lo acercaste) y centrado en ti.
   if (!MV.esc) MV.esc = Math.max(MV.w, MV.h) / LADO;
-  $('mapa-ley').open = false;
+  $('mapa-ley').open = false; mapaFiltrosUI();
   MV.ptrs.clear(); MV.toque = null;   // un dedo que quedo apoyado al cerrar no debe contar como pellizco
   mapaCentrar();
   pintarMapaHD();
@@ -5685,6 +5704,12 @@ function abrirMapa() {
   $('mapa-menos').onclick = () => mapaZoom(MV.w / 2, MV.h / 2, 1 / 1.5);
   $('mapa-yo').onclick = () => mapaCentrar();
   $('mapa-dest-q').onclick = () => ponerDestino(null);
+  $('mapa-ley').addEventListener('change', ev => {
+    const c = ev.target; if (!c || !c.dataset || !(c.dataset.mf in MAPA_F)) return;
+    MAPA_F[c.dataset.mf] = c.checked ? 1 : 0;
+    try { localStorage.setItem('dq_mapa_filtros', JSON.stringify(Object.keys(MAPA_F).filter(k => !MAPA_F[k]))); } catch (e) {}
+    mapaFiltrosUI(); mapaPedir();
+  });
   addEventListener('resize', () => { if ($('v-mapa').classList.contains('on')) mapaPedir(); });
 }
 
@@ -9626,6 +9651,7 @@ async function inicio() {
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();
+  setTimeout(() => { try { if (GFX.efectivo !== 'minima') pintarMapaHD(true); } catch (e) {} }, 12000);   /* el mapa nitido se prepara solo, a trozos de 3 ms: al abrirlo ya esta, y el minimapa gana detalle. En Minima se pinta al abrir el mapa. */
   if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
   try {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
