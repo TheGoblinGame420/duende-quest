@@ -57,6 +57,7 @@ import { Dios } from './dios.js';
 import { Viajes } from './viajes.js';
 import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
+import { instalarGrupo } from './grupo.js';
 
 const MAX_JUGADORES = 300;
 const VISTA_2D = 1100, TOPE_2D = 40, LEJOS_2D = 450;   // px y filas: la foto 2D con mucha gente solo lleva a los cercanos
@@ -4107,6 +4108,8 @@ Object.assign(MmoWorld.prototype, Encargos);
 Object.assign(MmoWorld.prototype, Secundarias);
 Object.assign(MmoWorld.prototype, Vasos);
 Object.assign(MmoWorld.prototype, Caso);
+// El bot en el grupo oficial de Telegram (bienvenida, novedades, hitos, antiespam): functions/mmo/grupo.js
+instalarGrupo(MmoWorld.prototype);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).
 MmoWorld.prototype.nuevoItem = (nv, r) => generarItem(nv, r);
 MmoWorld.prototype.generarItem = generarItem;
