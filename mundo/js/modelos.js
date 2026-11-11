@@ -609,7 +609,7 @@ function animarRig(m, est, te, t) {
       if (ataca) {
         // Brazo derecho: arriba y atras, luego tajo hacia delante (~0.35 s).
         const k = Math.min(kA, 1), vuelta = kA < 1 ? 1 : Math.max(0, 1 - (kA - 1) * 4);
-        const cmb = m.combo | 0;   // combo visual (v344): 0 tajo de arriba, 1 tajo de vuelta (barrido), 2 estocada fuerte
+        const cmb = r.cmb ?? (m.combo | 0);   // combo visual (v344): 0 tajo de arriba, 1 tajo de vuelta (barrido), 2 estocada fuerte
         const ang = k < 0.4 ? lerp(0, -3.3, suave(k / 0.4)) : lerp(-3.3, -0.5, suave((k - 0.4) / 0.6));
         if (bD && cmb === 1) {
           // Tajo de vuelta: brazo a la altura del hombro que barre de un lado al otro.
@@ -786,6 +786,7 @@ function animarRig(m, est, te, t) {
     }
   }
 
+  if (m.tipo !== 'duende') animarExtra(m, r, b, est, te, t, f, mueve, ataca, aA, kA);   /* criaturas: capas, mandibulas, estocadas y muertes propias */
   // Comunes: retroceso al recibir y caida al morir.
   if (est === 'herido') {
     const e = Math.max(0, 1 - te / 0.35);
@@ -1638,45 +1639,413 @@ function zCara(x, y) {
 const mc = (c, def, extra) => mat(c.color || def, c.e || extra ? { e: Math.max(c.e || 0, extra || 0) } : null);
 const principal = (c, def) => c.color || def;
 
+// ── KIT DE CRIATURAS (monstruos, jefes y PNJ) ──
+// Geometrias facetadas baratas para dar forma (muslo, pecho, placas, garras) sin
+// subir los triangulos: un miembro son 24 y una cuña 8, frente a los 120 de una esfera.
+function geoCuna() {
+  // Prisma en cuña: base 1 x 1 en z = 0 y filo horizontal en z = 1 (hocicos, placas, hojas).
+  const A = [-0.5, -0.5, 0], B = [0.5, -0.5, 0], C = [0.5, 0.5, 0], D = [-0.5, 0.5, 0], E = [-0.5, 0, 1], F = [0.5, 0, 1];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([A, D, C, A, C, B, D, E, F, D, F, C, A, F, E, A, B, F, A, E, D, B, C, F].flat(), 3));
+  g.computeVertexNormals();
+  return g;
+}
+Object.assign(FABRICA, {
+  miembro: () => new THREE.CylinderGeometry(1, 0.68, 1, 6).translate(0, -0.5, 0),   // cuelga de y = 0, fino abajo
+  pecho: () => new THREE.CylinderGeometry(1, 0.7, 1, 6).translate(0, 0.5, 0),       // base en y = 0, ancho arriba
+  aro6: () => new THREE.CylinderGeometry(1, 1, 1, 6, 1, true),                      // banda abierta (cintos, vendas, ribetes)
+  semiB: () => new THREE.SphereGeometry(1, 6, 2, 0, PI * 2, 0, PI / 2),             // cupula baja (hombreras, placas)
+  cuna: geoCuna,
+});
+
+// Cuerpo de criatura bipeda: mismas marcas de rig que humano() (pI, pD, cuerpo, bI, bD,
+// manoI, manoD, cabeza, H) pero con rodillas y codos doblados, pecho ancho y manos con garras.
+// La cabeza la pone quien llama (r.cabeza queda vacia). o: { piel, ropa, pantalon, botas,
+// mangas, antebrazo, manos, L, T, A, ancho, panza, grueso, cab, encorvado, tunica, ribete,
+// garras, manoG, brazoG, hombro (color de la bola del hombro), ligero }
+function criatura(r, o) {
+  const R = r.raiz, lig = !!o.ligero;
+  const L = o.L ?? 0.4, T = o.T ?? 0.46, Ab = o.A ?? 0.5, W = o.ancho ?? 1, H = o.cab ?? 1, P = o.panza ?? 1;
+  const gr = 0.085 * (o.grueso ?? 1), enc = o.encorvado || 0;
+  const piel = hx(o.piel), ropa = hx(o.ropa), pant = hx(o.pantalon ?? osc(o.ropa, 0.62)), bota = hx(o.botas ?? o.piel);
+  const manga = hx(o.mangas ?? o.ropa), ante = hx(o.antebrazo ?? o.piel), mano = hx(o.manos ?? o.piel), una = '#e9dfc4';
+  if (o.tunica) {
+    const tn = hx(o.tunica), tg = r.tunica = piv(r, G(R, [0, 0, 0]));
+    const Q = [['tronco', tn, [0, 0, 0], [0.37 * W * P, L + 0.07, 0.33 * W * P]]];
+    if (o.ribete) Q.push(['aro6', hx(o.ribete), [0, 0.035, 0], [0.4 * W * P, 0.07, 0.36 * W * P]]);
+    MF(tg, Q);
+  } else {
+    for (const s of [1, -1]) {
+      const p = piv(r, G(R, [0.13 * W * s, L, 0]));
+      const Q = [
+        ['miembro', pant, [0, 0.02, 0], [gr * 1.3, L * 0.56, gr * 1.4], [-0.32, 0, 0]],                 // muslo (rodilla adelante)
+        ['miembro', o.botas ? pant : piel, [0, -L * 0.5, L * 0.17], [gr * 0.95, L * 0.46, gr], [0.36, 0, 0]],   // espinilla
+        ['caja', bota, [0, -L + 0.05, 0.07], [gr * 2, 0.1, 0.27]],
+      ];
+      if (o.garras && !o.botas && !lig) for (const x of [-0.55, 0.55]) Q.push(['cono4', una, [x * gr, -L + 0.035, 0.2], [0.024, 0.075, 0.024], [PI / 2, 0, 0]]);
+      MF(p, Q);
+      if (s > 0) r.pI = p; else r.pD = p;
+    }
+  }
+  const cu = r.cuerpo = piv(r, G(R, [0, L, 0], [enc, 0, 0]));
+  MF(cu, [
+    ['caja', pant, [0, 0.03, 0], [0.33 * W, 0.15, 0.23]],                                 // cadera
+    ['esferaB', ropa, [0, T * 0.34, 0.03 * P], [0.27 * W * P, T * 0.42, 0.22 * P]],        // barriga
+    ['pecho', ropa, [0, T * 0.26, 0], [0.3 * W, T * 0.64, 0.2]],                           // pecho: ancho en los hombros
+    ['caja', ropa, [0, T * 0.9, -0.03], [0.34 * W, 0.1, 0.2]],                             // lomo entre los hombros
+  ]);
+  const hy = T * 0.84, hom = 0.3 * W + 0.05, g2 = gr * (o.brazoG ?? 0.82);
+  for (const s of [1, -1]) {
+    const b = piv(r, G(cu, [hom * s, hy, 0], [o.brazoX ?? -enc - 0.08, 0, (o.brazoZ ?? 0.16) * s]));
+    const hm = [0, -Ab * 0.98, Ab * 0.21], rm = 0.082 * (o.manoG ?? 1);
+    const Q = [
+      ['icos', hx(o.hombro ?? o.mangas ?? o.ropa), [0, 0, 0], g2 * 1.4],
+      ['miembro', manga, [0, 0, 0], [g2, Ab * 0.52, g2]],
+      ['miembro', ante, [0, -Ab * 0.47, 0], [g2 * 1.08, Ab * 0.55, g2 * 1.08], [-0.4, 0, 0]],       // antebrazo (codo doblado)
+      ['icos', mano, hm, rm],
+    ];
+    if (o.garras && !lig) for (const [x, z] of [[-0.6, 0.2], [0, 0.55], [0.6, 0.2]]) Q.push(['cono4', una, [hm[0] + x * rm, hm[1] - rm * 0.6, hm[2] + z * rm], [0.02, 0.085, 0.02], [PI - 0.55, 0, 0]]);
+    MF(b, Q);
+    const mn = G(b, hm);
+    if (s > 0) { r.bI = b; r.manoI = mn; } else { r.bD = b; r.manoD = mn; }
+  }
+  r.cabeza = piv(r, G(cu, [0, T + 0.01, o.cuelloZ ?? 0], [-enc * 0.8, 0, 0]));
+  r.H = H; r.topeCabeza = 0.54 * H;
+  return r;
+}
+
+// Cabeza de goblin: craneo (mismo sitio y tamaño que en humano(): los cascos encajan),
+// nariz ganchuda, orejas grandes con su interior, cuencas oscuras con ceño en V y una
+// mandibula saliente con colmillos que se abre al gruñir y al atacar (r.mandibula).
+// o: { piel, ojos (color), amigo, ligero, mascara (color del pañuelo: tapa la boca), colmillos }
+function cabezaGoblin(r, o) {
+  const cb = r.cabeza, H = r.H, lig = !!o.ligero, amigo = !!o.amigo;
+  const piel = hx(o.piel), pielO = hx(osc(o.piel, 0.7));
+  const C = [
+    ['esfera', piel, [0, 0.26, 0], [0.3, 0.28, 0.28]],
+    ['cono', hx(osc(o.piel, 0.86)), [0, 0.27, 0.2], [0.075, amigo ? 0.24 : 0.3, 0.07], [PI / 2 + (amigo ? 0.3 : 0.5), 0, 0]],
+  ];
+  const dentro = hx(mez(o.piel, '#c8705a', 0.55)), atras = amigo ? -0.25 : 0.35;
+  const oreja = x => [
+    ['cono', piel, [0, 0, 0], [0.09, 0.42, 0.05], [0, x * atras, -x * 1.12]],
+    ['cono', dentro, [x * 0.012, 0.004, 0.03], [0.055, 0.33, 0.028], [0, x * atras, -x * 1.12]],
+  ];
+  for (const x of [-1, 1]) {
+    if (amigo) {
+      const og = piv(r, G(cb, [x * 0.25 * H, 0.3 * H, -0.02 * H]));
+      MF(og, oreja(x), null, null, null, H);
+      (r.orejas || (r.orejas = [])).push([og, x]);
+    } else for (const p of oreja(x)) C.push([p[0], p[1], [p[2][0] + x * 0.25, p[2][1] + 0.3, p[2][2] - 0.02], p[3], p[4]]);
+  }
+  if (amigo) {
+    // PNJ: la cara amable de siempre (ojos del duende 2D) y una sonrisa.
+    const cara = partesOjos2D(o.piel), esOjo = p => p[2][1] >= 0.25 && p[2][1] <= 0.345;
+    for (const p of cara) if (!esOjo(p)) C.push(p);
+    C.push(['caja', '#3a1c14', [0, 0.115, 0.25], [0.14, 0.022, 0.03]]);
+    r.ojosP = piv(r, G(cb, [0, 0.3 * H, 0]));
+    MF(r.ojosP, cara.filter(esOjo), null, null, [0, -0.3 * H, 0], H);
+  } else {
+    for (const x of [-1, 1]) {
+      C.push(['caja', '#17120f', [x * 0.105, 0.305, 0.215], [0.13, 0.085, 0.1], [0, x * 0.3, x * 0.2]]);       // cuenca
+      C.push(['caja', pielO, [x * 0.112, 0.368, 0.225], [0.18, 0.055, 0.11], [0.2, 0, x * 0.38]]);             // ceño
+    }
+    const ojo = mat(o.ojos, { e: 1 });
+    r.ojosP = piv(r, G(cb, [0, 0.305 * H, 0]));
+    for (const x of [-1, 1]) M(r.ojosP, 'esferaB', ojo, [x * 0.105 * H, 0, 0.256 * H], [0.05 * H, 0.034 * H, 0.026 * H], [0, 0, x * 0.3]);
+    r.ojosMalos = true;
+    const J = [];
+    if (o.mascara) {
+      // Pañuelo del asesino: tapa boca y menton; la nariz asoma por encima.
+      const tela = hx(o.mascara);
+      C.push(['caja', tela, [0, 0.12, 0.11], [0.42, 0.13, 0.3], [0.12, 0, 0]],['cuna', hx(osc(o.mascara, 0.8)), [0, 0.07, 0.2], [0.26, 0.1, 0.12], [PI / 2 - 0.2, 0, 0]]);
+    } else {
+      C.push(['caja', '#2a0f14', [0, 0.146, 0.185], [0.2, 0.034, 0.13]]);                                         // boca por dentro
+      J.push(['caja', pielO, [0, -0.03, 0.115], [0.3, 0.085, 0.25]], ['caja', '#e9dfc4', [0, 0.02, 0.228], [0.15, 0.028, 0.02]]);
+      for (const x of [-1, 1]) J.push(['cono4', '#f1e9cf', [x * 0.108, 0, 0.218], [0.03, o.colmillos ?? 0.12, 0.03], [0.12, 0, -x * 0.12]]);
+      if (lig) for (const p of J) C.push([p[0], p[1], [p[2][0], p[2][1] + 0.125, p[2][2] + 0.01], p[3], p[4]]);
+      else { r.mandibula = piv(r, G(cb, [0, 0.125 * H, 0.01 * H])); MF(r.mandibula, J, null, null, null, H); }
+    }
+  }
+  MF(cb, C, null, null, null, H);
+}
+
+// Capa que cuelga de la nuca y ondea (r.cuelgan). En ligero va pegada al cuerpo, sin pivote.
+function capaViva(r, color, T, largo, o = {}) {
+  const c1 = hx(color), c2 = hx(osc(color, 0.72)), an = o.ancho ?? 0.46;
+  const P = [
+    ['caja', c1, [0, -largo * 0.25, -0.01], [an * 0.8, largo * 0.5, 0.035]],
+    ['caja', c2, [0, -largo * 0.72, -0.03], [an, largo * 0.48, 0.035], [0.1, 0, 0]],
+  ];
+  if (!o.ligero) for (const x of [-0.36, -0.12, 0.12, 0.36]) P.push(['cono4', c2, [x * an, -largo * 0.94, -0.05], [an * 0.13, largo * (0.14 + 0.1 * Math.abs(x)), 0.02], [PI, 0, 0]]);
+  if (o.ligero) { MF(r.cuerpo, P, null, null, [0, T * 0.86, -0.21]); return null; }
+  const g = piv(r, G(r.cuerpo, [0, T * 0.86, -0.2], [0.14, 0, 0]));
+  MF(g, P);
+  (r.cuelgan || (r.cuelgan = [])).push([g, 'x', 0.04, 0.32, 2.1]);
+  return g;
+}
+// Casco de hierro (unidades de cabeza): cupula con ala y, a pedido, nasal, carrilleras,
+// pincho, cuernos o cresta (crestaT = de oreja a oreja, como los centuriones).
+function cascoGob(r, color, o = {}) {
+  r.tocado = true;
+  const c = hx(color), c2 = hx(osc(color, 0.66));
+  // La cupula empieza por encima de los ojos (y = 0,35): la mirada roja se ve bajo el ala.
+  const P = [['semi', c, [0, 0.35, 0], [0.325, 0.25, 0.315]], ['caja', c2, [0, 0.365, 0.02], [0.66, 0.035, 0.68]]];
+  if (o.nasal) P.push(['caja', c2, [0, 0.27, 0.3], [0.05, 0.2, 0.035]]);
+  if (o.mejillas) for (const x of [-1, 1]) P.push(['caja', c, [x * 0.275, 0.2, 0.06], [0.04, 0.3, 0.2]]);
+  if (o.pincho) P.push(['cono4', c2, [0, 0.58, 0], [0.05, 0.2, 0.05]]);
+  if (o.cuernos) for (const x of [-1, 1]) P.push(['cono', hx(o.cuernos), [x * 0.27, 0.44, 0], [0.07, 0.36, 0.07], [0.25, 0, -x * 0.85]]);
+  if (o.cresta) P.push(['caja', c2, [0, 0.6, -0.02], o.crestaT ? [0.5, 0.04, 0.07] : [0.07, 0.04, 0.44]], ['caja', hx(o.cresta), [0, 0.69, -0.02], o.crestaT ? [0.56, 0.13, 0.07] : [0.07, 0.13, 0.5]]);
+  return fuera(MF(r.cabeza, P, null, null, null, r.H));
+}
+// Hombreras de placa con reborde (y pua si se pide).
+function hombrerasB(r, color, o = {}) {
+  const c = hx(color), c2 = hx(osc(color, 0.68)), k = o.k ?? 1;
+  for (const b of [r.bI, r.bD]) {
+    const s = b === r.bI ? 1 : -1;
+    const P = [['semiB', c, [0.02 * s, -0.01, 0], [0.16 * k, 0.12 * k, 0.17 * k]], ['aro6', c2, [0.02 * s, 0, 0], [0.18 * k, 0.03, 0.19 * k]]];
+    if (o.pua) P.push(['cono4', hx(o.pua), [0.03 * s, 0.08 * k, 0], [0.045 * k, 0.22 * k, 0.045 * k], [0, 0, -s * 0.35]]);
+    if (o.piel) P.push(['esferaB', hx(o.piel), [0.03 * s, -0.02, -0.03], [0.19 * k, 0.1 * k, 0.2 * k]]);   // manto de piel
+    fuera(MF(b, P));
+  }
+}
+// Escudos de los goblins: 'torre' (rectangular con umbo), 'lagrima' (de caballero) o 'rodela'.
+function escudoGob(mano, forma, color, borde = '#c9a227', emblema) {
+  const g = fuera(G(mano, [0.09, 0.05, 0.04]));
+  mano.userData.escudo = true;
+  const c = hx(color), b = hx(borde), P = [];
+  if (forma === 'torre') {
+    P.push(['caja', c, [0, 0, 0], [0.045, 0.56, 0.34]], ['caja', b, [0.005, 0.27, 0], [0.05, 0.04, 0.36]], ['caja', b, [0.005, -0.27, 0], [0.05, 0.04, 0.36]], ['icos', b, [0.04, 0, 0], 0.07]);
+    if (emblema) P.push(['caja', hx(emblema), [0.026, 0, 0], [0.012, 0.42, 0.05]], ['caja', hx(emblema), [0.026, 0.05, 0], [0.012, 0.05, 0.24]]);
+  } else if (forma === 'lagrima') {
+    P.push(['caja', c, [0, 0.1, 0], [0.045, 0.3, 0.34]], ['cuna', c, [0, -0.05, 0], [0.045, 0.34, 0.3], [PI / 2, 0, PI / 2]], ['caja', b, [0.005, 0.24, 0], [0.05, 0.04, 0.36]], ['icos', b, [0.04, 0.08, 0], 0.06]);
+    if (emblema) P.push(['caja', hx(emblema), [0.026, 0.02, 0], [0.012, 0.36, 0.06]]);
+  } else P.push(['cil', c, [0, 0, 0], [0.26, 0.04, 0.26], [0, 0, PI / 2]], ['aro6', b, [0, 0, 0], [0.28, 0.05, 0.28], [0, 0, PI / 2]], ['icos', b, [0.03, 0, 0], 0.07]);
+  MF(g, P);
+  return g;
+}
+// Armas de monstruo (la hoja apunta a +z como las del jugador).
+function garroteClavos(mano, lig) {
+  const g = grupoArma(mano);
+  const P = [['tronco', '#6b4a2b', [0, 0, 0.72], [0.115, 0.74, 0.115], [-PI / 2, 0, 0]], ['aro6', '#c9b48a', [0, 0, 0.03], [0.052, 0.12, 0.052], [PI / 2, 0, 0]], ['aro6', '#4a4038', [0, 0, 0.62], [0.118, 0.06, 0.118], [PI / 2, 0, 0]]];
+  if (!lig) P.push(['cono4', '#d8d0b8', [0.09, 0, 0.6], [0.03, 0.1, 0.03], [0, 0, -PI / 2]], ['cono4', '#d8d0b8', [-0.09, 0, 0.5], [0.03, 0.1, 0.03], [0, 0, PI / 2]], ['cono4', '#d8d0b8', [0, 0.09, 0.52], [0.03, 0.1, 0.03]], ['cono4', '#d8d0b8', [0, -0.09, 0.64], [0.03, 0.1, 0.03], [PI, 0, 0]]);
+  MF(g, P);
+  return g;
+}
+function dagaCurva(mano, filo = '#c4ccd4') {
+  const g = grupoArma(mano);
+  MF(g, [['caja', '#2b2233', [0, 0, -0.04], [0.04, 0.045, 0.17]], ['caja', '#8a6a2a', [0, 0, 0.06], [0.11, 0.05, 0.03]], ['caja', filo, [0, 0.005, 0.19], [0.022, 0.075, 0.24]], ['cuna', filo, [0, 0.03, 0.3], [0.022, 0.075, 0.16], [-0.35, 0, 0]]]);
+  return g;
+}
+// Lanza con pendon. Con rig (r) la muñeca es un pivote: en la estocada la punta va al frente.
+function lanzaGob(r, mano, pendon = '#a51f26', lig) {
+  const g = fuera(G(mano, [0, 0, 0.02], [-1.35, 0, 0]));
+  const P = [['cil', '#6b4a2b', [0, 0, 0.57], [0.025, 1.7, 0.025], [PI / 2, 0, 0]], ['cono4', '#d0d6dc', [0, 0, 1.4], [0.055, 0.26, 0.03], [PI / 2, 0, 0]], ['aro6', '#8a6a2a', [0, 0, 1.37], [0.04, 0.06, 0.04], [PI / 2, 0, 0]]];
+  if (pendon) P.push(['cuna', hx(pendon), [0, -0.02, 1.22], [0.016, 0.2, 0.3], [PI / 2, 0, 0]]);
+  MF(g, P);
+  if (!lig) { piv(r, g); r.muneca = g; r.munecaInc = 1.35; r.cmb = 2; }
+  return g;
+}
+// Hacha de guerra de dos filos (a dos manos).
+function hachaDoble(mano, metal = '#e0c070', mango = '#4a3420', k = 1) {
+  const g = grupoArma(mano, -0.7), m = hx(metal), m2 = hx(osc(metal, 0.7));
+  MF(g, [
+    ['cil', hx(mango), [0, 0, 0.36 * k], [0.03, 0.98 * k, 0.03], [PI / 2, 0, 0]],
+    ['cuna', m, [0, 0.31 * k, 0.7 * k], [0.035, 0.46 * k, 0.28 * k], [PI / 2, 0, 0]],
+    ['cuna', m, [0, -0.31 * k, 0.7 * k], [0.035, 0.46 * k, 0.28 * k], [-PI / 2, 0, 0]],
+    ['caja', m2, [0, 0, 0.7 * k], [0.06, 0.1 * k, 0.14 * k]],
+    ['cono4', m2, [0, 0, 0.84 * k], [0.035, 0.16 * k, 0.035], [PI / 2, 0, 0]],
+  ]);
+  return g;
+}
+
+// Animacion extra de las criaturas (la llama animarRig despues de la pose del estado; solo
+// mira marcas del rig que ponen los monstruos, asi que el duende no cambia):
+//   r.cuelgan [[pivote, eje, vaiven quieto, vuelo al moverse, velocidad]]: capas, pendones, colas.
+//   r.mandibula (bipedos): gruñe quieto y se abre al atacar, al recibir y al morir.
+//   r.acecha: quieto, se agazapa y tantea el arma.   r.dosManos: el tajo va con los dos brazos.
+//   r.muneca + r.munecaInc: la lanza apunta al frente en la estocada.   r.cabezazo: embiste con la cabeza.
+//   r.zarpa (cuadrupedos): se agazapa y da el zarpazo con una pata.   r.buche: saco que se hincha.
+//   r.caer: 'frente' (de rodillas y de bruces), 'huesos' (se desarma), 'esfuma' (gira y se deshace).
+function animarExtra(m, r, b, est, te, t, f, mueve, ataca, aA, kA) {
+  const A = m.alto, muerto = est === 'muere', { cuerpo: cu, cabeza: cb, bI, bD, pI, pD } = r;
+  if (r.cuelgan) for (const [o, eje, quieto, vuelo, vel] of r.cuelgan) o.rotation[eje] += Math.sin(t * vel + o.id) * quieto + (mueve ? vuelo * (1 + 0.25 * Math.sin(f * 2)) : 0) + (ataca ? aA * vuelo * 0.7 : 0);
+  if (r.buche) r.buche.scale.multiplyScalar(1 + 0.16 * Math.max(0, Math.sin(t * 1.9)) + (est === 'lanza' ? 0.3 : 0));
+  if (r.modo === 'bipedo') {
+    if (r.mandibula) r.mandibula.rotation.x += muerto ? 0.45 * Math.min(1, te / 0.3) : ataca ? aA * 0.55 : est === 'herido' ? 0.4 * Math.max(0, 1 - te / 0.35) : est === 'lanza' ? 0.3 : 0.1 * Math.max(0, Math.sin(t * 1.7));
+    if (r.acecha && est === 'quieto') {
+      const w = 0.5 + 0.5 * Math.sin(t * 1.1), k = r.acecha;
+      b.position.y -= 0.012 * A * w * k;
+      if (cu) cu.rotation.x += 0.05 * w * k;
+      if (cb) cb.rotation.x -= 0.04 * w * k;
+      if (bD) bD.rotation.x -= 0.14 * Math.max(0, Math.sin(t * 0.8 + 1)) * k;
+    }
+    if (ataca) {
+      const k = Math.min(kA, 1), vuelta = kA < 1 ? 1 : Math.max(0, 1 - (kA - 1) * 4);
+      if (r.dosManos && bI && bD) {
+        const ang = k < 0.4 ? lerp(0, -3.3, suave(k / 0.4)) : lerp(-3.3, -0.5, suave((k - 0.4) / 0.6));
+        bI.rotation.x += ang * vuelta * 0.92; bI.rotation.z -= 0.55 * aA; bD.rotation.z += 0.3 * aA;
+        if (cu) cu.rotation.x += (k < 0.4 ? -0.18 * suave(k / 0.4) : lerp(-0.18, 0.3, suave((k - 0.4) / 0.6))) * vuelta;
+      }
+      if (r.muneca) {
+        const ke = k < 0.35 ? lerp(0, 0.8, suave(k / 0.35)) : lerp(0.8, -1.55, suave(clamp((k - 0.35) / 0.25, 0, 1)));
+        r.muneca.rotation.x += (r.munecaInc - 0.15) * suave(clamp(k / 0.3, 0, 1)) * vuelta - ke * vuelta;
+      }
+      if (r.cabezazo && cu) { cu.rotation.x += (k < 0.4 ? -0.3 * suave(k / 0.4) : lerp(-0.3, 0.75, suave((k - 0.4) / 0.35))) * vuelta; b.position.y += aA * 0.05 * A; }
+    }
+  } else if (r.modo === 'cuadrupedo' && r.zarpa) {
+    if (ataca) {
+      const k = Math.min(kA, 1), carga = k < 0.4 ? suave(k / 0.4) : Math.max(0, 1 - (k - 0.4) / 0.3);
+      b.position.z -= carga * 0.08 * A; b.position.y -= carga * 0.04 * A; b.rotation.x -= carga * 0.06;
+      const p = r.patas[0] && r.patas[0][0];
+      if (p) p.rotation.x -= (k < 0.4 ? -0.3 * suave(k / 0.4) : 1.25 * arco((k - 0.4) / 0.6));
+    } else if (est === 'quieto') b.position.y -= 0.012 * A * (0.5 + 0.5 * Math.sin(t * 1.3));
+  }
+  if (muerto) {
+    const k = Math.min(1, te / 1.4);
+    if (r.caer === 'frente') {
+      const k1 = suave(Math.min(1, k / 0.3)), k2 = suave(clamp((k - 0.25) / 0.3, 0, 1));
+      b.position.y -= 0.16 * A * k1 * (1 - k2);
+      if (pI) { pI.rotation.x += 1.2 * k1 * (1 - k2); pD.rotation.x += 0.9 * k1 * (1 - k2); }
+      if (cu) cu.rotation.x += 0.3 * k1 * (1 - k2);
+      if (cb) cb.rotation.x += 0.5 * k1 * (1 - k2);
+      b.rotation.x = (PI / 2) * 0.94 * k2;
+    } else if (r.caer === 'huesos') {
+      const k1 = suave(Math.min(1, k / 0.4));
+      b.scale.y *= 1 - 0.7 * k1; b.scale.x *= 1 + 0.2 * k1; b.scale.z *= 1 + 0.2 * k1;
+      if (cb) { cb.rotation.z += 1.3 * k1; cb.rotation.x += 0.6 * k1; cb.position.x += 0.28 * k1; }
+      if (bI) { bI.rotation.z += 0.7 * k1; bD.rotation.z -= 0.7 * k1; bD.rotation.x -= 0.8 * k1; }
+      if (pI) { pI.rotation.z += 0.55 * k1; pD.rotation.z -= 0.55 * k1; }
+      if (cu) cu.rotation.x += 0.5 * k1;
+    } else if (r.caer === 'esfuma') {
+      const k1 = suave(k);
+      b.rotation.y += k1 * 7; b.position.y += 0.25 * A * k1;
+      b.scale.set(Math.max(0.01, 1 - k1), Math.max(0.01, (1 + 0.7 * k1) * (1 - k1 * k1)), Math.max(0.01, 1 - k1));
+    }
+  }
+}
+
 // ── GOBLINS ──
 const GOB = {
   // Colores sacados de las hojas 2D (assets/enemigos/sheets/<hoja>.png).
-  goblin_normal:     { piel: '#4f8a3c', ropa: '#8f8f8f', pantalon: '#784818', botas: '#8a8a8a' },
-  goblin_samurai:    { piel: '#4f8a3c', ropa: '#cfcfcf', pantalon: '#a8a8a8', botas: '#6a6a6a' },
-  goblin_mage:       { piel: '#4f8a3c', ropa: '#55489a', tunica: true },
-  goblin_peasant:    { piel: '#4f8a3c', ropa: '#8a5a22', pantalon: '#6b3f14', botas: '#4a2a12', pelo: [1, '#5a3418'] },
-  goblin_assassin:   { piel: '#4f8a3c', ropa: '#34347a', pantalon: '#26265a', botas: '#1a1a3a' },
-  goblin_guard:      { piel: '#4f8a3c', ropa: '#9a9a9a', pantalon: '#7a7a7a', botas: '#5a5a5a', armadura: true },
-  goblin_knight:     { piel: '#4f8a3c', ropa: '#b4b4b4', pantalon: '#808080', botas: '#5a5a5a', armadura: true, pelo: [7, '#6b3a1c'] },
-  goblin_lord:       { piel: '#4f8a3c', ropa: '#9a9a9a', tunica: true, panza: 1.25 },
-  goblin_centurion:  { piel: '#4f8a3c', ropa: '#c8904a', pantalon: '#9a6a30', botas: '#6b4a22', armadura: true },
-  goblin_battlelord: { piel: '#4f8a3c', ropa: '#d8a848', pantalon: '#b07a38', botas: '#7a5226', ancho: 1.15, armadura: true },
+  goblin_normal:     { piel: '#4f8a3c', ropa: '#8a8a86', pantalon: '#6b4420', mangas: 'piel', enc: 0.24 },
+  goblin_samurai:    { piel: '#4f8a3c', ropa: '#cfcfcf', pantalon: '#8a8a94', botas: '#4a4a52', enc: 0.1 },
+  goblin_mage:       { piel: '#4f8a3c', ropa: '#55489a', tunica: true, ribete: '#c9a227', enc: 0.14 },
+  goblin_peasant:    { piel: '#4f8a3c', ropa: '#8a5a22', pantalon: '#5e3a14', botas: '#3e2410', pelo: [1, '#5a3418'], enc: 0.2 },
+  goblin_assassin:   { piel: '#4f8a3c', ropa: '#34347a', pantalon: '#24244f', botas: '#17172f', ancho: 0.92, enc: 0.3 },
+  goblin_guard:      { piel: '#4f8a3c', ropa: '#9a9aa0', pantalon: '#5a5a66', botas: '#4a4a52', armadura: true, enc: 0.12 },
+  goblin_knight:     { piel: '#4f8a3c', ropa: '#b4b4ba', pantalon: '#6a6a74', botas: '#55555e', armadura: true, pelo: [7, '#6b3a1c'], enc: 0.1 },
+  goblin_lord:       { piel: '#4f8a3c', ropa: '#9a9a9a', tunica: true, ribete: '#f0e8d8', panza: 1.28, enc: 0.08 },
+  goblin_centurion:  { piel: '#4f8a3c', ropa: '#c8904a', pantalon: '#7a4a22', botas: '#5a3a1a', armadura: true, enc: 0.08 },
+  goblin_battlelord: { piel: '#4f8a3c', ropa: '#d8a848', pantalon: '#7a5226', botas: '#5a3a1c', ancho: 1.16, armadura: true, enc: 0.14 },
 };
 function goblin(c, v) {
-  const d = GOB[v] || GOB.goblin_normal, r = nuevoRig('bipedo');
-  const ropa = principal(c, d.ropa), mr = mc(c, d.ropa);
-  humano(r, {
-    piel: d.piel, ropa, ropaMat: mr,
-    pantalon: c.color ? osc(ropa, 0.7) : d.pantalon ?? osc(ropa, 0.6), botas: d.botas ?? '#3a2a1c', cinto: d.armadura || d.tunica ? null : '#3a2412',
-    cabeza: 'goblin', ojos: c.amigo ? 'duende' : v === 'goblin_assassin' ? '#ffe14a' : '#ff3b2f',
-    nariz: 'pico', orejas: 0.36, orejasVivas: !!c.amigo, colmillos: !c.amigo, cab: 1.05, L: 0.42, T: 0.48, A: 0.4,
-    panza: d.panza, ancho: d.ancho, tunica: d.tunica ? ropa : null, tunicaMat: d.tunica ? mr : null,
+  const d = GOB[v] || GOB.goblin_normal, r = nuevoRig('bipedo'), lig = !!c.ligero, amigo = !!c.amigo, jefe = !!c.jefe;
+  // Con tinte (jefes, la corte, PNJ) el color va a la tela o las placas; lo de debajo queda
+  // oscuro para que no sea un muñeco de un solo color.
+  const acento = c.color || '#a51f26', ropa = jefe && c.color ? mez(c.color, '#24242e', 0.5) : principal(c, d.ropa);   /* jefes: placas oscuras teñidas y el tinte vivo en capa, cresta, hombreras y gema */
+  const pant = c.color ? mez(ropa, '#17151f', 0.62) : d.pantalon;
+  const T = 0.46, L = d.tunica ? 0.44 : 0.4, W = (d.ancho ?? 1) * (jefe ? 1.06 : 1), P = d.panza ?? (d.armadura ? 1 : 1.12);
+  criatura(r, {
+    ligero: lig, piel: d.piel, ropa, pantalon: pant, botas: c.color && d.botas ? mez(ropa, '#101016', 0.72) : d.botas,
+    mangas: d.mangas === 'piel' ? d.piel : ropa, antebrazo: d.armadura ? osc(ropa, 0.72) : d.piel,
+    cab: 1.08, L, T, A: 0.5, ancho: W, panza: P, encorvado: amigo ? 0.05 : d.enc, cuelloZ: amigo ? 0 : 0.03,
+    tunica: d.tunica ? ropa : null, ribete: d.tunica ? d.ribete : null, garras: !amigo, manoG: 1.15,
   });
+  cabezaGoblin(r, { piel: d.piel, ojos: v === 'goblin_assassin' ? '#ffe14a' : jefe && c.color ? mez(c.color, '#ffffff', 0.25) : '#ff3b2f', amigo, ligero: lig, mascara: v === 'goblin_assassin' ? osc(ropa, 0.8) : null });
   if (d.pelo) fuera(MF(r.cabeza, partesPelo(d.pelo[0], ''), d.pelo[1], null, null, r.H));
+  // Detalles del torso (se funden con el cuerpo: no cuestan dibujos).
+  const cu = r.cuerpo, D = [], cuero = '#3a2412', oro = '#c9a227';
+  const cinto = (c1 = cuero, hebilla = oro) => D.push(['aro6', c1, [0, T * 0.2, 0.012 * P], [0.27 * W * P, 0.055, 0.238 * P]], ['caja', hebilla, [0, T * 0.2, 0.235 * P], [0.075, 0.065, 0.03]]);
+  const harapos = (c1, n = 4) => { if (!lig) for (let i = 0; i < n; i++) { const a = -1.9 + (3.8 * i) / (n - 1); D.push(['cono4', hx(c1), [Math.sin(a) * 0.2 * W, 0.07, Math.cos(a) * 0.19 * P], [0.06, 0.13 + (i % 2) * 0.04, 0.03], [PI, 0, 0]]); } };
+  const correa = (c1 = cuero) => { if (!lig) D.push(['caja', c1, [0.01, T * 0.56, 0.2], [0.06, T * 1.0, 0.035], [-0.12, 0, -0.85]]); };
+  const gema = () => { if (jefe && c.color) M(cu, 'icos', mat(c.color, { e: 0.9 }), [0, T * 0.62, 0.2], 0.05); };
   switch (v) {
-    case 'goblin_normal': garrote(r.manoD); break;
-    case 'goblin_samurai': ACC.paja(r, '#7a4a1e'); espada(r.manoD, { largo: 0.8, guarda: '#2b2b2b', mango: '#2b2b2b' }); break;
-    case 'goblin_mage': ACC.sombrero(r, osc(ropa, 0.85), 0.75); baston(r, r.manoD, '#c084fc'); break;
-    case 'goblin_peasant': if (!c.amigo) horca(r.manoD); break;
+    case 'goblin_normal':
+      harapos(osc(ropa, 0.8)); cinto('#5a4630', '#8a7a5a'); correa();
+      if (!lig) D.push(['caja', '#6b4a2b', [-0.2 * W, T * 0.12, 0.13], [0.1, 0.11, 0.08]], ['cono4', '#e9dfc4', [0.03, T * 0.84, 0.2], [0.026, 0.08, 0.026], [PI, 0, 0]]);
+      garroteClavos(r.manoD, lig);
+      for (const b of [r.bI, r.bD]) MF(b, [['aro6', '#c9b48a', [0, -0.5 * 0.72, 0.5 * 0.1], [0.085, 0.09, 0.085], [-0.4, 0, 0]]]);
+      break;
+    case 'goblin_samurai':
+      cinto('#2b2b33', '#8a1c1c');
+      ACC.paja(r, '#7a4a1e');
+      for (const b of [r.bI, r.bD]) fuera(MF(b, [['caja', '#8a1c1c', [b === r.bI ? 0.04 : -0.04, -0.06, 0], [0.07, 0.22, 0.22]], ['caja', '#2b2b33', [b === r.bI ? 0.045 : -0.045, 0.02, 0], [0.075, 0.03, 0.24]]]));
+      if (!lig) D.push(['cil', '#3a2a1a', [0.1, T * 0.7, -0.2], [0.015, 0.9, 0.015]], ['caja', hx(acento), [0.1, T * 0.7 + 0.3, -0.34], [0.02, 0.4, 0.26]]);   // estandarte a la espalda
+      espada(r.manoD, { largo: 0.86, guarda: '#2b2b2b', mango: '#2b2b2b', ancho: 0.06 });
+      break;
+    case 'goblin_mage':
+      cinto('#3a2412', '#c084fc');
+      if (!lig) D.push(['icos', '#7dd3fc', [0.17, T * 0.14, 0.17], 0.045], ['icos', '#a3e635', [-0.16, T * 0.14, 0.18], 0.04], ['caja', osc(ropa, 0.7), [0, T * 0.6, 0.2], [0.07, T * 0.7, 0.03]]);
+      ACC.sombrero(r, osc(ropa, 0.85), 0.75); baston(r, r.manoD, '#c084fc');
+      break;
+    case 'goblin_peasant':
+      harapos(osc(ropa, 0.75), 5); cinto('#c9b48a', '#8a6438');
+      if (!lig) D.push(['caja', '#b88a48', [0.08, T * 0.42, 0.21], [0.11, 0.1, 0.03], [0, 0, 0.2]]);   // remiendo
+      D.push(['esferaB', '#9a7a4a', [0.02, T * 0.52, -0.25], [0.2, 0.22, 0.15]], ['cono4', '#7a5c34', [0.02, T * 0.52 + 0.2, -0.25], [0.06, 0.1, 0.06]]);   // costal a la espalda
+      correa('#7a5c34');
+      if (!amigo) horca(r.manoD).translateZ(0.2);
+      break;
     case 'goblin_assassin':
-      ACC.capucha(r, osc(ropa, 0.85)); capa(r, osc(ropa, 0.7), 0.48, 0.42);
-      espada(r.manoD, { largo: 0.32, daga: true }); espada(r.manoI, { largo: 0.32, daga: true }); r.dosArmas = true; r.paso = 11; break;
-    case 'goblin_guard': ACC.casco(r, '#8d8d8d'); hombreras(r, '#b0b0b0'); lanzaA(r.manoD); if (c.amigo) escudo(r.manoI, '#2f6fd6', 'redondo', '#d7dde4'); break;
-    case 'goblin_knight': hombreras(r, '#c8c8c8'); espada(r.manoD, { largo: 0.85 }); escudo(r.manoI, '#7a7a7a', 'rect', '#c8c8c8'); break;
-    case 'goblin_lord': ACC.corona(r); maza(r.manoD); break;
-    case 'goblin_centurion': ACC.romano(r, '#c69a3e', '#6b3a1c'); hombreras(r, '#d8a848'); espada(r.manoD, { largo: 0.5, ancho: 0.09 }); escudo(r.manoI, '#a51f26', 'rect', '#e8b923'); break;
-    case 'goblin_battlelord': ACC.casco(r, '#d8a848'); ACC.corona(r, '#f0d878'); hombreras(r, '#c8903a', '#f0d878'); hacha(r.manoD, '#e0c070', '#4a3420', 1.3); r.tAtk = 0.45; break;
+      cinto('#17172f', '#8a8a94'); correa('#17172f');
+      if (!lig) D.push(['caja', '#17172f', [-0.01, T * 0.56, 0.2], [0.06, T * 1.0, 0.035], [-0.12, 0, 0.85]], ['caja', '#c4ccd4', [0.19 * W, T * 0.14, 0.14], [0.03, 0.12, 0.02], [0, 0, 0.3]]);
+      ACC.capucha(r, osc(ropa, 0.85)); capaViva(r, osc(ropa, 0.62), T, 0.5, { ligero: lig, ancho: 0.42 });
+      dagaCurva(r.manoD); dagaCurva(r.manoI); r.dosArmas = true; r.paso = 11;
+      break;
+    case 'goblin_guard': {
+      const metal = c.color ? mez(ropa, '#e8e8ee', 0.25) : '#a8a8b0';
+      cinto(cuero, oro);
+      D.push(['aro6', osc(metal, 0.7), [0, T * 0.88, 0], [0.2, 0.07, 0.17]]);   // gola
+      if (!lig) for (const x of [-1, 0, 1]) D.push(['cuna', hx(osc(metal, 0.85)), [x * 0.17 * W, T * 0.13, x ? 0.15 : 0.22], [0.14, 0.03, 0.17], [PI / 2, 0, 0]]);   // faldar
+      cascoGob(r, amigo ? '#9aa4b4' : '#8d8d94', { nasal: !amigo, mejillas: true, pincho: true });
+      hombrerasB(r, jefe ? acento : metal);
+      lanzaGob(r, r.manoD, amigo ? '#2f6fd6' : acento, lig || amigo);
+      if (amigo) escudoGob(r.manoI, 'rodela', '#2f6fd6', '#d7dde4');
+      break;
+    }
+    case 'goblin_knight': {
+      const metal = c.color ? mez(ropa, '#e8e8ee', 0.2) : '#c8c8ce';
+      cinto(cuero, oro);
+      D.push(['aro6', osc(metal, 0.7), [0, T * 0.88, 0], [0.2, 0.07, 0.17]], ['caja', hx(acento), [0, T * 0.02, 0.2], [0.17, 0.3, 0.03], [-0.12, 0, 0]]);   // gola y tabardo
+      if (!lig) D.push(['caja', oro, [0, T * 0.62, 0.2], [0.1, 0.1, 0.03], [0, 0, PI / 4]]);   // rombo del peto
+      hombrerasB(r, jefe ? acento : metal, { k: 1.1, pua: jefe ? '#e9dfc4' : null });
+      espada(r.manoD, { largo: 0.9, ancho: 0.08 }); escudoGob(r.manoI, 'lagrima', c.color ? osc(ropa, 0.55) : '#6a6a74', metal, acento);
+      if (jefe) capaViva(r, osc(acento, 0.7), T, 0.62, { ligero: lig });
+      break;
+    }
+    case 'goblin_lord':
+      cinto('#5a1c1c', oro);
+      D.push(['esferaB', '#f0e8d8', [0, T * 0.9, 0.02], [0.3 * W, 0.1, 0.24]]);   // cuello de armiño
+      if (!lig) D.push(['icos', oro, [0, T * 0.6, 0.215], 0.05], ['caja', oro, [0.07, T * 0.72, 0.19], [0.14, 0.02, 0.02], [0, 0, 0.6]], ['caja', oro, [-0.07, T * 0.72, 0.19], [0.14, 0.02, 0.02], [0, 0, -0.6]]);
+      ACC.corona(r, '#ffd84a', 1.15); maza(r.manoD);
+      capaViva(r, c.color ? osc(c.color, 0.45) : '#6b1420', T, 0.74, { ligero: lig, ancho: 0.56 });
+      break;
+    case 'goblin_centurion': {
+      const metal = c.color ? mez(ropa, '#f0e0c0', 0.2) : '#d8a848';
+      cinto('#5a1c1c', oro);
+      for (let i = 0; i < (lig ? 0 : 7); i++) { const a = -1.5 + i * 0.5; D.push(['caja', i % 2 ? '#8a1c22' : '#7a4a22', [Math.sin(a) * 0.25 * W, T * 0.02, Math.cos(a) * 0.2], [0.09, 0.2, 0.03], [0, a, 0]]); }   // faldellin de tiras
+      D.push(['aro6', hx(osc(metal, 0.7)), [0, T * 0.88, 0], [0.2, 0.07, 0.17]]);
+      cascoGob(r, metal, { mejillas: true, cresta: jefe ? acento : '#a51f26', crestaT: true });
+      hombrerasB(r, jefe ? acento : metal);
+      espada(r.manoD, { largo: 0.5, ancho: 0.1 }); escudoGob(r.manoI, 'torre', jefe ? osc(acento, 0.75) : '#a51f26', '#e8b923', '#e8b923');
+      capaViva(r, jefe ? osc(acento, 0.7) : '#8a1c22', T, 0.56, { ligero: lig });
+      break;
+    }
+    case 'goblin_battlelord': {
+      const metal = c.color ? mez(ropa, '#f0e8d0', 0.2) : '#d8a848';
+      cinto('#3a2412', '#e9dfc4');
+      D.push(['aro6', hx(osc(metal, 0.7)), [0, T * 0.88, 0], [0.22, 0.07, 0.18]]);
+      if (!lig) D.push(['icos', '#e9dfc4', [0, T * 0.2, 0.25], 0.055], ['caja', hx(osc(metal, 0.75)), [0, T * 0.62, 0.2], [0.3, 0.035, 0.03]], ['caja', hx(osc(metal, 0.75)), [0, T * 0.46, 0.2], [0.24, 0.035, 0.03]]);
+      cascoGob(r, metal, { nasal: true, cuernos: '#e9dfc4' }); ACC.corona(r, '#f0d878', 0.78);
+      hombrerasB(r, jefe ? acento : osc(metal, 0.9), { k: 1.15, pua: '#f0d878', piel: '#4a3626' });
+      hachaDoble(r.manoD, c.color ? mez(c.color, '#f0f0f0', 0.5) : '#e0c070', '#4a3420', 1.15);
+      r.tAtk = 0.45; r.dosManos = true; r.escudo = true;
+      capaViva(r, jefe ? osc(acento, 0.55) : '#5a1c22', T, 0.6, { ligero: lig, ancho: 0.5 });
+      break;
+    }
   }
+  if (D.length) MF(cu, D);
+  gema();
+  if (!amigo) { r.acecha = 1; if (jefe && r.modo === 'bipedo') r.caer = 'frente'; }
   return r;
 }
 
@@ -2427,14 +2796,15 @@ function decorarJefe(r) {
 }
 
 // ═══════════ API ═══════════
-export function crearMonstruo(k) {
+// o (opcional): { ligero: true } = calidad baja (sin adornos menudos ni pivotes de capa o mandibula).
+export function crearMonstruo(k, o) {
   const d = MONSTRUOS[k] || { hoja: 'goblin_normal', nivel: 1 };
   let alto = 62 / PX_M;
   try { if (MONSTRUOS[k]) alto = statsMonstruo(k).alto / PX_M; } catch (e) {}
-  const c = { k, color: d.tinte || null, jefe: !!d.jefe, e: d.jefe ? 0.22 : 0, vuela: !!d.vuela };
+  const c = { k, color: d.tinte || null, jefe: !!d.jefe, e: d.jefe ? 0.22 : 0, vuela: !!d.vuela, ligero: !!(o && o.ligero) };
   const r = (ARQ[d.hoja] || ARQ.goblin_normal)(c);
   if (c.jefe) decorarJefe(r);
-  const m = new Modelo(r, alto, 'm:' + k + (c.jefe ? ':j' : ''));
+  const m = new Modelo(r, alto, 'm:' + k + (c.jefe ? ':j' : '') + (c.ligero ? '#l' : ''));
   if (c.jefe) m._aura(c.color || '#ff4444');
   m.tipo = 'monstruo'; m.k = k; m.hoja = d.hoja; m.vuela = !!d.vuela; m.jefe = c.jefe;
   return m;
