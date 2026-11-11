@@ -981,6 +981,8 @@ body:is(.movil,.compacto) #mini #mini-r{transition:opacity .5s;}
 body:is(.movil,.compacto) #mini #mini-r.quieto{opacity:0;}
 body:is(.movil,.compacto) #joy .pista-joy{transition:opacity .4s;}
 body:is(.movil,.compacto).en-combate #joy .pista-joy{opacity:0;}
+@media (orientation:landscape) and (max-height:500px){html body:is(.movil,.compacto):not(.cine) #avisos{left:calc(50% + 72px);width:min(48vw,360px);}}   /* acostado: los avisos van arriba, a la derecha de la ficha del objetivo, y no bajan al centro en pleno combate */
+@media (orientation:portrait){body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){top:calc(112px + env(safe-area-inset-top) + var(--tg-top,0px))!important;margin-top:0;}}   /* tutorial con objetivo fijado: el paso va bajo la ficha del objetivo, no encima */
 /* Pantalla limpia: fuera todo lo que no sea vida, minimapa, menu y controles; la mision asoma unos segundos cuando avanza. */
 body.hud-limpio #oro,body.hud-limpio #temp3,body.hud-limpio #mundial,body.hud-limpio #chicha3:not(.listo),body.hud-limpio #xp-prox,body.hud-limpio #mini .z,body.hud-limpio #mini::after,body.hud-limpio #joy .pista-joy,body.hud-limpio #tira-diario,body.hud-limpio #ob-sig{display:none!important;}
 body.hud-limpio #misiones:not(.abierto):not(.con-tuto):not(.vivo){opacity:0;pointer-events:none;}
