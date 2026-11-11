@@ -42,6 +42,7 @@ import { htmlCaso } from './caso.js?v=369';
 import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=369';
 import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=369';
 import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=369';
+import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=369';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -212,22 +213,14 @@ const C_PLAZA = C('#cdb98a'), C_ROCA = C('#6b6460'), C_NIEVE = C('#f2f4ff'), C_A
 // ── ESCENA ──
 const lienzo = $('lienzo');
 // ── CALIDAD GRAFICA ──
-// baja: menos resolucion y vista corta; media: lo de siempre; alta: sombras
-// del sol y mas resolucion. Se guarda en el navegador (cambiarla recarga).
-const CALIDADES = {
-  baja:  { px: 0.75, lejos: 130, aa: false, sombras: false },
-  media: { px: 1,    lejos: 170, aa: false, sombras: false },
-  alta:  { px: 1.5,  lejos: 230, aa: true,  sombras: true, post: true },
-};
-// Android flojo (poca memoria o pocos nucleos): empieza en baja. En iOS
-// hardwareConcurrency no es fiable, asi que solo se mira Android.
-// El navegador interno de Facebook/Instagram tambien (va justo de memoria).
+// Cinco niveles (minima, baja, media, alta, ultra) y «automatico» (lo detectado en el equipo); las
+// opciones avanzadas del menu pisan al preajuste. Todo vive en GFX (menu.js: PRESETS, detectarGama,
+// crearGfx) y se aplica en vivo con aplicarGfx(); solo el antialias y la vegetacion piden recargar.
+// Android flojo (poca memoria o pocos nucleos; en iOS hardwareConcurrency no es fiable) y el
+// navegador interno de Facebook/Instagram (va justo de memoria): POBRE.
 const POBRE = esIAB || (/Android/i.test(navigator.userAgent) && ((navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 8) <= 4));
-let CAL = POBRE ? 'baja' : MOVIL ? 'media' : 'alta';
-// La GPU dice mas que la memoria: Mali y Adreno antiguos, PowerVR baratos,
-// Intel HD y los dibujantes por software (SwiftShader, llvmpipe) empiezan en
-// baja; Intel UHD en PC, en media. Solo cambia el punto de partida: la
-// eleccion manual de Ajustes (dq3_calidad) manda siempre.
+// La GPU dice mas que la memoria (menu.js, detectarGama): solo cambia el punto de partida;
+// la eleccion manual del menu (dq3_calidad y dq3_gfx) manda siempre.
 function gpuNombre() {
   try {
     const c = document.createElement('canvas'), gl = c.getContext('webgl');
@@ -239,15 +232,25 @@ function gpuNombre() {
   } catch (e) { return ''; }
 }
 const GPU = gpuNombre();
-if (/SwiftShader|llvmpipe|softpipe|Microsoft Basic Render|Mali-(4\d\d|T\d+|G(31|51|52|57|71|72))\b|Adreno \(TM\) ([1-5]\d\d|60\d|61[0-3])\b|Adreno ([1-5]\d\d|60\d|61[0-3])\b|PowerVR (Rogue )?(GE8|G6|SGX)|Intel\(R\) HD Graphics|Intel HD Graphics/i.test(GPU)) CAL = 'baja';
-else if (CAL === 'alta' && /Intel\(R\) UHD|Intel UHD/i.test(GPU)) CAL = 'media';
-try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
-const Q = CALIDADES[CAL];
+const GFX = crearGfx({ gpu: GPU, ua: navigator.userAgent, mem: navigator.deviceMemory, nucleos: navigator.hardwareConcurrency, movil: MOVIL, iab: esIAB, dpr: devicePixelRatio || 1 });
+// CAL: nivel de detalle con el que se construye el mundo (arboles, modelos, topes de figuras). No cambia hasta recargar.
+const CAL = ['baja', 'media', 'alta'][GFX.det] || 'media';
+// Q: lo que el dibujo lee en vivo (aplicarGfx lo mantiene al dia). Q.sombras = las mallas quedan marcadas
+// para dar y recibir sombra (no cuesta nada con las sombras apagadas: asi se encienden sin recargar).
+const Q = { px: GFX.px, lejos: GFX.lejos, aa: GFX.aa, sombras: true, post: GFX.post };
+// Particulas y efectos al minimo (se lee al emitir: cambia en vivo).
+let PARCO = GFX.fx === 0;
+let MENU = null;   // menu del juego (iniciarMenu, mas abajo)
 // El vidrio (backdrop-filter) vuelve a difuminar el 3D en cada cuadro: en movil
-// o fuera de alta, paneles opacos (index.html, body.sin-vidrio).
-document.body.classList.toggle('sin-vidrio', MOVIL || CAL !== 'alta');
-// Tope de cuadros: 60 (un monitor de 120/144 Hz no dibuja el doble) y 30 en baja.
-const CUADRO_MS = CAL === 'baja' ? 33 : 16.4;
+// o fuera de alta y ultra, paneles opacos (index.html, body.sin-vidrio).
+const ponerVidrio = () => document.body.classList.toggle('sin-vidrio', MOVIL || !(GFX.efectivo === 'alta' || GFX.efectivo === 'ultra'));
+ponerVidrio();
+// Tope de cuadros, leido en cada cuadro: 60 (un monitor de 120/144 Hz no dibuja el doble), 30 en baja
+// y minima, o lo que elija el jugador; 0 = sin tope (el ritmo de la pantalla).
+const msDeFps = f => f === 60 ? 16.4 : f > 0 ? 1000 / f - 0.4 : 0;
+let CUADRO_MS = msDeFps(GFX.fps);
+// Referencia para medir la fluidez (resolucion dinamica y telemetria): sin tope cuenta como 60.
+const cuadroRef = () => Math.max(16.4, CUADRO_MS);
 // Sin WebGL (o el driver lo niega) el modulo no puede seguir: se ofrece CLASSIC (red de seguridad de index.html).
 let render;
 try { render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: MOVIL ? 'low-power' : 'high-performance' }); }
@@ -257,7 +260,6 @@ let glPerdidoT = 0;
 lienzo.addEventListener('webglcontextlost', e => { e.preventDefault(); clearTimeout(glPerdidoT); glPerdidoT = setTimeout(() => { if (window.__dqFallo) window.__dqFallo('Se perdieron los gráficos 3D de tu dispositivo. Reintenta o juega con el mismo duende en CLASSIC (2D).'); }, 8000); });
 lienzo.addEventListener('webglcontextrestored', () => { clearTimeout(glPerdidoT); const v = document.getElementById('dq-red'); if (v) v.remove(); });
 render.setPixelRatio(Math.min(devicePixelRatio || 1, Q.px));
-if (Q.sombras) { render.shadowMap.enabled = true; render.shadowMap.type = THREE.PCFSoftShadowMap; }
 render.outputColorSpace = THREE.SRGBColorSpace;
 // Si un shader propio (agua, estrellas, bruma) no compila en algun movil raro,
 // se vuelve al material de siempre en vez de dejar un hueco en la escena.
@@ -281,12 +283,21 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.0);
 const sol = new THREE.DirectionalLight(0xfff2dd, 1.0);
 sol.position.set(120, 200, 80);
 escena.add(hemi, sol, sol.target);
-if (Q.sombras) {
-  sol.castShadow = true;
-  sol.shadow.mapSize.set(1024, 1024);
-  const sc = sol.shadow.camera; sc.left = -26; sc.right = 26; sc.top = 26; sc.bottom = -26; sc.near = 1; sc.far = 400;
-  sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.04;
+// Sombras del sol: 1 = 1024 px alrededor del jugador; 2 = 2048 px y mas alcance. Se encienden y apagan en vivo.
+let sombrasCaidas = false, postCaido = false;   // las quito la red de seguridad (resolucionDinamica): no vuelven solas
+function ponerSombras(n) {
+  const si = n > 0;
+  if (si) {
+    const tam = n > 1 ? 2048 : 1024, r = n > 1 ? 44 : 26, sc = sol.shadow.camera;
+    if (sol.shadow.mapSize.x !== tam) { sol.shadow.mapSize.set(tam, tam); if (sol.shadow.map) { sol.shadow.map.dispose(); sol.shadow.map = null; } }
+    if (sc.right !== r) { sc.left = -r; sc.right = r; sc.top = r; sc.bottom = -r; sc.near = 1; sc.far = 400; sc.updateProjectionMatrix(); }
+    sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.04;
+    render.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
+  if (sol.castShadow === si && render.shadowMap.enabled === si) return;
+  sol.castShadow = si; render.shadowMap.enabled = si; render.shadowMap.needsUpdate = true;
 }
+ponerSombras(GFX.sombras);
 const solDir = new THREE.Vector3(120, 200, 80);
 // ── POST-PROCESO (solo en alta): resplandor de lo brillante (cristales,
 // magia, portales), viñeta suave y algo mas de color. Se carga aparte: en
@@ -301,8 +312,14 @@ const GRADO = {
     void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
       c.rgb = mix(vec3(l), c.rgb, uSat); vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
 };
-if (Q.post && !PRUEBA_SIN_POST()) {
+// Se enciende y apaga en vivo (menu de graficos); los modulos se descargan la primera vez.
+let postCargando = false;
+function ponerPost(si) {
+  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; } document.body.classList.add('sin-post'); return; }
+  if (composer || postCargando || PRUEBA_SIN_POST()) return;
+  postCargando = true;
   Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import('three/addons/postprocessing/' + n + '.js'))).then(([E, R, B, O, S]) => {
+    if (!GFX.post || postCaido || composer) return;
     const w = innerWidth, h = innerHeight;
     const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 });
     const c = new E.EffectComposer(render, rt);
@@ -312,12 +329,15 @@ if (Q.post && !PRUEBA_SIN_POST()) {
     c.addPass(new O.OutputPass());
     c.setPixelRatio(render.getPixelRatio()); c.setSize(w, h);
     composer = c; document.body.classList.remove('sin-post');
-  }).catch(e => console.warn('[3D] sin post-proceso', e));
+  }).catch(e => console.warn('[3D] sin post-proceso', e)).then(() => { postCargando = false; });
 }
+if (GFX.post) ponerPost(true);
 function PRUEBA_SIN_POST() { return /[?&]sinPost=1/.test(location.search); }
 // Resolucion dinamica: si el movil no llega a ~40 fps baja la resolucion
 // (hasta un 60%) y la sube cuando sobra.
 let pxAct = Math.min(devicePixelRatio || 1, Q.px), dtProm = 16, resT = 0;
+GFX.pxReal = pxAct; GFX.cuadroMs = CUADRO_MS;
+function ponerPx(n) { pxAct = n; GFX.pxReal = n; render.setPixelRatio(n); if (composer) composer.setPixelRatio(n); ajustar(); }
 // Distancia de vision dinamica: con la resolucion ya al minimo y aun lento,
 // se acorta la niebla (cullFlora y las figuras usan fog.far) y se recupera sola.
 let lejosDin = Q.lejos, avisoCal = false, lentas = 0, buenas = 0;
@@ -327,27 +347,56 @@ let lejosDin = Q.lejos, avisoCal = false, lentas = 0, buenas = 0;
 // el tiron de compilar shaders al entrar) y no vuelven hasta recargar.
 function resolucionDinamica(ms) {
   if (document.hidden || ms > 200) return;
-  dtProm += (ms - dtProm) * 0.05; resT += ms;
+  dtProm += (ms - dtProm) * 0.05;
+  if (!GFX.din) return;   // «resolucion dinamica: no»: solo se mide, no se toca nada
+  resT += ms;
   if (resT < 2000) return;
   resT = 0;
-  const max = Math.min(devicePixelRatio || 1, Q.px), min = max * 0.6;
-  const lento = 25 * CUADRO_MS / 16.4, muyLento = Math.max(38, lento + 10);
-  lentas = dtProm > lento ? lentas + 1 : 0; buenas = dtProm < CUADRO_MS + 1.2 ? buenas + 1 : 0;
-  if (lentas >= 2 && composer) { try { composer.dispose(); } catch (e) {} composer = null; document.body.classList.add('sin-post'); lentas = 0; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
-  if (lentas >= 2 && sol.castShadow) { sol.castShadow = false; render.shadowMap.enabled = false; lentas = 0; console.info('[3D] sombras desactivadas por rendimiento'); return; }
+  const max = Math.min(devicePixelRatio || 1, Q.px), min = Math.min(max, Math.max(0.5, max * 0.6));
+  const ref = cuadroRef(), lento = 25 * ref / 16.4, muyLento = Math.max(38, lento + 10);
+  lentas = dtProm > lento ? lentas + 1 : 0; buenas = dtProm < ref + 1.2 ? buenas + 1 : 0;
+  if (lentas >= 2 && composer) { postCaido = true; ponerPost(false); lentas = 0; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
+  if (lentas >= 2 && sol.castShadow) { sombrasCaidas = true; ponerSombras(0); lentas = 0; console.info('[3D] sombras desactivadas por rendimiento'); return; }
   // > 38 ms (< 26 fps): un movil topado a 30 Hz (ahorro de bateria) da ~33 ms aunque vaya sobrado; a ese no se le acorta la vista.
   if (dtProm > muyLento && pxAct <= min + 0.01 && lejosDin > 95) {
     lejosDin -= 20;
     try { musica.ligera(true); } catch (e) {}   // tambien la musica pasa a modo ligero
-    if (!avisoCal && CAL !== 'baja') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En ' + K('Ajustes (?)', 'Más (⋯) → ?') + ' puedes poner la calidad Baja.'); }
+    if (!avisoCal && GFX.efectivo !== 'minima') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En ' + K('el menú (Esc)', 'el menú (⚙)') + ' → Gráficos puedes bajar la calidad.'); }
     return;
   }
   if (buenas >= 2 && lejosDin < Q.lejos) lejosDin = Math.min(Q.lejos, lejosDin + 10);
   // Sube solo tras 3 revisiones (6 s) pegado al tope, para no oscilar.
   const n = dtProm > lento ? Math.max(min, pxAct - 0.1) : buenas >= 3 ? Math.min(max, pxAct + 0.05) : pxAct;
   if (Math.abs(n - pxAct) < 0.01) return;
-  pxAct = n; render.setPixelRatio(n); if (composer) composer.setPixelRatio(n); ajustar();
+  ponerPx(n);
 }
+// Cambia los ajustes graficos en vivo y los guarda. parcial: { nivel } (auto|minima|baja|media|alta|ultra)
+// o cualquier opcion (px, lejos, sombras, det, fx, post, aa, fps, din; null = lo del preajuste) y verFps.
+// Antialias (aa) y vegetacion (det) se guardan y entran al recargar. Lo usan el menu y window.dqGfx.
+const oyentesGfx = [];
+function aplicarGfx(parcial) {
+  const p = parcial || {}, lejosAntes = GFX.lejos;
+  fusionarGfx(GFX, p);
+  Q.px = GFX.px; Q.lejos = GFX.lejos; Q.post = GFX.post;
+  PARCO = GFX.fx === 0;
+  CUADRO_MS = msDeFps(GFX.fps); GFX.cuadroMs = CUADRO_MS;
+  ponerVidrio();
+  if ('nivel' in p || 'sombras' in p) sombrasCaidas = false;
+  if ('nivel' in p || 'post' in p) postCaido = false;
+  ponerSombras(sombrasCaidas ? 0 : GFX.sombras);
+  ponerPost(GFX.post && !postCaido);
+  const max = Math.min(devicePixelRatio || 1, Q.px);
+  if (('nivel' in p || 'px' in p || 'din' in p || pxAct > max) && Math.abs(pxAct - max) > 0.005) ponerPx(max);
+  if ('nivel' in p || 'lejos' in p || 'din' in p || GFX.lejos !== lejosAntes) { lejosDin = Q.lejos; try { ambiente(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }
+  try { musica.ligera(POBRE || GFX.fx === 0); } catch (e) {}
+  lentas = 0; buenas = 0; resT = 0;
+  try { if (MENU) MENU.refrescar(); } catch (e) {}
+  for (const f of oyentesGfx) { try { f(GFX); } catch (e) {} }
+  return GFX;
+}
+// Para los demas modulos (perf.js, pruebas): lectura de los ajustes vigentes y aplicar(parcial).
+// ajustes es el objeto vivo: nivel, efectivo, detectado, gpu, px, pxReal, lejos, sombras, det, fx, post, aa, fps, cuadroMs, din, verFps, cuadros.
+window.dqGfx = { ajustes: GFX, presets: PRESETS, niveles: NIVELES, aplicar: aplicarGfx, alCambiar(f) { if (typeof f === 'function') oyentesGfx.push(f); } };
 // ── DIA, NOCHE Y CLIMA ──
 const BLANCO_H = C('#ffffff'), NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
 // Estrellas que titilan: cada una con su fase y un tinte (blancas, azuladas,
@@ -476,7 +525,7 @@ const bruma = (() => {
     return { m, tex, k: 0 };
   } catch (e) { return null; }
 })();
-const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL, POBRE || CAL === 'baja', CAL);
+const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL, POBRE || PARCO, ['baja', 'media', 'alta'][GFX.fx]);
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
 const lluvia = (() => {
   const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
@@ -500,7 +549,10 @@ const NIEBLA_TINTE = Object.fromEntries(Object.entries({
 const SOL_DIA = C('#fff2dd'), SOL_NOCHE = C('#9fb4ff'), SOL_PUEBLO = C('#ffcf8f'), CENIT_DIA = C('#2a4fb8'), CENIT_NOCHE = C('#02040e');
 const nieblaTinteObj = C(CIELO.pueblo), nieblaAct = C(CIELO.pueblo);
 let ocasoK = 0, ocasoAct = 0, brumaObj = 0.12;
-const musica = crearMusica({ ligera: POBRE || CAL === 'baja' });
+// Volumen de la musica y de los efectos (menu → Sonido): 0..1, guardado como 0-100 en dq3_vol_mus y dq3_vol_fx.
+const VOL = { mus: 1, fx: 1 };
+for (const k in VOL) { try { const v = localStorage.getItem('dq3_vol_' + k); if (v != null && v !== '' && isFinite(+v)) VOL[k] = clamp(+v / 100, 0, 1); } catch (e) {} }
+const musica = crearMusica({ ligera: POBRE || PARCO, vol: VOL.mus });
 const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' };
 // Para probar: ?clima=lluvia|tormenta|nieve|niebla|arena y ?hora=0..24
 const PRUEBA = new URLSearchParams(location.search);
@@ -1417,7 +1469,7 @@ class Figura3D {
     }
     // Tope de figuras (gama baja): fuera de los MAX_FIG mas cercanos solo queda la sombra-disco (el nombre va aparte, en etiquetas()).
     const enRango = d < escena.fog.far + 15, ver = enRango && this._cerca !== false;
-    this.raiz.visible = ver; this.sombra.visible = enRango && (!Q.sombras || d > 24 || !ver);
+    this.raiz.visible = ver; this.sombra.visible = enRango && (!sol.castShadow || d > 24 || !ver);
     if (this.montura) this.montura.obj.visible = ver;
     if (!ver) { if (enRango) ponerSombra(this.sombra, this.sombraBase, x, y, z); return; }
     const animar = d < 45 || (cuadro + this.raiz.id) % 2 === 0;
@@ -1669,6 +1721,7 @@ const SON = crearSonidos({
   puede: () => sonido && !fuera3 && !document.hidden,
   oyente: () => { const e = camara.matrixWorld.elements, l = Math.hypot(e[0], e[2]) || 1; return { x: P.x, z: P.z, rx: e[0] / l, rz: e[2] / l }; },
 });
+SON.volumen(VOL.fx);
 // x, z (opcional): suena desde ahi, con volumen por distancia y paneo estereo (lo de otros).
 // tono (opcional): multiplica la velocidad de reproduccion (>1 agudo, <1 grave).
 function sfx(n, vol, x, z, tono) {
@@ -2928,7 +2981,7 @@ const AREA = { torbellino: '#e2e8f0', abanico: '#cbd5e1', nova: '#9be7ff', meteo
 // Golpes firma con efecto propio (ver efectoFirma).
 const FIRMA = { golpe_heroico: 1, siniestro: 1, sanar: 1, escudo_poder: 1, renovar: 1 };
 function efectoFirma(m, de) {
-  const baja = POBRE || CAL === 'baja', n = k => baja ? Math.max(1, Math.round(k / 2)) : k;
+  const baja = PARCO, n = k => baja ? Math.max(1, Math.round(k / 2)) : k;
   // En gama baja, los golpes firma de otros que no te tocan ni a ti ni a tu objetivo no se dibujan.
   if (baja && m.p !== miId && m.tg !== miId && !(m.h || []).some(g => g[0] === objetivo)) return;
   if (m.id === 'golpe_heroico' || m.id === 'siniestro') {
@@ -2960,7 +3013,7 @@ function efectoHab(m) {
   if (de && AREA[m.id]) {
     // Las de otros (que no pegan a tu objetivo) van tenues, y en gama baja ni se dibujan.
     const ajena = m.p !== miId && !(m.h || []).some(g => g[0] === objetivo);
-    if (!(ajena && (POBRE || CAL === 'baja'))) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id], true, ajena ? 0.3 : 0.8);
+    if (!(ajena && PARCO)) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id], true, ajena ? 0.3 : 0.8);
   }
   if (FIRMA[m.id]) { try { efectoFirma(m, de); } catch (e) {} }
   for (const [id, d, tipo, w] of m.h || []) {
@@ -4218,6 +4271,7 @@ function tituloZona(id) {
 
 // ── VENTANAS ──
 function abrir(id) {
+  if (id !== 'v-menu' && MENU && MENU.abierto()) MENU.cerrar();   // el mundo sigue con el menu abierto: si llega otra ventana (muerte, error...), el menu se aparta
   if (!$(id).classList.contains('on')) { sfxK('libro', 0.12); SON.tocar('clic', { vol: 0.8 }); }
   if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
   $(id).classList.add('on');
@@ -4225,6 +4279,7 @@ function abrir(id) {
   pedirSincroAtras();
 }
 function cerrar(id) {
+  if (id === 'v-ayuda' && MENU) MENU.cerrar();   // lo que era la ventana de ajustes vive ahora en el menu
   // El editor de apariencia cerrado por otra via (Atras de Telegram, ✕): la camara vuelve y se descarta la prueba.
   if (id === 'v-look' && camAntes) { ({ camYaw, camPitch, camDist } = camAntes); camAntes = null; lookEditor = null; cambiarSkinPropia(); }
   if ($(id).classList.contains('on')) SON.tocar('clic', { vol: 0.7, cerrar: true });
@@ -4878,9 +4933,8 @@ document.addEventListener('visibilitychange', () => {
   else if (avisoExpT && Date.now() - avisoExpT > 20000 && sinExped()) { avisoExpVisto = true; avisoExpT = 0; setTimeout(() => aviso(AVISO_EXP, 'ok'), 2500); }
 });
 document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && sinExped() && !hayVentana()) { avisoExpVisto = true; aviso(AVISO_EXP, 'ok'); } });
-$('b-ayuda').onclick = () => { const ac = $('ay-cuenta'); if (ac) ac.style.display = soyInvitado ? '' : 'none'; abrir('v-ayuda'); };
-$('sel-calidad').value = CAL;
-$('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
+// El «?» ya no esta en el HUD: su contenido vive en el menu del juego (menu.js), que lo «pulsa» al abrirse para refrescar lo de la cuenta.
+$('b-ayuda').onclick = () => { const ac = $('ay-cuenta'); if (ac) ac.style.display = soyInvitado ? '' : 'none'; if (MENU) MENU.abrir('controles'); else abrir('v-ayuda'); };
 if ($('sel-brillo')) { $('sel-brillo').value = BRILLO; $('sel-brillo').onchange = e => { BRILLO = e.target.value === 'claro' ? 'claro' : 'normal'; try { localStorage.setItem('dq3_brillo', BRILLO); } catch (er) {} ambiente(zonaActual || zonaEn(P.x, P.z)); }; }
 $('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); mandar({ t: 'amigos' }); $('amigos-c')._h = ''; pintarAmigos3(); };
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
@@ -4917,7 +4971,7 @@ const FRASES3 = ['¡Ayuda aquí!', 'Vamos al jefe', 'Gracias, causa', 'Espérame
     cerrarG();
   };
   document.addEventListener('pointerdown', e => { if (fila.classList.contains('on') && !fila.contains(e.target) && !bt.contains(e.target)) cerrarG(); }, true);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarG(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && fila.classList.contains('on')) { cerrarG(); e.stopPropagation(); } });   /* Esc cierra los gestos y nada mas (sin gestos abre el menu) */
 })();
 // El menu ⋯ abierto se cierra al tocar fuera de el (tapa parte del mundo).
 document.addEventListener('pointerdown', e => { const m = $('botones'); if (m.classList.contains('abierto') && !m.contains(e.target)) m.classList.remove('abierto'); }, true);
@@ -5426,7 +5480,7 @@ function chatAbierto() { return document.activeElement === $('chat-in'); }
 const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank', 'v-amigos', 'v-obj'];
 addEventListener('keydown', e => {
   const t = e.target;
-  if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
+  if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea') || t.closest('#v-menu')) return;   /* el menu del juego se maneja con el teclado (menu.js) */
   if (t.matches('select')) { if (e.key !== 'Escape') e.preventDefault(); t.blur(); }
   else if (t.matches('button,a') && e.code !== 'Tab' && e.code !== 'Enter') t.blur();
 }, true);
@@ -5557,10 +5611,10 @@ function abrirLlevar() {
   if (!yo) return;
   $('v-diario').querySelector('h2').textContent = 'LLEVAR MI DUENDE';
   if (soyInvitado) {
-    $('diario-c').innerHTML = '<p class="vv-p">Pide un código y escríbelo en Duende Quest dentro de <b>Telegram</b> o en tu <b>cuenta de correo</b> (en cualquier navegador o celular): ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p><p class="vv-p" id="llevar-cod" style="text-align:center;font:700 28px monospace;letter-spacing:5px;color:#ffd84a;margin:8px 0">…</p><p class="vv-p" style="font-size:12px;color:var(--txt3)">La cuenta debe ser nueva o casi (hasta Nv 5, sin compras). Usa el código antes de 10 minutos y no se lo pases a nadie.</p>';
+    $('diario-c').innerHTML = '<p class="vv-p">Pide un código y escríbelo en Duende Quest dentro de <b>Telegram</b> o en tu <b>cuenta de correo</b> (en cualquier navegador o celular): ⚙ Menú → Ayuda y soporte → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p><p class="vv-p" id="llevar-cod" style="text-align:center;font:700 28px monospace;letter-spacing:5px;color:#ffd84a;margin:8px 0">…</p><p class="vv-p" style="font-size:12px;color:var(--txt3)">La cuenta debe ser nueva o casi (hasta Nv 5, sin compras). Usa el código antes de 10 minutos y no se lo pases a nadie.</p>';
     mandar({ t: 'vincCodigo' });
   } else {
-    $('diario-c').innerHTML = '<p class="vv-p">¿Jugaste como invitado en otro navegador o celular? Allí toca ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende») y escribe aquí el código de 6 letras y números.</p><div style="display:flex;gap:6px"><input id="llevar-in" maxlength="8" autocomplete="off" placeholder="Código" style="flex:1;min-width:0;text-transform:uppercase;font:700 18px monospace;letter-spacing:3px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:rgba(0,0,0,.35);color:var(--txt)"><button class="btn" id="llevar-ok">Traer</button></div><p class="vv-p" style="font-size:12px;color:var(--txt3);margin-top:8px">Solo en una cuenta nueva o casi (hasta Nv 5, sin compras): su duende actual se archiva y juegas con el que traes.</p>';
+    $('diario-c').innerHTML = '<p class="vv-p">¿Jugaste como invitado en otro navegador o celular? Allí toca ⚙ Menú → Ayuda y soporte → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende») y escribe aquí el código de 6 letras y números.</p><div style="display:flex;gap:6px"><input id="llevar-in" maxlength="8" autocomplete="off" placeholder="Código" style="flex:1;min-width:0;text-transform:uppercase;font:700 18px monospace;letter-spacing:3px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:rgba(0,0,0,.35);color:var(--txt)"><button class="btn" id="llevar-ok">Traer</button></div><p class="vv-p" style="font-size:12px;color:var(--txt3);margin-top:8px">Solo en una cuenta nueva o casi (hasta Nv 5, sin compras): su duende actual se archiva y juegas con el que traes.</p>';
     const inp = $('llevar-in');
     inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('llevar-ok').click(); });
     $('llevar-ok').onclick = () => { const cod = inp.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };
@@ -6037,7 +6091,7 @@ const PROXIMOS = Object.values([[EXPEDICION.nv, '🧭 expediciones de tu mascota
 // sobre el jugador durante ~6 s; en calidad baja o equipo pobre, menos rafagas y menos chispas.
 const COL_FUEGOS = ['#ff4d6d', '#ffd84a', '#4ade80', '#60a5fa', '#c084fc', '#f472b6', '#fb923c', '#e0f2fe'];
 function fuegosArtificiales(grande) {
-  const baja = POBRE || CAL === 'baja';
+  const baja = PARCO;
   const nR = baja ? (grande ? 4 : 3) : (grande ? 8 : 5) + (MOVIL ? -1 : 0);
   const nC = baja ? 18 : MOVIL ? 30 : 48;
   for (let i = 0; i < nR; i++) {
@@ -6085,11 +6139,11 @@ function subiNivel(lv) {
   // Talentos y especializacion: se dice al desbloquearlos y en cada nivel con puntos (el libro va dentro de ⋯ en movil).
   const dondeLibro = MOVIL ? '⋯ → 📖' : '📖 (tecla P)';
   // Nv 3 con 'DuendeNNNN': una vez, se le dice que puede ponerle su nombre (gratis) para que sus amigos lo reconozcan.
-  if (lv === 3 && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) setTimeout(() => { let visto = false; try { visto = !!localStorage.getItem('dq_aviso_nombre'); localStorage.setItem('dq_aviso_nombre', '1'); } catch (e) {} if (!visto && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre en ${K('? → Ajustes', 'Más (⋯) → ?')}.`, 'ok'); }, 6000);
+  if (lv === 3 && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) setTimeout(() => { let visto = false; try { visto = !!localStorage.getItem('dq_aviso_nombre'); localStorage.setItem('dq_aviso_nombre', '1'); } catch (e) {} if (!visto && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre en ⚙ Menú → Ayuda y soporte.`, 'ok'); }, 6000);
   if (lv === TAL_PRE_NIVEL) setTimeout(() => aviso(`🌟 Nv ${lv}: elige tu primer talento en ${dondeLibro} → Talentos. A Nv 10 lo activas con un toque (elegirlo no gasta nada).`, 'ok'), 2500);
   if (lv === 9) setTimeout(() => aviso('⚔ Último nivel para cambiar de clase gratis: desde Nv 10 cuesta oro. Pruébalas en ' + dondeLibro + '.', 'ok'), 2500);
   // El aviso de la XP al morir desde Nv 10 se da en la pantalla de muerte (la primera vez), no aqui entre otros 3.
-  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 las cazas suman puntos de chicha real, pero como invitado no suman. Si quieres que cuenten, crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 6000);
+  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 las cazas suman puntos de chicha real, pero como invitado no suman. Si quieres que cuenten, crea tu cuenta gratis (tu duende pasa contigo) en ⚙ Menú → Ayuda y soporte.', 'ok'), 6000);
   if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
   else if (lv > 10) setTimeout(() => aviso(`🌟 +1 punto de talento: úsalo en ${dondeLibro} → Talentos.`, 'ok'), 1500);
   // Nv 3+, una vez por dispositivo: permiso para que el bot te escriba (Bot API 6.9).
@@ -6586,6 +6640,7 @@ function atrasVentana() {
   if (id === 'v-pago') { aviso('Cierra el pago con su ✕ (así no se pierden tus datos).', 'err', 1); return true; }
   if (id === 'dq-regalo') { try { regalo3.cerrar(); } catch (e) {} return true; }   // tarjeta de compra: Atras la cierra (marca vista)
   if (id === 'dq-avtg') { try { avisoTg3.cerrarAtras(); } catch (e) {} return true; }
+  if (id === 'v-menu' && MENU && MENU.atras()) return true;   // el menu vuelve un paso (confirmacion → lista de secciones) antes de cerrarse
   if (id === 'v-look' && typeof cerrarLook === 'function') cerrarLook(false); else cerrar(id);
   return true;
 }
@@ -7024,7 +7079,7 @@ function guardarTeclas() { try { if (Object.keys(MAPA_T).length) localStorage.se
 // Escape cancela. No se pueden usar las que ya tienen otro papel fijo (Esc, Enter del chat, Mayus de volar) ni las del navegador.
 addEventListener('keydown', e => {
   if (!capturaT) return;
-  if (!$('v-ayuda').classList.contains('on')) { capturaT = null; return; }
+  if (!$('v-ayuda').classList.contains('on') && !(MENU && MENU.abierto())) { capturaT = null; return; }
   e.preventDefault(); e.stopImmediatePropagation();
   if (e.repeat) return;
   if (e.code === 'Escape') { capturaT = null; pintarTeclas(); return; }
@@ -7098,7 +7153,8 @@ addEventListener('keydown', e => {
   if (cod === 'KeyP' && !e.repeat) V.abrirLibro();
   if (cod === 'KeyL' && !e.repeat) V.abrirLogros();
   if (cod === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
-  if (e.code === 'Escape') { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); }
+  // Esc: primero suelta el objetivo; sin objetivo ni nada abierto, abre el menu del juego.
+  if (e.code === 'Escape') { if (objetivo || objetivoP || autoAtk) { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); } else if (!e.repeat && MENU && !cineEst) MENU.abrir(); }
 });
 addEventListener('blur', () => { atkMantener = false; clearTimeout(tMayus); tMayus = 0; });
 addEventListener('keyup', e => { const cod = MAPA_T[e.code] || e.code; teclas[cod] = false; if (cod === 'Digit1' || cod === 'KeyZ') atkMantener = false; if (cod === 'ShiftLeft' || cod === 'ShiftRight') mayusEsquiva(); if (cod === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto
@@ -7345,7 +7401,7 @@ function esquivar() {
   mandar({ t: 'esq3' });
   if (!esqTuto && ++esqUsos >= 3) esqAprendida(false);
   SON.tocar('esquiva'); vib('light');
-  if (!POBRE && CAL !== 'baja' && !enCueva(P.x)) FX.emitir(P.x, P.y + 0.1, P.z, { n: MOVIL ? 4 : 7, color: '#bfae8e', vel: 1.4, vida: 0.4, grav: -0.6, plano: true, radio: 0.35, tam: 1.2 });
+  if (!PARCO && !enCueva(P.x)) FX.emitir(P.x, P.y + 0.1, P.z, { n: MOVIL ? 4 : 7, color: '#bfae8e', vel: 1.4, vida: 0.4, grav: -0.6, plano: true, radio: 0.35, tam: 1.2 });
 }
 // Cada cuadro (desde fisica): impulso en curso y anillo de recarga del boton 💨.
 function pasoEsquiva(ahora) {
@@ -7433,7 +7489,7 @@ const tajos = [];
 function efectoGolpe(vara, alAire) {
   if (!P || !yo) return;
   // Arco por arma (no vara): alcance -> tamano (Odachi x1.22, Dagas x0.9) y color del arma salvo la Katana.
-  const cl = CLASES[yo.clase], aw = !vara ? ARMAS[yo.arma] : null, baja = POBRE || CAL === 'baja';
+  const cl = CLASES[yo.clase], aw = !vara ? ARMAS[yo.arma] : null, baja = PARCO;
   const color = (aw && yo.arma !== 'katana' && aw.color) || (cl && cl.color) || '#fff1c1';
   const cmb = P.combo || 0, fuerte = cmb === 2, alto = P.fig && P.fig.alto ? P.fig.alto : 1.6;
   while (tajos.length >= (baja ? 2 : 5)) { const v = tajos.shift(); escena.remove(v.g); if (v.mat) v.mat.dispose(); }
@@ -7450,7 +7506,7 @@ function efectoGolpe(vara, alAire) {
   tajos.push({ g, mat, t0: performance.now(), dur: fuerte ? 260 : 200, ry: P.ry, giro: cmb === 1 ? -1 : 1, fuerte });
   const fx = Math.sin(P.ry), fz = Math.cos(P.ry);
   if (fuerte && !baja) FX.emitir(P.x + fx * 1.1, P.y + alto * 0.55, P.z + fz * 1.1, { n: MOVIL ? 6 : 10, color, vel: 3, vida: 0.3 });
-  if (aw && yo.arma === 'chispa' && !POBRE && CAL === 'alta') FX.emitir(P.x + fx * 1.1, P.y + alto * 0.55, P.z + fz * 1.1, { n: 4, color: '#00eeff', vel: 2.6, vida: 0.25 });   // Chispa: chispazos cian
+  if (aw && yo.arma === 'chispa' && GFX.fx === 2) FX.emitir(P.x + fx * 1.1, P.y + alto * 0.55, P.z + fz * 1.1, { n: 4, color: '#00eeff', vel: 2.6, vida: 0.25 });   // Chispa: chispazos cian
   // Vara al aire: una bolita de luz que sale hacia delante y se deshace en chispas.
   if (vara && alAire) {
     const b = new THREE.Mesh(GEO_BALA, matBala(color));
@@ -8072,7 +8128,7 @@ function animarMon(o, t) {
     if (!o.muereT && o.mx > 0 && o.hp > 0 && o.hp / o.mx < 0.25 && f.raiz.visible && dP < 40) {
       f.raiz.rotation.z += Math.sin(t / 140 + o.id) * (MENOS_MOV ? 0.05 : 0.12);
       if (mueve) f.raiz.position.y -= 0.15 * 0.12 * Math.abs(Math.sin(t / 90));
-      if (!MENOS_MOV && CAL !== 'baja' && t - (o.sudorT || 0) > 2500) { o.sudorT = t; try { FX.emitir(o.x, y + 1.3, o.z, { n: 2, color: '#7dd3fc', vel: 0.8, vida: 0.6, grav: 3, tam: 0.8 }); } catch (e) {} }
+      if (!MENOS_MOV && !PARCO && t - (o.sudorT || 0) > 2500) { o.sudorT = t; try { FX.emitir(o.x, y + 1.3, o.z, { n: 2, color: '#7dd3fc', vel: 0.8, vida: 0.6, grav: 3, tam: 0.8 }); } catch (e) {} }
     }
     retroceso(o, t, f.raiz); preparaGolpe(o, t, f.raiz);
     return;
@@ -8172,7 +8228,7 @@ function etiquetas(t) {
 // del dueño); fuera, la musica generada de cada zona (musica.js). Se pide la
 // primera vez que hace falta (1 MB) y reintenta tras el primer toque si el
 // navegador bloquea el audio.
-const tema = new Audio(); tema.loop = true; tema.volume = 0.3; tema.preload = 'none';
+const tema = new Audio(); tema.loop = true; tema.volume = 0.3 * VOL.mus; tema.preload = 'none';
 let temaOn = false;
 let temaMal = false;   // el MP3 fallo (red, formato): no se reintenta, suena la generada
 let temaBloq = false;   // el navegador rechazo play() (autoplay): suena la generada hasta el siguiente toque
@@ -9034,7 +9090,7 @@ function cuadroBucle(t) {
     p.t += dt / 0.28;
     const a = p.a, ay = (a.y || alturaEn(a.x, a.z)) + 1.2;
     p.mesh.position.set(lerp(p.de.x, a.x, p.t), lerp(p.de.y, ay, p.t) + Math.sin(p.t * Math.PI) * 0.8, lerp(p.de.z, a.z, p.t));
-    const bajaP = POBRE || CAL === 'baja', cercaP = Math.hypot(a.x - P.x, a.z - P.z) < 45;
+    const bajaP = PARCO, cercaP = Math.hypot(a.x - P.x, a.z - P.z) < 45;
     // Estela: una particula cada 2 cuadros (en calidad baja no hay estela; lejos del duende tampoco).
     if (p.t < 1 && !bajaP && cercaP && (p.n++ % 2) === 0) { const q = p.mesh.position; FX.emitir(q.x, q.y, q.z, { n: 1, color: p.color, forma: p.forma, vida: 0.25, vel: 0.3, grav: 0, radio: 0.05 }); }
     if (p.t >= 1) {
@@ -9111,7 +9167,7 @@ function cuadroBucle(t) {
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (toca(0, 250, t)) {
-    ventanaAb = hayVentana() && !$('v-look').classList.contains('on');
+    ventanaAb = hayVentana() && !$('v-look').classList.contains('on') && !(MENU && MENU.abierto());   /* con el menu se sigue dibujando normal: los graficos se ven al cambiarlos */
     try { musica.vuelo(P.vuela ? 1 : P.planea ? 0.6 : 0); } catch (e) {}   // viento mas fuerte en el aire
     const z = zonaEn(P.x, P.z);
     if (z !== zonaActual) { zonaActual = z; tituloZona(z); if (benditas3[z] > Date.now() && MAPAS[z]) aviso(`✨ ${MAPAS[z].nombre} está Bendecida: +10% XP al cazar (${Math.ceil((benditas3[z] - Date.now()) / 60000)} min)`, 'ok'); }
@@ -9208,7 +9264,7 @@ function cuadroBucle(t) {
   if (sacudir > 0) { sacudir = Math.max(0, Math.min(0.6, sacudir) - dt); const am = sacudir * (0.3 + sacudir * 0.4) * (MENOS_MOV ? 0.15 : 1); camara.position.x += Math.sin(t * 0.09) * am; camara.position.y += Math.cos(t * 0.11) * am; }
   alasMesh.visible = (P.vuela || P.planea) && !!yo;
   if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t, P.planea ? 'planea' : ((P.vy || 0) > 1 ? 'sube' : ''));
-  if (P.vuela && !POBRE && CAL !== 'baja' && (++estelaN % 3) === 0) FX.emitir(P.x - (P.vx || 0) * 0.05, P.y + 1.2, P.z - (P.vz || 0) * 0.05, { n: 1, color: caEstela, vida: 0.5, vel: 0.3, grav: -0.5, radio: 0.6, tam: 1 });
+  if (P.vuela && !PARCO && (++estelaN % 3) === 0) FX.emitir(P.x - (P.vx || 0) * 0.05, P.y + 1.2, P.z - (P.vz || 0) * 0.05, { n: 1, color: caEstela, vida: 0.5, vel: 0.3, grav: -0.5, radio: 0.6, tam: 1 });
   etiquetas(t);
   numeros = numeros.filter(n => {
     n.t += dt;
@@ -9308,12 +9364,35 @@ async function inicio() {
   // Los umbrales escalan con el tope (en baja, 30 fps es lo normal).
   setTimeout(() => {
     try {
-      const k = CUADRO_MS / 16.4;
+      const k = cuadroRef() / 16.4;
       paso('fps_' + CAL + '_' + (dtProm < 20 * k ? 'ok' : dtProm < 36 * k ? 'justo' : 'lento'));
       const fam = (/SwiftShader|llvmpipe|softpipe/i.exec(GPU) ? 'swiftshader' : (/Mali|Adreno|PowerVR|Apple|Intel/i.exec(GPU) || ['otra'])[0]).toLowerCase();
       paso('gpu_' + fam);
     } catch (e) {}
   }, 90000);
+  // Menu del juego (Esc o ⚙): graficos, sonido, controles, interfaz, ayuda y salir. El mundo no se pausa.
+  escena.onBeforeRender = () => { GFX.cuadros++; };   // para el contador de FPS (un entero por cuadro)
+  try {
+    MENU = iniciarMenu({
+      gfx: GFX, aplicarGfx, movil: MOVIL, tg: TG,
+      abrirModal: abrir, cerrarModal: cerrar,
+      alAbrir: () => { try { $('b-ayuda').click(); } catch (e) {} },
+      enCombate: enCombate3, enAbismo: () => enAbismo(P.x), yo: () => yo, invitado: () => soyInvitado,
+      irA: url => { location.href = url; },
+      sonido: {
+        activo: () => sonido,
+        alternar: () => { $('b-son').onclick(); if (sonido) { try { musica.arrancar(); } catch (e) {} } },
+        volumen: (k, v) => {
+          if (!(k in VOL)) return 1;
+          if (v == null) return VOL[k];
+          VOL[k] = clamp(+v || 0, 0, 1);
+          try { localStorage.setItem('dq3_vol_' + k, String(Math.round(VOL[k] * 100))); } catch (e) {}
+          if (k === 'mus') { try { musica.volumenJugador(VOL.mus); tema.volume = 0.3 * VOL.mus; } catch (e) {} } else { try { SON.volumen(VOL.fx); } catch (e) {} }
+          return VOL[k];
+        },
+      },
+    });
+  } catch (e) { console.error('[menu]', e); }
   requestAnimationFrame(bucle);
   // Lo que llego del servidor durante la carga, en orden (un mensaje roto no corta los demas).
   arteListo = true;

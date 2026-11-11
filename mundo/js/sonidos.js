@@ -11,7 +11,7 @@ export function crearSonidos({ ctx, puede, oyente }) {
   // ctx(): el AudioContext de los efectos (o null). puede(): sonido encendido,
   // pestaña visible y Telegram activo. oyente(): { x, z, rx, rz } posicion del
   // jugador y vector «derecha» de la camara.
-  let bus = null, busCtx = null, ruidoBuf = null, voces = 0, ultR = 1;
+  let bus = null, busCtx = null, ruidoBuf = null, voces = 0, ultR = 1, volJ = 1;   // volJ: volumen que elige el jugador (menu → Sonido)
   const ultimo = {};
   const MAX_VOCES = 6;
   const PRIORIDAD = { amenaza: 1, no: 1, nivel: 1 };   // avisos que siempre se oyen aunque haya muchas voces
@@ -26,7 +26,7 @@ export function crearSonidos({ ctx, puede, oyente }) {
       comp.attack.value = 0.004; comp.release.value = 0.2;
       // El compresor de WebAudio sube solo ~+8 dB (makeup automatico con estos valores):
       // 0.4 deja lo suave (pasos, clics) como antes frente a la musica y doma los picos.
-      const g = c.createGain(); g.gain.value = 0.4;
+      const g = c.createGain(); g.gain.value = 0.4 * volJ;
       g.connect(comp); comp.connect(c.destination);
       bus = g; busCtx = c;
     } catch (e) { bus = c.destination; busCtx = c; }
@@ -227,5 +227,6 @@ export function crearSonidos({ ctx, puede, oyente }) {
       voces++; setTimeout(() => { voces = Math.max(0, voces - 1); try { d.disconnect(); } catch (e) {} }, dura * 1000 + 120);
     } catch (e) {}
   }
-  return { tocar, pos, salida, variar };
+  function volumen(v) { volJ = Math.max(0, Math.min(1, +v || 0)); if (bus && bus.gain) bus.gain.value = 0.4 * volJ; }
+  return { tocar, pos, salida, variar, volumen };
 }
