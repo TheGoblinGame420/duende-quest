@@ -808,7 +808,13 @@ function choqueCueva(tx, tz, cx, cz) {
 function choqueTerreno(tx, ty, tz, cx, cy, cz) {
   for (let i = 2; i <= 8; i++) {
     const k = i / 8, x = tx + (cx - tx) * k, z = tz + (cz - tz) * k;
-    if (ty + (cy - ty) * k < Math.max(alturaEn(x, z), aguaEn(x)) + 0.6) return (i - 1) / 8;
+    if (ty + (cy - ty) * k < Math.max(alturaEn(x, z), aguaEn(x)) + 0.6) {
+      // Afina el punto de corte entre la ultima muestra libre y esta (3 mitades): la distancia de la camara
+      // cambia de forma continua al asomar una loma, no a escalones de 1/8.
+      let a = (i - 1) / 8, b = k;
+      for (let j = 0; j < 3; j++) { const m = (a + b) / 2, mx = tx + (cx - tx) * m, mz = tz + (cz - tz) * m; if (ty + (cy - ty) * m < Math.max(alturaEn(mx, mz), aguaEn(mx)) + 0.6) b = m; else a = m; }
+      return a;
+    }
   }
   return 1;
 }
@@ -1394,6 +1400,9 @@ class Figura3D {
     if (this.pausa && this.tUlt) { const dp = Math.min(100, Math.max(0, t - this.tUlt)); this.tE += dp; this.tOff = (this.tOff || 0) + dp; }
     this.tUlt = t;
     const ts = (t - (this.tOff || 0)) / 1000;
+    // Reloj de la animacion: corre al ritmo de la velocidad real al andar (this.ritmo, lo pone animarJugador; 1 = como
+    // siempre). Asi los pies no patinan al ir despacio con el joystick, nadando o cuesta arriba, ni al ir mas rapido.
+    const tRit = this.tRit = (this.tRit === undefined ? ts : this.tRit + Math.max(0, ts - this._ts0) * (this.ritmo || 1)); this._ts0 = ts;
     const d = Math.hypot(x - P.x, z - P.z);
     // Inclinacion procedural: se ladea al girar corriendo y cabecea al arrancar/frenar (muelle critico).
     if (this._t === undefined) { this._t = t; this._ry = ry; this._x = x; this._y = y; this._z = z; this._v = 0; this._vy = 0; }
@@ -1424,7 +1433,7 @@ class Figura3D {
     if (this.montura) {
       const mo = this.montura;
       mo.obj.position.set(x, y, z); mo.obj.rotation.set(0, ry, 0);
-      if (animar) mo.animar(this.andaMontura ? 'corre' : 'quieto', ts, ts);
+      if (animar) mo.animar(this.andaMontura ? 'corre' : 'quieto', tRit, tRit);
       mo.obj.updateMatrixWorld(true);
       mo.silla.getWorldPosition(vSilla);
       this.raiz.position.copy(vSilla);
@@ -1440,7 +1449,7 @@ class Figura3D {
     }
     if (this.estira) { this.raiz.scale.y *= 1 + this.estira; this.raiz.scale.x *= 1 - this.estira * 0.4; this.raiz.scale.z *= 1 - this.estira * 0.4; }
     this.modelo.montaAnda = !!(this.montura && this.andaMontura);
-    if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
+    if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, tRit);
     ponerSombra(this.sombra, this.sombraBase, x, y, z);
   }
   quitar() { this.montar(''); escena.remove(this.raiz, this.sombra); this.modelo.dispose(); }
@@ -1749,6 +1758,7 @@ const npcs = [];
 let atkBuf = 0, combo3T = 0;   // toque de ATACAR guardado justo antes de acabar la recarga; brillo del 3.er golpe
 let objetivo = 0, autoAtk = false, sigAtk = 0, avisoLejosT = 0, avisoAlcT = 0, colaHab = null, colaHasta = 0;
 let camYaw = Math.PI, camPitch = 0.42, camDist = COMPACTO ? 8.5 : 11, camReal = camDist, camHold = 0;
+let camZoomMeta = null, camZoomVisto = 0;   // zoom de la rueda con inercia: meta pendiente y el camDist que dejo el ultimo cuadro
 let camCombate = false, camCombGira = false;   // hay objetivo vivo cerca / la camara de combate esta girando
 // Camara de combate: ultimo arrastre manual (no pelear con el jugador), zoom extra de contexto y su recalculo.
 let camArrastreT = -1e9, camExtra = 0, camExtraMeta = 0, camExtraT = 0, camSube = 0;
@@ -7203,7 +7213,9 @@ function soltarAtkRaton() {
   if (arrastre.atk) { arrastre.atk = false; atkMantener = false; }
 }
 lienzo.addEventListener('contextmenu', e => e.preventDefault());
-lienzo.addEventListener('wheel', e => { camDist = clamp(camDist + Math.sign(e.deltaY) * 1.2, 4, 26); e.preventDefault(); }, { passive: false });
+// Rueda: el zoom llega con una inercia corta (cuadroBucle) en vez de saltar; con el panel tactil del portatil
+// (muchos pasos pequeños) avanza en proporcion y no 1,2 m por evento.
+lienzo.addEventListener('wheel', e => { const k = e.deltaMode === 0 && Math.abs(e.deltaY) < 50 ? e.deltaY / 50 : Math.sign(e.deltaY); camZoomMeta = clamp((camZoomMeta === null ? camDist : camZoomMeta) + k * 1.2, 4, 26); camZoomVisto = camDist; e.preventDefault(); }, { passive: false });
 const ray = new THREE.Raycaster(), vec2 = new THREE.Vector2();
 function elegirEn(cx, cy, doble) {
   vec2.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
@@ -7778,7 +7790,9 @@ function fisica(dt) {
     if (teclas.KeyS || teclas.ArrowDown) f -= 1;
     if (teclas.KeyD || teclas.ArrowRight) s += 1;
     if (teclas.KeyA || teclas.ArrowLeft) s -= 1;
-    if (joy.id !== null) { f = -joy.dy; s = joy.dx; }
+    // Joystick: zona muerta de ~7 px que no se nota al salir de ella (arranca andando despacio), curva suave
+    // para afinar el paso y carrera completa desde el 85 % del recorrido (antes habia que llegar al borde justo).
+    if (joy.id !== null) { const jm = Math.hypot(joy.dx, joy.dy), jk = jm > 0.18 ? (0.18 + 0.82 * Math.pow(Math.min(1, (jm - 0.18) / 0.67), 1.25)) / jm : 0; f = -joy.dy * jk; s = joy.dx * jk; }
   }
   fwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw)); der.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
   let mx = fwd.x * f + der.x * s, mz = fwd.z * f + der.z * s;
@@ -7818,8 +7832,15 @@ function fisica(dt) {
         if (ahoraP - (P.avisoPuebloT || 0) > 3000) { P.avisoPuebloT = ahoraP; aviso('En el pueblo no se vuela: aterriza fuera (C para bajar).'); }
       }
       // Las laderas muy empinadas (la cordillera del borde) no se suben.
-      const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
-      if (P.vuela || sube / (vel * dt / pasos + 1e-3) < 1.4) { P.x = nx; P.z = nz; } else { P.vx *= 0.3; P.vz *= 0.3; break; }
+      const h0 = alturaEn(P.x, P.z), sube = alturaEn(nx, nz) - h0;
+      if (P.vuela || sube / (vel * dt / pasos + 1e-3) < 1.4) { P.x = nx; P.z = nz; }
+      else {
+        // Contra una ladera que no se sube, resbala a lo largo de ella (por el eje que si deja pasar, con la misma
+        // pendiente maxima) en vez de quedarse clavado; solo si ninguno de los dos deja, se frena.
+        const ax = Math.abs(nx - P.x), az = Math.abs(nz - P.z);
+        const okX = ax > 1e-4 && (alturaEn(nx, P.z) - h0) / (ax + 1e-3) < 1.4, okZ = az > 1e-4 && (alturaEn(P.x, nz) - h0) / (az + 1e-3) < 1.4;
+        if (okX && (!okZ || ax >= az)) P.x = nx; else if (okZ) P.z = nz; else { P.vx *= 0.3; P.vz *= 0.3; break; }
+      }
     }
     // Gira suave hacia donde va (no de golpe).
     if (quiere) P.ry = lerpAng(P.ry, Math.atan2(mx, mz), 1 - Math.exp(-14 * dt));
@@ -8053,6 +8074,12 @@ function animarJugador(q, esYo, t) {
       f.estira = !P.suelo && !P.vuela && !P.planea ? clamp(P.vy * 0.008, -0.03, 0.07) : 0;
     }
     f.pausa = esYo && t < pausaAnim;
+    {
+      // Ritmo del paso segun la velocidad real (1 = la de siempre a pie o en su montura); cambia suave.
+      const vR = esYo ? Math.hypot(P.vx || 0, P.vz || 0) : Math.hypot(q.vx || 0, q.vz || 0), vN = MUNDO.velocidad * (f.montura ? velMontura(f.mId) || 1 : 1);
+      const rM = (e === 'corre' || (f.montura && anda)) && !(esYo && monturaPrueba) ? clamp(vR / vN, 0.45, 1.5) : 1;
+      f.ritmo = (f.ritmo || 1) + (rM - (f.ritmo || 1)) * (1 - Math.exp(-8 * clamp((t - (f.ritmoT || t)) / 1000, 0, 0.1))); f.ritmoT = t;
+    }
     if (f.modelo) f.modelo.combo = esYo ? P.combo || 0 : 0;   // pose del combo (solo el propio duende; los demas, el tajo de siempre)
     if (esYo) {
       // Tu duende gira la cabeza hacia el monstruo marcado o el mas cercano (< 10 m).
@@ -9139,6 +9166,11 @@ function cuadroBucle(t) {
     }
   }
   camExtra += (camExtraMeta - camExtra) * (1 - Math.exp(-dt * 1.5));
+  // Zoom de la rueda: se acerca a su meta con inercia corta. Si otra cosa cambio camDist (pellizco, probador, vistas), manda ella.
+  if (camZoomMeta !== null) {
+    if (Math.abs(camDist - camZoomVisto) > 1e-6) camZoomMeta = null;
+    else { camDist += (camZoomMeta - camDist) * (1 - Math.exp(-dt * 16)); if (Math.abs(camZoomMeta - camDist) < 0.02) { camDist = camZoomMeta; camZoomMeta = null; } camZoomVisto = camDist; }
+  }
   const vzO = vistaZona ? vistaZonaAplicar(ahoraCam) : null;   // panoramica de zona nueva (se resta abajo)
   const dCam = Math.max(3, camDist + camExtra);
   const camX = tx + Math.sin(camYaw) * Math.cos(camPitch) * dCam, camZ = tz + Math.cos(camYaw) * Math.cos(camPitch) * dCam;
@@ -9161,7 +9193,7 @@ function cuadroBucle(t) {
   // Golpe critico: la camara se acerca un instante y vuelve (v322).
   fovGolpe *= Math.exp(-dt * 9); if (Math.abs(fovGolpe) < 0.05) fovGolpe = 0;
   const fovObj = fovBase + fovGolpe + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10) + ((P.vuela || P.planea) && !MENOS_MOV ? 5 : 0);
-  if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * (fovGolpe ? 14 : 3)); camara.updateProjectionMatrix(); }
+  if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * (1 - Math.exp(-dt * (fovGolpe ? 14 : 3))); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (toca(0, 250, t)) {
