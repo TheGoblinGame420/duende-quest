@@ -2707,20 +2707,21 @@ function modeloPuerta() {
 }
 function quitarMon(id) { solidosExtra = solidosExtra.filter(x => x.id !== id); const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); if (o.noctMats) { for (const m of o.noctMats) m.dispose(); o.noctMats = null; } o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
 function foto(m) {
+  relojFoto(+m.ts);
   const enFoto = new Set();
   for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
     enFoto.add(id);
     if (id === miId) continue;
     const o = otros.get(id);
     if (!o) continue;
-    fijarDestino(o, x, z); o.ry = ry; o.a = a; o.hp = hp; o.mx = mx; o.muerto = !!muerto; o.h = h || 0;
+    fijarDestino(o, x, z, ry, a === 1 || a === 3 || a === 4); o.ry = ry; o.a = a; o.hp = hp; o.mx = mx; o.muerto = !!muerto; o.h = h || 0;
   }
   for (const o of [...otros.values()]) { if (enFoto.has(o.id)) o.falta = 0; else if ((o.falta = (o.falta || 0) + 1) > 10) quitarOtro(o.id); }
   if (m.n) for (const d of m.n) agregarMon(d);
   for (const [id, x, z, ry, hp, st] of m.m) {
     const o = mons.get(id);
     if (!o) continue;
-    fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st;
+    fijarDestino(o, x, z, ry); o.ry = ry; o.hp = hp; o.st = st;
     // st 3 = muriendo en el servidor: si el md3 no nos llego (entro en vista ya muerto), se marca aqui
     if (st === 3 && !o.muereT) { o.muereT = performance.now(); bestDeMuerte(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
   }
@@ -2728,28 +2729,79 @@ function foto(m) {
   if (yo) { yo.hp = m.hp; yo.rec = m.rec; P.rec = m.rec; yo.combo = m.cb || 0; pintarVida(); }
 }
 // ── INTERPOLACION ──
-// Cada foto (cada ~200 ms) fija un tramo: desde donde se dibuja ahora hasta la
-// posicion nueva, recorrido a velocidad constante en lo que tarda la foto
-// siguiente (con hasta un 20 % de extrapolacion si se retrasa). Los saltos
+// Las fotos salen del servidor cada ~200 ms pero llegan a destiempo (red del movil). Cada foto recibe una
+// hora virtual de ritmo parejo (relojFoto) y cada figura guarda sus 4 ultimas posiciones con esa hora.
+// Se dibuja con el retardo de una foto mas un margen segun lo irregular que venga la red: casi siempre hay
+// una posicion anterior y otra posterior, y se va de una a otra a velocidad pareja (antes cada foto
+// reiniciaba el tramo desde la posicion dibujada y la figura frenaba y arrancaba 5 veces por segundo).
+// Si la foto se retrasa, sigue en linea recta como mucho 180 ms y la correccion entra suave. Los saltos
 // grandes (teletransporte, carga) se aplican al instante.
-function fijarDestino(o, x, z) {
+const RELOJ = { tv: 0, cad: 200, jit: 0, dif: 0, ts: 0 };
+// ts = hora del servidor de la foto. La hora virtual es ts mas la diferencia de relojes, que se toma de las
+// fotos que llegan antes (las tardias no la mueven casi); jit = retraso medio de las demas sobre esa base.
+function relojFoto(ts) {
   const t = performance.now();
-  if (o.tx === undefined || Math.hypot(x - o.x, z - o.z) > 10) { o.x = o.px = x; o.z = o.pz = z; }
-  else { o.px = o.x; o.pz = o.z; }
+  if (!(ts > 0)) ts = RELOJ.ts ? RELOJ.ts + Math.max(1, t - RELOJ.tv - RELOJ.jit) : t;
+  const d = t - ts;
+  if (!RELOJ.ts || ts <= RELOJ.ts || Math.abs(d - RELOJ.dif) > 1500) { RELOJ.dif = d; RELOJ.jit = 0; }
+  else {
+    RELOJ.cad = clamp(RELOJ.cad + (ts - RELOJ.ts - RELOJ.cad) * 0.1, 150, 300);
+    RELOJ.dif += (d - RELOJ.dif) * (d < RELOJ.dif ? 0.5 : 0.01);
+    RELOJ.jit += (Math.max(0, d - RELOJ.dif) - RELOJ.jit) * 0.08;
+  }
+  RELOJ.ts = ts; RELOJ.tv = ts + RELOJ.dif;
+}
+// mueve (solo jugadores): el otro cliente dice que camina, vuela o planea. Su posicion la manda el cada
+// ~200 ms sin compas con las fotos: una foto puede traer la misma de antes y la siguiente dos pasos juntos.
+// Por eso la hora de su dato no es la de la foto: se estima con la distancia recorrida y su velocidad media
+// (dentro de los 200 ms que puede llevar de viejo), y una foto sin posicion nueva no cuenta como parada.
+function fijarDestino(o, x, z, ry, mueve) {
+  const tv = RELOJ.tv || performance.now(), r = ry === undefined ? o.ry || 0 : ry;
+  let s = o.sn;
+  if (!s || !(Math.hypot(x - o.x, z - o.z) <= 10)) {
+    if (!s) s = o.sn = { t: [0, 0, 0, 0], x: [0, 0, 0, 0], z: [0, 0, 0, 0], r: [0, 0, 0, 0] };
+    for (let i = 0; i < 4; i++) { s.t[i] = tv - 3 + i; s.x[i] = x; s.z[i] = z; s.r[i] = r; }
+    o.x = x; o.z = z; o.vx = o.vz = 0; o.dly = undefined; o.vE = 0; o.tvU = tv; o.est = false;
+  } else {
+    const d = Math.hypot(x - s.x[3], z - s.z[3]);
+    if (mueve && d < 0.05 && tv - (o.tvU || 0) < 500) { s.r[3] = r; return; }
+    let ts = tv;
+    if (mueve && o.est && d > 0.05) {
+      const cruda = d / Math.max(50, tv - o.tvU) * 1000;
+      o.vRara = o.vE && Math.abs(cruda - o.vE) > 0.5 * o.vE ? (o.vRara || 0) + 1 : 0;
+      o.vE = !o.vE || o.vRara >= 2 ? cruda : o.vE + (cruda - o.vE) * 0.12;
+      ts = clamp(s.t[3] + d / Math.max(0.5, o.vE) * 1000, tv - 200, tv);
+    } else o.vE = 0;
+    o.est = !!mueve; o.tvU = tv;
+    /* Dos datos de la misma foto (alta del monstruo y su fila): vale el ultimo, sin correr la cola. */
+    if (tv - s.t[3] > 20) for (let i = 0; i < 3; i++) { s.t[i] = s.t[i + 1]; s.x[i] = s.x[i + 1]; s.z[i] = s.z[i + 1]; s.r[i] = s.r[i + 1]; }
+    s.t[3] = Math.max(ts, s.t[2] + 1); s.x[3] = x; s.z[3] = z; s.r[3] = r;
+    const sp = s.t[3] - s.t[2];
+    if (sp > 50) { o.vx = (x - s.x[2]) / sp * 1000; o.vz = (z - s.z[2]) / sp * 1000; }
+  }
   o.tx = x; o.tz = z;
-  o.dur = clamp(t - (o.tU || t - 200), 120, 320); o.tU = t; o.t0 = t;
-  o.vx = (x - o.px) / o.dur * 1000; o.vz = (z - o.pz) / o.dur * 1000;
 }
 function avanzarHacia(o, t) {
-  if (o.t0 === undefined) return;
-  const k = Math.min(1.15, (t - o.t0) / o.dur);
-  const ix = o.px + (o.tx - o.px) * k, iz = o.pz + (o.tz - o.pz) * k;
-  // Se sigue al punto interpolado con un filtro suave: con la red irregular del movil
-  // el salto entre un paquete y el siguiente (y el pequeño exceso al extrapolar) se veia a tirones.
-  const dt = Math.min(0.1, (t - (o.tR || t)) / 1000); o.tR = t;
+  const s = o.sn;
+  if (!s) return;
+  const dt = Math.min(0.1, Math.max(0, (t - (o.tR || t)) / 1000)); o.tR = t; o.dtR = dt;
+  // Retardo: una foto (o dos, si esta figura llega una si y otra no por estar lejos) mas el margen de la red.
+  // (El margen: 2,5 veces el retraso medio cubre casi todas las fotos tardias; de 25 a 220 ms.)
+  // Un jugador en marcha: sus datos llevan hasta 200 ms de viejos; con 100 ms mas casi nunca hay que adivinar.
+  const metaD = (o.est ? RELOJ.cad + 100 : Math.max(RELOJ.cad, Math.min(450, s.t[3] - s.t[2]))) + clamp(RELOJ.jit * 2.5 + 25, 25, 220);
+  if (o.dly === undefined) o.dly = metaD; else o.dly += clamp(metaD - o.dly, -150 * dt, 150 * dt);
+  const tr = t - o.dly;
+  let i = 2;
+  while (i > 0 && tr < s.t[i]) i--;
+  const sp = s.t[i + 1] - s.t[i];
+  let k = (tr - s.t[i]) / sp;
+  if (k < 0) k = 0;
+  else if (k > 1) { const kMax = 1 + (o.est ? 240 : 180) / Math.max(sp, 150); if (k >= kMax) { k = kMax; o.vx = o.vz = 0; } }
+  const ix = s.x[i] + (s.x[i + 1] - s.x[i]) * k, iz = s.z[i] + (s.z[i + 1] - s.z[i]) * k;
+  o.ryI = lerpAng(s.r[i], s.r[i + 1], Math.min(1, k));
+  // Filtro corto sobre el punto interpolado: redondea las esquinas y las correcciones tras extrapolar.
   if (!dt || Math.hypot(ix - o.x, iz - o.z) > 6) { o.x = ix; o.z = iz; }
-  else { const f = 1 - Math.exp(-dt * 16); o.x += (ix - o.x) * f; o.z += (iz - o.z) * f; }
-  if (k >= 1.15) { o.vx = o.vz = 0; }
+  else { const f = 1 - Math.exp(-dt * 20); o.x += (ix - o.x) * f; o.z += (iz - o.z) * f; }
 }
 function ataqueVisto(m) {
   const o = mons.get(m.tg);
@@ -7979,7 +8031,9 @@ function moverMascotas(t, dt) {
 function animarJugador(q, esYo, t) {
   const f = q.fig;
   if (!f) return;
-  if (!esYo) { const sq = Math.max(alturaEn(q.x, q.z), aguaEn(q.x) - 0.9); q.y = baseAltura(q.x, q.z, sq) + (q.vh = lerp(q.vh || 0, q.h || 0, 0.15)); }
+  if (!esYo) { const sq = Math.max(alturaEn(q.x, q.z), aguaEn(q.x) - 0.9); q.y = baseAltura(q.x, q.z, sq) + (q.vh = lerp(q.vh || 0, q.h || 0, 1 - Math.exp(-9 * (q.dtR === undefined ? 0.016 : q.dtR))));
+    /* Giro de los demas: sale del mismo tramo que su posicion y se suaviza igual a 30 que a 60 fps (antes saltaba con cada foto). */
+    q.ryV = lerpAng(q.ryV === undefined ? q.ry : q.ryV, q.ryI === undefined ? q.ry : q.ryI, 1 - Math.exp(-14 * (q.dtR || 0))); }
   const y = esYo ? P.y : q.y;
   const anda = esYo ? P.anda : q.a === 1;
   if (!esYo) { const dx = q.tx - q.x, dz = q.tz - q.z; if (Math.abs(dx * der.x + dz * der.z) > 0.02) q.f = (dx * der.x + dz * der.z) > 0 ? 1 : -1; }
@@ -8008,13 +8062,13 @@ function animarJugador(q, esYo, t) {
       else if (!P.muerto) { let dm = 10; for (const o of mons.values()) if (!o.muereT) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < dm) { dm = d; mir = o; } } }
       mirarSuave(f, P, t, P.ry, P.muerto ? null : mir);
     }
-    f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
+    f.poner(q.x, y, q.z, esYo ? P.ry : q.ryV, t);
     if (!esYo) {
       const vuela = q.a === 3 || q.a === 4;
       const tipoAla = q.al || 'aprendiz';
       if (q.alas && q.alas.userData.id !== tipoAla) { quitarAlas(q.alas); q.alas = null; }
       if (vuela && !q.alas) q.alas = nuevasAlas(tipoAla);
-      if (q.alas) { q.alas.visible = vuela && f.raiz.visible; if (q.alas.visible) ponerAlas(q.alas, q.x, y, q.z, q.ry, t, q.a === 4 ? 'planea' : ''); }
+      if (q.alas) { q.alas.visible = vuela && f.raiz.visible; if (q.alas.visible) ponerAlas(q.alas, q.x, y, q.z, q.ryV, t, q.a === 4 ? 'planea' : ''); }
     }
     return;
   }
@@ -8521,7 +8575,7 @@ function moverAventureros(t, dt) {
       const v = Math.min(d, 2.4 * dt), nx = av.x + dx / d * v, nz = av.z + dz / d * v;
       const [ex, ez] = empujarFuera(nx, nz);
       if (Math.hypot(ex - nx, ez - nz) > 0.01) { av.tx = ex; av.tz = ez; }   // choca: se para ahi y elige otro rumbo
-      av.x = ex; av.z = ez; av.ry = lerpAng(av.ry, Math.atan2(dx, dz), 0.15); anda = true;
+      av.x = ex; av.z = ez; av.ry = lerpAng(av.ry, Math.atan2(dx, dz), 1 - Math.exp(-9 * dt)); anda = true;
     }
     av.fig.estado(anda ? 'corre' : 'quieto', t);
     av.fig.poner(av.x, alturaEn(av.x, av.z), av.z, av.ry, t);
@@ -9232,7 +9286,7 @@ function cuadroBucle(t) {
 const vFX = new THREE.Vector3();
 
 // Estado visible en la consola para depurar (solo lectura).
-window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now(), true), recibir,
+window.__dq3 = { P, mons, otros, get cam() { return camara; }, get camYaw() { return camYaw; }, get camDist() { return camDist; }, get nCuadro() { return cuadro; }, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now(), true), recibir,
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 
 // ── INICIO ──
