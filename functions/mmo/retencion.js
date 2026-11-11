@@ -918,6 +918,8 @@ export const Retencion = {
     // alarma tambien salta antes de la hora en punto cuando uno toca; lo de
     // arriba ya no repite nada (avisos y copia van marcados por dia).
     try { if (this.recordarPedidos) await this.recordarPedidos(); } catch (e) { console.error('[MMO recordar pedidos]', e); }
+    // Registros y nivel 10 que quedaron esperando su resumen sin nadie conectado (alertas.js). Solo al dueño.
+    try { if (this.alertasVolcar) await this.alertasVolcar(Date.now()); } catch (e) { console.error('[MMO alertas]', e); }
     await this.programarAlarma();
   },
   async programarAlarma() {

@@ -608,6 +608,7 @@ async function pruebas() {
   await pruebasExpedicion();
   await pruebasTorreVuelta();
   await pruebasEvadir();
+  await pruebasAlertas();
   await pruebasDios();
   await pruebasFiltro();
   await pruebasSinCortes();
@@ -3855,6 +3856,119 @@ async function pruebasFiltro() {
   avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: 'como reclamo mi chicha' });
   chequear(b.ultimos('chat').some(m => m.m === 'como reclamo mi chicha'), 'preguntar por la chicha llega');
   for (const x of [v, v2, y2, a, b]) await dejar(x);
+}
+
+// Avisos al dueño (functions/mmo/alertas.js): por el avisarAdmin REAL con un Telegram de mentira.
+async function pruebasAlertas() {
+  console.log('Alertas al dueño: registro, nivel 10, /alertas y ningún precio automático');
+  const DUENO = '424242';
+  const env0 = { tok: mundo.env.TELEGRAM_BOT_TOKEN, adm: mundo.env.ADMIN_TG_ID };
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT; mundo.env.ADMIN_TG_ID = DUENO;
+  const fetchReal = globalThis.fetch;
+  const tgs = [], otros = [];
+  globalThis.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.includes('api.telegram.org')) { tgs.push(JSON.parse(init.body)); return new Response('{"ok":true}'); }
+    otros.push(u);
+    return new Response('[]');
+  };
+  const alDueno = () => tgs.filter(x => String(x.chat_id) === DUENO).map(x => x.text);
+  const aOtros = () => tgs.filter(x => String(x.chat_id) !== DUENO);
+  const limpiar = async () => { await calma(); tgs.length = 0; };
+  // El reloj del arnes no se mueve (otras pruebas dependen de la hora): se atrasa la marca del ultimo envio, que es lo mismo.
+  const pasan = ms => { if (mundo._alT) mundo._alT -= ms; };
+  const ventana = async () => { pasan(5 * 60 * 1000 + 1000); await mundo.alertasVolcar(Date.now()); await calma(); };
+  const pref0 = almacen.get('alertasAdmin');
+  almacen.delete('alertasAdmin'); mundo._alPref = null; mundo._alCola = []; mundo._alT = 0; mundo._alDemas = 0;
+  try {
+    // Registro
+    const anon = await entrar('AnonAlerta', 'a91'); await calma();
+    chequear(alDueno().length === 0, 'un invitado anónimo no avisa al dueño');
+    const r1 = await entrarTg('RegUno', 88001); await calma();
+    chequear(alDueno().length === 1 && /Registro/.test(alDueno()[0]) && alDueno()[0].includes(r1.c.nombre) && /Telegram/.test(alDueno()[0]), 'una cuenta nueva avisa al dueño al momento (' + alDueno().length + ')');
+    chequear(aOtros().length === 0, 'el aviso de registro solo va al chat del dueño');
+    await dejar(r1); await limpiar();
+    const r1b = await entrarTg('RegUno', 88001); await ventana();
+    chequear(alDueno().length === 0, 'volver a entrar con la misma cuenta no avisa otra vez');
+    await dejar(r1b); await limpiar();
+    // Antiráfaga: el primero sale ya; los de los 5 min siguientes, en un resumen.
+    await ventana();
+    const ra = await entrarTg('RafagaA', 88002); await calma();
+    const rb = await entrarTg('RafagaB', 88003), rc = await entrarTg('RafagaC', 88004), rd = await entrarTg('RafagaD', 88005); await calma();
+    chequear(alDueno().length === 1, 'en una ráfaga solo el primero sale al momento (' + alDueno().length + ')');
+    pasan(60000); await mundo.alertasVolcar(Date.now()); await calma();
+    chequear(alDueno().length === 1, 'dentro de la ventana no sale nada más');
+    await ventana();
+    chequear(alDueno().length === 2 && /Registros: 3/.test(alDueno()[1]) && [rb, rc, rd].every(x => alDueno()[1].includes(x.c.nombre)), 'los demás llegan juntos en un solo resumen');
+    for (const x of [ra, rb, rc, rd]) await dejar(x);
+    await limpiar();
+    // Invitado que pasa su duende a una cuenta
+    const tokInv = 'b7'.repeat(16);
+    const inv = await entrar('PasaCuenta', 'b7'); ponerNivel(inv, 3); await mundo.guardar(inv); await dejar(inv);
+    await ventana(); await limpiar();
+    const her = await entrarTg('CuentaNueva', 88006, { inv: tokInv, heredar: true }); await calma();
+    chequear(her.c && her.c.nivel === 3 && alDueno().length === 1 && /Registro/.test(alDueno()[0]) && /era invitado/.test(alDueno()[0]), 'un invitado que crea su cuenta avisa como registro (' + alDueno().length + ')');
+    await limpiar();
+    // Nivel 10: una vez por personaje
+    await ventana(); await limpiar();
+    ponerNivel(anon, 9); anon.c.xp = 0; delete anon.c.av10;
+    mundo.sumarXp(anon, 5e6); await calma();
+    chequear(anon.c.nivel >= 10 && anon.c.av10 === 1 && alDueno().length === 1 && /Nivel 10/.test(alDueno()[0]) && alDueno()[0].includes(anon.c.nombre), 'llegar a nivel 10 avisa al dueño (' + alDueno().length + ')');
+    await ventana(); await limpiar();
+    anon.c.nivel = 9; anon.c.xp = 0; mundo.sumarXp(anon, 5e6); await ventana();
+    chequear(alDueno().length === 0, 'el mismo personaje no avisa dos veces del nivel 10');
+    ponerNivel(her, 12); her.c.xp = 0; mundo.sumarXp(her, 5e6); await ventana();
+    chequear(alDueno().length === 0 && !her.c.av10, 'subir de nivel por encima de 10 no avisa');
+    await limpiar();
+    // /alertas: preferencia guardada; apagada no envía
+    const e0 = await interno('alertas', {});
+    const on = (e, id) => (e.tipos.find(t => t.id === id) || {}).on;
+    chequear(e0.ok && ['compras', 'registros', 'nivel10', 'pendientes', 'retiros', 'chicha'].every(id => on(e0, id) === true) && on(e0, 'reportes') === false && on(e0, 'cupo') === false, '/alertas: por defecto van compras, registros, nivel 10 y lo que pide una acción; reportes y cupo, apagados');
+    chequear((await interno('alertas', {}, 'otra-clave')).status === 403, '/alertas: sin la clave interna no responde');
+    const e1 = await interno('alertas', { tipo: 'nivel10', on: false });
+    chequear(e1.ok && on(e1, 'nivel10') === false && almacen.get('alertasAdmin').nivel10 === false, '/alertas guarda la preferencia en el almacenamiento del mundo');
+    mundo._alPref = null;   // como tras un reinicio del servidor: se lee de lo guardado
+    const otro = await entrar('SubeCallado', 'a92'); ponerNivel(otro, 9); otro.c.xp = 0;
+    mundo.sumarXp(otro, 5e6); await ventana();
+    chequear(otro.c.nivel >= 10 && alDueno().length === 0, 'con «nivel 10» apagado no se envía nada (también tras reiniciar)');
+    chequear(otro.c.av10 === 1, 'y queda marcado: encenderlo luego no avisa de los que ya subieron');
+    await interno('alertas', { tipo: 'registros', on: false });
+    const r2 = await entrarTg('RegCallado', 88007); await ventana();
+    chequear(alDueno().length === 0, 'con «registros» apagado una cuenta nueva no avisa');
+    chequear((await mundo.avisarAdmin('prueba cupo', null, true, 'cupo')) === false && alDueno().length === 0, 'un aviso de tipo apagado por defecto (cupo) no sale');
+    chequear((await mundo.avisarAdmin('prueba compra', null, true, 'compras')) === true && alDueno().length === 1, 'un aviso de compra sí sale');
+    await interno('alertas', { tipo: 'compras', on: false });
+    chequear((await mundo.avisarAdmin('prueba compra 2', null, true, 'compras')) === false && alDueno().length === 1, 'apagar «compras» lo calla');
+    chequear((await mundo.avisarAdmin('reclamo de un pedido', null, true)) === true && alDueno().length === 2, 'un aviso sin tipo (reclamo de un pedido pagado) sale siempre');
+    const e2 = await interno('alertas', { tipo: 'cupo', on: true });
+    chequear(e2.ok && on(e2, 'cupo') === true && (await mundo.avisarAdmin('prueba cupo', null, true, 'cupo')) === true, 'encender «cupo» lo deja pasar');
+    chequear((await interno('alertas', { tipo: 'precio', on: true })).ok === false, '/alertas rechaza un tipo que no existe');
+    const e3 = await interno('alertas', { tipo: 'defecto' });
+    chequear(e3.ok && on(e3, 'compras') === true && on(e3, 'cupo') === false && Object.keys(almacen.get('alertasAdmin')).length === 0, '/alertas defecto vuelve a lo de fábrica');
+    chequear(aOtros().length === 0, 'ninguna de estas alertas escribe a un jugador');
+    for (const x of [anon, her, otro, r2]) await dejar(x);
+    await limpiar();
+
+    // Ningún cron publica el precio (el «pulso» se quitó el 24-oct-2026).
+    const { runCron } = await import('../functions/api/cron.js');
+    const idx = { ok: true, ids: [], callar: [], hoy: [], permitidos: [], candidatos: 0, enviados: 0 };
+    const envCron = {
+      TELEGRAM_BOT_TOKEN: TOKEN_BOT, ADMIN_TG_ID: DUENO, TG_CHANNEL_ID: '-100777', DISCORD_WEBHOOK_URL: 'https://discord.test/hook', SUPABASE_URL: 'https://supabase.test', SUPABASE_SERVICE_KEY: 'x',
+      MMO: { idFromName: () => 'mundo-1', get: () => ({ fetch: async () => new Response(JSON.stringify(idx)) }) },
+    };
+    const salidas = [];
+    globalThis.fetch = async (url, init) => { salidas.push(String(url) + ' ' + String((init && init.body) || '')); return new Response('[]'); };
+    const logReal = console.log; console.log = () => {};
+    try { for (const cr of ['0 3,15 * * *', '0 17 * * *', '0 12 * * 1', '0 0 * * *']) await runCron(cr, envCron); } finally { console.log = logReal; }
+    chequear(!salidas.some(x => /dexscreener|pump\.fun|geckoterminal/i.test(x)), 'ningún cron consulta el precio de $DUENDE');
+    chequear(!salidas.some(x => /api\.telegram\.org|discord/i.test(x) && /precio|price|pulso|mercado|\$DUENDE/i.test(x)), 'ningún cron publica el precio ni un «pulso» en Telegram o Discord');
+    chequear(!salidas.some(x => x.includes('-100777') || (x.includes('api.telegram.org') && x.includes(DUENO))), 'ningún cron escribe al canal ni al chat del dueño');
+  } finally {
+    globalThis.fetch = fetchReal;
+    mundo.env.TELEGRAM_BOT_TOKEN = env0.tok; mundo.env.ADMIN_TG_ID = env0.adm;
+    if (pref0 === undefined) almacen.delete('alertasAdmin'); else almacen.set('alertasAdmin', pref0);
+    mundo._alPref = null; mundo._alCola = []; mundo._alT = 0; mundo._alDemas = 0;
+  }
 }
 
 async function pruebasDios() {
