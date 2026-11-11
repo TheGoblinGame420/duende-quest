@@ -19,6 +19,7 @@
 //   piv   pivote [x, y] (la articulación)
 //   r     radio de la junta redonda que la pieza lleva en el pivote (tapa el hueco al girar; 8 si falta)
 //   relleno  color con que se tapa el hueco cuando la pieza va por delante del cuerpo
+//   zona     polígono que limita ese relleno (solo donde de verdad hay cuerpo detrás)
 //   osc   giro al caminar (rad) · golpe: giro al atacar (rad) · empuje: avance al atacar (px)
 // ═══════════════════════════════════════════════════════
 
@@ -45,6 +46,112 @@ export const MARIONETAS = {
       { rol: 'brazoA', piv: [36, 112], r: 10, osc: .2, poly: [18, 101, 47, 104, 52, 130, 48, 172, 40, 188, 22, 192, 22, 198, 0, 198, 0, 150, 10, 120] },
       { rol: 'cabeza', piv: [100, 118], r: 16, poly: [0, 0, 193, 0, 193, 56, 141, 58, 140, 105, 128, 120, 118, 128, 92, 128, 76, 118, 60, 104, 46, 98, 0, 96] },
       { rol: 'brazoB', piv: [136, 124], r: 10, osc: .1, golpe: -.45, empuje: 7, poly: [141, 58, 193, 58, 193, 150, 160, 158, 138, 150, 131, 128, 140, 112] },
+    ],
+  },
+  skin_momia: {
+    w: 175, h: 210, tronco: [100, 150],
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [74, 148], r: 10, poly: [44, 136, 70, 140, 98, 152, 96, 170, 88, 184, 86, 210, 14, 210, 14, 170] },
+      { rol: 'piernaB', piv: [118, 152], r: 10, poly: [100, 152, 132, 146, 150, 160, 165, 185, 165, 210, 86, 210, 88, 184, 96, 170] },
+      { rol: 'brazoB', piv: [136, 112], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [140, 84, 175, 84, 175, 122, 150, 130, 136, 124, 130, 108] },
+      { rol: 'cabeza', piv: [104, 90], r: 14, poly: [45, 0, 175, 0, 175, 82, 140, 83, 128, 91, 112, 96, 92, 92, 76, 84, 70, 70, 68, 34, 45, 31] },
+      { rol: 'brazoA', piv: [70, 100], r: 9, osc: .1, poly: [2, 6, 44, 6, 45, 31, 68, 34, 70, 70, 68, 92, 74, 100, 66, 108, 46, 112, 42, 128, 22, 128, 2, 100] },
+    ],
+  },
+  skin_frankenstein: {
+    w: 175, h: 210, tronco: [95, 155],
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [64, 156], r: 9, poly: [44, 152, 82, 158, 86, 172, 76, 184, 76, 210, 12, 210, 12, 172] },
+      { rol: 'piernaB', piv: [120, 162], r: 9, poly: [100, 162, 138, 158, 156, 176, 165, 210, 96, 210, 96, 180] },
+      { rol: 'brazoB', piv: [134, 116], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [146, 88, 160, 77, 175, 70, 175, 140, 140, 140, 130, 128, 132, 104] },
+      { rol: 'cabeza', piv: [106, 96], r: 14, poly: [38, 0, 175, 0, 175, 66, 160, 77, 146, 88, 138, 90, 124, 100, 100, 102, 88, 96, 74, 84, 70, 70, 60, 62, 58, 32, 38, 29] },
+      { rol: 'brazoA', piv: [58, 96], r: 9, osc: .1, poly: [2, 4, 38, 4, 38, 29, 58, 32, 60, 66, 58, 86, 62, 98, 50, 106, 30, 102, 2, 90] },
+    ],
+  },
+  skin_vampiro: {
+    w: 175, h: 210, tronco: [100, 150],
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [76, 150], r: 9, poly: [50, 150, 96, 146, 100, 160, 100, 180, 88, 190, 80, 210, 28, 210, 30, 172] },
+      { rol: 'piernaB', piv: [118, 154], r: 9, poly: [100, 160, 134, 146, 152, 160, 166, 186, 166, 210, 100, 210, 100, 180] },
+      { rol: 'brazoB', piv: [136, 112], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [136, 90, 150, 82, 175, 78, 175, 132, 150, 134, 134, 122, 130, 104] },
+      { rol: 'cabeza', piv: [106, 86], r: 13, poly: [48, 0, 175, 0, 175, 70, 150, 74, 136, 78, 128, 86, 112, 92, 96, 88, 84, 76, 80, 62, 72, 60, 69, 35, 48, 32] },
+      { rol: 'brazoA', piv: [74, 92], r: 9, osc: .1, poly: [10, 4, 48, 4, 48, 32, 69, 35, 72, 60, 70, 72, 80, 86, 74, 98, 58, 104, 30, 100, 18, 84] },
+    ],
+  },
+  skin_esqueleto: {
+    w: 175, h: 210, tronco: [95, 152],
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [70, 154], r: 9, poly: [50, 150, 90, 152, 92, 166, 76, 180, 76, 210, 14, 210, 16, 172, 40, 160] },
+      { rol: 'piernaB', piv: [118, 158], r: 9, poly: [100, 160, 136, 152, 150, 166, 164, 186, 164, 210, 94, 210, 94, 178] },
+      { rol: 'brazoB', piv: [134, 114], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [136, 90, 148, 83, 175, 68, 175, 134, 146, 134, 132, 122, 130, 106] },
+      { rol: 'cabeza', piv: [104, 94], r: 14, poly: [37, 0, 175, 0, 175, 66, 148, 82, 136, 88, 124, 98, 100, 100, 84, 92, 70, 80, 62, 62, 60, 34, 37, 31] },
+      { rol: 'brazoA', piv: [62, 92], r: 9, osc: .1, poly: [2, 4, 37, 4, 37, 31, 60, 34, 62, 62, 60, 76, 66, 92, 54, 102, 34, 98, 2, 92] },
+    ],
+  },
+  skin_lobo: {
+    w: 175, h: 210, tronco: [98, 150],
+    piezas: [
+      { rol: 'capa', piv: [60, 136], r: 7, osc: .16, poly: [16, 106, 46, 112, 60, 126, 62, 146, 32, 152, 16, 142] },
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [68, 154], r: 9, poly: [50, 150, 86, 152, 90, 166, 92, 184, 92, 210, 20, 210, 20, 176, 44, 160] },
+      { rol: 'piernaB', piv: [124, 164], r: 9, poly: [102, 166, 142, 156, 152, 170, 164, 190, 164, 210, 92, 210, 92, 184] },
+      { rol: 'brazoB', piv: [138, 122], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [136, 112, 148, 86, 175, 70, 175, 138, 146, 140, 132, 130] },
+      { rol: 'cabeza', piv: [106, 96], r: 14, poly: [44, 0, 175, 0, 175, 68, 148, 84, 134, 92, 124, 100, 100, 102, 84, 92, 74, 80, 70, 62, 68, 35, 44, 32] },
+      { rol: 'brazoA', piv: [70, 94], r: 9, osc: .1, poly: [2, 4, 44, 4, 44, 32, 68, 35, 70, 62, 68, 80, 76, 94, 66, 106, 40, 106, 10, 96, 2, 80] },
+    ],
+  },
+  skin_pirata: {
+    w: 175, h: 210, tronco: [95, 152],
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'piernaA', piv: [66, 160], r: 9, poly: [46, 160, 82, 156, 88, 166, 88, 184, 86, 210, 14, 210, 14, 178, 40, 170] },
+      { rol: 'piernaB', piv: [120, 158], r: 9, poly: [92, 160, 138, 150, 152, 164, 164, 186, 164, 210, 90, 210, 90, 170] },
+      { rol: 'brazoB', piv: [136, 116], r: 8, osc: .16, golpe: -.5, empuje: 7, poly: [134, 104, 148, 100, 160, 95, 175, 94, 175, 134, 148, 138, 132, 128] },
+      { rol: 'cabeza', piv: [104, 94], r: 14, poly: [37, 0, 175, 0, 175, 93, 160, 95, 148, 100, 138, 90, 124, 98, 100, 100, 84, 92, 68, 80, 60, 62, 58, 33, 37, 30] },
+      { rol: 'brazoA', piv: [64, 94], r: 9, osc: .1, poly: [2, 4, 37, 4, 37, 30, 58, 33, 60, 62, 68, 80, 70, 92, 62, 104, 40, 108, 18, 104, 2, 92] },
+    ],
+  },
+  // El Táctico teclea: el teclado y las manos son una sola pieza; las piernas, cortas, van por detrás.
+  skin_tactico: {
+    w: 215, h: 210, tronco: [90, 180],
+    piezas: [
+      { rol: 'piernaA', piv: [62, 180], r: 7, osc: .5, poly: [44, 176, 78, 178, 84, 188, 86, 210, 40, 210] },
+      { rol: 'piernaB', piv: [120, 192], r: 6, osc: .5, poly: [102, 192, 140, 190, 146, 210, 100, 210] },
+      { rol: 'cuerpo' },
+      { rol: 'cabeza', piv: [100, 100], r: 12, poly: [26, 8, 205, 8, 205, 76, 152, 82, 150, 96, 136, 106, 112, 112, 88, 106, 72, 96, 62, 84, 50, 74, 26, 60] },
+      { rol: 'brazoB', piv: [90, 160], r: 0, relleno: '#0e2014', zona: [74, 124, 138, 124, 138, 188, 74, 188], osc: .05, golpe: -.22, empuje: 6, poly: [86, 150, 100, 140, 140, 124, 180, 126, 215, 138, 215, 166, 150, 200, 108, 200, 74, 178, 74, 166] },
+    ],
+  },
+  // Espectros: no tienen piernas, flotan; se mueven sus zarcillos, el orbe y la espada.
+  skin_necromancer: {
+    w: 221, h: 210, tronco: [110, 150], flota: true,
+    piezas: [
+      { rol: 'capa', piv: [70, 160], r: 0, osc: .05, poly: [0, 70, 60, 70, 86, 130, 92, 180, 70, 210, 0, 210] },
+      { rol: 'capa', piv: [160, 205], r: 0, osc: .05, poly: [136, 118, 221, 118, 221, 210, 120, 210, 126, 160] },
+      { rol: 'cuerpo' },
+      { rol: 'capa', piv: [150, 62], r: 0, osc: .06, golpe: .3, poly: [110, 0, 221, 0, 221, 62, 150, 62, 120, 30] },
+    ],
+  },
+  skin_legendariafull: {
+    w: 316, h: 210, tronco: [200, 200], flota: true,
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'brazoB', piv: [250, 140], r: 0, osc: .1, poly: [240, 70, 316, 70, 316, 180, 240, 180] },
+      { rol: 'brazoA', piv: [150, 165], r: 0, osc: .05, golpe: 1.5, poly: [0, 0, 90, 0, 118, 100, 130, 128, 150, 160, 160, 176, 140, 180, 100, 130, 30, 110, 0, 60] },
+    ],
+  },
+  // El Berserker va de toga: no se le ven las piernas; avanza a saltitos, mazo en alto.
+  skin_berserker: {
+    w: 317, h: 210, tronco: [160, 190], paso: 1.3,
+    piezas: [
+      { rol: 'cuerpo' },
+      { rol: 'brazoB', piv: [240, 150], r: 8, relleno: '#1a0626', osc: .12, poly: [234, 128, 272, 128, 272, 168, 240, 170, 232, 150] },
+      { rol: 'cabeza', piv: [160, 104], r: 12, poly: [120, 0, 208, 0, 208, 40, 220, 40, 220, 58, 200, 62, 202, 96, 190, 106, 178, 104, 166, 112, 150, 112, 140, 104, 128, 106, 118, 96, 120, 62, 100, 58, 100, 40, 120, 40] },
+      { rol: 'brazoA', piv: [96, 134], r: 8, relleno: '#1a0626', zona: [62, 106, 100, 106, 100, 158, 70, 152], osc: .1, golpe: 1.2, poly: [34, 62, 84, 50, 99, 78, 98, 112, 100, 140, 96, 156, 72, 150, 64, 122, 70, 106, 44, 102] },
     ],
   },
 };
@@ -108,7 +215,7 @@ function hornear(def, img) {
       // Pieza por delante del cuerpo: debajo queda su silueta en el color de la ropa.
       tx.setTransform(1, 0, 0, 1, 0, 0); tx.globalCompositeOperation = 'source-over'; tx.clearRect(0, 0, W, H);
       tx.setTransform(s, 0, 0, s, 0, 0);
-      tx.save(); trazar(tx, p); tx.clip(); tx.drawImage(img, 0, 0); tx.restore();
+      tx.save(); trazar(tx, p); tx.clip(); if (d.zona) { trazar(tx, d.zona); tx.clip(); } tx.drawImage(img, 0, 0); tx.restore();
       tx.globalCompositeOperation = 'source-in'; tx.fillStyle = d.relleno; tx.fillRect(0, 0, def.w, def.h);
       cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.globalCompositeOperation = 'destination-over'; cx.drawImage(tmp, 0, 0); cx.restore();
     }
@@ -141,10 +248,17 @@ function hornear(def, img) {
 // por jugador, creado una sola vez; se suelta solo cuando el jugador se va.
 function estadoDe(q, muerto, t) {
   let e = _estado.get(q);
-  if (!e) { e = { anda: 0, tm: muerto ? t - 999 : -1, m: null }; _estado.set(q, e); }
+  if (!e) { e = { anda: 0, tm: muerto ? t - 999 : -1 };   /* si ya estaba muerto al verlo, aparece tendido */ _estado.set(q, e); }
   if (muerto) { if (e.tm < 0) e.tm = t; }
   else e.tm = -1;
   return e;
+}
+
+// Cuadros que lleva muerto un duende (−1 si está vivo). Lo usa también el cliente
+// para la caída de las skins de hoja animada. Hay que llamarlo cada cuadro.
+export function tiempoMuerto(q, muerto, t) {
+  const e = estadoDe(q, muerto, t);
+  return muerto ? t - e.tm : -1;
 }
 
 // Curva del golpe: k de 0 a 1 → toma impulso (−1), descarga (+1) y vuelve a 0.
@@ -199,7 +313,7 @@ export function dibujarMarioneta(g, m, q, alto, t, anda, aire, atk, herido, muer
       }
       case 'brazoA': case 'brazoB':
         rot = -sn * p.fase * p.osc * A + resp * .035 * p.fase * (1 - A);
-        if (p.golpe) { rot += gk * p.golpe; mx = Math.max(0, gk) * p.empuje; }
+        if (p.golpe) { rot += (gk < 0 ? gk * .35 : gk) * p.golpe; mx = Math.max(0, gk) * p.empuje; }   /* toma poco impulso y descarga entero */
         else if (gk) rot += gk * .12 * p.fase;
         if (aire) rot -= p.fase * .18;
         if (duele) rot += p.fase * .3;
@@ -210,7 +324,7 @@ export function dibujarMarioneta(g, m, q, alto, t, anda, aire, atk, herido, muer
         my = Math.abs(cs) * 1.5 * A;
         break;
       case 'capa':
-        rot = Math.sin(t * .05) * .03 + (sn * p.osc + .1) * A - gk * .1 + duele * .12;
+        rot = Math.sin(t * .05 + i * 1.7) * .035 + (sn * p.osc + .08) * A * (i & 1 ? -1 : 1) + gk * (p.golpe || -.1) + duele * .12;
         break;
     }
     g.save();

@@ -20,7 +20,7 @@ import {
 } from './data.js?v=372';
 import { iniciarRegalo } from './regalo.js?v=372';
 import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=372';
-import { marioneta, dibujarMarioneta } from './marioneta.js?v=372';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=372';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -320,7 +320,7 @@ const FX = { corte_h: [65, 40, 5, 2], corte_arriba: [52, 56, 5, 2], corte_giro: 
 Object.keys(FX).forEach(k => cargar('fx_' + k, A + 'fx/' + k + '.png'));
 let ANIM = null;
 fetch(A + 'skins/duende_anim.json').then(r => r.json()).then(d => { ANIM = d; }).catch(() => {});
-const ANIM_IDX = { reposo: [1, 2, 3], camina: [4, 5, 6, 7, 8, 9], ataca: [10, 11, 12, 13, 14], herido: [15, 16, 17] };
+const ANIM_IDX = { reposo: [1, 2, 3], camina: [4, 5, 6, 7, 8, 9], ataca: [10, 11, 12, 13, 14], herido: [15, 16, 17], muere: [19, 20, 21] };
 
 // Copias teñidas en cache (mismo truco que el arcade: tiñe sin perder volumen).
 const _tinte = new Map();
@@ -4847,7 +4847,10 @@ function dibujarDuende(q, esYo) {
     if (atk > 0) lista = ANIM_IDX.ataca;
     else if (herido) { lista = ANIM_IDX.herido; vel = 6; }
     else if (anda || enAire) { lista = ANIM_IDX.camina; vel = 5; }
-    const idx = atk > 0 ? lista[Math.min(lista.length - 1, Math.floor((1 - atk / 14) * lista.length))] : lista[Math.floor(frame / vel) % lista.length];
+    let idx = atk > 0 ? lista[Math.min(lista.length - 1, Math.floor((1 - atk / 14) * lista.length))] : lista[Math.floor(frame / vel) % lista.length];
+    // Al morir cae (tambalea, se desploma y queda tendido) en vez de quedarse de pie medio transparente.
+    const tMuerto = tiempoMuerto(q, muerto, frame);
+    if (muerto) { idx = ANIM_IDX.muere[Math.min(2, Math.floor(tMuerto / 7))]; g.globalAlpha = 1 - Math.min(1, tMuerto / 40) * .55; }
     const [cw, ch] = ANIM.celda;
     const alto = FIS.jugH / (ANIM.altoDePie || 1);
     const ancho = alto * (cw / ch);
