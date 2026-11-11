@@ -1970,6 +1970,7 @@ async function pruebasMundoAbierto() {
   tick(1);
   Math.random = azarReal;
   chequear(raroVivo(), 'después sí puede volver');
+  await pruebasRankTodos();
 }
 
 pruebas().then(resumen).catch(e => { console.error(e); process.exit(1); });
@@ -4714,4 +4715,126 @@ async function pruebasSinPvP() {
     chequear(d.hp === d.st.maxHp, 'CLASSIC (' + mapa + '): sin duelo el de al lado no pierde vida');
   }
   await dejar(c); await dejar(d);
+}
+
+// ── RANKING DE NIVELES COMPLETO (functions/mmo/ranktodos.js) ──
+async function pruebasRankTodos() {
+  console.log('Ranking de niveles completo: todos los personajes, invitados incluidos');
+  const pedir = async (s, o) => { avanzar(2500); s.limpiar(); await s.mandar({ t: 'rankNv', ...o }); await calma(); return s.ultimos('rankNv').pop(); };
+  // Un invitado recien creado (Nv 1, sin subir de nivel) ya sale, marcado como invitado.
+  const a = await entrar('RkÑusta', '7c1'); await calma();
+  let r = await pedir(a, { q: 'rknusta' });
+  chequear(r && r.r.length === 1 && r.r[0].n === a.c.nombre && r.r[0].lv === 1 && r.r[0].inv === 1 && r.r[0].yo === 1, 'un invitado de Nv 1 sale en el ranking sin haber subido de nivel, marcado como invitado (búsqueda sin tildes ni mayúsculas)');
+  chequear(r && r.mio && r.mio.p >= 1 && r.mio.n === a.c.nombre, 'la respuesta trae siempre tu puesto');
+  // Volumen: 130 personajes mas (mitad cuentas, mitad invitados).
+  for (let i = 0; i < 130; i++) await mundo.rkAnotar({ uid: (i % 2 ? 'inv:rkfalso' : 'web:rkfalso') + i, nombre: 'Relleno' + i, nivel: 2 + (i % 7), xp: i, kills: i }, true);
+  r = await pedir(a, { d: 0 });
+  chequear(r && r.tot >= 131 && r.tot === r.n && r.r.length === 50 && r.mas === true && r.r[0].p === 1, 'la primera página trae 50 filas, el total de personajes y avisa de que hay más');
+  chequear(r && r.r.every((x, i) => i === 0 || r.r[i - 1].lv >= x.lv), 'ordenado por nivel');
+  chequear(r && r.r.every(x => !('uid' in x) && !('u' in x)), 'las filas no enseñan el uid de nadie');
+  const r2 = await pedir(a, { d: 50 });
+  chequear(r2 && r2.d === 50 && r2.r.length === 50 && r2.r[0].p === 51 && r2.mio && r2.mio.p === r.mio.p, '«Ver más» trae la página siguiente (puestos 51-100) y tu puesto sigue ahí');
+  const fin = await pedir(a, { d: r.tot - 3 });
+  chequear(fin && fin.r.length === 3 && fin.mas === false, 'la última página no ofrece más');
+  const lejos = await pedir(a, { d: 999999 });
+  chequear(lejos && lejos.r.length === 0 && lejos.mas === false && lejos.tot === r.tot, 'pedir más allá del final no rompe nada');
+  const raro = await pedir(a, { d: 'x', q: { a: 1 } });
+  chequear(raro && raro.d === 0 && raro.r.length === 50, 'un pedido mal formado se trata como la primera página');
+  // Todos los jugadores conectados de la prueba estan en el indice.
+  const todos = [...mundo.porUid.keys()].filter(u => !mundo.uidsPrueba.has(u));
+  chequear(todos.length > 0 && todos.every(u => mundo.rk.has(u)), 'todos los conectados están en el índice');
+  // Subir de nivel te mueve de puesto.
+  const p0 = r.mio.p;
+  ponerNivel(a, 9); a.c.xp = 5; await mundo.actualizarRanking(a); await calma();
+  r = await pedir(a, { d: 0 });
+  chequear(r && r.mio.p < p0 && r.mio.lv === 9 && r.r[r.mio.p - 1] && r.r[r.mio.p - 1].yo === 1, 'al subir de nivel subes de puesto y tu fila sale marcada');
+  // Busqueda por nombre.
+  r = await pedir(a, { q: 'RELLENO1' });
+  chequear(r && r.n === 41 && r.r.length === 41 && r.r.every(x => /^Relleno1/.test(x.n)) && r.r.some(x => x.inv) && r.r.some(x => !x.inv) && r.tot >= 131, 'la búsqueda filtra por nombre y conserva el puesto real y la marca de invitado');
+  r = await pedir(a, { q: 'relleno' });
+  chequear(r && r.n === 130 && r.r.length === 50 && r.mas === true, 'una búsqueda con muchos resultados también va por páginas');
+  r = await pedir(a, { q: 'zzzznadie' });
+  chequear(r && r.n === 0 && r.r.length === 0 && r.mio.p > 0, 'una búsqueda sin resultados sigue trayendo tu puesto');
+  // Limite de ritmo: dos pedidos seguidos, una sola respuesta.
+  avanzar(2500); a.limpiar(); await a.mandar({ t: 'rankNv', d: 0 }); await a.mandar({ t: 'rankNv', d: 50 }); await calma();
+  chequear(a.ultimos('rankNv').length === 1, 'dos pedidos pegados: solo se atiende uno');
+  // Cuentas de prueba internas y baneados, fuera.
+  const uidP = [...mundo.uidsPrueba][0];
+  await mundo.rkAnotar({ uid: uidP, nombre: 'BotInterno', nivel: 60, xp: 1, kills: 1 }, true);
+  chequear(!mundo.rk.has(uidP), 'las cuentas de prueba internas no entran al índice');
+  const mod = await mundo.cargarMod();
+  mod.ban['web:rkfalso0'] = { n: 'Relleno0', hasta: 0, t: 1 };
+  avanzar(31000);
+  r = await pedir(a, { q: 'relleno0' });
+  chequear(r && r.n === 0, 'un baneado no sale en el ranking');
+  delete mod.ban['web:rkfalso0'];
+  avanzar(31000);
+  r = await pedir(a, { q: 'relleno0' });
+  chequear(r && r.n === 1, 'y vuelve a salir cuando se le quita el ban');
+  // El mensaje de siempre sigue igual para los clientes viejos (top 20) y suma el total y tu puesto.
+  avanzar(4000); a.limpiar(); await a.mandar({ t: 'ranking' }); await calma();
+  const rk = a.ultimos('ranking').pop();
+  chequear(rk && Array.isArray(rk.r) && rk.r.length === 20 && rk.r.every(x => typeof x.n === 'string' && typeof x.lv === 'number' && typeof x.yo === 'boolean') && rk.rtot >= 131 && rk.rpos >= 1, 'el mensaje «ranking» de siempre mantiene su top 20 y añade el total y tu puesto');
+  chequear(rk && Array.isArray(rk.sem) && rk.mio && !rk.sem.some(x => /^Relleno/.test(x.n)), 'el ranking semanal (con premio) no cambia: solo quien ganó XP esta semana');
+  // Cambio de nombre: la fila sigue al personaje.
+  const antes = a.c.nombre; a.c.nombre = 'RkRebautizada'; await mundo.reservarNombre(a.c, antes); await calma();
+  r = await pedir(a, { q: 'rkrebautizada' });
+  chequear(r && r.n === 1 && r.r[0].yo === 1 && (await pedir(a, { q: 'rknusta' })).n === 0, 'al cambiar de nombre la fila se actualiza (no queda el nombre viejo)');
+  // Un invitado no puede suplantar un nombre que ya existe: le toca otro.
+  const b = await entrar('RkRebautizada', '7c2'); await calma();
+  chequear(b.c.nombre !== a.c.nombre, 'un invitado no entra con el nombre de otro');
+  r = await pedir(a, { q: 'rkrebautizada' });
+  chequear(r && r.n === 1, 'y en el ranking sigue habiendo un solo «RkRebautizada»');
+  // Guardado por trozos: solo se escriben los que cambiaron.
+  await mundo.rkVolcar(true);
+  const filas = () => [...almacen].filter(([k]) => k.startsWith('rkn:')).reduce((n, [, v]) => n + Object.keys(v).length, 0);
+  chequear(filas() === mundo.rk.size, 'el índice se guarda entero, repartido en trozos');
+  const put0 = state.storage.put; const puestas = [];
+  state.storage.put = async (k, v) => { puestas.push(k); return put0(k, v); };
+  await mundo.rkVolcar(true);
+  chequear(puestas.filter(k => k.startsWith('rkn:')).length === 0, 'sin cambios no se escribe nada');
+  ponerNivel(a, 10); await mundo.actualizarRanking(a); await calma();
+  await mundo.rkVolcar();
+  chequear(puestas.filter(k => k.startsWith('rkn:')).length === 0, 'un cambio no se escribe hasta que pasa el minuto');
+  avanzar(61000); await mundo.rkVolcar();
+  chequear(puestas.filter(k => k.startsWith('rkn:')).length === 1, 'y entonces se reescribe solo el trozo que cambió');
+  // Entrar otra vez sin cambios no ensucia nada.
+  await mundo.reservarNombre(a.c); await calma();
+  chequear(mundo.rkSucios.size === 0, 'volver a entrar sin cambios no provoca escrituras');
+  state.storage.put = put0;
+  // Reinicio del servidor: el indice se lee de sus trozos, sin tocar los personajes.
+  const list0 = state.storage.list; const prefijos = [];
+  state.storage.list = async o => { prefijos.push(o && o.prefix); return list0(o); };
+  const tam = mundo.rk.size;
+  mundo._rkP = null; mundo.rk = null;
+  await mundo.rkCargar();
+  chequear(mundo.rk.size === tam && prefijos.length === 1 && prefijos[0] === 'rkn:', 'tras un reinicio el índice se recupera con una sola lectura de sus trozos');
+  state.storage.list = list0;
+  // Siembra unica con los personajes ya guardados (los que aun no han vuelto a entrar).
+  almacen.set('c:inv:rkviejo1', { uid: 'inv:rkviejo1', nombre: 'ViejoInvitado', nivel: 3, xp: 40, kills: 12 });
+  almacen.set('c:web:rkviejo2', { uid: 'web:rkviejo2', nombre: 'ViejaCuenta', nivel: 44, xp: 9, kills: 900 });
+  almacen.set('c:inv:rkviejo3', { uid: 'inv:rkviejo3', nombre: 'Bot Prueba', nivel: 2, xp: 0, kills: 1 });
+  almacen.delete('mig:rankTodos');
+  await mundo.rkMigrar();
+  chequear(mundo.rk.has('inv:rkviejo1') && mundo.rk.has('web:rkviejo2') && !mundo.rk.has('inv:rkviejo3') && almacen.get('mig:rankTodos') === 1, 'la siembra recoge los personajes guardados (invitados incluidos) y deja fuera los de prueba');
+  chequear(filas() === mundo.rk.size, 'y lo sembrado queda guardado');
+  almacen.delete('c:inv:rkviejo1'); await mundo.rkQuitar('inv:rkviejo1');
+  await mundo.rkMigrar();
+  chequear(!mundo.rk.has('inv:rkviejo1'), 'la siembra no se repite');
+  r = await pedir(a, { q: 'viejacuenta' });
+  chequear(r && r.n === 1 && !r.r[0].inv && r.r[0].lv === 44, 'una cuenta sembrada sale sin la marca de invitado');
+  // Herencia invitado -> cuenta: la fila pasa a la cuenta y deja de ser de invitado.
+  await mundo.rkAnotar({ uid: 'inv:rkhereda', nombre: 'Heredera', nivel: 12, xp: 3, kills: 30 }, true);
+  await mundo.migrarUid('inv:rkhereda', 'web:rkhereda', 'Heredera');
+  r = await pedir(a, { q: 'heredera' });
+  chequear(r && r.n === 1 && !r.r[0].inv && r.r[0].lv === 12 && !mundo.rk.has('inv:rkhereda'), 'al pasar de invitado a cuenta la fila se muda y pierde la marca de invitado');
+  // Un personaje archivado sale del ranking.
+  await mundo.rkQuitar('web:rkhereda');
+  r = await pedir(a, { q: 'heredera' });
+  chequear(r && r.n === 0, 'un personaje archivado sale del ranking');
+  // Limpieza: el relleno no debe quedar para las pruebas que sigan.
+  for (const u of [...mundo.rk.keys()]) if (/rkfalso|rkviej/.test(u)) await mundo.rkQuitar(u);
+  for (const k of ['c:web:rkviejo2', 'c:inv:rkviejo3']) almacen.delete(k);
+  await mundo.rkVolcar(true);
+  await dejar(a); await dejar(b);
 }
