@@ -155,7 +155,7 @@ footer a{color:var(--txt2);}
   // ?web=1 (boton de la portada): sigue siendo una visita normal, si no venia ya de un anuncio.
   var desdeWeb = /[?&]web=1(&|$)/.test(location.search) && !document.documentElement.classList.contains('anuncio');
   var qs = location.search.replace(/([?&])web=1(&|$)/, function (m, a, z) { return z ? a : ''; });
-  // Quien entra por /jugar/ (anuncio o revisor de Meta con la URL limpia) juega sin la parte cripto:
+  // Quien entra por /jugar/ (anuncio o revisor de Meta con la URL limpia) juega con la version para anuncios:
   // marca en la pestaña y ad=1 en la URL (el salto a Chrome por intent pierde el sessionStorage).
   if (!desdeWeb) {
     try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
