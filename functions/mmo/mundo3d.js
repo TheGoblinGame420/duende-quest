@@ -285,6 +285,7 @@ export const Mundo3D = {
       case 'reclamoPedido': return this.reclamoPedido(s, m);   // world.js
       case 'ev': return this.evCompra(s, m);   // retencion.js
       case 'ranking': return this.enviarRanking(s);
+      case 'rankNv': return this.rankNv(s, m);   // ranktodos.js
       case 'tiendaTemp': return this.tiendaTemp(s, m);   // world.js: tienda de la fiesta (puesto de la Abuela)
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);

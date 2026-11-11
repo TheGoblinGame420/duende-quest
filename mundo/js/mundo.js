@@ -2678,6 +2678,7 @@ function recibir(m) {
     case 'res': if (m.p === miId) { aviso((m.de || 'Alguien') + ' te resucitó.', 'ok'); cerrar('v-muerte'); SON.tocar('cura'); vib('success'); try { FX.emitir(P.x, P.y + 1, P.z, { n: MOVIL ? 20 : 32, color: '#4ade80', vel: 2.5, vida: 1.1, grav: -2.5, radio: 0.6, tam: 1.1 }); } catch (e) {} } break;
     case 'tiendaTemp': V.alTiendaTemp(m); break;   // tienda de la fiesta (puesto de la Abuela)
     case 'ranking': rankDatos = m; if (npcAbierto === 'ranking') pintarRanking(m.r); pintarRankPanel(); break;
+    case 'rankNv': recibirRankNv(m); break;
     case 'heredar': preguntarHeredar(m); break;
     case 'vincCod': if (m.inv) pintarLlevar(m); break;
     case 'invTraer': try { sessionStorage.setItem('dq_vcod', m.cod); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', 1); setTimeout(() => location.reload(), 900); break;
@@ -7095,6 +7096,7 @@ function pintarRankPanel() {
   const tabs = [['sem', 'Semana'], ['abismo', 'Abismo'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['cueva', 'Cueva']];   // la Torre es de CLASSIC (2D): aqui no se puede subir
   if (rankTab === 'torre') rankTab = 'cueva';
   let s = '<div class="rank-tabs">' + tabs.map(([k, n]) => `<button data-rt="${k}" class="${k === rankTab ? 'on' : ''}">${n}</button>`).join('') + '</div>';
+  if (rankTab === 'r') return pintarRankNivel(c, s);
   if (rankTab === 'abismo') s += htmlTemp(temp3 || (d && d.temp));
   else if (!d) { c.innerHTML = s + '<p class="vv-p">Cargando…</p>'; }
   else {
@@ -7111,6 +7113,74 @@ function pintarRankPanel() {
   }
   c.innerHTML = s;
   c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; if (rankTab === 'abismo') mandar({ t: 'temp3' }); pintarRankPanel(); });
+}
+// Pestaña «Nivel»: TODOS los personajes (invitados incluidos) por páginas de 50, con buscador y tu puesto fijo.
+// El servidor manda cada página con { t:'rankNv' }; si aún no llegó ninguna se enseña el top 20 de siempre.
+const rkNv = { q: '', filas: [], tot: 0, n: 0, mas: false, mio: null, esp: false, listo: false, t: 0, tm: 0, td: 0 };
+const rkClave = t => { const k = String(t || '').slice(0, 16).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[\s_]+/g, ''); return k.length >= 2 ? k : ''; };
+function pedirRankNv(d) {
+  rkNv.esp = true;
+  const o = { t: 'rankNv', d: d | 0 };
+  if (rkClave(rkNv.q)) o.q = rkNv.q;
+  mandar(o);
+  clearTimeout(rkNv.tm);
+  /* El servidor atiende un pedido cada 200 ms: si este se perdió, se repite una vez. */
+  rkNv.tm = setTimeout(() => { if (rkNv.esp && $('v-rank').classList.contains('on') && rankTab === 'r') mandar(o); rkNv.esp = false; pintarRankNvLista(); }, 1500);
+}
+function recibirRankNv(m) {
+  if (!m || !Array.isArray(m.r) || (m.q || '') !== rkClave(rkNv.q)) return;
+  if (!m.d) rkNv.filas = m.r.slice();
+  else if (m.d === rkNv.filas.length) rkNv.filas = rkNv.filas.concat(m.r);
+  else return;
+  rkNv.tot = m.tot | 0; rkNv.n = m.n | 0; rkNv.mas = !!m.mas; rkNv.mio = m.mio || null;
+  rkNv.esp = false; rkNv.listo = true; rkNv.t = Date.now(); clearTimeout(rkNv.tm);
+  pintarRankNvLista();
+}
+function filaRankNv(x) {
+  return `<div class="rk ${x.yo ? 'yo' : ''}"><span class="pos">${x.p <= 3 ? ['🥇', '🥈', '🥉'][x.p - 1] : x.p}</span><b>${esc(x.n)}${x.inv ? ' <span class="rk-inv" title="Juega como invitado">👤 Invitado</span>' : ''}</b><span>Nv ${x.lv}</span></div>`;
+}
+function pintarRankNvLista() {
+  const l = $('rk-l');
+  if (!l || rankTab !== 'r') return;
+  const f = n => (n || 0).toLocaleString('es', { useGrouping: 'always' });
+  const busca = !!rkClave(rkNv.q);
+  /* Sin páginas todavía (o servidor viejo): el top 20 del mensaje «ranking». */
+  const viejo = !rkNv.listo && rankDatos && Array.isArray(rankDatos.r) ? rankDatos.r.map((x, i) => ({ ...x, p: i + 1 })) : null;
+  const L = rkNv.listo ? rkNv.filas : viejo || [];
+  l.innerHTML = L.length ? L.map(filaRankNv).join('') : `<p class="vv-p">${!rkNv.listo && !viejo ? 'Cargando…' : busca ? 'Nadie se llama así. Prueba con otra parte del nombre.' : 'Aún no hay nadie: ¡sé el primero!'}</p>`;
+  const tot = rkNv.listo ? rkNv.tot : (rankDatos && rankDatos.rtot) || 0;
+  $('rk-cuenta').textContent = !tot ? '' : busca && rkNv.listo ? `${f(rkNv.n)} ${rkNv.n === 1 ? 'resultado' : 'resultados'} entre ${f(tot)} duendes` : `${f(tot)} duendes en total · mostrando ${f(L.length)}`;
+  const b = $('rk-mas');
+  b.style.display = rkNv.listo && rkNv.mas ? '' : 'none';
+  b.disabled = rkNv.esp; b.textContent = rkNv.esp ? 'Cargando…' : 'Ver más';
+  const mio = rkNv.listo ? rkNv.mio : rankDatos && rankDatos.rpos ? { p: rankDatos.rpos, lv: yo && yo.nivel } : null;
+  const mi = $('rk-mio');
+  mi.style.display = mio ? '' : 'none';
+  if (mio) mi.textContent = mio.p ? `Tu puesto: #${f(mio.p)} de ${f(tot)}${mio.lv ? ' · Nv ' + mio.lv : ''}${mio.inv ? ' · juegas como invitado' : ''}` : 'Tu puesto: aún no apareces. Sube un nivel y entras.';
+}
+function pintarRankNivel(c, tabsHtml) {
+  if (!$('rk-l')) {
+    c.innerHTML = tabsHtml
+      + `<div class="rk-busca"><span aria-hidden="true">🔎</span><input id="rk-q" type="search" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="Buscar por nombre" aria-label="Buscar un duende por nombre" value="${esc(rkNv.q)}"><button class="bt" id="rk-x" title="Borrar la búsqueda" aria-label="Borrar la búsqueda">✕</button></div>`
+      + '<p class="vv-p rk-cuenta" id="rk-cuenta"></p><div class="rank-lista" id="rk-l"></div>'
+      + '<button class="btn sec rk-mas" id="rk-mas" style="display:none">Ver más</button>'
+      + '<div class="rk yo rk-mio" id="rk-mio" style="display:none"></div>';
+    c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; if (rankTab === 'abismo') mandar({ t: 'temp3' }); pintarRankPanel(); });
+    const q = $('rk-q'), x = $('rk-x');
+    const buscar = ya => {
+      x.style.visibility = q.value ? 'visible' : 'hidden';
+      clearTimeout(rkNv.td);
+      rkNv.td = setTimeout(() => { if (rkClave(q.value) === rkClave(rkNv.q) && rkNv.listo) { rkNv.q = q.value; return; } rkNv.q = q.value; pedirRankNv(0); }, ya ? 0 : 450);
+    };
+    x.style.visibility = q.value ? 'visible' : 'hidden';
+    q.oninput = () => buscar(false);
+    q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); buscar(true); q.blur(); } };
+    x.onclick = () => { q.value = ''; buscar(true); };
+    $('rk-mas').onclick = () => { if (!rkNv.esp) { pedirRankNv(rkNv.filas.length); pintarRankNvLista(); } };
+  }
+  /* Al abrir (o si lo que hay tiene más de 20 s y no se ha bajado por la lista) se pide la primera página. */
+  if (!rkNv.esp && (!rkNv.listo || (Date.now() - rkNv.t > 20000 && rkNv.filas.length <= 50))) pedirRankNv(0);
+  pintarRankNvLista();
 }
 // ── RECOMPENSA DIARIA (racha por semanas de 7 dias, sin tope) ──
 // "Mañana: <premio>" segun lo ultimo cobrado (yo.login), con el oro de la semana.

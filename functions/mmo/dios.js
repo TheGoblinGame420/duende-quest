@@ -136,6 +136,8 @@ export const Dios = {
       const dueno = await this.state.storage.get(k);
       if (!dueno) await this.state.storage.put(k, c.uid);
     }
+    // Ranking de niveles completo (ranktodos.js): alta al entrar y al cambiar de nombre.
+    if (this.rkAnotar) this.rkAnotar(c).catch(e => console.error('[MMO rankTodos]', e));
   },
   // Herencia invitado→cuenta: la reserva del nombre pasa del uid del invitado a la cuenta.
   async pasarNombre(uidInv, uid, nombre) {

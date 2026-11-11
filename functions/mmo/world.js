@@ -54,6 +54,7 @@ import { Pase } from './pase.js';
 import { Torre } from './torre.js';
 import { Expediciones } from './expediciones.js';
 import { Dios } from './dios.js';
+import { RankTodos } from './ranktodos.js';
 import { Viajes } from './viajes.js';
 import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
@@ -285,6 +286,8 @@ export class MmoWorld {
         await this.state.storage.put('ranking', r.filter(x => !pruebas.includes(x.n)));
         await this.state.storage.put('mig:ranking-pruebas', 1);
       }
+      // Ranking de niveles completo: siembra el indice con los personajes ya guardados (una sola vez; ranktodos.js).
+      try { await this.rkMigrar(); } catch (e) { console.error('[MMO rankTodos migrar]', e); }
       // Version nueva publicada: copia de todo antes de aceptar sesiones (copias.js; solo si cambio VERSION).
       if (!this.migrado) { this.migrado = true; await this.copiaPorVersion(); }
     } catch (e) { console.error('[MMO migrar]', e); }
@@ -546,6 +549,7 @@ export class MmoWorld {
       case 'tgEscribirNo': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.tarjetaTgNo(s.c.uid).catch(() => {}); return;   // «Ahora no» en la tarjeta de Telegram (retencion.js)
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
+      case 'rankNv': return this.rankNv(s, m);   // ranktodos.js: una pagina del ranking de niveles completo
       case 'tiendaTemp': return this.tiendaTemp(s, m);   // tienda de la fiesta: solo con el objeto del evento
       case 'hab': return this.habilidad(s, m);
       case 'item': return this.item(s, m);
@@ -3291,6 +3295,7 @@ export class MmoWorld {
   // ── RANKING ──
   async actualizarRanking(s) {
     if (UIDS_PRUEBA.has(s.c.uid) || this.diosActivo(s)) return;
+    this.rkAnotar(s.c, true).catch(e => console.error('[MMO rankTodos]', e));   // el indice completo (ranktodos.js)
     const r = await this.rankingLeer();
     const i = r.findIndex(x => x.uid === s.c.uid);
     const fila = { uid: s.c.uid, n: s.c.nombre, lv: s.c.nivel, xp: s.c.xp, k: s.c.kills };
@@ -3391,6 +3396,7 @@ export class MmoWorld {
   // Lo que vive en memoria al storage (al quedar vacio el mundo y antes de una copia).
   async volcarMemoria() {
     await this.volcarRanking(true);
+    await this.rkVolcar(true);
     await this.volcarTempGlobal(true);
     // XP de la semana pendiente (revisarSemana la vuelca cada minuto solo con gente conectada):
     // al quedar vacio el mundo el DO se puede apagar y se perdia el ultimo minuto.
@@ -3410,6 +3416,10 @@ export class MmoWorld {
     if (Date.now() - (s.rankT || 0) < 3000) return;
     s.rankT = Date.now();
     const r = (await this.rankingLeer()).filter(x => !UIDS_PRUEBA.has(x.uid));
+    // Nivel: el top 20 sale del indice completo (ranktodos.js), con los invitados marcados y tu puesto entre todos.
+    let rv = null;
+    try { rv = await this.rkVista(); } catch (e) { console.error('[MMO rankTodos]', e); }
+    const rNv = rv && rv.l.length ? rv.l.slice(0, 20).map((x, i) => { const o = this.rkFila(x, i, s.c.uid); return { n: o.n, lv: o.lv, k: o.k, yo: !!o.yo, ...(o.inv ? { inv: 1 } : {}) }; }) : r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid }));
     const todo = this.topSemana(), iy = todo.findIndex(([uid]) => uid === s.c.uid);
     const sem = todo.slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
     // Tu puesto aunque no salgas en el top 20 (quien llega de un anuncio nunca se veia) y la liga que llevas.
@@ -3431,7 +3441,7 @@ export class MmoWorld {
     const todoT = await this.topTorre(), tpos = todoT.findIndex(([uid]) => uid === s.c.uid) + 1;
     const torre = todoT.slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
     const herm = (await this.topHerm()).slice(0, 5).map(([id, x]) => ({ n: x.n, p: x.p, m: x.m, yo: id === s.c.herm }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, mio, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, tpos, ttot: todoT.length, herm, cueva: this.infoCuevaSem(s.c), temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
+    this.enviar(s, { t: 'ranking', r: rNv, rtot: rv ? rv.l.length : rNv.length, rpos: rv && rv.pos.has(s.c.uid) ? rv.pos.get(s.c.uid) + 1 : 0, sem, mio, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, tpos, ttot: todoT.length, herm, cueva: this.infoCuevaSem(s.c), temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
@@ -3695,6 +3705,7 @@ export class MmoWorld {
         this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
         this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
         this.volcarRanking().catch(e => console.error('[MMO ranking]', e));
+        this.rkVolcar().catch(e => console.error('[MMO rankTodos]', e));
         this.volcarTempGlobal().catch(e => console.error('[MMO tempGlobal]', e));
         // Fin de la Hora Feliz extra de la meta comunitaria (solo a los conectados).
         if (this.felizExtraHasta && this.felizExtraHasta <= ahora) { this.felizExtraHasta = 0; this.tgSucio = true; if (!hf) this.aTodos({ t: 'aviso', m: this.felizAno ? '⚡ Terminó la Hora Feliz de Año Nuevo.' : '⚡ Terminó la Hora Feliz de «Entre todos».' }); this.felizAno = false; }
@@ -4098,6 +4109,8 @@ Object.assign(MmoWorld.prototype, Torre);
 Object.assign(MmoWorld.prototype, Expediciones);
 // Modo Dios del dueño (moderacion) y nombres unicos: functions/mmo/dios.js
 Object.assign(MmoWorld.prototype, Dios);
+// Ranking de niveles completo (todos los personajes, invitados incluidos): functions/mmo/ranktodos.js
+Object.assign(MmoWorld.prototype, RankTodos);
 // Piedras de viaje entre zonas visitadas: functions/mmo/viajes.js
 Object.assign(MmoWorld.prototype, Viajes);
 // El mundo abierto 3D (mismo personaje, otro mundo): functions/mmo/mundo3d.js

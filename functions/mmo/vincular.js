@@ -54,6 +54,7 @@ export const Vincular = {
     if (c) {
       if (c.nivel > 1 || c.oro > 0) await this.state.storage.put('arch:' + uid, { ...c, archivado: Date.now(), por: v.uid });
       await this.state.storage.delete('c:' + uid);
+      if (this.rkQuitar) await this.rkQuitar(uid);   // sale del ranking completo (ranktodos.js)
       for (const kn of ['n:' + claveNombre(c.nombre), 'ne:' + esqueleto(c.nombre)]) if ((await this.state.storage.get(kn)) === uid) await this.state.storage.delete(kn);
     }
     console.log('[MMO llevar]', v.uid, '->', uid);
@@ -80,6 +81,7 @@ export const Vincular = {
       return true;
     };
     try {
+      if (this.rkMover) await this.rkMover(viejo, nuevo, nombre);   // ranking completo (ranktodos.js)
       const r = await this.rankingLeer();
       const fila = r.find(x => x.uid === viejo);
       if (fila) { fila.uid = nuevo; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
@@ -161,6 +163,7 @@ export const Vincular = {
         s.noGuardar = true;
         if (c.nivel > 1 || c.oro > 0) await this.state.storage.put('arch:' + c.uid, { ...c, archivado: Date.now(), por: v.uid });
         await this.state.storage.delete('c:' + c.uid);
+        if (this.rkQuitar) await this.rkQuitar(c.uid);   // sale del ranking completo (ranktodos.js)
         for (const kn of ['n:' + claveNombre(c.nombre), 'ne:' + esqueleto(c.nombre)]) if ((await this.state.storage.get(kn)) === c.uid) await this.state.storage.delete(kn);
         await this.state.storage.put('al:' + c.uid, v.uid);
         destino.vinc = { ...(destino.vinc || {}), [tipo]: c.uid };

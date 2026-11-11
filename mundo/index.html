@@ -334,6 +334,19 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .rk b{flex:1;color:var(--txt);}
 .rk .pos{width:24px;text-align:center;}
 .rk.yo{background:rgba(74,222,128,.14);border:1px solid #4ade80;}
+/* Pestaña «Nivel» del ranking: todos los duendes, buscador, «Ver más» y tu puesto fijo. */
+#rk-l .rk .pos{width:auto;min-width:24px;font-variant-numeric:tabular-nums;}
+#rk-l .rk b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rk-inv{margin-left:4px;font:500 10.5px var(--sans);color:var(--txt3);letter-spacing:.02em;white-space:nowrap;}
+.rk-busca{display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:0 4px 0 10px;border:1px solid var(--borde);border-radius:10px;background:rgba(0,0,0,.35);color:var(--txt2);}
+.rk-busca:focus-within{border-color:var(--oro);}
+.rk-busca input{flex:1;min-width:0;height:44px;border:0;background:none;color:var(--txt);font:500 16px var(--sans);outline:0;-webkit-appearance:none;appearance:none;}
+.rk-busca input::-webkit-search-cancel-button{display:none;}
+.rk-busca input::placeholder{color:var(--txt3);}
+.rk-busca .bt{position:static;width:44px;height:44px;flex:none;border:0;background:none;box-shadow:none;color:var(--txt2);font-size:14px;}
+.rk-cuenta{font-size:11.5px!important;margin:0 2px 6px!important;color:var(--txt2);}
+.rk-mas{width:100%;margin-top:8px;min-height:44px;}
+.rk.yo.rk-mio{position:sticky;bottom:0;margin-top:8px;display:block;line-height:1.35;background:#1e1a0c;border:1px solid rgba(250,204,21,.55);border-radius:8px;padding:9px 10px;color:var(--txt);}
 .pase-lista{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
 .pase-n{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--borde);font:500 12px var(--sans);color:var(--txt2);}
 .pase-n b{width:22px;text-align:center;color:var(--txt);}
