@@ -2064,18 +2064,75 @@ function esqueleto(c, conCapa) {
     MF(r.cuerpo, [['cono', hx(harapo), [0.16, 0.12, 0.17], [0.05, 0.3, 0.03], [PI + 0.2, 0, 0.2]], ['cono', hx(harapo), [-0.12, 0.2, 0.18], [0.04, 0.26, 0.03], [PI - 0.1, 0, -0.2]]]);
     if (c.jefe) baston(r, r.manoD, c.color || '#ff4a3a');
     r.paso = 7;
-  } else {
-    const hueso = principal(c, '#efe9b8');
-    humano(r, { piel: c.color ? mat(hueso, { e: c.e }) : hueso, huesos: true, cabeza: 'calavera', ojos: c.color ? mez(c.color, '#ffffff', 0.3) : '#3a3a30', L: 0.52, T: 0.5, A: 0.42, botas: hueso });
-    espada(r.manoD, { largo: 0.7, hoja: '#9a8f7a', guarda: '#5b4a35' });
-    r.paso = 8;
+    return r;
   }
+  // Esqueleto de verdad: huesos sueltos con nudos en las articulaciones, costillar hueco,
+  // calavera con cuencas y una mandibula que castañetea. Al morir se desarma.
+  const R = r.raiz, lig = !!c.ligero, jefe = !!c.jefe;
+  const hueso = principal(c, '#efe9b8'), h = hx(hueso), h2 = hx(osc(hueso, 0.7)), hueco = '#221d18', diente = hx(mez(hueso, '#ffffff', 0.5));
+  const L = 0.54, T = 0.5, Ab = 0.46, enc = 0.14;
+  for (const s of [1, -1]) {
+    const p = piv(r, G(R, [0.1 * s, L, 0]));
+    MF(p, [
+      ['miembro', h, [0, 0, 0], [0.046, L * 0.5, 0.046], [-0.14, 0, 0]],
+      ['icos', h2, [0, -L * 0.49, L * 0.07], 0.05],
+      ['miembro', h, [0, -L * 0.49, L * 0.07], [0.04, L * 0.46, 0.04], [0.14, 0, 0]],
+      ['caja', h, [0, -L + 0.035, 0.07], [0.1, 0.07, 0.25]],
+    ]);
+    if (s > 0) r.pI = p; else r.pD = p;
+  }
+  const cu = r.cuerpo = piv(r, G(R, [0, L, 0], [enc, 0, 0]));
+  const B = [
+    ['caja', h, [0, 0.03, 0], [0.27, 0.09, 0.13]],                                                                        // pelvis
+    ['caja', h2, [0, T * 0.45, -0.04], [0.055, T * 0.86, 0.055]],                                                         // columna
+    ['aro6', h, [0, T * 0.5, 0.02], [0.15, 0.04, 0.11]], ['aro6', h, [0, T * 0.66, 0.02], [0.19, 0.045, 0.13]], ['aro6', h, [0, T * 0.82, 0.02], [0.21, 0.045, 0.135]],   // costillas
+    ['caja', h, [0, T * 0.68, 0.13], [0.05, T * 0.44, 0.03]],                                                             // esternon
+    ['caja', h, [0, T * 0.94, 0], [0.5, 0.05, 0.07]],                                                                     // claviculas
+  ];
+  if (!lig) for (const [x, z, a] of [[-0.09, 0.07, 0.15], [0.08, 0.07, -0.2], [0, -0.08, 0]]) B.push(['cono4', c.color ? hx(osc(c.color, 0.45)) : '#4a3a36', [x, 0.02, z], [0.07, 0.2, 0.025], [PI, 0, a]]);   // harapo en la cadera
+  if (jefe) B.push(['icos', hx(c.color || '#ff7a1a'), [0, T * 0.66, 0.02], 0.06]);                              // brasa en el pecho
+  MF(cu, B);
+  for (const s of [1, -1]) {
+    const b = piv(r, G(cu, [0.26 * s, T * 0.92, 0], [-enc - 0.05, 0, 0.14 * s]));
+    const hm = [0, -Ab * 0.97, Ab * 0.17];
+    const Q = [
+      ['icos', h2, [0, 0, 0], 0.052], ['miembro', h, [0, 0, 0], [0.038, Ab * 0.5, 0.038]],
+      ['icos', h2, [0, -Ab * 0.5, 0], 0.042], ['miembro', h, [0, -Ab * 0.5, 0], [0.034, Ab * 0.5, 0.034], [-0.35, 0, 0]],
+      ['caja', h, hm, [0.075, 0.09, 0.05]],
+    ];
+    if (!lig) for (const x of [-0.028, 0, 0.028]) Q.push(['cono4', h, [hm[0] + x, hm[1] - 0.04, hm[2] + 0.01], [0.012, 0.09, 0.012], [PI - 0.3, 0, 0]]);
+    MF(b, Q);
+    const mn = G(b, hm);
+    if (s > 0) { r.bI = b; r.manoI = mn; } else { r.bD = b; r.manoD = mn; }
+  }
+  if (jefe) hombrerasB(r, c.color ? mez(c.color, '#3a3a44', 0.5) : '#6a6a74', { k: 1.05, pua: h });
+  const cb = r.cabeza = piv(r, G(cu, [0, T + 0.03, 0.03], [-enc * 0.8, 0, 0]));
+  r.H = 1; r.topeCabeza = 0.51;
+  const C = [
+    ['esfera', h, [0, 0.27, 0], [0.24, 0.24, 0.26]],
+    ['caja', h, [0, 0.13, 0.1], [0.2, 0.1, 0.19]],                                    // maxilar
+    ['cono4', hueco, [0, 0.165, 0.2], [0.03, 0.07, 0.02]],                           // nariz
+    ['caja', diente, [0, 0.085, 0.19], [0.15, 0.028, 0.02]],
+  ];
+  for (const x of [-1, 1]) C.push(['caja', hueco, [x * 0.088, 0.275, 0.21], [0.105, 0.095, 0.09], [0, 0, x * 0.22]]);
+  MF(cb, C);
+  /* Las brasas de las cuencas van en la cabeza (no parpadean: un pivote menos). */
+  const ojo = mat(c.color ? mez(c.color, '#ffffff', 0.3) : '#ffb347', { e: 1 });
+  for (const x of [-1, 1]) M(cb, 'icos', ojo, [x * 0.088, 0.275, 0.245], 0.026);
+  const J = [['caja', h2, [0, -0.04, 0.095], [0.17, 0.05, 0.19]], ['caja', diente, [0, -0.012, 0.18], [0.13, 0.024, 0.02]]];
+  if (lig) MF(cb, J, null, null, [0, 0.085, 0.005]);
+  else { r.mandibula = piv(r, G(cb, [0, 0.085, 0.005])); MF(r.mandibula, J); }
+  // Espada mellada y, si no es ligero, media rodela podrida en el otro brazo.
+  espada(r.manoD, { largo: 0.72, hoja: c.color ? hx(mez(c.color, '#9a8f7a', 0.5)) : '#9a8f7a', guarda: '#5b4a35', ancho: 0.075 });
+  if (!lig) escudoGob(r.manoI, 'rodela', '#5a4632', '#7a7468');
+  if (c.k === 'esqueleto_real') { ACC.corona(r, '#d8b23a', 0.85); r.conCorona = false; }
+  r.paso = 8; r.caer = 'huesos'; r.hundir = 0.12; r.acecha = 1;
   return r;
 }
 
 // ── FANTASMAS (flotan, sin piernas) ──
 function fantasma(c, v) {
-  const r = nuevoRig('flota'), R = r.raiz;
+  const r = nuevoRig('flota'), R = r.raiz, lig = !!c.ligero;
   r.caer = 'encoge';
   const cu = r.cuerpo = piv(r, G(R, [0, 0.62, 0]));
   r.cabeza = piv(r, G(cu, [0, 0.38, 0]));
@@ -2088,17 +2145,35 @@ function fantasma(c, v) {
     }
   };
   if (v === 'fantasma') {
-    // Sombra negra con jirones magenta y cara de calavera palida.
-    const negro = mat(principal(c, '#1e1424'), { op: 0.92 }), rosa = mat('#e0207a', { e: 0.8 });
-    M(cu, 'esfera', negro, [0, 0.38, 0], [0.4, 0.46, 0.38]);
+    // Espectro encapuchado: capucha en punta, manto de hombros, calavera palida con las
+    // cuencas encendidas, manos de hueso y jirones magenta que arden. Se esfuma al morir.
+    const negro = hx(principal(c, '#1e1424')), manto = hx(mez(principal(c, '#1e1424'), '#5a2a6a', 0.35)), hues = '#b8a8c0', rosa = mat('#e0207a', { e: 0.8 });
+    const B = [
+      ['esferaB', negro, [0, 0.42, -0.02], [0.38, 0.41, 0.37]],                                  // capucha
+      ['cono', negro, [0, 0.7, -0.14], [0.17, 0.36, 0.17], [-1.0, 0, 0]],                        // punta caida hacia atras
+      ['semiB', manto, [0, 0.16, -0.02], [0.47, 0.2, 0.4]],                                      // manto de hombros
+      ['esfera', hues, [0, 0.4, 0.19], [0.21, 0.23, 0.17]],                                      // calavera
+      ['caja', hues, [0, 0.27, 0.27], [0.15, 0.09, 0.1]],                                        // maxilar
+      ['caja', '#120a16', [0, 0.25, 0.325], [0.11, 0.025, 0.02]],                                // boca
+      ['cono4', '#120a16', [0, 0.33, 0.35], [0.025, 0.06, 0.02]],                                // nariz
+    ];
+    for (const x of [-1, 1]) B.push(['caja', '#120a16', [x * 0.08, 0.43, 0.315], [0.095, 0.09, 0.08], [0, 0, x * 0.25]]);
+    MF(cu, B);
     const cola = r.cola = piv(r, G(cu, [0, 0.2, 0]));
-    M(cola, 'cono', negro, [0, 0, -0.03], [0.37, 0.66, 0.35], [PI + 0.15, 0, 0]);
-    M(cu, 'esfera', '#a898b0', [0, 0.42, 0.2], [0.24, 0.25, 0.2]);
-    MF(cu, [['esferaB', '#1b1430', [-0.09, 0.46, 0.38], [0.065, 0.075, 0.03]], ['esferaB', '#1b1430', [0.09, 0.46, 0.38], [0.065, 0.075, 0.03]], ['esferaB', '#1b1430', [0, 0.33, 0.39], [0.05, 0.03, 0.02]]]);
+    const Cq = [['cono', negro, [0, 0, -0.03], [0.36, 0.7, 0.33], [PI + 0.15, 0, 0]]];
+    if (!lig) Cq.push(['cono', manto, [0.2, 0.02, 0], [0.15, 0.46, 0.12], [PI + 0.1, 0, 0.3]], ['cono', manto, [-0.2, 0.02, 0], [0.15, 0.42, 0.12], [PI + 0.1, 0, -0.3]], ['cono', negro, [0, 0.02, -0.2], [0.14, 0.5, 0.12], [PI + 0.4, 0, 0]]);
+    MF(cola, Cq);
     const j = piv(r, G(cu, [0, 0.4, 0]));
-    MF(j, [['cono', null, [0.3, 0.3, -0.1], [0.05, 0.4, 0.05], [0, 0, -0.9]], ['cono', null, [-0.3, 0.3, -0.1], [0.05, 0.4, 0.05], [0, 0, 0.9]], ['cono', null, [0.1, 0.42, -0.2], [0.04, 0.32, 0.04], [-0.5, 0, -0.3]], ['cono', null, [0, -0.5, -0.25], [0.05, 0.35, 0.05], [-2.4, 0, 0]]], rosa).userData.sinFlash = true;
+    MF(j, [['cono', null, [0.3, 0.3, -0.1], [0.05, 0.4, 0.05], [0, 0, -0.9]], ['cono', null, [-0.3, 0.3, -0.1], [0.05, 0.4, 0.05], [0, 0, 0.9]], ['cono', null, [0.1, 0.42, -0.2], [0.04, 0.32, 0.04], [-0.5, 0, -0.3]], ['cono', null, [0, -0.5, -0.25], [0.05, 0.35, 0.05], [-2.4, 0, 0]], ['aro6', null, [0, -0.2, -0.02], [0.44, 0.035, 0.38]], ['icos', null, [-0.08, 0.03, 0.35], 0.026], ['icos', null, [0.08, 0.03, 0.35], 0.026]], rosa).userData.sinFlash = true;
     r.flamas.push(j);
-    brazos(rosa, 0.36);
+    for (const lado of [1, -1]) {
+      const b = piv(r, G(cu, [0.4 * lado, 0.26, 0.04], [0, 0, 0.45 * lado]));
+      const Q = [['cono', manto, [0, 0.04, 0], [0.11, 0.34, 0.11], [PI, 0, 0]], ['icos', hues, [0, -0.33, 0.02], 0.055]];
+      if (!lig) for (const x of [-0.035, 0, 0.035]) Q.push(['cono4', hues, [x, -0.36, 0.04], [0.014, 0.12, 0.014], [PI - 0.5, 0, 0]]);
+      MF(b, Q);
+      if (lado > 0) r.bI = b; else r.bD = b;
+    }
+    r.caer = 'esfuma'; r.hundir = 0;
   } else if (v === 'fantasma_halo') {
     // Alma Errante: encapuchado morado, resplandor cian y un farol.
     const tun = mat(principal(c, '#2a1a5c'), { op: 0.95 });
@@ -2134,30 +2209,56 @@ function fantasma(c, v) {
 
 // ── HECHICERO (mago con tunica, barba y gran sombrero) ──
 function hechicero(c) {
-  const r = nuevoRig('bipedo');
+  const r = nuevoRig('bipedo'), lig = !!c.ligero, jefe = !!c.jefe;
   if (c.amigo) {
-    const tun = '#2f5fb3';
-    humano(r, {
-      piel: '#e6c3a0', ropa: tun, ropaMat: mat(tun), tunica: tun, tunicaMat: mat(tun),
-      cabeza: 'goblin', ojos: 'duende', nariz: 'pico', orejas: 0.18, cab: 1, L: 0.55, T: 0.55, A: 0.45,
-    });
+    // Sabio del pueblo: tunica azul con ribete dorado, barba blanca, sombrero y baston.
+    const tun = c.color || '#2f5fb3', piel = '#e6c3a0';
+    criatura(r, { ligero: lig, piel, ropa: tun, tunica: tun, ribete: '#c9a227', cab: 1, L: 0.55, T: 0.52, A: 0.46, encorvado: 0.08, panza: 1.05 });
+    cabezaGoblin(r, { piel, amigo: true, ligero: lig });
+    MF(r.cuerpo, [['aro6', '#c9a227', [0, 0.52 * 0.2, 0.012], [0.285, 0.05, 0.25]], ['semiB', hx(osc(tun, 0.78)), [0, 0.52 * 0.78, -0.01], [0.4, 0.12, 0.3]], ['icos', '#a78bfa', [0, 0.52 * 0.74, 0.21], 0.04]]);
     ACC.barba(r, '#f2f2f2');
     ACC.sombrero(r, osc(tun, 0.75), 0.95);
     baston(r, r.manoD, '#a78bfa');
     r.paso = 7;
     return r;
   }
-  const tun = principal(c, '#7a0a66'), mt = mc(c, tun);
-  humano(r, {
-    piel: '#24142a', ropa: tun, ropaMat: mt, tunica: tun, tunicaMat: mt, mangas: mt, manos: '#3a2a3a',
-    cabeza: 'goblin', ojos: '#ff4af0', nariz: null, orejas: 0, cab: 1, L: 0.55, T: 0.55, A: 0.45,
+  // Cultista: capucha honda con el rostro en sombra y dos ojos encendidos, manto de hombros
+  // con ribete dorado, mangas de campana, garras oscuras, amuleto y un orbe en la mano.
+  const acento = c.color || '#ff6af0';
+  const tun = jefe && c.color ? mez(c.color, '#1a1420', 0.55) : principal(c, '#7a0a66'), oscuro = hx(osc(tun, 0.62)), oro = '#e8b923', T = 0.52, L = 0.55;
+  criatura(r, {
+    ligero: lig, piel: '#24142a', ropa: tun, tunica: tun, ribete: oro, mangas: tun, antebrazo: osc(tun, 0.8), manos: '#3a2a3a', hombro: osc(tun, 0.8),
+    cab: 1, L, T, A: 0.48, encorvado: 0.2, cuelloZ: 0.03, garras: true, manoG: 1.1, brazoG: 0.95,
   });
-  ACC.capucha(r, osc(tun, 0.8));
-  MF(r.cuerpo, [['toro', '#e8b923', [0, 0.5, 0.05], [0.17, 0.17, 0.12], [0.5, 0, 0]], ['esferaB', '#e8b923', [0, 0.34, 0.2], 0.04]]);
-  const orbe = piv(r, G(r.manoD, [0, -0.06, 0.04]));
-  M(orbe, 'icos', mat(c.color ? mez(c.color, '#ffffff', 0.3) : '#ff6af0', { e: 1 }), [0, 0, 0], 0.08).userData.sinFlash = true;
+  const D = [
+    ['semiB', oscuro, [0, T * 0.74, -0.01], [0.42, 0.14, 0.31]],                                  // manto de hombros
+    ['aro6', oro, [0, T * 0.75, -0.01], [0.43, 0.035, 0.32]],
+    ['aro6', '#3a2412', [0, T * 0.2, 0.012], [0.285, 0.05, 0.25]],                                // cordon
+    ['caja', oscuro, [0, T * 0.02, 0.2], [0.13, 0.34, 0.03], [-0.1, 0, 0]],                       // estola
+    ['icos', oro, [0, T * 0.56, 0.215], 0.05],                                                    // amuleto
+  ];
+  if (!lig) D.push(['caja', oro, [0.07, T * 0.7, 0.2], [0.15, 0.022, 0.02], [0, 0, 0.75]], ['caja', oro, [-0.07, T * 0.7, 0.2], [0.15, 0.022, 0.02], [0, 0, -0.75]], ['caja', '#5a3a1a', [0.2, T * 0.1, 0.12], [0.1, 0.13, 0.05], [0, 0, 0.15]]);
+  MF(r.cuerpo, D);
+  for (const b of [r.bI, r.bD]) MF(b, [['cono', hx(tun), [0, -0.48 * 0.98, 0.48 * 0.19], [0.12, 0.3, 0.12], [-0.4, 0, 0]]]);   // manga de campana
+  const cb = r.cabeza, H = r.H;
+  MF(cb, [
+    ['esfera', '#0e0812', [0, 0.25, 0.02], [0.26, 0.25, 0.24]],                                   // rostro en sombra
+    ['semi', hx(tun), [0, 0.2, -0.07], [0.36, 0.4, 0.33]],                                         // capucha
+    ['cuna', hx(tun), [0, 0.47, 0.02], [0.5, 0.16, 0.32], [0.35, 0, 0]],                           // visera de la capucha
+    ['cono', oscuro, [0, 0.47, -0.24], [0.12, 0.34, 0.12], [-1.2, 0, 0]],                          // punta
+    ['caja', oscuro, [0.29, 0.17, -0.03], [0.07, 0.44, 0.36], [0, 0.2, -0.12]], ['caja', oscuro, [-0.29, 0.17, -0.03], [0.07, 0.44, 0.36], [0, -0.2, 0.12]],   // caidas laterales
+    ['caja', oscuro, [0, 0.15, -0.26], [0.5, 0.4, 0.08]],                                          // caida de la nuca
+  ], null, null, null, H);
+  r.tocado = true;
+  const ojo = mat(jefe && c.color ? mez(c.color, '#ffffff', 0.4) : '#ff4af0', { e: 1 });
+  r.ojosP = piv(r, G(cb, [0, 0.3 * H, 0]));
+  for (const x of [-1, 1]) M(r.ojosP, 'esferaB', ojo, [x * 0.09 * H, 0, 0.245 * H], [0.05 * H, 0.03 * H, 0.025 * H], [0, 0, x * 0.35]);
+  r.ojosMalos = true;
+  const orbe = piv(r, G(r.manoD, [0, -0.1, 0.06]));
+  M(orbe, 'icos', mat(c.color ? mez(c.color, '#ffffff', 0.3) : '#ff6af0', { e: 1 }), [0, 0, 0], 0.085).userData.sinFlash = true;
   r.brillo.push(orbe);
-  r.paso = 7;
+  if (jefe) capaViva(r, osc(acento, 0.5), T, 0.8, { ligero: lig, ancho: 0.5 });
+  r.paso = 7; r.acecha = 0.6;
   return r;
 }
 
