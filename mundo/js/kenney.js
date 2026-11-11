@@ -34,6 +34,11 @@ async function leerBin(base) {
 
 function crearKit(ind, buf) {
   const cache = new Map();
+  // Dos materiales iguales: uno para las mallas sueltas (casas fundidas) y otro para las instanciadas
+  // (flora). Con uno solo, three cambiaba de programa (y rehacia su clave) cada vez que alternaban
+  // en la lista de dibujo: decenas de veces por cuadro.
+  const material = hacerMaterial(), materialInst = hacerMaterial();
+  function hacerMaterial() {
   const material = transparentar(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
   const prev = material.onBeforeCompile;
   material.onBeforeCompile = (sh, r) => {
@@ -46,6 +51,8 @@ function crearKit(ind, buf) {
       #endif`);
   };
   material.customProgramCacheKey = () => 'tapa-kenney';
+  return material;
+  }
   function geo(n) {
     if (cache.has(n)) return cache.get(n);
     const d = ind[n];
@@ -95,7 +102,7 @@ function crearKit(ind, buf) {
     g.computeBoundingSphere();
     return g;
   }
-  return { ind, geo, fundir, material, caja: n => ind[n] && { min: ind[n].min, max: ind[n].max } };
+  return { ind, geo, fundir, material, materialInst, caja: n => ind[n] && { min: ind[n].min, max: ind[n].max } };
 }
 
 // Geometria a partir de triangulos sueltos [[x,y,z]×3, color] (con indice,

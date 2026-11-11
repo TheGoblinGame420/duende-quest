@@ -68,12 +68,13 @@ const resultados = [];
 function fila(nombre, m) {
   resultados.push({ escena: nombre, ...m });
   const f = (o, k = 'media') => String(o[k].toFixed(1)).padStart(6);
-  console.log(nombre.padEnd(11) + '│' + String(m.cuadros).padStart(5) + ' │' + f(m.logica) + f(m.logica, 'p95') + f(m.logica, 'p99') + f(m.logica, 'peor') + ' │' + f(m.render) + f(m.render, 'p95') + ' │' + f(m.total) + f(m.total, 'peor') + ' │' +
-    String(m.llamadas).padStart(5) + String(m.llamadasMax).padStart(6) + ' │' + String(Math.round(m.triangulos / 1000)).padStart(5) + 'k │' + String(m.geometrias).padStart(5) + String(m.texturas).padStart(4) + String(m.programas).padStart(4) + ' │' +
-    String(m.tareasLargas).padStart(3) + String(m.tareaLargaPeor).padStart(5) + ' │' + String(m.heapMB ?? '-').padStart(6));
+  const n = (v, w) => String(v).padStart(w);
+  console.log(nombre.padEnd(11) + '│' + n(m.cuadros, 5) + ' │' + f(m.logica, 'p50') + f(m.logica) + f(m.logica, 'p95') + f(m.logica, 'p99') + f(m.logica, 'peor') + ' │' + f(m.render, 'p50') + f(m.render) + f(m.render, 'p95') + ' │' + f(m.total, 'p50') + f(m.total, 'peor') + ' │' +
+    n(m.llamadas, 5) + n(m.llamadasMax, 6) + ' │' + n(Math.round(m.triangulos / 1000), 5) + 'k │' + n(m.geometrias, 5) + n(m.texturas, 4) + n(m.programas, 4) + ' │' +
+    n(m.tareasLargas, 3) + n(m.tareaLargaPeor, 5) + ' │' + n(m.heapMB ?? '-', 6) + ' │' + (m.censo ? n(m.censo.recorridos, 6) + n(m.censo.recalculan, 6) : '') + ' │' + (m.sint ? n(m.sint.logMin.toFixed(2), 6) + n(m.sint.logP50.toFixed(2), 6) + n(m.sint.renMin.toFixed(2), 7) + n(m.sint.renP50.toFixed(2), 6) : ''));
 }
 function cabecera() {
-  console.log('escena     │ cuad │  logica JS ms: med p95 p99 peor │ render med p95 │ total med peor │ dibujos med max │ tris │ geo tex prog │ largas peor │ heap MB');
+  console.log('escena     │ cuad │ logica JS ms: p50 media p95 p99 peor │ render: p50 media p95 │ total p50 peor │ dibujos med max │ tris │ geo tex prog │ largas peor │ heap MB │ objetos recorridos / con matriz recalculada │ sintetico: logica min p50, render min p50');
 }
 
 // Perfil de CPU de la escena (--perfil[=N]): las N funciones con mas tiempo propio, en ms por cuadro.
@@ -96,7 +97,7 @@ function perfil(p, cuadros) {
 async function sesion(url, escenas) {
   const nav = await abrirNavegador({ ancho: MOVIL ? 360 : 1280, alto: MOVIL ? 740 : 720, movil: MOVIL, args: GPU ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] : [] });
   try {
-    await nav.cmd('Page.addScriptToEvaluateOnNewDocument', { source: `try{localStorage.setItem('dq3_calidad','${CAL}');localStorage.setItem('dq3_look_visto','1')}catch(e){}` });
+    await nav.cmd('Page.addScriptToEvaluateOnNewDocument', { source: `try{localStorage.setItem('dq3_calidad','${CAL}');localStorage.setItem('dq3_look_visto','1');localStorage.setItem('dq_bautizo_visto','1')}catch(e){}` });
     const t0 = Date.now();
     await nav.ir(BASE + url);
     await nav.esperarA('window.__dq3 && __dq3.yo && window.dqPerf && dqPerf.muestra().cuadros > 3', 180000);
@@ -110,20 +111,26 @@ async function sesion(url, escenas) {
     const nombre = await nav.js('__dq3.yo.nombre');
     // Nivel 60 con mucha vida: las escenas no dependen de que el duende aguante.
     await dev(`(()=>{const s=jug('${nombre}'); s.c.nivel=60; s.st=mundo.stats(s.c); s.hp=s.st.maxHp; mundo.actualizarYo(s); return 1})()`);
-    await nav.js(`document.querySelectorAll('.ventana.on,.modal.on').forEach(v=>v.classList.remove('on')); 1`);
+    // Ventanas que saltan solas (premio diario, leyenda, nombre...): con una abierta el juego baja a 10 fps y tapa la captura.
+    const cerrarVentanas = () => nav.js(`(()=>{ document.querySelectorAll('.modal.on [data-cerrar]').forEach(b=>b.click()); document.querySelectorAll('.modal.on').forEach(v=>v.classList.remove('on')); const t=document.getElementById('tarjeta-bautizo'); if(t) t.remove(); return 1 })()`);
+    await nav.esperar(2500); await cerrarVentanas();
     const tp = async (x, z, yaw, pitch = 0.42) => {
       await dev(`(()=>{const s=jug('${nombre}'); s.p.x=${x}; s.p.z=${z}; s.movT=Date.now(); s.hp=s.st.maxHp; return 1})()`);
       await nav.js(`__dq3.recibir({t:'snap3',x:${x},z:${z}}); __dq3.camara(${yaw},${pitch}); 1`);
     };
     const medir = async (nombreE, ms, accion) => {
+      await cerrarVentanas();
       if (PERFIL) { await nav.cmd('Profiler.enable'); await nav.cmd('Profiler.setSamplingInterval', { interval: 250 }); await nav.cmd('Profiler.start'); }
       await nav.js('dqPerf.reiniciar()');
       const fin = Date.now() + ms;
       if (accion) await accion(fin);
       while (Date.now() < fin) await nav.esperar(50);
-      const m = await nav.js('dqPerf.muestra()');
+      const m = await nav.js('(()=>{const m=dqPerf.muestra(); try{m.censo=dqPerf.censo()}catch(e){} return m})()');
+      // Pasada sintetica: 150 cuadros forzados seguidos. El minimo y la mediana de esos cuadros casi no dependen
+      // de lo ocupada que este la maquina (los ms de arriba si): es lo que se compara entre versiones.
+      m.sint = await nav.js('(()=>{dqPerf.reiniciar(); for(let i=0;i<150;i++) __dq3.cuadro(); const s=dqPerf.muestra(); return {logMin:s.logica.min,logP50:s.logica.p50,renMin:s.render.min,renP50:s.render.p50}})()');
       fila(nombreE, m);
-      if (PERFIL) perfil((await nav.cmd('Profiler.stop')).profile, m.cuadros);
+      if (PERFIL) perfil((await nav.cmd('Profiler.stop')).profile, m.cuadros + 150);
       if (FOTOS) { fs.mkdirSync(FOTOS, { recursive: true }); await nav.foto(path.join(FOTOS, nombreE + '-' + CAL + (MOVIL ? '-movil' : '') + '.png')); }
     };
     // Giro de camara dentro de la pagina (por tiempo, no por cuadros): una vuelta en `ms`.

@@ -56,12 +56,12 @@ function c() {
 function reiniciar() { n = 0; i = 0; tAntes = 0; largas = 0; largasMs = 0; largaPeor = 0; desde = ahora(); }
 
 function resumen(v) {
-  if (!n) return { media: 0, p50: 0, p95: 0, p99: 0, peor: 0 };
+  if (!n) return { min: 0, media: 0, p50: 0, p95: 0, p99: 0, peor: 0 };
   let s = 0;
   for (let k = 0; k < n; k++) { s += v[k]; orden[k] = v[k]; }
   const o = orden.subarray(0, n); o.sort();
   const q = p => +o[Math.min(n - 1, Math.floor(n * p))].toFixed(2);
-  return { media: +(s / n).toFixed(2), p50: q(0.5), p95: q(0.95), p99: q(0.99), peor: +o[n - 1].toFixed(2) };
+  return { min: +o[0].toFixed(2), media: +(s / n).toFixed(2), p50: q(0.5), p95: q(0.95), p99: q(0.99), peor: +o[n - 1].toFixed(2) };
 }
 function media(v) { let s = 0; for (let k = 0; k < n; k++) s += v[k]; return n ? Math.round(s / n) : 0; }
 function maximo(v) { let m = 0; for (let k = 0; k < n; k++) if (v[k] > m) m = v[k]; return m; }

@@ -868,7 +868,7 @@ function crearFlora() {
           if (!g.length) return;
           const [n, tam, modo] = vars[vi], cj = KIT.caja(n);
           const base = tam / (modo === 'a' ? Math.max(cj.max[0] - cj.min[0], cj.max[2] - cj.min[2]) : cj.max[1] - cj.min[1]);
-          const im = new THREE.InstancedMesh(KIT.geo(n), KIT.material, g.length);
+          const im = new THREE.InstancedMesh(KIT.geo(n), KIT.materialInst || KIT.material, g.length);
           g.forEach((t, i) => {
             e.set(0, t.rot, 0); q.setFromEuler(e);
             const k = t.s * base; sc.set(k, k, k); v.set(t.x, t.y - 0.12, t.z);
@@ -881,6 +881,7 @@ function crearFlora() {
           let c = celdas.get(ck);
           if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] }); }
           c.cerca.push(im);
+          im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;   /* flora fija: three no recalcula su matriz en cada cuadro */
           escena.add(im);
         });
       }
@@ -910,6 +911,7 @@ function crearFlora() {
       let c = celdas.get(ck);
       if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] }); }
       c[destino].push(im);
+      im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
       escena.add(im);
     });
   }
@@ -1418,7 +1420,8 @@ class Figura3D {
     }
     // Tope de figuras (gama baja): fuera de los MAX_FIG mas cercanos solo queda la sombra-disco (el nombre va aparte, en etiquetas()).
     const enRango = d < escena.fog.far + 15, ver = enRango && this._cerca !== false;
-    this.raiz.visible = ver; this.sombra.visible = enRango && (!Q.sombras || d > 24 || !ver);
+    this.raiz.visible = ver; this.raiz.matrixWorldAutoUpdate = ver;   /* oculta: three se salta sus ~20 piezas al recalcular matrices */
+    this.sombra.visible = enRango && (!Q.sombras || d > 24 || !ver);
     if (this.montura) this.montura.obj.visible = ver;
     if (!ver) { if (enRango) ponerSombra(this.sombra, this.sombraBase, x, y, z); return; }
     const animar = d < 45 || (cuadro + this.raiz.id) % 2 === 0;
@@ -8927,6 +8930,15 @@ let bucleErrT = 0;
 // segundo plano o la pestaña oculta, y 10 fps con una ventana encima del 3D
 // (mapa, ajustes…; el editor de apariencia no, que muestra al duende).
 let proxCuadro = 0, ventanaAb = false, ventanaAntes = false;
+// Tope de cuadros en ms entre cuadros (0 = sin tope). Se lee en cada cuadro: el menu de ajustes lo cambia
+// en vivo con window.dqTopeFps(30 | 45 | 60 | 0).
+let topeCuadroMs = CUADRO_MS;
+window.dqTopeFps = fps => { topeCuadroMs = fps > 0 ? Math.max(4, 1000 / fps - 0.3) : 0; proxCuadro = 0; return topeCuadroMs; };
+// Ritmo regular: el tope se redondea a un numero entero de refrescos de la pantalla (medidos con los
+// propios avisos de requestAnimationFrame). Antes, en 90/120/144 Hz un tope de 16,4 ms alternaba
+// cuadros de 2 y 3 refrescos (tirones aunque la media fuera 60); ahora todos duran lo mismo:
+// 144 Hz -> 72, 120 -> 60, 90 -> 90, 75 -> 75, 60 -> 60; y con tope de 30: 60 -> 30, 90 -> 30, 120 -> 30, 144 -> 28,8.
+let vsMs = 16.67, vsMin = 99, vsN = 0, rafAntes = 0;
 // Modo reposo: quieto, sin pelea ni habilidad y sin tocar nada en 4 s, se dibuja a 30 fps (20 en baja): menos bateria y calor.
 let reposo = false, reposoAntes = false, reposoT = 0, topeFigT = 0;
 const MAX_FIG = { baja: 8, media: 16, alta: 30 }[CAL] || 16;
@@ -8980,13 +8992,21 @@ function guardaNaN() {
   } else { posOk.cx = c.x; posOk.cy = c.y; posOk.cz = c.z; posOk.cok = true; }
 }
 function bucle(t, forzar) {
-  requestAnimationFrame(bucle);
   if (forzar !== true) {
+    requestAnimationFrame(bucle);   /* un cuadro forzado (pruebas) no abre otra cadena de avisos */
+    // Refresco real de la pantalla: el menor intervalo entre avisos de los ultimos 40 (los cuadros lentos dan multiplos).
+    const dRaf = t - rafAntes; rafAntes = t;
+    if (dRaf > 2 && dRaf < vsMin) vsMin = dRaf;
+    if (++vsN >= 40) { if (vsMin < 60) vsMs = vsMin; vsMin = 99; vsN = 0; }
     if (fuera3 || document.hidden) return;
     if (reposo && t - Math.max(ultimoToqueT, movInputT) < 4000) { reposo = false; proxCuadro = 0; }
-    const paso = ventanaAb ? 100 : reposo ? (CAL === 'baja' ? 50 : 33) : CUADRO_MS;
-    if (t < proxCuadro - 1.5) return;
-    proxCuadro = Math.max(proxCuadro + paso, t + paso * 0.5);
+    /* tope de FPS: lo fija el menú */
+    const tope = topeCuadroMs;
+    const paso = ventanaAb ? 100 : reposo ? Math.max(tope, CAL === 'baja' ? 50 : 33) : tope;
+    // Cada cuantos refrescos toca dibujar (entero): asi todos los cuadros duran lo mismo.
+    const cada = Math.max(1, Math.round(paso / vsMs - 0.15)) * vsMs;
+    if (t - proxCuadro < cada - vsMs * 0.3) return;
+    proxCuadro = t;
   }
   try { PERF.a(); armarColaFig(); cuadroBucle(t); }
   catch (e) {
