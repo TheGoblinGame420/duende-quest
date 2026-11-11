@@ -90,11 +90,21 @@ const MATS = new Map();
 // chicas. Usa la normal 'normal' que Lambert ya calcula (con flatShading sale de
 // dFdx/dFdy de vViewPosition), asi que no hace falta vNormal. Sin mallas nuevas.
 const RIM_K = (() => { try { return (matchMedia('(pointer: coarse)').matches ? 0.24 : 0.32).toFixed(2); } catch (e) { return '0.28'; } })();
+// El color (ya con su fuerza) va en un uniforme compartido: mundo.js lo cambia con la hora (calido de dia,
+// azul de luna de noche). Quien no lo toque (galeria, taller) ve el blanco calido de siempre.
+// uBordeK.x = 1 pondera el borde con el cielo (mas arriba, casi nada por debajo), .y = oclusion de las caras
+// que miran al suelo (bajo el sombrero, la barbilla, las axilas). Con (0, 0) el sombreado es el de antes.
+export const BORDE_DIA = new THREE.Color(1.0, 0.95, 0.87), BORDE_K = +RIM_K;
+export const LUZ_BORDE = { value: BORDE_DIA.clone().multiplyScalar(BORDE_K) };
+export const BORDE_FX = { value: new THREE.Vector2(0, 0) };
 function conBorde(fs, extra) {
-  return fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>' + extra +
+  return 'uniform vec3 uBorde;\nuniform vec2 uBordeK;\n' + fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>' + extra +
     '\n\tfloat rimF = pow(1.0 - max(dot(normal, normalize(vViewPosition)), 0.0), 3.0);' +
-    '\n\ttotalEmissiveRadiance += vec3(1.0, 0.95, 0.87) * rimF * ' + RIM_K + ';');
+    '\n\tfloat rimY = dot(normal, viewMatrix[1].xyz);' +   // componente «arriba del mundo» de la normal (en espacio de vista)
+    '\n\ttotalEmissiveRadiance += uBorde * rimF * mix(1.0, 0.55 + 0.6 * rimY, uBordeK.x);' +
+    '\n\tdiffuseColor.rgb *= 1.0 - uBordeK.y * smoothstep(0.15, 0.95, -rimY);');
 }
+function ponBorde(s) { s.uniforms.uBorde = LUZ_BORDE; s.uniforms.uBordeK = BORDE_FX; }
 function mat(color, o) {
   o = o || {};
   const c = col(color);
@@ -111,7 +121,7 @@ function mat(color, o) {
       emissive: o.e ? c : new THREE.Color(0), emissiveIntensity: o.e || 0,
       vertexColors: !!o.vc,
     });
-    if (op >= 1) { m.onBeforeCompile = s => { s.fragmentShader = conBorde(s.fragmentShader, ''); }; m.customProgramCacheKey = () => 'borde'; }
+    if (op >= 1) { m.onBeforeCompile = s => { ponBorde(s); s.fragmentShader = conBorde(s.fragmentShader, ''); }; m.customProgramCacheKey = () => 'borde'; }
   }
   m.userData.compartido = true;
   MATS.set(k, m);
@@ -202,6 +212,7 @@ function matVC(brillo) {
   if (m) return m;
   m = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, vertexColors: true, emissive: 0xffffff, emissiveIntensity: 1 });
   m.onBeforeCompile = s => {
+    ponBorde(s);
     s.vertexShader = 'attribute float brillo;\nvarying float vBrillo;\n' +
       s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvBrillo = brillo;');
     s.fragmentShader = 'varying float vBrillo;\n' +
