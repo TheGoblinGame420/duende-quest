@@ -1234,13 +1234,13 @@ function teñir(img, hue, sat) {
   return c;
 }
 const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }); })();
-const anilloMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
+const anilloMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
 const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Math.PI / 2), anilloMat);
 anillo.visible = false;
 escena.add(anillo);
 // Anillo pequeño "a tiro" (v344): bajo el monstruo mas cercano a menos de alcance+2 m.
 // Amarillo = casi; verde (y late) = el golpe ya le llega.
-const anilloTiroMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
+const anilloTiroMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
 const anilloTiro = new THREE.Mesh(new THREE.RingGeometry(0.48, 0.66, 28).rotateX(-Math.PI / 2), anilloTiroMat);
 anilloTiro.visible = false;
 escena.add(anilloTiro);
@@ -1594,7 +1594,7 @@ function mostrarMarca(m) {
   if (!marcaGeo) marcaGeo = new THREE.CylinderGeometry(0.35, 0.35, 30, 10, 1, true);
   // Una marca viva por jugador: la nueva reemplaza a la anterior.
   for (const a of marcas3.filter(a => a.p === m.p)) quitarMarca(a);
-  const mat = new THREE.MeshBasicMaterial({ color: MARCA_COL[m.k], transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+  const mat = new THREE.MeshBasicMaterial({ color: MARCA_COL[m.k], transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, fog: false });
   const mesh = new THREE.Mesh(marcaGeo, mat);
   mesh.position.set(m.x, (alturaEn(m.x, m.z) || 0) + 15, m.z);
   escena.add(mesh);
@@ -2922,7 +2922,7 @@ const GEO_ONDA = new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2);
 const GEO_ONDA_FINA = new THREE.RingGeometry(0.93, 1, 48).rotateX(-Math.PI / 2);
 function onda(x, z, radio, color, propio, op) {
   const o = op ?? 0.8;
-  const m = new THREE.Mesh(propio ? GEO_ONDA_FINA : GEO_ONDA, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide }));
+  const m = new THREE.Mesh(propio ? GEO_ONDA_FINA : GEO_ONDA, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
   m.position.set(x, alturaEn(x, z) + 0.15, z);
   escena.add(m);
   efectos.push({ m, t: 0, dura: 0.5, radio, op: o });
@@ -5845,7 +5845,7 @@ function crearCofres3() {
     ponerSolido(c.x, c.z, 0.55);
     // Haz dorado del legendario: se ve de lejos para guiar la subida; se apaga mientras recarga.
     if (c.tipo === 'legendario') {
-      if (!crearCofres3.matHaz) crearCofres3.matHaz = new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      if (!crearCofres3.matHaz) crearCofres3.matHaz = new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
       const haz = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 30, 10, 1, true), crearCofres3.matHaz);
       haz.position.set(c.x, alturaEn(c.x, c.z) + 15, c.z); escena.add(haz); c.haz = haz;
     }
@@ -5861,6 +5861,11 @@ function animarCofres(t) {
   const ahora = Date.now();
   for (const c of COFRES3) {
     if (c.haz) c.haz.visible = c.listoEn <= ahora;
+    if (c.g) {
+      const dxC = c.x - P.x, dzC = c.z - P.z, vivo = Math.abs(dxC) <= 90 && Math.abs(dzC) <= 90, limC = escena.fog.far + 8;
+      c.g.visible = vivo || dxC * dxC + dzC * dzC < limC * limC;
+      if (vivo !== c.vivo) { c.vivo = vivo; if (!vivo) c.g.updateMatrixWorld(true); c.g.matrixWorldAutoUpdate = vivo; }
+    }
     if (!c.g || Math.abs(c.x - P.x) > 90 || Math.abs(c.z - P.z) > 90) continue;
     const listo = c.listoEn <= ahora;
     c.tapa.rotation.x += ((listo ? 0 : -1.15) - c.tapa.rotation.x) * 0.12;
@@ -5906,7 +5911,7 @@ function mostrarTempFin(m) {
 // Epico o legendario: haz de luz del color de la rareza sobre el jugador, presumir
 // y, si mejora lo que lleva puesto, una tarjeta «▲ Mejor · Equipar» de un toque.
 function hazBotin(color) {
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
   const haz = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.7, 26, 14, 1, true), mat);
   haz.position.set(P.x, P.y + 13, P.z); escena.add(haz);
   FX.emitir(P.x, P.y + 1.2, P.z, { n: MOVIL ? 30 : 60, color, vel: 3, vida: 1.4, grav: -2.5, radio: 0.6, tam: 1.1 });
@@ -7441,7 +7446,7 @@ function efectoGolpe(vara, alAire) {
   const color = (aw && yo.arma !== 'katana' && aw.color) || (cl && cl.color) || '#fff1c1';
   const cmb = P.combo || 0, fuerte = cmb === 2, alto = P.fig && P.fig.alto ? P.fig.alto : 1.6;
   while (tajos.length >= (baja ? 2 : 5)) { const v = tajos.shift(); escena.remove(v.g); if (v.mat) v.mat.dispose(); }
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide, forceSinglePass: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const g = new THREE.Group(), inc = new THREE.Group(), me = new THREE.Mesh(GEO_TAJO, mat);
   me.rotation.x = -Math.PI / 2; inc.add(me); g.add(inc);
   // 0: tajo en diagonal, 1: tajo de vuelta casi plano (barre al reves), 2: golpe fuerte vertical y mas grande.
@@ -8126,49 +8131,63 @@ function retroceso(o, t, obj) {
 }
 // Color de nombre comprado («Color de tu nombre»): igual que colorTinte de CLASSIC; el arcoíris rota solo.
 function colorTinte3(id) { const tn = TINTES[id]; if (!tn) return ''; return tn.color === 'arcoiris' ? 'hsl(' + (Math.floor(performance.now() / 130) % 12) * 30 + ',90%,68%)' : tn.color; }
+// Etiquetas en dos pasos para no gastar en las que no se ven: lblVe() decide si la etiqueta cae en
+// rango, delante de la camara y fuera del HUD (deja su sitio en lblSx/lblSy; si no, la oculta), y solo
+// entonces se arma su HTML y lblPon() lo escribe. El transform se escribe solo si se movio 0,1 px.
+let lblSx = 0, lblSy = 0, lblW = 0, lblH = 0, lblUsN = 0;
+const lblUsX = new Float32Array(160), lblUsY = new Float32Array(160), lblMons = [];
+function lblVe(lbl, x, y, z, maxD) {
+  const dx = x - P.x, dz = z - P.z;
+  let ve = dx * dx + dz * dz < maxD * maxD;
+  if (ve) { vtmp.set(x, y, z).project(camara); ve = !(vtmp.z > 1 || vtmp.z < -1); }
+  if (ve) {
+    lblSx = (vtmp.x + 1) / 2 * lblW; lblSy = (1 - vtmp.y) / 2 * lblH;
+    for (let i = 0; i < rectsHud.length; i++) { const r = rectsHud[i]; if (lblSx > r.left - 24 && lblSx < r.right + 24 && lblSy > r.top - 2 && lblSy < r.bottom + 16) { ve = false; break; } }
+  }
+  if (!ve && lbl.style.display !== 'none') lbl.style.display = 'none';
+  return ve;
+}
+function lblPon(lbl, html) {
+  if (lbl.style.display === 'none') lbl.style.display = '';
+  if (lbl._h !== html) { lbl.innerHTML = html; lbl._h = html; }
+  const rx = Math.round(lblSx * 10), ry = Math.round(lblSy * 10);
+  if (rx !== lbl._rx || ry !== lbl._ry) { lbl._rx = rx; lbl._ry = ry; lbl.style.transform = `translate(${rx / 10}px,${ry / 10}px) translate(-50%,-100%)`; }
+}
+// Etiquetas de monstruo: la que caeria encima de otra ya puesta se oculta.
+function lblPisa(lbl) {
+  for (let i = 0; i < lblUsN; i++) if (Math.abs(lblUsX[i] - lblSx) < 70 && Math.abs(lblUsY[i] - lblSy) < 18) { if (lbl.style.display !== 'none') lbl.style.display = 'none'; return true; }
+  return false;
+}
+function lblUsa() { if (lblUsN < 160) { lblUsX[lblUsN] = lblSx; lblUsY[lblUsN++] = lblSy; } }
+const lblOrden = (a, b) => a._dl - b._dl;
 function etiquetas(t) {
-  const ponLbl = (lbl, x, y, z, html, maxD, extra) => {
-    const d = Math.hypot(x - P.x, z - P.z);
-    const s = d < maxD ? aPantalla(x, y, z) : null;
-    if (!s || (rectsHud.length && lblTapaHud(s))) { if (lbl.style.display !== 'none') lbl.style.display = 'none'; return; }
-    if (lbl.style.display === 'none') lbl.style.display = '';
-    if (lbl._h !== html) { lbl.innerHTML = html; lbl._h = html; }
-    lbl.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-100%)`;
-    if (extra) extra(lbl);
-  };
-  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : (yo.tinte && colorTinte3(yo.tinte)) || '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`, 999);
+  lblW = innerWidth; lblH = innerHeight;
+  if (yo && P.lbl && lblVe(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, 999)) lblPon(P.lbl, `<span style="color:${yo.dios ? '#ffd84a' : (yo.tinte && colorTinte3(yo.tinte)) || '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : (o.tn && colorTinte3(o.tn)) || (cl ? cl.color : '#fff')}">${o.gm === 2 ? 'DUEÑO ' : o.gm ? 'MOD ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '⚔ ' : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? ";background:#ff3344" : ""}"></i></span>`, 70);
+    if (lblVe(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, 70)) lblPon(o.lbl, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : (o.tn && colorTinte3(o.tn)) || (cl ? cl.color : '#fff')}">${o.gm === 2 ? 'DUEÑO ' : o.gm ? 'MOD ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '⚔ ' : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? ";background:#ff3344" : ""}"></i></span>`);
   }
   const kMis = tipoMision();
   // '❗' solo en el monstruo de mision vivo mas cercano; etiquetas de cerca a lejos (el objetivo primero) y sin encimarse.
   let misId = null, misD = 1e9;
   for (const o of mons.values()) if (o.k === kMis && !o.muereT) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < misD) { misD = d; misId = o.id; } }
-  const dMon = o => (o.id === objetivo ? -2 : o.id === misId ? -1 : Math.hypot(o.x - P.x, o.z - P.z));
-  const lista = [...mons.values()].sort((a, b) => dMon(a) - dMon(b));
-  const usados = [];
-  for (const o of lista) {
+  lblMons.length = 0; lblUsN = 0;
+  for (const o of mons.values()) { o._dl = o.id === objetivo ? -2 : o.id === misId ? -1 : Math.hypot(o.x - P.x, o.z - P.z); lblMons.push(o); }
+  lblMons.sort(lblOrden);
+  for (const o of lblMons) {
     if (o.muereT) { if (o.lbl && o.lbl.style.display !== 'none') o.lbl.style.display = 'none'; continue; }
     if (o.fig && o.fig._cerca === false && o.id !== objetivo) { if (o.lbl && o.lbl.style.display !== 'none') o.lbl.style.display = 'none'; continue; }
     const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.id === misId;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🔮 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.alertaT && t - o.alertaT < 600 && t >= o.alertaT ? '<b style="color:#ff4d4d;font-size:15px">! </b>' : ''}${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? (o.la ? '💰 ' : '★ ') + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${o.noct ? '<b style="color:#c4a8ff">🌙 ' + esc(def.nombre) + ' nocturno</b> ' : herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${o.ra ? `<span style="color:${colorNivel(o.nv)}">${marcaNivel(o.nv)}Nv${o.nv}</span>` : marcaNivel(o.nv) + 'Nv' + o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : o.noct ? 55 : 38));
-    if (o.lbl.style.display !== 'none') {
-      const s = aPantalla(o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z);
-      if (s) {
-        if (!el && !mis && usados.some(u => Math.abs(u[0] - s[0]) < 70 && Math.abs(u[1] - s[1]) < 18)) o.lbl.style.display = 'none';
-        else usados.push(s);
-      }
-    }
+    if (lblVe(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, el ? 90 : (o.j || mis ? 70 : o.noct ? 55 : 38)) && (el || mis || !lblPisa(o.lbl))) { lblUsa(); lblPon(o.lbl, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🔮 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.alertaT && t - o.alertaT < 600 && t >= o.alertaT ? '<b style="color:#ff4d4d;font-size:15px">! </b>' : ''}${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? (o.la ? '💰 ' : '★ ') + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${o.noct ? '<b style="color:#c4a8ff">🌙 ' + esc(def.nombre) + ' nocturno</b> ' : herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${o.ra ? `<span style="color:${colorNivel(o.nv)}">${marcaNivel(o.nv)}Nv${o.nv}</span>` : marcaNivel(o.nv) + 'Nv' + o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`); }
   }
-  for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
-  if (decoTp.lbl) { if (decoTp.puesto) ponLbl(decoTp.lbl, decoTp.puesto.x, decoTp.puesto.y + 1.6, decoTp.puesto.z, '<span style="color:#4ade80">Abuela · Tienda de la fiesta</span>', 40); else decoTp.lbl.style.display = 'none'; }
+  for (const av of aventureros) if (lblVe(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, 24)) lblPon(av.lbl, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`);
+  if (decoTp.lbl) { if (decoTp.puesto) { if (lblVe(decoTp.lbl, decoTp.puesto.x, decoTp.puesto.y + 1.6, decoTp.puesto.z, 40)) lblPon(decoTp.lbl, '<span style="color:#4ade80">Abuela · Tienda de la fiesta</span>'); } else decoTp.lbl.style.display = 'none'; }
   { const mk = marcasNpc();
     for (const n of npcs) {
       const m = mk.get(n.nombre), rol = n.rol || ROL_NPC[n.tipo], cerca = Math.hypot(n.x - P.x, n.z - P.z) < 60;
-      ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${m ? `<b class="npc-marca">${m}</b>${cerca ? '<br>' : ''}` : ''}${cerca ? `<span style="color:#4ade80">${esc(n.nombre)}</span>${rol ? `<br><small style="color:#fde68a;font-size:11px">${rol}</small>` : ''}` : ''}`, m ? 140 : 60);
+      if (lblVe(n.lbl, n.x, n.y + 2.4, n.z, m ? 140 : 60)) lblPon(n.lbl, `${m ? `<b class="npc-marca">${m}</b>${cerca ? '<br>' : ''}` : ''}${cerca ? `<span style="color:#4ade80">${esc(n.nombre)}</span>${rol ? `<br><small style="color:#fde68a;font-size:11px">${rol}</small>` : ''}` : ''}`);
     } }
 }
 // ── TEMA DEL PUEBLO ──
@@ -8206,7 +8225,7 @@ const corrientes3 = [];
 function crearCorrientes() {
   const geoC = new THREE.CylinderGeometry(7, 7, 70, 20, 1, true), geoA = new THREE.TorusGeometry(7.5, 0.35, 6, 32);
   for (const c of CORRIENTES) {
-    const col = new THREE.Mesh(geoC, new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    const col = new THREE.Mesh(geoC, new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, blending: THREE.AdditiveBlending }));
     col.position.set(c.x, 30, c.z);
     const aros = [0, 1, 2].map(i => { const a = new THREE.Mesh(geoA, new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); a.rotation.x = Math.PI / 2; a.position.set(c.x, 10 + i * 22, c.z); escena.add(a); return a; });
     escena.add(col);
@@ -8227,7 +8246,7 @@ const corrM3 = [];
 let matCorrM = null;
 function crearCorrientesMundo() {
   const geoC = new THREE.CylinderGeometry(7, 7, 60, MOVIL || CAL === 'baja' ? 12 : 20, 1, true), geoA = new THREE.TorusGeometry(7.5, 0.35, 6, MOVIL || CAL === 'baja' ? 16 : 32);
-  matCorrM = { col: new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }), aro: new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }) };
+  matCorrM = { col: new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, blending: THREE.AdditiveBlending }), aro: new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }) };
   const nAros = MOVIL || CAL === 'baja' ? 1 : 3;
   for (const c of corrientesMundo(MAPAS, MONSTRUOS)) {
     const col = new THREE.Mesh(geoC, matCorrM.col);
@@ -8242,7 +8261,9 @@ function animarCorrientesMundo(t) {
   if (!matCorrM) return;
   matCorrM.col.opacity = 0.09 + 0.05 * Math.sin(t / 600);
   for (const c of corrM3) {
-    if (Math.abs(c.col.position.x - P.x) > 220 || Math.abs(c.col.position.z - P.z) > 220) continue;   // lejos no se anima (ni se ve con la niebla)
+    const lejosC = Math.abs(c.col.position.x - P.x) > 220 || Math.abs(c.col.position.z - P.z) > 220;
+    if (lejosC !== c.fija) { c.fija = lejosC; c.col.updateMatrixWorld(true); c.col.matrixAutoUpdate = false; c.col.matrixWorldAutoUpdate = false; for (const a of c.aros) { if (lejosC) a.updateMatrixWorld(true); a.matrixAutoUpdate = a.matrixWorldAutoUpdate = !lejosC; } }
+    if (lejosC) continue;   // lejos no se anima (ni se ve con la niebla)
     c.aros.forEach((a, i) => { a.position.y = c.y + 1 + ((t / 70 + i * 20) % 56); a.rotation.z = t / 900; });
   }
 }
@@ -8822,17 +8843,17 @@ let caso = { p: [], s: '', sN: 0, res: 0 };
 let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0, encRecibido = false, secundarias = {};
 const secVistas = new Set();
 const faroEnc = (() => {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.8, 70, 12, 1, true).translate(0, 35, 0), new THREE.MeshBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.8, 70, 12, 1, true).translate(0, 35, 0), new THREE.MeshBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
 const faroAro = (() => {
-  const m = new THREE.Mesh(new THREE.RingGeometry(10, 11, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }));
+  const m = new THREE.Mesh(new THREE.RingGeometry(10, 11, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
   m.visible = false; escena.add(m); return m;
 })();
 // El monstruo que pide la mision activa (null si ya esta lista).
 function tipoMision() { const q = yo && yo.mis && MISIONES[yo.mis.i]; return q && yo.mis.p < q.n ? q.tipo : null; }
 const faro = (() => {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
 // Tocar una mision del dia marca su camino (flecha y metros en la fila); se camina a mano, no hay piloto automatico.
@@ -9035,7 +9056,7 @@ function cuadroBucle(t) {
   if (impactos.length) impactos = impactos.filter(i => { if (t < i.t) return true; if (!i.o.muereT) { i.o.golpeT = t; i.o.predT = t; i.o.golpeC = false; i.o.golpeDe = P; pausaGolpe(i.o, pesoArma().p); } return false; });
   // Interpolacion de los demas.
   for (const o of otros.values()) { avanzarHacia(o, t); animarJugador(o, false, t); }
-  for (const o of [...mons.values()]) {
+  for (const o of mons.values()) {   /* borrar del Map mientras se recorre es seguro */
     if (!o.muereT) avanzarHacia(o, t);
     if (o.muereT && t - o.muereT > 1600) { quitarMon(o.id); continue; }
     animarMon(o, t);
@@ -9051,7 +9072,7 @@ function cuadroBucle(t) {
   } else if (n.fig) { const h = n.fig.hoja; n.fig.cuadro(h.mov[1] + Math.floor(t / 600 + n.x) % 2, h.mov[0], P.x > n.x); n.fig.poner(n.x, n.y, n.z, camYaw); }
   moverAventureros(t, dt);
   // Proyectiles.
-  proyectiles = proyectiles.filter(p => {
+  if (proyectiles.length) proyectiles = proyectiles.filter(p => {
     p.t += dt / 0.28;
     const a = p.a, ay = (a.y || alturaEn(a.x, a.z)) + 1.2;
     p.mesh.position.set(lerp(p.de.x, a.x, p.t), lerp(p.de.y, ay, p.t) + Math.sin(p.t * Math.PI) * 0.8, lerp(p.de.z, a.z, p.t));
@@ -9185,8 +9206,8 @@ function cuadroBucle(t) {
   luzDuende.visible = nocheK > 0.5 && !enCueva(P.x) && !enAbismo(P.x);
   if (luzDuende.visible) luzDuende.position.set(P.x, alturaEn(P.x, P.z) + 0.06, P.z);
   // Cueva y Abismo solo existen para el render dentro de su zona (estan lejos y no se ven desde fuera).
-  if (cueva) cueva.grupo.visible = enCueva(P.x);
-  if (abismo) abismo.grupo.visible = enAbismo(P.x);
+  if (cueva) cueva.grupo.visible = cueva.grupo.matrixWorldAutoUpdate = enCueva(P.x);
+  if (abismo) abismo.grupo.visible = abismo.grupo.matrixWorldAutoUpdate = enAbismo(P.x);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
   else if (!enCueva(P.x)) animarCorrientesMundo(t);
@@ -9217,7 +9238,7 @@ function cuadroBucle(t) {
   pintarObjetivo();
   if (toca(2, 100, t)) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
   if (toca(3, 333, t)) { pintarMisiones(); revisarAtrasTg(); }
-  efectos = efectos.filter(e => {
+  if (efectos.length) efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);
     e.m.scale.set(r, r, r); e.m.material.opacity = (e.op ?? 0.8) * (1 - e.t);
@@ -9231,7 +9252,7 @@ function cuadroBucle(t) {
   if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t, P.planea ? 'planea' : ((P.vy || 0) > 1 ? 'sube' : ''));
   if (P.vuela && !POBRE && CAL !== 'baja' && (++estelaN % 3) === 0) FX.emitir(P.x - (P.vx || 0) * 0.05, P.y + 1.2, P.z - (P.vz || 0) * 0.05, { n: 1, color: caEstela, vida: 0.5, vel: 0.3, grav: -0.5, radio: 0.6, tam: 1 });
   etiquetas(t);
-  numeros = numeros.filter(n => {
+  if (numeros.length) numeros = numeros.filter(n => {
     n.t += dt;
     const s = aPantalla(n.x + n.dx * n.t, n.y + n.t * 1.2 - n.t * n.t * 0.35, n.z);
     if (!s || n.t > 1.1) { n.d.style.display = 'none'; poolNum.push(n.d); return false; }
@@ -9309,7 +9330,7 @@ async function inicio() {
   pintarMapaBase();
   if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
   try {
-    const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide }))];
+    const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
     if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
     cal.forEach(m => { m.position.set(P.x, -50, P.z); escena.add(m); });
     render.compile(escena, camara);
