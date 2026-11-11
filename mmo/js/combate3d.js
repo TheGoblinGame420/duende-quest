@@ -90,5 +90,4 @@ export const ESTADOS_MON = {
   oveja:    { i: '✨', n: 'Llamita', c: '#f9a8d4' },
   dolor:    { i: '⏳', n: 'Dolor', c: '#a78bfa' },
   provoca:  { i: '🎯', n: 'Provocado', c: '#fb923c' },
-  tambaleo: { i: '⚠', n: 'Tambaleo', c: '#e5e7eb' },
 };
