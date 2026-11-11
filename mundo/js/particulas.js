@@ -47,6 +47,7 @@ void main() {
   vA = vivo * (frm > 3.5 ? 1.0 - k : 1.0 - k * k);
 }`;
 const FRAG = `
+uniform float uNuc;
 varying vec3 vCol; varying float vA; varying float vF; varying vec2 vDir; varying float vW;
 void main() {
   vec2 c = gl_PointCoord - 0.5; float a;
@@ -60,7 +61,10 @@ void main() {
   } else if (vF < 3.5) { float d = dot(c, c) * 4.0; if (d > 1.0) discard; a = (1.0 - d) * (1.0 - d) * 0.45; }
   else if (vF < 4.5) { float r = length(c) * 2.0; if (r > 1.0) discard; a = smoothstep(0.68, 0.86, r) * (1.0 - smoothstep(0.89, 1.0, r)) * 1.3; }
   else { float r = length(c) * 2.0; if (r > 1.0) discard; a = exp(-r * r * 5.0); }
-  gl_FragColor = vec4(vCol, vA * a);
+  // Nucleo caliente (uNuc > 0, de calidad media para arriba): el centro de chispas, estrellas y destellos tira a
+  // blanco y el color gana fuerza; con el resplandor del post-proceso es lo que hace brillar un golpe. El humo no.
+  float nuc = vF > 2.5 && vF < 3.5 ? 0.0 : uNuc;
+  gl_FragColor = vec4(vCol * (1.0 + 0.3 * nuc) + vec3(nuc * a * a * 0.55), vA * a);
 }`;
 // Ambientes por zona. m: modo del shader · c/c2: colores (c2 para la fraccion < corte)
 // · tam: metros · frac: parte de las motas que se dibujan · add: aditivo (brilla) · a: opacidad.
@@ -88,7 +92,7 @@ export function crearParticulas(escena, max, movil, pobre, cal) {
   for (let i = 0; i < N; i++) dat[i * 4] = -1e6;   // todas muertas
   const at = (n, a, k) => { const b = new THREE.BufferAttribute(a, k); b.setUsage(THREE.DynamicDrawUsage); g.setAttribute(n, b); return b; };
   const aP = at('position', pos, 3), aV = at('vel', vel, 3), aD = at('dat', dat, 4), aC = at('col', col, 3), aF = at('frm', frm, 1);
-  const u = { uT: { value: 0 }, uEsc: { value: 320 }, uMaxPx: { value: MAXPX } };
+  const u = { uT: { value: 0 }, uEsc: { value: 320 }, uMaxPx: { value: MAXPX }, uNuc: { value: 0 } };
   const m = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const pts = new THREE.Points(g, m);
   pts.frustumCulled = false; pts.renderOrder = 5;
@@ -228,6 +232,8 @@ export function crearParticulas(escena, max, movil, pobre, cal) {
   }
   return {
     emitir, golpe, subirNivel, brillo,
+    // Nucleo caliente de las particulas (mundo.js lo enciende de calidad media para arriba).
+    calidad(fina) { u.uNuc.value = fina ? 1 : 0; },
     // tipo: 'luciernagas' | 'eter' | 'polvo' | 'hojas' | 'nieve' | 'ceniza' | 'arena' | ''
     ambiente(tipo) { ambPend = AMB[tipo] ? tipo : ''; },
     actualizar(dt, cam, alto) {

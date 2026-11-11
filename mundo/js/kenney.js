@@ -32,6 +32,10 @@ async function leerBin(base) {
   return r.arrayBuffer();
 }
 
+// Oclusion falsa en la base (mundo.js pone uAO segun la calidad; 0 = apagada): la parte baja de casas,
+// troncos y matas se oscurece hacia el suelo (los primeros ~1,3 m) y la pieza queda asentada en el terreno.
+export const KIT_FX = { uAO: { value: 0 } };
+
 function crearKit(ind, buf) {
   const cache = new Map();
   // Dos materiales iguales: uno para las mallas sueltas (casas fundidas) y otro para las instanciadas
@@ -45,10 +49,17 @@ function crearKit(ind, buf) {
     prev(sh, r);
     // Hojas y hierba toman el color de la instancia (con el brillo de su
     // pieza); lo demas conserva su color.
-    sh.vertexShader = 'attribute float tinte;\n' + sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
+    sh.uniforms.uAO = KIT_FX.uAO;
+    sh.vertexShader = 'attribute float tinte;\nuniform float uAO;\n' + sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
       #ifdef USE_INSTANCING_COLOR
         vColor.xyz = mix(color, instanceColor.xyz * clamp(dot(color, vec3(0.2126, 0.7152, 0.0722)) / 0.28, 0.55, 1.5), tinte);
-      #endif`);
+      #endif
+      #ifdef USE_INSTANCING
+        float aoEsc = length(instanceMatrix[1].xyz) * length(modelMatrix[1].xyz);
+      #else
+        float aoEsc = length(modelMatrix[1].xyz);
+      #endif
+      vColor.xyz *= 1.0 - uAO * (1.0 - smoothstep(0.0, 1.3, position.y * aoEsc));`);
   };
   material.customProgramCacheKey = () => 'tapa-kenney';
   return material;

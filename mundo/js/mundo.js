@@ -23,7 +23,7 @@ import { waChicha, mesChicha } from '/mmo/js/data.js?v=372';   // WhatsApp de la
 import { NOVEDADES } from '/mmo/js/data.js?v=372';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
 import { iniciarRegalo } from '/mmo/js/regalo.js?v=372';
 import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=372';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=372';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=372';
 import { crearMusica } from './musica.js?v=372';
 import { crearSonidos } from './sonidos.js?v=372';
 import { construirCueva } from './cueva.js?v=372';
@@ -31,7 +31,7 @@ import { TAPA, transparentar } from './tapa.js?v=372';
 import { construirAbismo } from './abismo.js?v=372';
 import { crearParticulas } from './particulas.js?v=372';
 import { PERF } from './perf.js?v=372';
-import { cargarKenney, piezasCasa } from './kenney.js?v=372';
+import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=372';
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=372';
 const MAQUINAS = maquinasAbismo();
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=372';
@@ -285,12 +285,42 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.0);
 const sol = new THREE.DirectionalLight(0xfff2dd, 1.0);
 sol.position.set(120, 200, 80);
 escena.add(hemi, sol, sol.target);
+// ── ACABADO (de media para arriba; en minima y baja no existe nada de esto) ──
+// FINO(): el nivel vigente admite los extras baratos de luz y material.
+const FINO = () => GFX.efectivo !== 'minima' && GFX.efectivo !== 'baja';
+// Luz de relleno: una direccional fria y sin sombra desde el lado contrario al sol. Con solo sol + hemisferica,
+// todas las caras en sombra de un bloque salian del mismo tono; con ella las formas se leen tambien a contraluz.
+// Su objetivo no esta en la escena (queda en el origen): la direccion es su propia posicion (ambiente() la pone).
+const relleno = new THREE.DirectionalLight(0xa9c4ff, 0);
+relleno.visible = FINO(); relleno.matrixAutoUpdate = false;
+escena.add(relleno);
+const RELLENO_DIA = C('#a9c4ff'), RELLENO_NOCHE = C('#5a6fb0'), BORDE_NOCHE = C('#9db8ff');
+let gradoU = null;   // uniformes vivos de la correccion de color (ShaderPass clona los de GRADO)
+// Lo llama ambiente() (cada pocos segundos, no por cuadro) y aplicarGfx(): relleno, luz de borde de los
+// personajes, oclusion de base del kit y contraste segun la hora. Fuera de FINO() todo queda como antes.
+let acabZ = 'pueblo', acabDia = 1, acabNub = 1;
+function acabadoLuz(z, dia, nub) {
+  acabZ = z; acabDia = dia; acabNub = nub;
+  const fino = FINO(), cueva = z === 'cueva';
+  if (relleno.visible !== fino) relleno.visible = fino;
+  if (fino) {
+    relleno.intensity = cueva ? 0.1 : 0.3 * (LUZ[z] || 1) * (0.3 + 0.7 * dia) * (0.6 + 0.4 * nub);
+    relleno.color.copy(RELLENO_NOCHE).lerp(RELLENO_DIA, dia);
+    relleno.position.set(-solDir.x, solDir.y * 0.12, -solDir.z); relleno.updateMatrix(); relleno.updateMatrixWorld(true);
+    // Borde: calido de dia, azul de luna y mas tenue de noche (antes era el mismo blanco calido a todas horas).
+    LUZ_BORDE.value.copy(BORDE_NOCHE).lerp(BORDE_DIA, dia).multiplyScalar(BORDE_K * (0.7 + 0.45 * dia));
+    KIT_FX.uAO.value = 0.3; BORDE_FX.value.set(1, 0.22);
+  } else { LUZ_BORDE.value.copy(BORDE_DIA).multiplyScalar(BORDE_K); KIT_FX.uAO.value = 0; BORDE_FX.value.set(0, 0); }
+  if (gradoU) { gradoU.uCon.value = 1 + 0.12 * dia; gradoU.uTono.value = cueva ? 0.4 : 1; }
+}
 // Sombras del sol: 1 = 1024 px alrededor del jugador; 2 = 2048 px y mas alcance. Se encienden y apagan en vivo.
 let sombrasCaidas = false, postCaido = false;   // las quito la red de seguridad (resolucionDinamica): no vuelven solas
+let sombraR = 26, sombraTexel = 52 / 1024;   // medio lado del encuadre (m) y lo que mide un texel: los lee el encuadre por cuadro
 function ponerSombras(n) {
   const si = n > 0;
   if (si) {
-    const tam = n > 1 ? 2048 : 1024, r = n > 1 ? 44 : 26, sc = sol.shadow.camera;
+    const tam = n > 1 ? 2048 : 1024, r = n > 1 ? 44 : 28, sc = sol.shadow.camera;
+    sombraR = r; sombraTexel = 2 * r / tam;
     if (sol.shadow.mapSize.x !== tam) { sol.shadow.mapSize.set(tam, tam); if (sol.shadow.map) { sol.shadow.map.dispose(); sol.shadow.map = null; } }
     if (sc.right !== r) { sc.left = -r; sc.right = r; sc.top = r; sc.bottom = -r; sc.near = 1; sc.far = 400; sc.updateProjectionMatrix(); }
     sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.04;
@@ -308,16 +338,23 @@ let composer = null;
 // Sin post-proceso, una viñeta CSS (#vineta en index.html) da el mismo marco por casi nada.
 document.body.classList.add('sin-post');
 const GRADO = {
-  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 } },
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; varying vec2 vUv;
-    void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-      c.rgb = mix(vec3(l), c.rgb, uSat); vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
+  // Correccion de color (trabaja en lineal, antes de OutputPass): saturacion, contraste con pivote en el tono
+  // medio de la escena (uCon), sombras un pelo frias y luces un pelo calidas (uTono), hombro suave para que lo muy
+  // brillante no se queme en blanco plano, y viñeta.
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; varying vec2 vUv;
+    void main() { vec4 c = texture2D(tDiffuse, vUv); c.rgb = max(c.rgb, 0.0); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+      c.rgb = mix(vec3(l), c.rgb, uSat);
+      c.rgb = pow(c.rgb / 0.4, vec3(uCon)) * 0.4;
+      c.rgb *= mix(vec3(1.0), mix(vec3(0.95, 0.985, 1.06), vec3(1.045, 1.01, 0.95), smoothstep(0.02, 0.55, l)), uTono);
+      vec3 h = max(c.rgb - 0.78, 0.0); c.rgb = min(c.rgb, 0.78) + h / (1.0 + h * 4.5);
+      vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
 };
 // Se enciende y apaga en vivo (menu de graficos); los modulos se descargan la primera vez.
 let postCargando = false;
 function ponerPost(si) {
-  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; } document.body.classList.add('sin-post'); return; }
+  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; gradoU = null; } document.body.classList.add('sin-post'); return; }
   if (composer || postCargando || PRUEBA_SIN_POST()) return;
   postCargando = true;
   Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import('three/addons/postprocessing/' + n + '.js'))).then(([E, R, B, O, S]) => {
@@ -327,10 +364,12 @@ function ponerPost(si) {
     const c = new E.EffectComposer(render, rt);
     c.addPass(new R.RenderPass(escena, camara));
     c.addPass(new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92));
-    c.addPass(new S.ShaderPass(GRADO));
+    const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms;
+    c.addPass(gp);
     c.addPass(new O.OutputPass());
     c.setPixelRatio(render.getPixelRatio()); c.setSize(w, h);
     composer = c; document.body.classList.remove('sin-post');
+    try { acabadoLuz(acabZ, acabDia, acabNub); } catch (e) {}
   }).catch(e => console.warn('[3D] sin post-proceso', e)).then(() => { postCargando = false; });
 }
 if (GFX.post) ponerPost(true);
@@ -391,6 +430,7 @@ function aplicarGfx(parcial) {
   if (('nivel' in p || 'px' in p || 'din' in p || pxAct > max) && Math.abs(pxAct - max) > 0.005) ponerPx(max);
   if ('nivel' in p || 'lejos' in p || 'din' in p || GFX.lejos !== lejosAntes) { lejosDin = Q.lejos; try { ambiente(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }
   try { musica.ligera(POBRE || GFX.fx === 0); } catch (e) {}
+  try { acabadoLuz(acabZ, acabDia, acabNub); FX.calidad(GFX.fx >= 1 && FINO()); } catch (e) {}
   lentas = 0; buenas = 0; resT = 0;
   try { if (MENU) MENU.refrescar(); } catch (e) {}
   for (const f of oyentesGfx) { try { f(GFX); } catch (e) {} }
@@ -528,6 +568,7 @@ const bruma = (() => {
   } catch (e) { return null; }
 })();
 const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL, POBRE || PARCO, ['baja', 'media', 'alta'][GFX.fx]);
+FX.calidad(GFX.fx >= 1 && FINO());
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
 const lluvia = (() => {
   const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
@@ -574,6 +615,7 @@ function ambiente(z) {
   if (z === 'pueblo') sol.color.lerp(SOL_PUEBLO, 0.32 * dia * (1 - ocaso));
   const a = (h - 6) / 24 * Math.PI * 2;
   solDir.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
+  acabadoLuz(z, dia, nub);
   const fijo = z === 'cueva' || z === 'eter';   // ni dia ni noche: siempre su cielo
   cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, fijo ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, fijo ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
@@ -689,6 +731,27 @@ function crearTerreno() {
     pos.setY(i, h);
     colorSuelo(x, z, h, c);
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  // Acabado del suelo (de calidad media para arriba; se decide al cargar, como la vegetacion): manchas grandes
+  // de pasto mas seco o mas fresco (ruido suave a dos escalas) y oclusion por relieve (hondonadas mas oscuras,
+  // lomas un pelo mas claras). Solo cambia el color por vertice del terreno: cero coste por cuadro, y el
+  // minimapa (colorSuelo) no se toca.
+  if (FINO()) {
+    const N = SEG + 1, paso = LADO / SEG;
+    const suave = (x, z, esc, s) => {
+      const fx = x / esc, fz = z / esc, x0 = Math.floor(fx), z0 = Math.floor(fz), tx = fx - x0, tz = fz - z0, sx = tx * tx * (3 - 2 * tx), sz = tz * tz * (3 - 2 * tz);
+      const a = hashR(x0, z0, s), b = hashR(x0 + 1, z0, s), c2 = hashR(x0, z0 + 1, s), d = hashR(x0 + 1, z0 + 1, s);
+      return (a + (b - a) * sx) * (1 - sz) + (c2 + (d - c2) * sx) * sz;
+    };
+    for (let iz = 0; iz < N; iz++) for (let ix = 0; ix < N; ix++) {
+      const i = iz * N + ix, x = pos.getX(i), z = pos.getZ(i), h = pos.getY(i);
+      const hl = pos.getY(iz * N + Math.max(0, ix - 1)), hr = pos.getY(iz * N + Math.min(SEG, ix + 1)), hu = pos.getY(Math.max(0, iz - 1) * N + ix), hd = pos.getY(Math.min(SEG, iz + 1) * N + ix);
+      const curva = ((hl + hr + hu + hd) / 4 - h) / paso;   // > 0: hondonada; < 0: loma
+      const ao = 1 - clamp(curva * 2.2, -0.08, 0.28);
+      const n = (suave(x, z, 30, 21) - 0.5) * 0.65 + (suave(x, z, 9, 22) - 0.5) * 0.35;   // -0.5..0.5
+      const k = ao * (1 + n * 0.34);
+      col[i * 3] *= k * (1 + n * 0.3); col[i * 3 + 1] *= k; col[i * 3 + 2] *= k * (1 - n * 0.22);
+    }
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
@@ -916,6 +979,9 @@ function crearFlora() {
   };
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
   const matsF = {}, celdas = new Map();
+  // De calidad media para arriba, cada arbol y cada mata varia tambien de tono y pierde algo de saturacion
+  // (el verde puro de todas las copas iguales aplanaba el bosque). Se decide al cargar.
+  const floraFina = FINO();
   for (const tipo in tipos) {
     const todos = tipos[tipo];
     const porCelda = new Map();
@@ -935,7 +1001,7 @@ function crearFlora() {
             e.set(0, t.rot, 0); q.setFromEuler(e);
             const k = t.s * base; sc.set(k, k, k); v.set(t.x, t.y - 0.12, t.z);
             m4.compose(v, q, sc); im.setMatrixAt(i, m4);
-            col.set(t.color || TINTE_ROCA[t.zona] || '#5f8f4a').offsetHSL(0, 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * 0.12);
+            col.set(t.color || TINTE_ROCA[t.zona] || '#5f8f4a').offsetHSL(floraFina ? (hashR(t.x | 0, t.z | 0, 12) - 0.5) * 0.05 : 0, floraFina ? -0.1 - hashR(t.x | 0, t.z | 0, 13) * 0.14 : 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * (floraFina ? 0.17 : 0.12));
             im.setColorAt(i, col);
           });
           im.computeBoundingSphere();
@@ -9456,8 +9522,24 @@ function cuadroBucle(t) {
   if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
   estrellas.position.copy(camara.position);
   // El sol (y su sombra) siguen al duende.
-  sol.target.position.set(P.x, P.y, P.z);
-  sol.position.set(P.x + solDir.x * 0.5, P.y + solDir.y * 0.5, P.z + solDir.z * 0.5);
+  if (sol.castShadow) {
+    // Encuadre de la sombra: se adelanta hacia donde mira la camara (lo que queda a la espalda no se ve) y se
+    // ajusta a la rejilla de texeles del mapa, para que los bordes no bailen al caminar.
+    const fx = P.x - camara.position.x, fz = P.z - camara.position.z, fl = Math.hypot(fx, fz) || 1, ad = sombraR * 0.3;
+    let cx = P.x + fx / fl * ad, cz = P.z + fz / fl * ad, cy = P.y;
+    // Base del plano de la luz: d = hacia el sol, r = horizontal y perpendicular a d, u = r × d (ortonormales).
+    const dl = Math.hypot(solDir.x, solDir.y, solDir.z) || 1, dx = solDir.x / dl, dy = solDir.y / dl, dz = solDir.z / dl;
+    const rl = Math.hypot(dz, dx) || 1, rx = dz / rl, rz = -dx / rl;
+    const ux = -dy * rz, uy = rz * dx - rx * dz, uz = dy * rx;
+    const a = cx * rx + cz * rz, b = cx * ux + cy * uy + cz * uz;
+    const da = Math.round(a / sombraTexel) * sombraTexel - a, db = Math.round(b / sombraTexel) * sombraTexel - b;
+    cx += rx * da + ux * db; cy += uy * db; cz += rz * da + uz * db;
+    sol.target.position.set(cx, cy, cz);
+    sol.position.set(cx + solDir.x * 0.5, cy + solDir.y * 0.5, cz + solDir.z * 0.5);
+  } else {
+    sol.target.position.set(P.x, P.y, P.z);
+    sol.position.set(P.x + solDir.x * 0.5, P.y + solDir.y * 0.5, P.z + solDir.z * 0.5);
+  }
   moverLluvia(dt, t);
   // Linterna del duende: un charco de luz calida bajo sus pies de noche (fuera de cueva y Abismo).
   luzDuende.visible = nocheK > 0.5 && !enCueva(P.x) && !enAbismo(P.x);
