@@ -9,6 +9,8 @@
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
 <style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate,html.anuncio #roadmap,html.anuncio .soc.pump,html.anuncio a[href*="duendesolana420"]{display:none!important;}</style>
+<!-- .solo-anuncio: lo contrario de .solo-cripto (texto del juego que reemplaza al del token en modo anuncio) -->
+<style>.solo-anuncio{display:none!important;}html.anuncio .solo-anuncio{display:revert!important;}html.anuncio #utilidad,html.anuncio #como-comprar,html.anuncio .franja-token{display:none!important;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
@@ -26,6 +28,7 @@
 <meta property="og:image:alt" content="Duende Quest Online, el MMORPG de los duendes: juega gratis en la web y en Telegram">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@elduendesolana">
 <meta name="twitter:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
@@ -164,9 +167,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- El poster del trailer es lo mas grande de la primera pantalla: que baje ya, sin esperar al <video> -->
 <link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
-<!-- Fuente pixel sin bloquear el primer pintado (display=swap ya usa la de sistema mientras carga) -->
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
+<!-- Fuente de títulos (Cinzel, la misma de ORIGINS) sin bloquear el primer pintado: display=swap usa la serif del sistema mientras carga -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet"></noscript>
 <style>
 /* Paleta sobria comun (ver guia de diseno, oct-2026). Los nombres viejos de
    esta pagina (--green, --yellow, ...) se mantienen porque los usan estilos
@@ -773,6 +776,8 @@ section[id]{scroll-margin-top:72px;}
 .faq-cta{text-align:center;margin-top:2rem;}
 .faq-cta p{font-size:14px;color:var(--txt2);margin-top:.8rem;}
 </style>
+<!-- Capa de marca de la portada (nov-2026): variables, héroe, franja del token, utilidad y cómo comprar -->
+<link rel="stylesheet" href="/css/portada.css?v=372">
 </head>
 <body>
 
@@ -788,18 +793,18 @@ section[id]{scroll-margin-top:72px;}
     Duende Quest
   </a>
   <ul class="nav-links">
+    <li class="solo-cripto"><a href="#trust">Token</a></li>
+    <li class="solo-cripto"><a href="#como-comprar">Cómo comprar</a></li>
     <li><a href="#que-es">El juego</a></li>
-    <li><a href="#telegram">Telegram</a></li>
     <li><a href="#ranking">Ranking</a></li>
     <li><a href="#community">Comunidad</a></li>
-    <li class="solo-cripto"><a href="#tokenomics">Token</a></li>
     <li><a href="#nft-store">Tienda</a></li>
     <li class="solo-cripto"><a href="#roadmap">Hoja de ruta</a></li>
     <li><a href="#faq">Preguntas</a></li>
   </ul>
   <div class="nav-right">
     <a class="nav-play" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a">⬇ Instalar</a>
-    <a class="nav-play" href="/jugar/?web=1">Jugar</a>
+    <a class="nav-play" href="/jugar/?web=1">Jugar gratis</a>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>
       <span class="dot"></span>
@@ -813,33 +818,76 @@ section[id]{scroll-margin-top:72px;}
 
 <!-- ========== HERO ========== -->
 <section class="hero" aria-labelledby="hero-h1">
-  <img class="hero-coin" src="assets/ui/coin.png" alt="Logo de Duende Quest: la moneda pixel art del duende" id="hero-coin" width="88" height="88">
-  <p class="hero-blink">Juego peruano · Pixel art · Multijugador</p>
-  <a class="hero-nuevo" href="/novedades"><span id="nuevo-temp">Nuevo: Semana de la T'anta Wawa (3–12 nov) · 5 mazmorras</span> <span aria-hidden="true">›</span></a>
-  <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">El juego de rol online de duendes, hecho en Perú</span></h1>
-  <p class="hero-sub">Crea tu duende, caza monstruos y vence jefes con otros jugadores. En el celular o en la PC, sin instalar nada.</p>
-  <ul class="hero-benef">
-    <li>Gratis</li>
-    <li>Sin descargas</li>
-    <li>Navegador o Telegram</li>
-    <li>Nv 60, 14 días y 30 h de juego: 2 L de chicha morada de verdad</li>
-  </ul>
-  <!-- El unico boton de la primera pantalla: /jugar/ elige el juego que mejor corre en este equipo.
-       ?web=1: quien viene de aqui no pasa a modo anuncio (js/origen.js). -->
-  <a href="/jugar/?web=1" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
+  <div class="hero-top">
+    <div class="hero-txt">
+      <a class="hero-nuevo" href="/novedades"><span id="nuevo-temp">Nuevo: Semana de la T'anta Wawa (3–12 nov) · 5 mazmorras</span> <span aria-hidden="true">›</span></a>
+      <p class="hero-blink"><span class="solo-cripto">Memecoin en Solana · Con juego jugable hoy</span><span class="solo-anuncio">Juego peruano · Multijugador · Gratis</span></p>
+      <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub"><span class="solo-cripto">La memecoin peruana que ya tiene su propio juego</span><span class="solo-anuncio">El juego de rol online de duendes, hecho en Perú</span></span></h1>
+      <p class="hero-sub"><span class="solo-cripto">$DUENDE es el token de la comunidad de Duende Quest, un MMORPG gratis en 3D y 2D que ya puedes jugar en el celular o en la PC, sin instalar nada y sin tener el token.</span><span class="solo-anuncio">Crea tu duende, caza monstruos y vence jefes con otros jugadores. En el celular o en la PC, sin instalar nada.</span></p>
+      <!-- El unico boton de jugar de la primera pantalla: /jugar/ elige el juego que mejor corre en este equipo.
+           ?web=1: quien viene de aqui no pasa a modo anuncio (js/origen.js). -->
+      <div class="hero-acciones">
+        <a href="/jugar/?web=1" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
+        <a href="#como-comprar" class="btn-sec hero-cta-token solo-cripto">Cómo comprar $DUENDE</a>
+      </div>
+      <div class="hero-ca solo-cripto">
+        <span class="hero-ca-l">Contrato en Solana</span>
+        <code class="hero-ca-addr" title="HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump">HtkZy2a4…XrFTpump</code>
+        <button type="button" class="hero-ca-copiar" data-copiar="HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" aria-label="Copiar la dirección del contrato de $DUENDE">Copiar</button>
+        <a class="hero-ca-ver" href="#trust">Verificar</a>
+      </div>
+      <ul class="hero-benef">
+        <li>Gratis y sin descargas</li>
+        <li>Navegador o Telegram</li>
+        <li class="solo-cripto">El token es opcional</li>
+        <li>Nv 60, 14 días y 30 h de juego: 2 L de chicha morada de verdad</li>
+      </ul>
+    </div>
+    <div class="hero-arte">
+      <img class="arte-foto solo-cripto" src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende, junto a maíz morado, en la playa de Chancay">
+      <img class="arte-duende solo-cripto" src="assets/lore/duende-chicha.webp" width="200" height="300" decoding="async" fetchpriority="high" alt="El Duende, la mascota de $DUENDE, brinda con un vaso de chicha morada">
+      <img class="arte-juego solo-anuncio" src="/assets/video/promo3d-poster.jpg" width="540" height="960" loading="lazy" decoding="async" alt="Duende Quest en 3D: el mundo abierto del juego">
+      <img class="hero-coin" src="assets/ui/coin.png" alt="" id="hero-coin" width="88" height="88">
+    </div>
+  </div>
+  <!-- En vivo: conectados y jugadores de hoy los da el servidor del MMO
+       (/mmo/ws por GET); el jefe mundial sale cada :00 y :30 UTC. -->
+  <div class="vivo" aria-live="polite">
+    <span class="vivo-item" id="vivo-on" hidden><span class="vivo-punto" aria-hidden="true"></span><b></b>&nbsp;jugando ahora</span>
+    <span class="vivo-item" id="vivo-hoy" hidden><b></b>&nbsp;jugaron hoy</span>
+    <span class="vivo-item jefe" id="vivo-jefe">Jefe mundial en&nbsp;<b>--:--</b></span>
+  </div>
+  <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
+</section>
+
+<!-- ========== FRANJA DEL TOKEN (solo datos que ya están en #trust y #tokenomics) ========== -->
+<section class="franja-token solo-cripto" aria-label="Datos del token $DUENDE">
+  <div class="franja">
+    <div class="franja-i"><b>1.000M</b><span>Supply fijo, sin minteo adicional</span></div>
+    <div class="franja-i"><b>0%</b><span>Impuesto de compra y de venta</span></div>
+    <div class="franja-i"><b>Revocadas</b><span>Autoridades de minteo, congelamiento y actualización</span></div>
+    <div class="franja-i"><b>pump.fun</b><span>Lanzamiento abierto, sin preventa ni reparto previo</span></div>
+  </div>
+  <p class="franja-nota">No nos creas a nosotros: <a href="#trust">compruébalo tú mismo</a> en Solscan y RugCheck.</p>
+</section>
+
+<!-- ========== LOS DOS JUEGOS ========== -->
+<section class="section" id="juegos" aria-labelledby="juegos-h">
+  <h2 class="px-title" id="juegos-h">Dos juegos, un mismo duende</h2>
+  <p class="px-sub">Elige cómo jugar. Tu personaje, tu nivel y tus skins valen en los dos.</p>
   <div class="juegos" aria-label="Elige tu juego">
     <article class="juego origins">
       <div class="juego-media">
-        <video id="hero-video" data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Tráiler de $DUENDE ORIGINS"></video>
+        <video id="hero-video" data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Tráiler de Duende Quest ORIGINS"></video>
         <button type="button" class="juego-son" id="hero-son" aria-label="Activar sonido del tráiler">🔇 Activar sonido</button>
         <span class="juego-tag">NUEVO · 3D</span>
       </div>
       <h3>$DUENDE ORIGINS</h3>
-      <ul><li>Mundo abierto 3D estilo AION</li><li>Vuela con alas y elige bando: Luz o Sombra</li><li>PvP de facciones, asedios y hermandades</li></ul>
+      <ul><li>Mundo abierto 3D para explorar a pie o volando</li><li>Vuela con alas y elige bando: Luz o Sombra</li><li>PvP de facciones, asedios y hermandades</li></ul>
       <a href="/mundo/" class="btn-main juego-btn">🌌 Jugar ORIGINS</a>
     </article>
     <article class="juego classic">
-      <div class="juego-media"><picture><source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados.webp"><img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" decoding="async" alt="Captura de $DUENDE CLASSIC: jefes en grupo en pixel art"></picture><span class="juego-tag">2D · PIXEL ART</span></div>
+      <div class="juego-media"><picture><source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados.webp"><img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" decoding="async" alt="Captura de Duende Quest CLASSIC: jefes en grupo en pixel art"></picture><span class="juego-tag">2D · PIXEL ART</span></div>
       <h3>$DUENDE CLASSIC</h3>
       <ul><li>El MMO 2D de siempre, en pixel art</li><li>6 mazmorras, la Torre y la banda del Titán</li><li>4 clases, 10 zonas hasta el nivel 60</li></ul>
       <a href="/mmo/" class="btn-tg juego-btn">⚔️ Jugar CLASSIC</a>
@@ -849,16 +897,76 @@ section[id]{scroll-margin-top:72px;}
   <div class="hero-btns">
     <a href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener" class="btn-tg">Abrir en Telegram</a>
   </div>
-  <!-- En vivo: conectados y jugadores de hoy los da el servidor del MMO
-       (/mmo/ws por GET); el jefe mundial sale cada :00 y :30 UTC. -->
-  <div class="vivo" aria-live="polite">
-    <span class="vivo-item" id="vivo-on" hidden><span class="vivo-punto" aria-hidden="true"></span><b></b>&nbsp;jugando ahora</span>
-    <span class="vivo-item" id="vivo-hoy" hidden><b></b>&nbsp;jugaron hoy</span>
-    <span class="vivo-item jefe" id="vivo-jefe">Jefe mundial en&nbsp;<b>--:--</b></span>
-  </div>
   <a class="vivo-skins" href="#nft-store"><b>4 skins exclusivas animadas</b> con poderes (Esmeralda, Sombrío, Solar y Cósmico): se compran una vez y valen en $DUENDE CLASSIC y en $DUENDE ORIGINS.</a>
   <p class="hero-more">Más opciones: <a href="#capturas">ver capturas</a> · <a href="game.html" target="_blank">modo arcade clásico</a> · <a href="#nft-store">tienda de skins</a> · <button type="button" onclick="openPumpFun()" id="btn-buy-main">token $DUENDE (opcional)</button></p>
-  <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
+</section>
+
+<!-- ========== UTILIDAD REAL HOY ========== -->
+<section class="section solo-cripto" id="utilidad" aria-labelledby="utilidad-h">
+  <h2 class="px-title" id="utilidad-h">Para qué sirve $DUENDE hoy</h2>
+  <p class="px-sub">Sin promesas: solo lo que ya existe y puedes comprobar.</p>
+  <div class="util-grid">
+    <article class="util-card">
+      <picture>
+        <source type="image/webp" srcset="assets/capturas/mmo-pueblo-jugadores-640.webp">
+        <img src="assets/capturas/mmo-pueblo-jugadores.png" width="1160" height="720" loading="lazy" decoding="async" alt="Jugadores reunidos en el pueblo de Duende Quest Online">
+      </picture>
+      <div class="util-txt">
+        <h3>Un juego que ya funciona</h3>
+        <p>Duende Quest es un MMORPG gratis: mundo abierto 3D en ORIGINS y pixel art en CLASSIC, en el navegador y en Telegram. Se juega completo sin tener el token.</p>
+        <a href="#que-es">Conoce el juego</a>
+      </div>
+    </article>
+    <article class="util-card">
+      <div class="util-skins" aria-hidden="true">
+        <img src="assets/skins/skin_king.png" width="193" height="210" loading="lazy" decoding="async" alt="">
+        <img src="assets/skins/skin_necromancer.png" width="221" height="210" loading="lazy" decoding="async" alt="">
+        <img src="assets/skins/skin_pirata.png" width="175" height="210" loading="lazy" decoding="async" alt="">
+      </div>
+      <div class="util-txt">
+        <h3>Skins con descuento</h3>
+        <p>Las skins son opcionales. Se consiguen con el oro que ganas jugando o pagando con Telegram Stars, SOL o $DUENDE, que tiene descuento. Una compra vale en los dos juegos.</p>
+        <a href="#nft-store">Ver la tienda</a>
+      </div>
+    </article>
+    <article class="util-card">
+      <img src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende">
+      <div class="util-txt">
+        <h3>La chicha morada $DUENDE</h3>
+        <p>El premio del juego es real: 2 litros de chicha morada al llegar a nivel 60, con 14 días y 30 horas de juego. Es gratis, no es un sorteo y se envía dentro del Perú.</p>
+        <a href="/chicha/?web=1">Cómo funciona</a>
+      </div>
+    </article>
+  </div>
+  <p class="sec-line util-no"><strong>Lo que $DUENDE no es:</strong> no es una inversión, no da derechos sobre el proyecto y no reparte ganancias. Su precio puede subir o bajar, incluso a cero.</p>
+</section>
+
+<!-- ========== COMO COMPRAR (mismos datos que el FAQ y #donate) ========== -->
+<section class="section solo-cripto" id="como-comprar" aria-labelledby="como-comprar-h">
+  <h2 class="px-title" id="como-comprar-h">Cómo comprar $DUENDE</h2>
+  <p class="px-sub">Es opcional: el juego entero es gratis sin el token. Si igual lo quieres, son cuatro pasos.</p>
+  <div class="compra-wrap">
+    <ol class="pasos compra-pasos">
+      <li><span class="paso-n" aria-hidden="true">1</span><div><h3>Ten una wallet de Solana</h3><p>Por ejemplo, Phantom. Guarda tu frase semilla fuera de internet: nadie de Duende Quest te la va a pedir nunca.</p></div></li>
+      <li><span class="paso-n" aria-hidden="true">2</span><div><h3>Ponle un poco de SOL</h3><p>Con SOL pagas el token y la comisión de la red. Empieza con un monto pequeño.</p></div></li>
+      <li><span class="paso-n" aria-hidden="true">3</span><div><h3>Comprueba el contrato</h3><p>Copia la dirección de esta página y revisa que sea la misma en el sitio donde compras. Hay copias con el mismo nombre.</p></div></li>
+      <li><span class="paso-n" aria-hidden="true">4</span><div><h3>Elige dónde comprar</h3><p><strong>En pump.fun</strong>, al precio del momento. O <strong>directo al creador</strong>: envías SOL (mínimo 0.1) a la tasa fija de 1 SOL = 10.000 $DUENDE, él revisa el pago y te manda los tokens a mano. Ese dinero financia el desarrollo del juego.</p>
+        <p class="compra-btns"><button type="button" class="btn-sec btn-sm" onclick="openPumpFun()">Abrir pump.fun</button> <a href="#donate" class="btn-sec btn-sm">Comprar directo al creador</a></p></div></li>
+    </ol>
+    <aside class="compra-ca" aria-label="Contrato de $DUENDE">
+      <h3>Contrato oficial</h3>
+      <p class="compra-ca-red">Red Solana · Token-2022</p>
+      <code class="compra-ca-addr">HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump</code>
+      <button type="button" class="btn-main compra-ca-copiar" data-copiar="HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump">Copiar dirección</button>
+      <ul class="compra-ca-ver">
+        <li><a href="https://solscan.io/token/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener">Ver en Solscan</a></li>
+        <li><a href="https://rugcheck.xyz/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener">Ver en RugCheck</a></li>
+        <li><a href="/token/">Paso a paso y avisos importantes</a></li>
+      </ul>
+      <p class="compra-ca-riesgo">$DUENDE es un token de entretenimiento. Su precio puede bajar a cero y nada de esto es asesoría financiera: compra solo lo que puedas permitirte perder.</p>
+    </aside>
+  </div>
+  <p class="sec-line">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
 </section>
 
 <!-- ========== STATS (dato real: jugadores registrados de la base del juego).
