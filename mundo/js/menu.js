@@ -204,7 +204,7 @@ body.cine #dq-fps{display:none}
 #v-menu .mn-det>summary{cursor:pointer;padding:12px 0;font:700 12px/1.3 var(--sans,system-ui,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:var(--txt2,#b8b0d8);list-style-position:inside}
 #v-menu .fila{padding:9px 0;min-height:48px;border-bottom:1px solid var(--mn-linea);font:500 14px/1.3 var(--sans,system-ui,sans-serif);gap:12px}
 #v-menu .fila>span{color:var(--txt,#f2efff)}
-#v-menu .fila>b{font-weight:600;color:var(--txt2,#b8b0d8);text-align:right}
+#v-menu .fila>b{font-weight:600;color:var(--txt2,#b8b0d8);text-align:right;margin-left:auto}
 #v-menu select{min-height:36px;padding:6px 10px!important;border-radius:7px!important;border:1px solid var(--mn-linea)!important;background:#1c1638!important;color:var(--txt,#f2efff)!important;font:600 13px var(--sans,system-ui,sans-serif);max-width:100%}
 #v-menu .btn.sec{background:rgba(255,255,255,.06);border:1px solid var(--mn-linea);min-height:36px}
 #v-menu a{color:var(--cian,#7dd3fc)}
@@ -224,11 +224,12 @@ body.movil #v-menu .mn-sw[aria-checked="true"]::after{transform:translateX(28px)
 body.movil #v-menu .mn-rango input{height:44px}
 /* Apaisado bajo (celular acostado): a pantalla completa, dos columnas compactas. */
 @media (max-height:500px){
- #v-menu .mn-caja{width:100vw;height:100vh;height:100dvh;border-radius:0;border-width:0;grid-template-columns:184px minmax(0,1fr);padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+ #v-menu .mn-caja{width:100vw;height:100vh;height:100dvh;border-radius:0;border-width:0;grid-template-columns:204px minmax(0,1fr);padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
  #v-menu .mn-cab{padding:6px 10px 6px 14px}
  #v-menu .mn-nav{padding:6px;gap:1px}
  #v-menu .mn-it{padding:6px 10px;font-size:13.5px}
- #v-menu .mn-it.mn-pri{margin-bottom:4px}
+ #v-menu .mn-it.mn-pri{display:none}
+ #v-menu .mn-it span{white-space:nowrap}
  #v-menu .mn-sep{margin:3px 4px}
  #v-menu .mn-cont{padding:10px 14px 16px}
 }
@@ -378,7 +379,7 @@ export function iniciarMenu(api) {
     f._c = c; filasAv[k] = f; sg.appendChild(f);
   }
   const swFps = interruptor('Contador de FPS', v => api.aplicarGfx({ verFps: v }));
-  sg.appendChild(opcion('Contador de FPS', 'Cuadros por segundo, en una esquina.', swFps.el));
+  sg.appendChild(opcion('Contador de FPS', 'Cuadros por segundo, a un lado de la pantalla.', swFps.el));
   const hueco = { graficos: h('div'), controles: h('div'), interfaz: h('div'), ayuda: h('div') };
   sg.appendChild(hueco.graficos);
   const pieG = h('div', 'mn-pie'); const bAuto = h('button', 'mn-btn sec', 'Restablecer (Automático)'); bAuto.type = 'button'; bAuto.id = 'mn-restablecer';

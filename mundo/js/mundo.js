@@ -4271,6 +4271,7 @@ function tituloZona(id) {
 
 // ── VENTANAS ──
 function abrir(id) {
+  if (id !== 'v-menu' && MENU && MENU.abierto()) MENU.cerrar();   // el mundo sigue con el menu abierto: si llega otra ventana (muerte, error...), el menu se aparta
   if (!$(id).classList.contains('on')) { sfxK('libro', 0.12); SON.tocar('clic', { vol: 0.8 }); }
   if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
   $(id).classList.add('on');
@@ -5610,10 +5611,10 @@ function abrirLlevar() {
   if (!yo) return;
   $('v-diario').querySelector('h2').textContent = 'LLEVAR MI DUENDE';
   if (soyInvitado) {
-    $('diario-c').innerHTML = '<p class="vv-p">Pide un código y escríbelo en Duende Quest dentro de <b>Telegram</b> o en tu <b>cuenta de correo</b> (en cualquier navegador o celular): ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p><p class="vv-p" id="llevar-cod" style="text-align:center;font:700 28px monospace;letter-spacing:5px;color:#ffd84a;margin:8px 0">…</p><p class="vv-p" style="font-size:12px;color:var(--txt3)">La cuenta debe ser nueva o casi (hasta Nv 5, sin compras). Usa el código antes de 10 minutos y no se lo pases a nadie.</p>';
+    $('diario-c').innerHTML = '<p class="vv-p">Pide un código y escríbelo en Duende Quest dentro de <b>Telegram</b> o en tu <b>cuenta de correo</b> (en cualquier navegador o celular): ⚙ Menú → Ayuda y soporte → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p><p class="vv-p" id="llevar-cod" style="text-align:center;font:700 28px monospace;letter-spacing:5px;color:#ffd84a;margin:8px 0">…</p><p class="vv-p" style="font-size:12px;color:var(--txt3)">La cuenta debe ser nueva o casi (hasta Nv 5, sin compras). Usa el código antes de 10 minutos y no se lo pases a nadie.</p>';
     mandar({ t: 'vincCodigo' });
   } else {
-    $('diario-c').innerHTML = '<p class="vv-p">¿Jugaste como invitado en otro navegador o celular? Allí toca ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende») y escribe aquí el código de 6 letras y números.</p><div style="display:flex;gap:6px"><input id="llevar-in" maxlength="8" autocomplete="off" placeholder="Código" style="flex:1;min-width:0;text-transform:uppercase;font:700 18px monospace;letter-spacing:3px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:rgba(0,0,0,.35);color:var(--txt)"><button class="btn" id="llevar-ok">Traer</button></div><p class="vv-p" style="font-size:12px;color:var(--txt3);margin-top:8px">Solo en una cuenta nueva o casi (hasta Nv 5, sin compras): su duende actual se archiva y juegas con el que traes.</p>';
+    $('diario-c').innerHTML = '<p class="vv-p">¿Jugaste como invitado en otro navegador o celular? Allí toca ⚙ Menú → Ayuda y soporte → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende») y escribe aquí el código de 6 letras y números.</p><div style="display:flex;gap:6px"><input id="llevar-in" maxlength="8" autocomplete="off" placeholder="Código" style="flex:1;min-width:0;text-transform:uppercase;font:700 18px monospace;letter-spacing:3px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:rgba(0,0,0,.35);color:var(--txt)"><button class="btn" id="llevar-ok">Traer</button></div><p class="vv-p" style="font-size:12px;color:var(--txt3);margin-top:8px">Solo en una cuenta nueva o casi (hasta Nv 5, sin compras): su duende actual se archiva y juegas con el que traes.</p>';
     const inp = $('llevar-in');
     inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('llevar-ok').click(); });
     $('llevar-ok').onclick = () => { const cod = inp.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };
@@ -6138,11 +6139,11 @@ function subiNivel(lv) {
   // Talentos y especializacion: se dice al desbloquearlos y en cada nivel con puntos (el libro va dentro de ⋯ en movil).
   const dondeLibro = MOVIL ? '⋯ → 📖' : '📖 (tecla P)';
   // Nv 3 con 'DuendeNNNN': una vez, se le dice que puede ponerle su nombre (gratis) para que sus amigos lo reconozcan.
-  if (lv === 3 && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) setTimeout(() => { let visto = false; try { visto = !!localStorage.getItem('dq_aviso_nombre'); localStorage.setItem('dq_aviso_nombre', '1'); } catch (e) {} if (!visto && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre en ${K('? → Ajustes', 'Más (⋯) → ?')}.`, 'ok'); }, 6000);
+  if (lv === 3 && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) setTimeout(() => { let visto = false; try { visto = !!localStorage.getItem('dq_aviso_nombre'); localStorage.setItem('dq_aviso_nombre', '1'); } catch (e) {} if (!visto && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre en ⚙ Menú → Ayuda y soporte.`, 'ok'); }, 6000);
   if (lv === TAL_PRE_NIVEL) setTimeout(() => aviso(`🌟 Nv ${lv}: elige tu primer talento en ${dondeLibro} → Talentos. A Nv 10 lo activas con un toque (elegirlo no gasta nada).`, 'ok'), 2500);
   if (lv === 9) setTimeout(() => aviso('⚔ Último nivel para cambiar de clase gratis: desde Nv 10 cuesta oro. Pruébalas en ' + dondeLibro + '.', 'ok'), 2500);
   // El aviso de la XP al morir desde Nv 10 se da en la pantalla de muerte (la primera vez), no aqui entre otros 3.
-  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 las cazas suman puntos de chicha real, pero como invitado no suman. Si quieres que cuenten, crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 6000);
+  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 las cazas suman puntos de chicha real, pero como invitado no suman. Si quieres que cuenten, crea tu cuenta gratis (tu duende pasa contigo) en ⚙ Menú → Ayuda y soporte.', 'ok'), 6000);
   if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
   else if (lv > 10) setTimeout(() => aviso(`🌟 +1 punto de talento: úsalo en ${dondeLibro} → Talentos.`, 'ok'), 1500);
   // Nv 3+, una vez por dispositivo: permiso para que el bot te escriba (Bot API 6.9).
