@@ -1194,7 +1194,8 @@ const AGUAYO = ['#c0262d', '#f2c23a', '#2f62c0', '#2a8a4a', '#e86a1a'];
 const lodObjeto = () => GFX.efectivo === 'minima' ? 2 : (GFX.efectivo === 'baja' || (MOVIL && GFX.efectivo === 'media')) ? 1 : 0;
 function objetosPropios(nombre, lista) {
   if (!PAQ || !PAQ.modelos[nombre] || !lista.length) return null;
-  const geo = PAQ.geo(nombre, lodObjeto()), o = new THREE.Object3D(), col = new THREE.Color();
+  /* Los que se repiten (faroles, puestos, barriles) van en calidad media con el nivel medio: el alto queda para alta y ultra. */
+  const geo = PAQ.geo(nombre, Math.max(lodObjeto(), lista.length > 2 && GFX.efectivo === 'media' ? 1 : 0)), o = new THREE.Object3D(), col = new THREE.Color();
   const inst = lista.length > 1 || !!lista[0].color, m = inst ? new THREE.InstancedMesh(geo, PAQ.material, lista.length) : new THREE.Mesh(geo, PAQ.material);
   lista.forEach((t, i) => {
     o.position.set(t.x, t.y != null ? t.y : alturaEn(t.x, t.z), t.z); o.rotation.set(0, t.ry || 0, 0); o.scale.setScalar(t.s || 1); o.updateMatrix();

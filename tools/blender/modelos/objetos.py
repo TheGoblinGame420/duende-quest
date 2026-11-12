@@ -256,7 +256,7 @@ def farol():
     b = caja(0.36, 0.36, 0.14, (0, 0, 0.32), marca='piedra', color=PIEDRA_OSC, bisel=0.03); p.append(b)
     # poste de hierro forjado, con un nudo a media altura
     L = N(8, 6, 4)
-    p.append(torno([(0.085, 0.38), (0.06, 0.5), (0.05, 1.5), (0.075, 1.56), (0.075, 1.62), (0.045, 1.7), (0.04, 2.52), (0.07, 2.6), (0.07, 2.64)] if _L[0] < 2 else [(0.07, 0.38), (0.045, 2.64)], L, 'liso', HIERRO))
+    p.append(torno([(0.085, 0.38), (0.06, 0.5), (0.05, 1.5), (0.075, 1.56), (0.075, 1.62), (0.045, 1.7), (0.04, 2.52), (0.07, 2.6), (0.07, 2.64)] if _L[0] < 2 else [(0.07, 0.38), (0.045, 2.64)], L, 'liso', N(HIERRO, HIERRO, '#3a2f2c')))
     # jaula: plato, cuatro barrotes, tejadillo y remate
     p.append(torno([(0.07, 2.62), (0.27, 2.66), (0.27, 2.7), (0, 2.7)], N(8, 4, 4), 'liso', HIERRO, fase=math.pi / 4))
     for k in range(4):
@@ -278,7 +278,7 @@ def farol():
     o = unir(p, 'farol')
     pintar_fn(o, lambda P, Nn, C: C * (1 + 0.25 * np.clip(ruido_fbm(P, 3.0, 2), -1, 1))[:, None])
     manchar(o, MUSGO, lambda P, Nn: (0.9 - P[:, 2] * 1.6) * (Nn[:, 2] * 0.5 + 0.7), 0.7, 5.0, 3)
-    manchar(o, '#6b3a22', lambda P, Nn: (P[:, 2] > 0.4) * (0.42 + 0.3 * ruido_fbm(P, 2.4, 9)), 0.45, 6.0, 4)   # oxido
+    manchar(o, '#6b3a22', lambda P, Nn: (P[:, 2] > 0.4) * (0.42 + 0.3 * ruido_fbm(P, 2.4, 9)), N(0.32, 0.32, 0.0), 6.0, 4)   # oxido
     desgastar(o, 0.4, 0.3)
     return suavizar(o, 40)
 
