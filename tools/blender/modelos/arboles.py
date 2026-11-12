@@ -281,7 +281,7 @@ def copa(puntas, lod, rng, radio=1.1, masas=7, tris=(640, 270, 90), aplastar=0.7
     rc = azar(semilla + 900 + lod); lista = []
     for gi, g in enumerate(gs):
         bolas = todas[gi]
-        o = masa(bolas, voxel=(0.26, 0.34, 0.5)[lod], tris=max(24, tris[lod] // len(gs)), ruido_f=(arruga, arruga * 0.8, arruga * 0.5)[lod], ruido_e=1.1, semilla=semilla + gi * 7, inflado=0.55, marca='nucleo' if nc else 'hoja')
+        o = masa(bolas, voxel=(0.26, 0.34, 0.5)[lod], tris=max(24, tris[lod] // len(gs)), ruido_f=(arruga, arruga * 0.8, arruga * 0.5)[lod], ruido_e=1.1, semilla=semilla + gi * 7, inflado=0.55, marca='nucleo' if nc and lod == 0 else 'hoja')   # en el nivel medio hay pocos carteles: la masa no se oscurece
         if nc: poner_viento(o, 0.6)
         z = pos(o)[:, 2]; z0, z1 = z.min(), z.max()
         pintar_fn(o, lambda P_, N, C: np.ones((len(P_), 3)) * (sombra + (luz - sombra) * np.clip(0.5 * (P_[:, 2] - z0) / (z1 - z0 + 1e-6) + 0.5 * (N[:, 2] * 0.5 + 0.5), 0, 1) ** 1.3)[:, None])
@@ -396,7 +396,7 @@ def _roble(lod, semilla, alto=4.4, r0=0.52, inclinar=0.5):
     rm, puntas = ramas(eje, rad, lod, azar(semilla + 2), n=5, t0=0.5, t1=0.95, largo=3.5, subir=0.8, caos=0.3, hijas=2, grosor=0.55, abrir=1.2)
     madera = corteza([tr] + rz + rm, azar(semilla + 3), cuanto_musgo=0.65, alto=alto + 2)
     cima = eje[-1] + [0, 0, 1.2]
-    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.2, masas=8, tris=(230, 164, 90), semilla=semilla, tono=(1.5, 1.35, 0.7), cartas=(190, 24), celda=0, tam=1.25)
+    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.2, masas=8, tris=(230, 164, 90), semilla=semilla, tono=(1.5, 1.35, 0.7), cartas=(190, 22), celda=0, tam=1.25)
     return mecer(unir(madera + hj))
 
 
@@ -440,7 +440,7 @@ def _abedul(lod, semilla, alto=6.4, r0=0.22):
         variar(o, 0.1, 3.0, semilla + 1)
         poner_viento(o, lambda P: np.clip(P[:, 2] / alto - 0.3, 0, 0.5))
     cima = eje[-1] + [0, 0, 0.7]
-    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=0.82, masas=8, tris=(200, 160, 80), aplastar=0.95, semilla=semilla, luz=1.45, sombra=0.45, tono=(1.6, 1.5, 0.6), arruga=0.16, cartas=(180, 26), celda=1, tam=1.1)
+    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=0.82, masas=8, tris=(200, 160, 80), aplastar=0.95, semilla=semilla, luz=1.45, sombra=0.45, tono=(1.6, 1.5, 0.6), arruga=0.16, cartas=(180, 20), celda=1, tam=1.1)
     return mecer(unir([tr] + rm + hj))
 
 
@@ -463,7 +463,7 @@ def _sauce(lod, semilla, alto=3.6, r0=0.5):
     rm, puntas = ramas(eje, rad, lod, azar(semilla + 2), n=6, t0=0.55, t1=0.97, largo=3.4, subir=1.0, caos=0.25, hijas=1, grosor=0.5, abrir=1.2, caer=0.35)
     madera = corteza([tr] + rz + rm, azar(semilla + 3), cuanto_musgo=0.8, alto=alto + 2)
     cima = eje[-1] + [0, 0, 1.4]
-    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.15, masas=7, tris=(190, 124, 70), aplastar=0.62, semilla=semilla, tono=(1.4, 1.45, 0.75), cartas=(90, 8), celda=0, tam=1.1)
+    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.15, masas=7, tris=(190, 124, 70), aplastar=0.62, semilla=semilla, tono=(1.4, 1.45, 0.75), cartas=(130, 4), celda=0, tam=1.2)
     rng = azar(semilla + 6); cor = []; c0 = np.array([eje[-1][0], eje[-1][1], 0])
     for k in range((18, 7, 0)[lod]):
         p = puntas[k % len(puntas)] + rng.normal(0, 0.55, 3) * [1, 1, 0.3]; f = (p - c0) * [1, 1, 0]; f /= np.linalg.norm(f) + 1e-6
@@ -481,7 +481,7 @@ def _selva(lod, semilla, alto=6.4, r0=0.46):
     rm, puntas = ramas(eje, rad, lod, azar(semilla + 2), n=5, t0=0.74, t1=0.98, largo=3.6, subir=0.25, caos=0.22, hijas=2, grosor=0.5, abrir=1.5)
     madera = corteza([tr] + rz + rm, azar(semilla + 3), color='#4d4033', musgo='#2f4a1c', cuanto_musgo=0.9, alto=alto + 2)
     cima = eje[-1] + [0, 0, 0.9]
-    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.45, masas=7, tris=(190, 136, 90), aplastar=0.5, semilla=semilla, tono=(1.2, 1.5, 0.8), sombra=0.3, cartas=(170, 18), celda=0, tam=1.6)
+    hj = copa(np.vstack([puntas, [cima]]), lod, azar(semilla + 4), radio=1.45, masas=7, tris=(190, 136, 90), aplastar=0.5, semilla=semilla, tono=(1.2, 1.5, 0.8), sombra=0.3, cartas=(170, 12), celda=0, tam=1.6)
     rng = azar(semilla + 6); li = []
     for k in range(4):
         a = puntas[int(rng.integers(0, len(puntas)))] + [0, 0, -0.3]
@@ -500,7 +500,7 @@ def _arbusto(lod, semilla, ancho=2.6):
         a = k * 2.4 + rng.uniform(-0.4, 0.4); d = rng.uniform(0.35, 1.05) if k else 0.0
         r = rng.uniform(0.4, 0.62) * (1.2 if k == 0 else 1.0)
         pts.append((math.cos(a) * d, math.sin(a) * d, r * 0.7 + rng.uniform(0, 0.45) * (1.1 - d) + (0.4 if k == 0 else 0)))
-    hj = copa(np.array(pts), lod, azar(semilla + 4), radio=0.52, masas=7, tris=(170, 120, 56), aplastar=0.8, semilla=semilla, tono=(1.4, 1.4, 0.7), sombra=0.3, luz=1.25, arruga=0.2, cartas=(120, 24), celda=0, tam=0.7)
+    hj = copa(np.array(pts), lod, azar(semilla + 4), radio=0.52, masas=7, tris=(170, 120, 56), aplastar=0.8, semilla=semilla, tono=(1.4, 1.4, 0.7), sombra=0.3, luz=1.25, arruga=0.2, cartas=(120, 20), celda=0, tam=0.7)
     palos = []
     for k in range(4):
         a = rng.uniform(0, 6.28); q = camino((math.cos(a) * 0.15, math.sin(a) * 0.15, HONDO * 0.4), (math.cos(a) * 0.8, math.sin(a) * 0.8, 1), rng.uniform(1.9, 2.5), 4, rng, 0.2, 0.25)

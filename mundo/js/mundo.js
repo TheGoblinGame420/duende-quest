@@ -957,10 +957,12 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
    Devuelve los que no tienen modelo propio (siguen con el kit). */
 const LIGERA = CAL === 'baja', LOD0_R = CAL === 'alta' ? 40 : LIGERA ? 22 : MOVIL ? 24 : 30, LOD1_R = CAL === 'alta' ? 60 : MOVIL ? 30 : 36, CERCA_MAX = 96;
 const mallasPropias = [], cercaPropia = new Map(), ocultasPropias = [], suciasPropias = new Set();
+/* Orilla inmediata: hay agua a 8 m o menos. Las especies de orilla (sauce) solo salen ahi; el llano del pueblo esta a 1,5 m sobre el agua pero lejos de ella, y antes se llenaba de sauces. Solo cambia la especie: ni se mueve ni se quita ningun arbol. */
+function juntoAlAgua(x, z) { for (let a = 0; a < 8; a++) { const c = Math.cos(a * 0.7854), s = Math.sin(a * 0.7854); if (alturaEn(x + c * 4, z + s * 4) <= MUNDO.agua || alturaEn(x + c * 8, z + s * 8) <= MUNDO.agua) return true; } return false; }
 function floraPropia(tipo, todos, celdas, fina, fijo) {
   const resto = [], grupos = new Map(), tocadas = new Set();
   for (const t of todos) {
-    const vars = fijo || PAQ.flora(tipo, t.zona, t.y < MUNDO.agua + 2.4);
+    const vars = fijo || PAQ.flora(tipo, t.zona, t.y < MUNDO.agua + 2.4 && juntoAlAgua(t.x, t.z));
     if (!vars) { resto.push(t); continue; }
     const vr = vars[Math.min(vars.length - 1, Math.floor(hashR(t.x | 0, t.z | 0, 11) * vars.length))];
     const kx = Math.floor(t.x / TROZO), kz = Math.floor(t.z / TROZO), k = kx + '|' + kz + '|' + vr.n;
