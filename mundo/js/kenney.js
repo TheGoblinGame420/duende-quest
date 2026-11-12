@@ -113,7 +113,7 @@ function crearKit(ind, buf) {
         v.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]).applyMatrix4(m4);
         pos[(ov + i) * 3] = v.x; pos[(ov + i) * 3 + 1] = v.y; pos[(ov + i) * 3 + 2] = v.z;
         col[(ov + i) * 3] = C[i * 3] * (k ? k.r : 1); col[(ov + i) * 3 + 1] = C[i * 3 + 1] * (k ? k.g : 1); col[(ov + i) * 3 + 2] = C[i * 3 + 2] * (k ? k.b : 1);
-        tin[ov + i] = T[i];
+        tin[ov + i] = p.t != null ? p.t : T[i];   // t: marca de obra (arquitectura.js)
       }
       const inv = sc.x * sc.y * sc.z < 0;
       for (let i = 0; i < I.length; i += 3) { idx[oi + i] = I[i] + ov; idx[oi + i + 1] = I[inv ? i + 2 : i + 1] + ov; idx[oi + i + 2] = I[inv ? i + 1 : i + 2] + ov; }
@@ -133,7 +133,7 @@ function crearKit(ind, buf) {
 // Geometria a partir de triangulos sueltos [[x,y,z]×3, color] (con indice,
 // color por vertice y sin tinte), para juntarla con fundir().
 const tcol = new THREE.Color();
-export function triangulos(lista) {
+export function triangulos(lista, tinte) {
   const pos = new Float32Array(lista.length * 9), col = new Float32Array(lista.length * 9);
   lista.forEach(([a, b, c, color], i) => {
     tcol.set(color);
@@ -142,7 +142,7 @@ export function triangulos(lista) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.setAttribute('tinte', new THREE.BufferAttribute(new Float32Array(lista.length * 3), 1));
+  g.setAttribute('tinte', new THREE.BufferAttribute(new Float32Array(lista.length * 3).fill(tinte || 0), 1));
   g.setIndex(new THREE.BufferAttribute(Uint16Array.from({ length: lista.length * 3 }, (_, i) => i), 1));
   return g;
 }
@@ -162,7 +162,9 @@ export function piezasCasa(nx, nz, sem, techo, pisos = 2) {
       const ventana = !puerta && r(i * 7 + j * 13 + lado * 3 + piso * 31) < (piso ? 0.6 : 0.45);
       const n = piso === 0 ? (puerta ? 'p_wall-door' : ventana ? 'p_wall-window-shutters' : 'p_wall')
         : (ventana ? 'p_wall-wood-window-shutters' : 'p_wall-wood');
-      piezas.push({ n, x: cx, y: piso, z: cz, ry });
+      piezas.push({ n, x: cx, y: piso, z: cz, ry, t: piso === 0 ? (puerta ? 6 : 3) : 4 });
+      // Vidriera dentro del hueco (marca 5): de noche da luz calida; una de cada cuatro queda a oscuras.
+      if (ventana) { const k = r(i * 5 + j * 11 + lado * 17 + piso * 3), col = k < 0.26 ? '#2a2018' : k < 0.6 ? '#ffb45a' : '#ff9a3c'; piezas.push({ geo: triangulos([[[0.45, 0.27, 0.3], [0.45, 0.27, -0.3], [0.45, 0.73, -0.3], col], [[0.45, 0.27, 0.3], [0.45, 0.73, -0.3], [0.45, 0.73, 0.3], col]], 5), x: cx, y: piso, z: cz, ry }); }
     }
   };
   for (let i = 0; i < nx; i++) { borde(i, nz - 1, 2); borde(i, 0, 3); }
@@ -189,9 +191,9 @@ export function piezasCasa(nx, nz, sem, techo, pisos = 2) {
     T.push(sg > 0 ? [P(...w0), P(...w3), P(...v2), vig] : [P(...w0), P(...v2), P(...w3), vig]);
   }
   // Al cambiar x por z la figura se refleja: se da la vuelta a los triangulos.
-  piezas.push({ geo: triangulos(largoX ? T : T.map(([a, b, c, k]) => [a, c, b, k])) });
+  piezas.push({ geo: triangulos(largoX ? T : T.map(([a, b, c, k]) => [a, c, b, k]), 2) });
   // Chimenea sobre un faldon.
   const ch = L - 0.8, cs = -S * 0.45;
-  piezas.push({ n: 'p_chimney', ...(largoX ? { x: ch - 0.32, z: cs } : { x: cs, z: ch - 0.32 }), y: y0 + alto - S * 0.45 * pend - 0.35, sy: 1.1 });
+  piezas.push({ n: 'p_chimney', ...(largoX ? { x: ch - 0.32, z: cs } : { x: cs, z: ch - 0.32 }), y: y0 + alto - S * 0.45 * pend - 0.35, sy: 1.1, t: 3 });
   return piezas;
 }
