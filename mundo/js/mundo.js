@@ -26,6 +26,7 @@ import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=373';
 import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=373';
 import { crearMusica } from './musica.js?v=373';
 import { crearSonidos } from './sonidos.js?v=373';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=373';
 import { construirCueva } from './cueva.js?v=373';
 import { TAPA, transparentar } from './tapa.js?v=373';
 import { construirAbismo } from './abismo.js?v=373';
@@ -340,14 +341,14 @@ let composer = null;
 // Sin post-proceso, una viñeta CSS (#vineta en index.html) da el mismo marco por casi nada.
 document.body.classList.add('sin-post');
 const GRADO = {
-  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 } },
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 }, uZona: { value: new THREE.Vector3(1, 1, 1) } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   // Correccion de color (trabaja en lineal, antes de OutputPass): saturacion, contraste con pivote en el tono
   // medio de la escena (uCon), sombras un pelo frias y luces un pelo calidas (uTono), hombro suave para que lo muy
   // brillante no se queme en blanco plano, y viñeta.
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; uniform vec3 uZona; varying vec2 vUv;
     void main() { vec4 c = texture2D(tDiffuse, vUv); c.rgb = max(c.rgb, 0.0); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-      c.rgb = mix(vec3(l), c.rgb, uSat);
+      c.rgb = mix(vec3(l), c.rgb, uSat) * uZona;
       c.rgb = pow(c.rgb / 0.4, vec3(uCon)) * 0.4;
       c.rgb *= mix(vec3(1.0), mix(vec3(0.95, 0.985, 1.06), vec3(1.045, 1.01, 0.95), smoothstep(0.02, 0.55, l)), uTono);
       vec3 h = max(c.rgb - 0.78, 0.0); c.rgb = min(c.rgb, 0.78) + h / (1.0 + h * 4.5);
@@ -432,7 +433,7 @@ function aplicarGfx(parcial) {
   if (('nivel' in p || 'px' in p || 'din' in p || pxAct > max) && Math.abs(pxAct - max) > 0.005) ponerPx(max);
   if ('nivel' in p || 'lejos' in p || 'din' in p || GFX.lejos !== lejosAntes) { lejosDin = Q.lejos; try { ambiente(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }
   try { musica.ligera(POBRE || GFX.fx === 0); } catch (e) {}
-  try { acabadoLuz(acabZ, acabDia, acabNub); FX.calidad(GFX.fx >= 1 && FINO()); } catch (e) {}
+  try { acabadoLuz(acabZ, acabDia, acabNub); FX.calidad(GFX.fx >= 1 && FINO()); ATM.calidad(GFX.efectivo); } catch (e) {}
   lentas = 0; buenas = 0; resT = 0;
   try { if (MENU) MENU.refrescar(); } catch (e) {}
   for (const f of oyentesGfx) { try { f(GFX); } catch (e) {} }
@@ -509,6 +510,13 @@ const bruma = (() => {
 })();
 const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL, POBRE || PARCO, ['baja', 'media', 'alta'][GFX.fx]);
 FX.calidad(GFX.fx >= 1 && FINO());
+// Atmosfera (atmosfera.js): niebla baja, rayos de luz, rayo de tormenta, salpicaduras y tinte por zona.
+const ATM = crearAtmosfera({ escena, alturaEn, aguaEn: x => aguaEn(x), movil: MOVIL });
+ATM.calidad(GFX.efectivo);
+const atmE = { t: 0, dt: 0, cuadro: 0, px: 0, py: 0, pz: 0, zona: 'pueblo', hora: 12, dia: 1, nocheK: 0, ocaso: 0, clima: 'despejado', solDir: null, niebla: null, FX: null, fx: 0, llano: 0 };
+let atmHora = 12, atmDia = 1, atmOcaso = 0, atmCampana = -1, atmFuego = 0, atmAgua = 0;
+window.__dqAtm = () => ATM.info();   /* solo lectura, para depurar y para las pruebas */
+window.__dqAtm.rayo = ms => ATM.relampago(performance.now() + (ms || 0), camara, camYaw);
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
 const lluvia = (() => {
   const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
@@ -567,6 +575,10 @@ function ambiente(z) {
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
   if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
+  /* Tinte de la zona tambien en la luz ambiente (sin post-proceso no hay pase de color); hora y ocaso para atmosfera.js. */
+  { const gz = GRADO_ZONA[z]; if (gz && !composer) { hemi.color.r *= gz[0]; hemi.color.g *= gz[1]; hemi.color.b *= gz[2]; } }
+  atmHora = h; atmDia = dia; atmOcaso = fijo ? 0 : ocaso;
+  campanasPueblo(h, z);
   hemi.groundColor.set(SUELO[z] || '#3a3040').multiplyScalar(0.5);
   const lejos = lejosDin;
   nieblaObj = z === 'eter' ? [90, 420] : z === 'cueva' ? [6, 55] : cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
@@ -616,7 +628,27 @@ function moverLluvia(dt, t) {
   lluvia.m.geometry.attributes.position.needsUpdate = true;
   lluvia.m.position.set(camara.position.x, camara.position.y - 12, camara.position.z);
   // Relampagos en la tormenta.
-  if (climaAct === 'tormenta' && t > sigRelampago) { relampagoT = t; sigRelampago = t + 7000 + Math.random() * 12000; musica.trueno(); }
+  if (climaAct === 'tormenta' && t > sigRelampago) { relampagoT = t; sigRelampago = t + 7000 + Math.random() * 12000; musica.trueno(); try { ATM.relampago(t, camara, camYaw); } catch (e) {} }
+}
+// Campanas lejanas del pueblo al dar las 6, las 12 y las 18 (hora del mundo): se oyen en el pueblo y, mas flojas, en sus alrededores.
+function campanasPueblo(h, z) {
+  const hh = Math.floor(h);
+  if (hh === atmCampana) return;
+  const antes = atmCampana; atmCampana = hh;
+  if (antes < 0 || (hh !== 6 && hh !== 12 && hh !== 18) || PRUEBA.has('hora')) return;
+  const d = Math.hypot(P.x - MUNDO.pueblo.x, P.z - MUNDO.pueblo.z);
+  if (d < 320 && z !== 'cueva' && z !== 'eter' && musica.campanas) musica.campanas(hh === 12 ? 4 : 3, clamp(1.15 - d / 320, 0.15, 1));
+}
+// Fuego y agua cercanos (cada medio segundo): faroles encendidos a menos de 10 m y orilla a menos de 14 m.
+function ambienteCercano() {
+  let f = 0, a = 0;
+  if (P.x < 1900) {
+    if (nocheK > 0.45) for (const q of faroles) { const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < 10) f = Math.max(f, 1 - d / 10); }
+    const na = aguaEn(P.x);
+    for (let i = 0; i < 8; i++) { const an = i * 0.7854; for (let r = 4; r <= 14; r += 5) if (alturaEn(P.x + Math.cos(an) * r, P.z + Math.sin(an) * r) < na - 0.15) { a = Math.max(a, 1 - (r - 4) / 14); break; } }
+  }
+  if (Math.abs(f - atmFuego) > 0.04 || (f === 0 && atmFuego)) { atmFuego = f; if (musica.fuego) musica.fuego(f); }
+  if (Math.abs(a - atmAgua) > 0.04 || (a === 0 && atmAgua)) { atmAgua = a; if (musica.agua) musica.agua(a); }
 }
 let fovBase = 60;
 function ajustar() {
@@ -9608,7 +9640,7 @@ function cuadroBucle(t) {
   escena.fog.near = lerp(escena.fog.near, nieblaObj[0], Math.min(1, dt)); escena.fog.far = lerp(escena.fog.far, nieblaObj[1], Math.min(1, dt));
   const flash = t - relampagoT < 120 || (t - relampagoT > 220 && t - relampagoT < 300);
   hemi.intensity = 1.5 * hemiBase + (flash ? 2.4 : 0);
-  if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
+  if (flash) { escena.background.lerp(C('#e8ecff'), 0.5); escena.fog.color.lerp(BLANCO_H, 0.35); }   /* el relampago tambien enciende la lejania */
   estrellas.position.copy(camara.position);
   // El sol (y su sombra) siguen al duende.
   if (sol.castShadow) {
@@ -9695,8 +9727,14 @@ function cuadroBucle(t) {
   if (gestosVivos.size) moverGestos(dt);
   if (toca(4, 500, t)) {   // ambiente de motas por zona (particulas.js)
     const z = zonaEn(P.x, P.z), nch = nocheK > 0.5;
-    FX.ambiente(z === 'eter' || z === 'abismo' ? 'eter' : z === 'cueva' || z === 'cavernas' ? 'polvo' : z === 'cumbres' ? 'nieve' : z === 'tormenta' || z === 'castillo' ? 'ceniza' : z === 'desierto' ? 'arena' : z === 'selva' || z === 'pueblo' ? (nch ? 'luciernagas' : 'hojas') : nch ? 'luciernagas' : '');
+    FX.ambiente(z === 'eter' || z === 'abismo' ? 'eter' : z === 'cueva' || z === 'cavernas' ? 'polvo' : z === 'cumbres' ? 'nieve' : z === 'tormenta' || z === 'castillo' ? 'ceniza' : z === 'desierto' ? 'arena' : z === 'selva' || z === 'pueblo' ? (nch ? 'luciernagas' : 'hojas') : nch ? 'luciernagas' : z === 'noche' ? 'esporas' : z === 'amanecer' || z === 'acantilados' ? 'polen' : '');
+    try { ambienteCercano(); } catch (e) {}
   }
+  /* Atmosfera: niebla baja, rayos de luz, salpicaduras y tinte de la zona (atmosfera.js). */
+  atmE.t = t; atmE.dt = dt; atmE.cuadro = cuadro; atmE.px = P.x; atmE.py = P.y; atmE.pz = P.z; atmE.zona = zC; atmE.hora = atmHora; atmE.dia = atmDia; atmE.nocheK = nocheK; atmE.ocaso = atmOcaso;
+  atmE.clima = climaAct; atmE.solDir = solDir; atmE.niebla = nieblaAct; atmE.FX = FX; atmE.fx = PARCO ? 0 : GFX.fx;
+  ATM.cuadro(atmE);
+  if (gradoU && gradoU.uZona) { gradoU.uZona.value.copy(ATM.est.tinte); gradoU.uSat.value = 1.08 * ATM.est.sat; }
   guardaNaN();
   vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
   empacarSombras();

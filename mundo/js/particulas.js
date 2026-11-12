@@ -76,6 +76,8 @@ const AMB = {
   nieve:       { m: 4, c: '#ffffff', c2: '#e0f2fe', corte: 0.4,  tam: 0.16, frac: 1,    add: false, a: 0.85 },
   ceniza:      { m: 5, c: '#57534e', c2: '#fb923c', corte: 0.3,  tam: 0.15, frac: 0.8,  add: false, a: 0.85 },
   arena:       { m: 6, c: '#d6b47a', c2: '#ecd3a0', corte: 0.4,  tam: 0.22, frac: 1,    add: false, a: 0.5 },
+  polen:       { m: 2, c: '#f3e3a0', c2: '#fff6d0', corte: 0.5,  tam: 0.1,  frac: 0.5,  add: true,  a: 0.55 },
+  esporas:     { m: 1, c: '#9be8b0', c2: '#c9b8ff', corte: 0.25, tam: 0.11, frac: 0.55, add: true,  a: 0.6 },
 };
 
 // cal (opcional): 'alta' | 'media' | 'baja' — fija el tamaño maximo en pantalla de cada particula.
