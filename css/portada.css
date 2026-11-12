@@ -249,3 +249,126 @@ footer{background:#06040f;border-top-color:rgba(196,181,253,.14);padding:3rem 1.
 
 /* ── 12. Movimiento reducido ── */
 @media(prefers-reduced-motion:reduce){.hero-arte .hero-coin{animation:none;}}
+
+/* ── 13. Ambiente medieval místico (12-nov-2026) ──
+   Piedra oscura, pergamino, filete dorado envejecido y niebla baja. Solo CSS: redefine
+   las variables de arriba, así que lo demás cambia solo. La mascota y las skins no se tocan. */
+:root{
+  --bg:#0c0b0f;--panel:#16141a;--panel2:#1f1c25;--borde:#39323c;
+  --txt:#efe7d6;--txt2:#beb4a2;--txt3:#9c9382;
+  --oro:#e0b85a;--oro2:#a57c2c;--yellow:#e0b85a;--amarillo:#e0b85a;
+  --pri:#6a3fc0;--pri2:#59329f;--pri-txt:#cbbdf3;--cian:#cbbdf3;--cyan:#cbbdf3;
+  --dark:#0c0b0f;--card:#16141a;
+  --marco:rgba(190,150,72,.36);--pergamino:#e6d8b8;--tinta:#2a1f12;
+  --sombra:0 10px 30px rgba(0,0,0,.5);
+  --brillo:linear-gradient(180deg,rgba(255,240,205,.045),rgba(255,240,205,0) 42%);
+}
+/* Muro de sillares: juntas oscuras con un canto apenas iluminado */
+body{background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='128'%3E%3Cpath d='M0 .5H220M0 64.5H220M70.5 0V64M180.5 64V128' stroke='%23000' stroke-opacity='.55'/%3E%3Cpath d='M0 1.5H220M0 65.5H220M71.5 1V64M181.5 65V128' stroke='%23fff' stroke-opacity='.045'/%3E%3Cpath d='M0 0H70V64H0zM180 64H220V128H180z' fill='%23fff' fill-opacity='.012'/%3E%3Cpath d='M70 0H220V64H70z' fill='%23000' fill-opacity='.1'/%3E%3C/svg%3E");}
+/* Niebla baja, muy tenue, detrás de todo */
+body::before{content:'';position:fixed;inset:-8% -20%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(42% 30% at 18% 82%,rgba(176,186,204,.075),transparent 70%),
+    radial-gradient(46% 28% at 82% 58%,rgba(150,138,196,.06),transparent 70%),
+    radial-gradient(62% 30% at 50% 104%,rgba(206,196,172,.085),transparent 70%);
+  animation:niebla 40s ease-in-out infinite alternate;}
+@keyframes niebla{to{transform:translate3d(5%,-2%,0);}}
+nav{background:rgba(12,11,15,.88);border-bottom-color:var(--marco);}
+/* Héroe: luz cálida de antorcha a un lado, violeta arcano al otro, y el muro detrás */
+.hero{background:
+    radial-gradient(46rem 30rem at 84% 10%,rgba(226,150,60,.17),transparent 62%),
+    radial-gradient(40rem 26rem at 0% 0%,rgba(106,63,192,.17),transparent 60%),
+    linear-gradient(180deg,rgba(12,11,15,.25) 0%,var(--bg) 100%);
+  border-bottom-color:var(--marco);}
+.hero-arte::before{background:radial-gradient(closest-side,rgba(224,184,90,.22),rgba(106,63,192,.12) 58%,transparent 72%);}
+.hero-arte::after{border-color:var(--marco);}
+.hero-nuevo,.hero-ca,.vivo-item{background:rgba(22,20,26,.8);border-color:var(--marco);}
+/* Marcos: filete dorado envejecido con un segundo filete interior */
+.about-card,.tcard,.trust-card,.nuevo-card,.booster-card,.skin-card,.tier-card,.arsenal-card,.nft-card,.game-feat,.ls-card,.creador-box,.donate-card,.apoyo-card,.exc-wrap,.pasos li,.faq details,.util-card,.compra-ca,.franja,.juego{
+  border-color:var(--marco);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 2px rgba(224,184,90,.06),var(--sombra);
+}
+.juego{background:var(--brillo),var(--panel);}
+.franja{background:rgba(190,150,72,.3);}
+.faq details[open]{border-color:rgba(224,184,90,.6);}
+.util-card>picture,.util-card>img{background:#121016;}
+.util-skins{background:radial-gradient(closest-side at 50% 85%,rgba(226,150,60,.3),transparent),#121016;}
+.sec-line{border-color:var(--marco);background:rgba(22,20,26,.86);}
+footer{background:#08070a;border-top-color:var(--marco);}
+/* Filete de los títulos: dos trazos y un rombo */
+.px-title::after,.pestanas .pestanas-t::after{content:'◆';display:flex;align-items:center;justify-content:center;width:150px;height:12px;border-radius:0;margin:.7rem auto 0;font:400 9px/1 Georgia,serif;color:var(--oro);
+  background:linear-gradient(90deg,transparent,var(--oro2) 34%,transparent 44%,transparent 56%,var(--oro2) 66%,transparent) center/100% 1px no-repeat;}
+@media(prefers-reduced-motion:reduce){body::before{animation:none;}}
+
+/* ── 14. Hoja de ruta: tres pergaminos (hecho, en curso, después) ── */
+.ruta{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start;text-align:left;}
+.ruta-col{padding:1.3rem 1.3rem 1.4rem;border-radius:10px;color:var(--tinta);border:1px solid #8a6a2c;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 30%),radial-gradient(120% 90% at 50% 0,#eee2c4,#d9c8a0);
+  box-shadow:inset 0 0 0 3px rgba(138,106,44,.18),inset 0 0 40px rgba(120,84,30,.22),var(--sombra);}
+.ruta-estado{display:inline-block;margin-bottom:.6rem;padding:.25rem .6rem;border:1px solid currentColor;border-radius:6px;font:800 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;}
+.ruta-col.hecho .ruta-estado{color:#1d5631;}
+.ruta-col.curso .ruta-estado{color:#6b3a00;}
+.ruta-col.despues .ruta-estado{color:#463f58;}
+.ruta-col h3{margin:0 0 .7rem;font-family:var(--titulo);font-weight:800;font-size:18px;line-height:1.25;letter-spacing:.02em;color:#3a2810;}
+.ruta-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+.ruta-col li{position:relative;padding-left:1.3rem;font-size:15px;line-height:1.45;color:var(--tinta);}
+.ruta-col li::before{content:'';position:absolute;left:.15rem;top:.5em;width:7px;height:7px;transform:rotate(45deg);background:#8a6a2c;}
+.ruta-col.hecho li::before{background:#1d5631;}
+.ruta-col a{color:#4a2a8a;font-weight:700;}
+.ruta-nota{margin-top:.9rem;padding-top:.7rem;border-top:1px solid rgba(138,106,44,.5);font-size:13.5px;line-height:1.45;color:#3a2e1c;}
+@media(max-width:900px){.ruta{grid-template-columns:1fr;max-width:520px;}}
+
+/* ── 15. Celular: lo secundario, plegado (lo arma js/portada-orden.js; sin JavaScript queda todo abierto) ── */
+.plg-btn{-webkit-appearance:none;appearance:none;display:inline;margin:0;padding:0;border:0;background:none;font:inherit;color:inherit;letter-spacing:inherit;text-align:inherit;cursor:default;}
+.plg-grupo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.8rem;max-width:760px;min-height:48px;margin:0 auto 1rem;padding:.6rem 1rem;border:1px solid var(--marco);border-radius:12px;background:var(--panel);font:700 15px var(--sans);color:var(--txt);text-align:left;}
+.plg-grupo>summary::-webkit-details-marker{display:none;}
+.plg-grupo>summary::after{content:'+';flex:none;font:400 22px/1 var(--sans);color:var(--oro);}
+.plg-grupo[open]>summary::after{content:'−';}
+@media(min-width:701px){.plg-grupo>summary{display:none;}}
+@media(max-width:700px){
+  .section{padding:1.7rem 16px;}
+  section.pestanas{padding-top:1.7rem;}
+  .px-sub{font-size:16px;}
+  /* Pasos y novedades: el título queda a la vista y el detalle se abre con un toque */
+  .plg-btn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;min-height:44px;cursor:pointer;}
+  .plg-btn::after{content:'+';flex:none;font:400 22px/1 var(--sans);color:var(--oro);}
+  .plg.plg-ab .plg-btn::after{content:'−';}
+  .plg:not(.plg-ab) .plg-c{display:none;}
+  .pasos li.plg{align-items:center;padding:.45rem .9rem;}
+  .pasos li.plg.plg-ab{align-items:flex-start;padding-bottom:.9rem;}
+  .pasos li.plg>div{flex:1;min-width:0;}
+  .pasos li.plg h3{margin:0;}
+  .nuevo-card.plg{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:.6rem;padding:.45rem .9rem;}
+  .nuevo-card.plg.plg-ab{padding-bottom:.9rem;}
+  .nuevo-card.plg b{margin:0;}
+  .nuevo-card.plg p{grid-column:1/-1;}
+  /* Utilidad: tarjetas apaisadas, con la imagen a un lado */
+  .util-grid{gap:.7rem;}
+  .util-card{flex-direction:row;border-radius:14px;}
+  .util-card>picture,.util-card>img,.util-skins{flex:none;width:96px;aspect-ratio:auto;}
+  .util-card>picture img,.util-card>img{aspect-ratio:auto;height:100%;}
+  .util-skins{align-items:center;padding:6px;}
+  .util-skins img{display:none;}
+  .util-skins img:nth-child(2){display:block;width:100%;height:auto;max-height:100%;object-fit:contain;}
+  .util-txt{padding:.5rem .9rem .3rem;gap:.1rem;text-align:left;}
+  .util-txt h3{font-size:17px;}
+  .util-card.plg:not(.plg-ab)>picture,.util-card.plg:not(.plg-ab)>.util-skins{width:72px;}
+  /* Qué es: sin la imagen de cabecera y con el texto plegado; los botones siguen a la vista */
+  #que-es .about-card{padding:.8rem 1rem 1rem;gap:.2rem;}
+  #que-es .about-card picture{display:none;}
+  /* Los dos juegos: la imagen ocupa menos alto */
+  .juego-media{aspect-ratio:16/9;max-height:none;}
+  .franja-i{padding:.8rem .9rem;}
+  /* «Una skin, dos juegos» ya lo dice el aviso de las skins exclusivas, que además lleva a la tienda */
+  #juegos .una-skin{display:none;}
+  /* Dentro de una pestaña, el título de la sección repite el de la pestaña */
+  .pestanas-panel>.section>.px-title{display:none;}
+  .faq summary{padding:.7rem 1rem;}
+  .compra-ca-ver{flex-direction:row;flex-wrap:wrap;gap:0 1.1rem;}
+  footer{padding:2rem 16px;}
+  .util-txt p{font-size:14px;line-height:1.45;}
+  .util-no{margin-top:1rem;}
+  /* La captura del celular ya está en «Capturas»: aquí se ahorra el alto */
+  #empieza .pasos-movil{display:none;}
+  .compra-ca{padding:1.1rem;}
+}
