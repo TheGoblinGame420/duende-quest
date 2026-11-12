@@ -8,6 +8,8 @@
 #   · atributo de punto 'col'    = color lineal (pintar*)
 #   · atributo de punto 'viento' = cuanto lo mece el viento, 0..1
 #   · atributo de punto 'nesf'   = normal "inflada" para follaje (xyz · peso)
+#   · atributo de punto 'viento2'= cuanto lo balancea el viento LENTO (el del tronco); -1 = igual que 'viento'
+#   · atributo de punto 'duv'    = coordenadas en la textura de follaje (solo las tarjetas, marca 'fronda')
 # Al terminar, la biblioteca triangula, suaviza por angulo, hornea la oclusion
 # ambiental en el color, comprueba el limite de triangulos y exporta.
 # ═══════════════════════════════════════════════════════
@@ -17,12 +19,16 @@ from mathutils import Vector, noise
 from mathutils.bvhtree import BVHTree
 
 # Marcas que entiende el juego (atributo `tinte` del material del kit y del organico).
-MARCAS = {'liso': 0, 'hoja': 1, 'teja': 2, 'piedra': 3, 'madera': 4, 'vidrio': 5, 'puerta': 6, 'emisivo': 7, 'monolito': 8}
+# 9 fronda = tarjeta de hojas (recortada con la textura de follaje; necesita 'duv') · 10 nucleo = masa interior de una
+# copa con tarjetas (hoja que el juego oscurece cuando las tarjetas se dibujan). Las dos toman el color de la zona.
+MARCAS = {'liso': 0, 'hoja': 1, 'teja': 2, 'piedra': 3, 'madera': 4, 'vidrio': 5, 'puerta': 6, 'emisivo': 7, 'monolito': 8, 'fronda': 9, 'nucleo': 10}
+HOJAS = (1, 9, 10)    # marcas que toman el color de la zona
 # Verde de referencia de las hojas: el juego divide por el y multiplica por el color de la zona.
 VERDE_REF = np.array([0.12, 0.36, 0.08])
 PRESUPUESTO = (1500, 500, 150)
 
 MODELOS = []          # lo llena @modelo
+TEXTURAS = {}         # lo llena textura(): nombre -> fn() que devuelve un array alto×ancho×3 (0..1)
 ESTRICTO = [True]     # foto.py lo apaga: una foto no falla por pasarse de triangulos
 _FAMILIA = {'nombre': '?'}
 
@@ -147,7 +153,7 @@ def unir(objs, nombre=None):
     objs = [o for o in objs if o is not None]
     if not objs: return None
     for o in objs:
-        aplicar(o); _attr(o.data, 'viento', 'FLOAT', 0.0); _attr(o.data, 'col', 'FLOAT_COLOR', (1, 1, 1, 1)); _attr(o.data, 'nesf', 'FLOAT_VECTOR')
+        aplicar(o); _attr(o.data, 'viento', 'FLOAT', 0.0); _attr(o.data, 'col', 'FLOAT_COLOR', (1, 1, 1, 1)); _attr(o.data, 'nesf', 'FLOAT_VECTOR'); _attr(o.data, 'viento2', 'FLOAT', -1.0); _attr(o.data, 'duv', 'FLOAT2')
         _afilar(o)
     if len(objs) > 1:
         with bpy.context.temp_override(active_object=objs[0], selected_editable_objects=objs, selected_objects=objs):
@@ -410,11 +416,84 @@ def desgastar(obj, luz=0.25, sombra=0.25):
     return poner_color(obj, color_de(obj) * f[:, None])
 
 
-def poner_viento(obj, v):
-    """Cuanto mece el viento cada vertice: numero, array o fn(P) → 0..1."""
-    n = len(obj.data.vertices); a = _attr(obj.data, 'viento', 'FLOAT', 0.0)
-    w = v(pos(obj)) if callable(v) else (np.full(n, v) if np.isscalar(v) else np.asarray(v))
-    a.data.foreach_set('value', np.clip(w, 0, 1).astype(np.float32)); return obj
+def poner_viento(obj, v, lento=None):
+    """Cuanto mece el viento cada vertice: numero, array o fn(P) → 0..1. Es el viento RAPIDO (el temblor de la hoja).
+    lento: el balanceo de todo el arbol (tronco y ramas, mas despacio); sin el, vale lo mismo que el rapido."""
+    n = len(obj.data.vertices)
+    def val(x): return x(pos(obj)) if callable(x) else (np.full(n, x) if np.isscalar(x) else np.asarray(x))
+    _attr(obj.data, 'viento', 'FLOAT', 0.0).data.foreach_set('value', np.clip(val(v), 0, 1).astype(np.float32))
+    if lento is not None: _attr(obj.data, 'viento2', 'FLOAT', -1.0).data.foreach_set('value', np.clip(val(lento), 0, 1).astype(np.float32))
+    return obj
+
+
+def poner_uv(obj, UV):
+    """Coordenadas de textura por vertice (n×2, 0..1) para las tarjetas de follaje."""
+    _attr(obj.data, 'duv', 'FLOAT2').data.foreach_set('vector', np.asarray(UV, dtype=np.float32).ravel()); return obj
+
+
+def tarjetas(lista, marca='fronda', nombre='tarjetas'):
+    """Tarjetas FIJAS de follaje (cuadrados de dos caras con un trozo de la textura de follaje recortado).
+    lista de dicts: o (centro de la base), lado (vector: MEDIO ancho) y sube (vector: alto completo), uv (u0, v0, u1, v1),
+    col (abajo, arriba: multiplicadores del verde de la zona), n (normal de sombreado, ya «inflada»), lento (balanceo).
+    Cada tarjeta gasta 4 triangulos (las dos caras comparten vertices). El temblor del viento lo pone el juego: quieta
+    donde nace (v0) y suelta en la punta (v1)."""
+    V = []; F = []; UV = []; C = []; W2 = []; N = []
+    for t in lista:
+        o = np.asarray(t['o'], dtype=float); l = np.asarray(t['lado'], dtype=float); s = np.asarray(t['sube'], dtype=float)
+        u0, v0, u1, v1 = t['uv']; i = len(V)
+        V += [o - l, o + l, o + l + s, o - l + s]; F += [(i, i + 1, i + 2, i + 3), (i + 3, i + 2, i + 1, i)]
+        UV += [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+        c0, c1 = t.get('col', (1.0, 1.0)); C += [np.ones(3) * c0, np.ones(3) * c0, np.ones(3) * c1, np.ones(3) * c1]
+        W2 += [t.get('lento', 1.0)] * 4
+        n = np.asarray(t.get('n', np.cross(l, s)), dtype=float); n = n / (np.linalg.norm(n) + 1e-9); N += [n] * 4
+    o = malla(nombre, V, F, marca, (1, 1, 1))
+    poner_color(o, np.array(C)); poner_uv(o, UV); poner_viento(o, 0.0, np.array(W2))
+    _attr(o.data, 'nesf', 'FLOAT_VECTOR').data.foreach_set('vector', np.array(N, dtype=np.float32).ravel())
+    o['dq_afilado'] = 1
+    return o
+
+
+CARTEL_MIN, CARTEL_PASO = 0.3, 0.15     # tamaño de un cartel: 0,3 m + 0,15 m · (1..15); lo lee modelado.js
+
+
+def carteles(lista, marca='fronda', nombre='carteles'):
+    """Carteles de follaje: racimos de hojas que SIEMPRE miran a la camara (el juego abre el cuadrado en pantalla, con
+    el racimo apuntando hacia fuera de la copa). Rompen la silueta desde cualquier lado y solo gastan 2 triangulos.
+    lista de dicts: o (donde nace), tam (lado en metros, 0,45..2,55), celda (0..3 de la textura de follaje),
+    col (abajo, arriba), n (normal de sombreado: hacia fuera de la copa), lento (balanceo).
+    Los 4 vertices van en el mismo punto: sin el juego (o en calidad baja) no se ven ni dan sombra."""
+    V = []; F = []; UV = []; C = []; W = []; W2 = []; N = []
+    for t in lista:
+        o = np.asarray(t['o'], dtype=float); i = len(V); k = t.get('celda', 0); m = 2.0 / 256
+        u0 = (k % 2) * 0.5 + m; v0 = (k // 2) * 0.5 + m; u1 = u0 + 0.5 - 2 * m; v1 = v0 + 0.5 - 2 * m
+        V += [o, o, o, o]; F.append((i, i + 1, i + 2, i + 3)); UV += [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+        c0, c1 = t.get('col', (1.0, 1.0)); C += [np.ones(3) * c0, np.ones(3) * c0, np.ones(3) * c1, np.ones(3) * c1]
+        W += [np.clip(round((t.get('tam', 1.0) - CARTEL_MIN) / CARTEL_PASO), 1, 15) / 15.0] * 4; W2 += [t.get('lento', 1.0)] * 4
+        n = np.asarray(t['n'], dtype=float); N += [n / (np.linalg.norm(n) + 1e-9)] * 4
+    o = malla(nombre, V, F, marca, (1, 1, 1))
+    poner_color(o, np.array(C)); poner_uv(o, UV); poner_viento(o, np.array(W), np.array(W2))   # en un cartel, «viento» guarda el tamaño
+    _attr(o.data, 'nesf', 'FLOAT_VECTOR').data.foreach_set('vector', np.array(N, dtype=np.float32).ravel())
+    o['dq_afilado'] = 1
+    return o
+
+
+def textura(nombre, fn):
+    """Registra una textura horneada por guion: fn() → array alto×ancho×3 (0..1, fila 0 = ARRIBA). Se escribe como
+    assets/3d/dq_<nombre>.png junto al paquete de la familia (PNG sin canal alfa: asi ningun navegador le toca los canales)."""
+    TEXTURAS[nombre] = fn
+
+
+def guardar_png(ruta, A):
+    """PNG RGB de 8 bits escrito a mano (sin gestion de color de por medio). Devuelve los bytes."""
+    import zlib
+    A = (np.clip(np.asarray(A, dtype=float), 0, 1) * 255 + 0.5).astype(np.uint8); h, w = A.shape[:2]
+    crudo = b''.join(bytes(1) + A[y].tobytes() for y in range(h))
+    arriba = b''.join(bytes([2]) + (A[y].astype(np.int16) - (A[y - 1] if y else 0)).astype(np.uint8).tobytes() for y in range(h))   # filtro «Up»
+    if len(zlib.compress(arriba, 9)) < len(zlib.compress(crudo, 9)): crudo = arriba
+    def trozo(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+    b = bytes([137, 80, 78, 71, 13, 10, 26, 10]) + trozo(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + trozo(b'IDAT', zlib.compress(crudo, 9)) + trozo(b'IEND', b'')
+    with open(ruta, 'wb') as f: f.write(b)
+    return b
 
 
 # ── registro ──
@@ -435,14 +514,17 @@ def _triangular(obj):
     bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces); bm.to_mesh(me); bm.free(); me.update()
 
 
-def hornear_ao(obj, fuerza=0.75, dist=1.6, rayos=40, suelo=True, semilla=1):
+def hornear_ao(obj, fuerza=0.75, dist=1.6, rayos=40, suelo=True, semilla=1, saltar=None):
     """Oclusion ambiental por vertice (rayos contra el propio modelo y el suelo). Devuelve 0..1 (1 = despejado)."""
     me = obj.data; P = pos(obj); N = _normal_vertice(obj)
-    polys = [tuple(p.vertices) for p in me.polygons]
+    # Las tarjetas de follaje (fronda) no tapan: son mas hueco que hoja, y sin ellas (calidad baja) la masa debe verse bien.
+    fr = [i for i, x in enumerate(me.materials) if x and x.name == 'dq_fronda']
+    polys = [tuple(p.vertices) for p in me.polygons if p.material_index not in fr] or [tuple(p.vertices) for p in me.polygons]
     bvh = BVHTree.FromPolygons([tuple(p) for p in P], polys)
     rng = azar(semilla); D = rng.normal(0, 1, (rayos, 3)); D /= np.linalg.norm(D, axis=1)[:, None]
     ao = np.ones(len(P))
     for i in range(len(P)):
+        if saltar is not None and saltar[i]: continue
         n = N[i]; o = P[i] + n * 0.03; tot = 0.0; occ = 0.0
         for d in D:
             c = float(d @ n)
@@ -476,19 +558,23 @@ def terminar(obj, m):
     if nt == 0: raise RuntimeError('modelo vacio')
     P = pos(obj); C = color_de(obj)
     W = np.zeros(len(P)); _attr(me, 'viento', 'FLOAT', 0.0).data.foreach_get('value', W)
-    AO = hornear_ao(obj, m['ao'], m['ao_dist'], suelo=m['suelo']) if m['ao'] > 0 else np.ones(len(P))
+    W2 = np.zeros(len(P)); _attr(me, 'viento2', 'FLOAT', -1.0).data.foreach_get('value', W2); W2 = np.where(W2 < 0, W, W2)
+    UV = np.zeros(len(P) * 2); _attr(me, 'duv', 'FLOAT2').data.foreach_get('vector', UV); UV = UV.reshape(-1, 2)
     L = np.zeros(nt * 3, dtype=np.int32); me.loop_triangles.foreach_get('loops', L)
     V = np.zeros(nt * 3, dtype=np.int32); me.loop_triangles.foreach_get('vertices', V)
     MI = np.zeros(nt, dtype=np.int32); me.loop_triangles.foreach_get('material_index', MI)
     cod = np.array([MARCAS.get((x.name if x else 'dq_liso')[3:], 0) for x in me.materials] or [0])
     marca = np.repeat(cod[MI], 3)
+    # Las tarjetas de follaje no llevan oclusion horneada (nacen dentro de la masa: saldrian negras); su sombra va pintada.
+    fronda = np.zeros(len(P), dtype=bool); fronda[V[marca == MARCAS['fronda']]] = True
+    AO = hornear_ao(obj, m['ao'], m['ao_dist'], suelo=m['suelo'], saltar=fronda) if m['ao'] > 0 else np.ones(len(P))
     CN = np.zeros(len(me.loops) * 3); me.corner_normals.foreach_get('vector', CN); CN = CN.reshape(-1, 3)[L]
     if 'nesf' in me.attributes:
         S = np.zeros(len(P) * 3); me.attributes['nesf'].data.foreach_get('vector', S); S = S.reshape(-1, 3)[V]
         w = np.clip(np.linalg.norm(S, axis=1), 0, 1)[:, None]; CN = CN * (1 - w) + S
     CN /= np.linalg.norm(CN, axis=1)[:, None] + 1e-9
     col = C[V] * AO[V][:, None]
-    hoja = marca == MARCAS['hoja']
+    hoja = np.isin(marca, HOJAS)
     col[hoja] *= VERDE_REF   # en hojas el color pintado es un multiplicador del verde de la zona
     # Para la foto: color final por vertice y normales finales en la malla.
     fa = me.attributes.get('foto') or me.attributes.new('foto', 'FLOAT_COLOR', 'POINT')
@@ -501,15 +587,17 @@ def terminar(obj, m):
     Pg = conv(P[V]); Ng = conv(CN)
     n8 = (np.clip(np.round(Ng * 31), -31, 31) * 4).astype(np.int8)   # 6 bits por eje: sobra para Lambert y comprime mejor
     s = np.clip(col, 0, 1); c8 = np.round(np.where(s <= 0.0031308, s * 12.92, 1.055 * s ** (1 / 2.4) - 0.055) * 63).astype(np.uint8) * 4 + 2   # 6 bits por canal
-    w8 = np.round(np.clip(W[V], 0, 1) * 15).astype(np.uint8) * 17
-    clave = np.concatenate([V[:, None].astype(np.int64), n8.astype(np.int64) // 8, marca[:, None].astype(np.int64)], axis=1)
+    # Viento: 4 bits altos = balanceo lento (tronco), 4 bajos = temblor rapido (hoja). Iguales = el byte de antes (n · 17).
+    w8 = np.round(np.clip(W2[V], 0, 1) * 15).astype(np.uint8) * 16 + np.round(np.clip(W[V], 0, 1) * 15).astype(np.uint8)
+    uv8 = np.round(np.clip(UV[V], 0, 1) * 255).astype(np.uint8)
+    clave = np.concatenate([V[:, None].astype(np.int64), n8.astype(np.int64) // 8, marca[:, None].astype(np.int64), uv8.astype(np.int64)], axis=1)
     _, prim, inv = np.unique(clave, axis=0, return_index=True, return_inverse=True)
     inv = np.asarray(inv).ravel()
     if len(prim) > 65535: raise RuntimeError('mas de 65535 vertices')
     # Vertices numerados por orden de primer uso: vecinos en la malla quedan vecinos en el archivo (comprime mucho mejor).
     _, primero = np.unique(inv, return_index=True); orden = np.argsort(primero, kind='stable')
     nuevo = np.empty(len(orden), dtype=np.int64); nuevo[orden] = np.arange(len(orden)); prim = prim[orden]; inv = nuevo[inv]
-    return dict(pos=Pg[prim].astype(np.float32), nor=n8[prim], col=c8[prim], marca=marca[prim].astype(np.uint8), viento=w8[prim], idx=inv.astype(np.uint16), tris=nt)
+    return dict(pos=Pg[prim].astype(np.float32), nor=n8[prim], col=c8[prim], marca=marca[prim].astype(np.uint8), viento=w8[prim], uv=uv8[prim] if (marca == MARCAS['fronda']).any() else None, idx=inv.astype(np.uint16), tris=nt)
 
 
 def construir(m, solo_lod=None):
@@ -550,13 +638,15 @@ def _bloque(d, mn, rango):
     idx = d['idx'].astype(np.int64); tope = np.maximum.accumulate(idx); ant = np.concatenate([[-1], tope[:-1]])
     b = b''.join(_zz(dq[:, e]) for e in range(3))
     b += b''.join(d['nor'][:, e].tobytes() for e in range(3)) + b''.join(d['col'][:, e].tobytes() for e in range(3))
-    b += d['marca'].tobytes() + d['viento'].tobytes() + _zz(ant + 1 - idx)
+    b += d['marca'].tobytes() + d['viento'].tobytes()
+    if d.get('uv') is not None: b += d['uv'][:, 0].tobytes() + d['uv'][:, 1].tobytes()   # solo los niveles con tarjetas ('uv': 1 en el indice)
+    b += _zz(ant + 1 - idx)
     return b + b'\0' * ((4 - len(b) % 4) % 4)
 
 
 def exportar(familia, salida):
     """Construye todos los modelos registrados y escribe <salida>/dq_<familia>.bin y .json."""
-    binario = bytearray(); indice = {}
+    binario = bytearray(); indice = {}; con_uv = False; tex = {}
     for m in MODELOS:
         limpiar_objetos()
         niveles = construir(m)
@@ -566,12 +656,21 @@ def exportar(familia, salida):
         for _, d in niveles:
             o = len(binario); v = len(d['pos'])
             binario += _bloque(d, mn, rango)
-            lods.append(dict(o=o, v=v, i=len(d['idx'])))
+            L = dict(o=o, v=v, i=len(d['idx']))
+            if d.get('uv') is not None: L['uv'] = 1; con_uv = True
+            lods.append(L)
         indice[m['nombre']] = dict(min=[round(float(x), 4) for x in mn], max=[round(float(x), 4) for x in mx], lods=lods, sus=m['sus'])
     os.makedirs(salida, exist_ok=True)
+    import hashlib
+    for n, fn in TEXTURAS.items():
+        b = guardar_png(os.path.join(salida, 'dq_%s.png' % n), fn()); tex[n] = dict(f='dq_%s.png' % n, h=hashlib.sha1(b).hexdigest()[:8])
+        print('[dq] textura dq_%s.png: %d bytes' % (n, len(b)))
     with open(os.path.join(salida, 'dq_%s.bin' % familia), 'wb') as f: f.write(binario)
     with open(os.path.join(salida, 'dq_%s.json' % familia), 'w', encoding='utf-8') as f:
-        json.dump(dict(v=2, familia=familia, bytes=len(binario), modelos=indice), f, separators=(',', ':'), ensure_ascii=False)
+        # v 3 = algun nivel lleva el plano de UV (los clientes viejos, que solo leen v 2, se quedan con el kit en vez de leerlo mal).
+        cab = dict(v=3 if con_uv else 2, familia=familia, bytes=len(binario), modelos=indice)
+        if tex: cab['tex'] = tex
+        json.dump(cab, f, separators=(',', ':'), ensure_ascii=False)
     print('[dq] %s: %d modelos, %d bytes' % (familia, len(indice), len(binario)))
 
 
