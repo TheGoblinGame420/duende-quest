@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 373;
+export const VERSION = 374;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 140, fecha: '12 nov 2026', items: [
+    '🏰 El mundo cambia de piel: plaza empedrada, casas de piedra y madera con ventanas encendidas de noche, arcos, menhires con runas y antorchas.',
+    '🌲 Bosque más vivo: caminos de piedra, troncos con musgo, helechos, setas que brillan de noche, niebla baja y luciérnagas.',
+    '🔊 Sonido ambiente por zona y hora: viento, grillos, agua, fuego y campanas del pueblo. Lo regulas en el menú ⚙.',
+    '📱 Barra de habilidades cómoda en el celular: casillas más grandes y una bandeja para el resto, que puedes ordenar.',
+    '🗺 CLASSIC también estrena fondo: suelo, caminos, agua y edificios nuevos, con luces de noche.',
+  ] },
   { n: 139, fecha: '11 nov 2026', items: [
     '☀ Buenos días y ritual de la noche: un regalo al amanecer, la olla de Mama Asiri que reposa mientras duermes y una intención para mañana. Nada se pierde si faltas.',
     '🗺 Mapa nuevo: zonas con su nivel, jefes, misiones, leyenda con filtros y cuánto llevas explorado. En el celular, la pantalla va más despejada.',

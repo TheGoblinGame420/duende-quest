@@ -17,11 +17,11 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
-} from './data.js?v=373';
-import { iniciarRegalo } from './regalo.js?v=373';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=373';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=373';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque } from './fondo2d.js?v=373';
+} from './data.js?v=374';
+import { iniciarRegalo } from './regalo.js?v=374';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=374';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=374';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque } from './fondo2d.js?v=374';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
