@@ -31,7 +31,7 @@
     '.pliegue-cerrar{display:block;margin:0 auto 1rem;font:600 14px var(--sans);min-height:44px;background:none;border:1px solid var(--borde);color:var(--txt2);border-radius:10px;padding:.6rem 1.1rem;cursor:pointer}',
     // Barra de secciones (solo celular)
     '.secciones{display:none}',
-    '@media(max-width:1180px){.secciones{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;top:var(--alto-nav,56px);z-index:90;transform:translateY(-120%);transition:transform .25s ease;padding:.55rem .8rem;background:rgba(9,6,21,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--borde)}',
+    '@media(max-width:1180px){.secciones{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;top:var(--alto-nav,56px);z-index:90;transform:translateY(-120%);transition:transform .25s ease;padding:.55rem .8rem;background:rgba(12,11,15,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--borde)}',
     '.secciones.ver{transform:none}',
     '.secciones::-webkit-scrollbar{display:none}',
     '.secciones a{flex:none;display:inline-flex;align-items:center;min-height:40px;font-size:.85rem;font-weight:700;color:var(--txt2);text-decoration:none;padding:.4rem .85rem;border:1px solid var(--borde);border-radius:999px;transition:color .15s,border-color .15s}',
@@ -145,6 +145,55 @@
     var orden = ['juegos', 'utilidad', 'como-comprar', 'bloque-token', 'lo-nuevo', 'bloque-juego', 'empieza', 'bloque-comunidad', 'bloque-tienda', 'bloque-duende', 'faq']
       .map(function (id) { return d.getElementById(id); }).filter(Boolean);
     for (var k = 1; k < orden.length; k++) orden[k - 1].insertAdjacentElement('afterend', orden[k]);
+
+    // ---------- Celular: lo secundario queda plegado (12-nov-2026) ----------
+    // En pantallas de hasta 700 px los pasos y las novedades muestran solo el título (se abren con un toque)
+    // y el detalle de transparencia y tokenomics va en un bloque que se despliega. El contrato, el botón de
+    // jugar y los avisos de riesgo quedan siempre a la vista. En escritorio todo sigue desplegado.
+    var cel = matchMedia('(max-width:700px)'), plgBotones = [], plgGrupos = [];
+    function plegarItems(selItems, selCabeza, abierto) {
+      [].forEach.call(d.querySelectorAll(selItems), function (it, i) {
+        var cab = it.querySelector(selCabeza);
+        if (!cab || it.classList.contains('plg')) return;
+        var cuerpos = [].filter.call(cab.parentNode.children, function (x) { return x !== cab && x.tagName === 'P'; });
+        if (!cuerpos.length) return;
+        cuerpos.forEach(function (c) { c.classList.add('plg-c'); });
+        var b = d.createElement('button'); b.type = 'button'; b.className = 'plg-btn';
+        while (cab.firstChild) b.appendChild(cab.firstChild);
+        cab.appendChild(b);
+        it.classList.add('plg');
+        if (i === abierto) it.classList.add('plg-ab');
+        b.addEventListener('click', function () { if (!cel.matches) return; it.classList.toggle('plg-ab'); sincPlegado(); });
+        plgBotones.push([b, it]);
+      });
+    }
+    function plegarGrupo(idSec, selDesde, selHasta, titulo) {
+      var s = d.getElementById(idSec); if (!s) return;
+      var a = s.querySelector(selDesde), z = s.querySelector(selHasta);
+      if (!a || !z || a.parentNode !== s || z.parentNode !== s) return;
+      var det = d.createElement('details'); det.className = 'plg-grupo';
+      var sum = d.createElement('summary'); sum.textContent = titulo; det.appendChild(sum);
+      s.insertBefore(det, a);
+      for (var n = a; n && n !== z;) { var sig = n.nextSibling; det.appendChild(n); n = sig; }
+      plgGrupos.push(det);
+    }
+    function sincPlegado() {
+      plgBotones.forEach(function (x) {
+        if (cel.matches) { x[0].setAttribute('aria-expanded', String(x[1].classList.contains('plg-ab'))); x[0].tabIndex = 0; }
+        else { x[0].removeAttribute('aria-expanded'); x[0].tabIndex = -1; }
+      });
+    }
+    function sincGrupos() { plgGrupos.forEach(function (g) { g.open = !cel.matches; }); }
+    plegarItems('#como-comprar .compra-pasos > li', 'h3', -1);
+    plegarItems('#empieza .pasos > li', 'h3', -1);
+    plegarItems('#lo-nuevo .nuevo-card', 'b', -1);
+    plegarItems('#utilidad .util-card', 'h3', -1);
+    plegarItems('#que-es .about-card', 'h3', -1);
+    plegarGrupo('trust', '.trust-grid', '.legal-note', 'Liquidez, impuestos, holders y enlaces para verificar');
+    plegarGrupo('tokenomics', '.tgrid', '.sec-line', 'Supply, lanzamiento y permisos, en detalle');
+    sincPlegado(); sincGrupos();
+    var alCambiar = function () { sincPlegado(); sincGrupos(); };
+    if (cel.addEventListener) cel.addEventListener('change', alCambiar); else if (cel.addListener) cel.addListener(alCambiar);
 
     // Un enlace a una sección plegada la abre antes de bajar hasta ella
     function abrirDestino(hash) {
