@@ -32,7 +32,7 @@ const luzc = (c, k) => k >= 0 ? mez(c, '#ffffff', k) : mez(c, '#000000', -k);
 // g: decorado grande · p: decorado pequeño · hueco: separación media del grande
 const ESTILOS = {
   amanecer2: { c: ['#1b1a2b', '#4a3b4a', '#a9765c'], br: '#c2a08c', lj: '#3a3348', cr: '#262231', lejos: 'montes', hito: 'castillo', cerca: 'aldea', su: 'adoquin', t: '#4a443e', mu: '#6c6a47', ho: ['#27331f', '#4a5a30'], arc: '#b48cff', g: ['casa', 'roble', 'casa', 'valla', 'casa', 'barril', 'roble'], p: ['mata', 'flor', 'piedra', 'mata'], hueco: 120, ant: 330 },
-  noche: { c: ['#05060f', '#0d1424', '#1e2e36'], br: '#5d7f86', lj: '#101c28', cr: '#0a1218', lejos: 'montes', hito: 'menhires', cerca: 'bosque', su: 'tierra', t: '#2b2a22', mu: '#42603a', ho: ['#0f2018', '#27472c'], arc: '#9d7bff', g: ['roble', 'roble', 'menhir', 'roble', 'ruina', 'roca', 'roble'], p: ['mata', 'seta', 'helecho', 'piedra', 'mata'], hueco: 95, ant: 620, estrellas: .7 },
+  noche: { c: ['#05060f', '#0d1424', '#1e2e36'], br: '#5d7f86', lj: '#101c28', cr: '#0a1218', lejos: 'montes', hito: 'menhires', cerca: 'bosque', su: 'tierra', t: '#2b2a22', mu: '#42603a', ho: ['#0f2018', '#27472c'], arc: '#9d7bff', g: ['roble', 'roble', 'menhir', 'roble', 'ruina', 'roca', 'roble'], p: ['mata', 'seta', 'helecho', 'piedra', 'mata'], hueco: 95, ant: 620, estrellas: .7, nmin: .6 },
   amanecer: { c: ['#2a1c26', '#6a3d3a', '#c48a5c'], br: '#d0a07e', lj: '#4a2e33', cr: '#2e1d22', lejos: 'montes', hito: 'torres', cerca: 'riscos', su: 'tierra', t: '#4f372d', mu: '#7c6c3e', ho: ['#3a2f1c', '#6a5a2c'], arc: '#ff9d5a', g: ['seco', 'roca', 'ruina', 'roble', 'roca', 'columna'], p: ['mata', 'piedra', 'flor', 'piedra'], hueco: 130, ant: 620 },
   selva: { c: ['#0c1a16', '#1f3a2c', '#5e7a4e'], br: '#8fae84', lj: '#17302a', cr: '#0e1f19', lejos: 'montes', hito: 'menhires', cerca: 'bosque', su: 'tierra', t: '#2f3022', mu: '#52803c', ho: ['#12301c', '#2f6a34'], arc: '#7dffb0', g: ['selva', 'selva', 'ruina', 'selva', 'roca', 'menhir'], p: ['helecho', 'mata', 'seta', 'flor', 'helecho'], hueco: 90, ant: 640 },
   tormenta: { c: ['#11141f', '#2a3242', '#5a6470'], br: '#8b96a3', lj: '#262d3b', cr: '#161a24', lejos: 'montes', hito: 'torres', cerca: 'riscos', su: 'roca', t: '#3b3c41', mu: '#5c6552', ho: ['#18241f', '#34493a'], arc: '#8fd8ff', g: ['roca', 'pino', 'roca', 'ruina', 'menhir', 'seco'], p: ['piedra', 'mata', 'piedra'], hueco: 125, ant: 600 },
@@ -442,7 +442,7 @@ function pintarPlataforma(g, e, x, y, w) {
 // ── Capas lejanas (mosaico de 1024 px que casa consigo mismo) ──
 function cresta(g, W, H, yb, amp, r, col, bruma, dentado) {
   const k1 = 1 + ((r() * 2) | 0), k2 = 3 + ((r() * 3) | 0), k3 = 7 + ((r() * 5) | 0), k4 = 17 + ((r() * 9) | 0), p1 = r() * TAU, p2 = r() * TAU, p3 = r() * TAU, p4 = r() * TAU;
-  const f = x => { const a = x / W * TAU; let v = .5 * Math.sin(a * k1 + p1) + .3 * Math.sin(a * k2 + p2) + .2 * Math.abs(Math.sin(a * k3 + p3)) * 2 - .2; if (dentado) v += dentado * Math.abs(Math.sin(a * k4 + p4)); return yb - amp * (v + .6); };
+  const f = x => { const a = x / W * TAU; let v = .5 * Math.sin(a * k1 + p1) + .3 * Math.sin(a * k2 + p2) + .4 * (1 - Math.abs(Math.sin(a * k3 + p3))) - .2; if (dentado) v += dentado * (1 - Math.abs(Math.sin(a * k4 + p4))) + dentado * .35 * (1 - Math.abs(Math.sin(a * (k4 * 2 + 5) + p1))); return yb - amp * (v + .6); };
   const gr = g.createLinearGradient(0, yb - amp * 1.6, 0, H); gr.addColorStop(0, css(col)); gr.addColorStop(.75, css(mez(col, bruma, .5))); gr.addColorStop(1, css(mez(col, bruma, .75)));
   g.fillStyle = gr; g.beginPath(); g.moveTo(0, H);
   for (let x = 0; x <= W; x += 4) g.lineTo(x, f(x));
@@ -455,6 +455,7 @@ function capaLejos(e, id) {
     // Pared de roca con columnas naturales y vetas.
     for (let i = 0; i < 9; i++) { const x = r() * W, w = 40 + r() * 80, col = mez(e.lj, e.br, .08 + r() * .12); for (const dx of [0, -W]) { const gr = g.createLinearGradient(x + dx, 0, x + dx + w, 0); gr.addColorStop(0, css(col, 0)); gr.addColorStop(.4, css(col, .9)); gr.addColorStop(1, css(luzc(col, -.4), 0)); g.fillStyle = gr; g.fillRect(x + dx, 0, w, H); } }
     for (let i = 0; i < 16; i++) { const x = r() * W, h = 40 + r() * 120, w = 12 + r() * 22; g.fillStyle = css(mez(e.lj, e.br, .1)); for (const dx of [0, -W]) { g.beginPath(); g.moveTo(x + dx - w, H); g.quadraticCurveTo(x + dx, H - h * .5, x + dx, H - h); g.quadraticCurveTo(x + dx + w * .3, H - h * .5, x + dx + w, H); g.fill(); } }
+    const fu = g.createLinearGradient(0, 0, 0, 150); fu.addColorStop(0, 'rgba(0,0,0,1)'); fu.addColorStop(1, 'rgba(0,0,0,0)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = fu; g.fillRect(0, 0, W, 150); g.globalCompositeOperation = 'source-over';
   } else {
     const dent = e.lejos === 'dunas' ? 0 : .28;
     cresta(g, W, H, 190, e.lejos === 'dunas' ? 34 : 86, r, mez(e.lj, e.br, .42), e.br, dent);
@@ -481,7 +482,7 @@ function capaCerca(e, id) {
     const items = []; for (let i = 0; i < n; i++) items.push([(i + r()) * W / n, r(), r(), r()]);
     g.fillStyle = css(col);
     for (const [x, a, b, d] of items) doble(() => {
-      if (e.cerca === 'bosque' || (e.cerca === 'aldea' && a > .6) || (e.cerca === 'ruinas' && a > .8)) {
+      if (e.cerca === 'bosque' || (e.cerca === 'aldea' && a > .6)) {
         const h = 110 + a * 90 - fila * 20, w = 5 + b * 4; g.fillRect(x - w / 2, base - h * .7, w, h * .7);
         for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x + Math.cos(k * 1.9 + d * 6) * 22, base - h * .78 + Math.sin(k * 2.3 + d * 4) * 16, 18 + ((k * 7 + d * 9) % 12), 0, TAU); g.fill(); }
       } else if (e.cerca === 'pinos') {
@@ -603,7 +604,7 @@ function trozo(m, v, i, esNoche) {
 // ── Lo que llama el cliente, en este orden, antes de dibujar a nadie ──
 // v = { g, mp, id, camX, VW, VH, OY, SUELO, frame, ligero }
 export function fondoCielo(v) {
-  const m = mapa(v), g = v.g, n = nocheAhora();
+  const m = mapa(v), g = v.g, n = Math.max(nocheAhora(), m.e.nmin || 0);
   g.drawImage(cielo(m, v, n), 0, -v.OY);
   let x = -Math.floor((((v.camX * .22) % CAPA_W) + CAPA_W) % CAPA_W);
   const yl = v.SUELO + 6 - m.lejos.height;
@@ -613,7 +614,7 @@ export function fondoCielo(v) {
   g.drawImage(m.cerca, x, yc); if (x + CAPA_W < v.VW) g.drawImage(m.cerca, x + CAPA_W, yc);
 }
 export function fondoMundo(v) {
-  const m = mapa(v), g = v.g, n = nocheAhora(), esNoche = n >= .6;
+  const m = mapa(v), g = v.g, n = Math.max(nocheAhora(), m.e.nmin || 0), esNoche = n >= .6;
   const cx = Math.floor(v.camX), i0 = Math.floor(cx / TROZO), i1 = Math.floor((cx + v.VW - 1) / TROZO);
   for (let i = i0; i <= i1; i++) g.drawImage(trozo(m, v, i, esNoche), i * TROZO - cx, m.T);
   // Niebla baja que deriva despacio (detrás de los personajes).
