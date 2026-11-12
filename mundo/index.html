@@ -966,6 +966,27 @@ body.movil #joy .pista-joy.grande{transform:scale(1.15);}
  body.movil #barra{bottom:calc(6px + env(safe-area-inset-bottom));width:min(352px,calc(60vw - 80px - env(safe-area-inset-right)));justify-content:flex-end;}   /* del joystick a ATACAR, sin meterse bajo ATACAR */
  body.movil.mano-der #barra{width:min(352px,calc(60vw - 80px - env(safe-area-inset-left)));justify-content:flex-start;}
 }
+/* ── Barra del celular (hb): toda casilla mide 44 px. Las que no caben en la fila van a una bandeja plegable
+   que abre el boton ↑ (mundo.js, hbOrdenar); sale del lado del joystick para no tapar ATACAR ni el centro. Solo body.movil: en PC no cambia. ── */
+#hb-mas,#hb-bandeja{display:none;}
+body.movil #barra{gap:4px;}
+body.movil #barra .acc{flex:0 0 44px;width:44px;height:44px;max-width:44px;max-height:44px;}
+body.movil #barra .acc img{width:24px;height:24px;}
+body.movil #barra #hb-mas.on,body.movil #barra #hb-editar{display:flex;flex:0 0 44px;width:44px;height:44px;box-sizing:border-box;align-items:center;justify-content:center;padding:0;margin:0;border-radius:8px;border:1px solid var(--marco,rgba(255,255,255,.3));background:rgba(14,9,30,.72);color:var(--oro,#ffd84a);font:700 20px/1 var(--sans);pointer-events:auto;touch-action:manipulation;cursor:pointer;}
+body.movil #barra #hb-mas.on{order:-1;}
+body.movil.mano-der #barra #hb-mas.on{order:0;}
+body.movil #barra #hb-editar{font-size:10px;letter-spacing:.04em;}
+body.movil #barra.hb-abierta #hb-bandeja{display:flex;flex-wrap:wrap-reverse;gap:4px;position:absolute;left:-6px;bottom:calc(100% + 6px);width:188px;pointer-events:none;z-index:3;}
+body.movil.mano-der #barra.hb-abierta #hb-bandeja{left:auto;right:-6px;flex-direction:row-reverse;}
+body.movil #barra #hb-bandeja .acc{background:rgba(14,9,30,.88);border-color:var(--marco,rgba(255,255,255,.3));}
+@media (max-width:359px){body.movil #barra.hb-abierta #hb-bandeja{width:92px;}}   /* pantallas muy angostas: dos columnas, sin llegar a FIJAR */
+body.movil #barra.hb-edit .acc:not(.arco){outline:1px dashed var(--oro,#ffd84a);outline-offset:-3px;}
+body.movil #barra.hb-edit .acc.hb-sel{outline:2px solid #4ade80;}
+@media (orientation:landscape) and (max-height:500px){
+ /* acostado: la fila usa todo el ancho hasta ATACAR (la franja de abajo no es del joystick) y casi nunca hace falta la bandeja */
+ body.movil #barra,body.movil.mano-der #barra{width:calc(100vw - 96px - env(safe-area-inset-left) - env(safe-area-inset-right));}
+ body:is(.movil,.compacto) #xp-prox{bottom:calc(54px + env(safe-area-inset-bottom));}
+}
 /* ── Menu del juego (mundo/js/menu.js) ── El ⚙ (#b-menu) va siempre a la vista; el «?» de antes vive dentro del menu.
    Celular acostado y pantallas anchas: cuarto boton de la fila. Celular en vertical (menos de 420 px no caben 4 entre
    el marco y el minimapa): el ⚙ va solo, bajo el minimapa (o bajo la fila cuando esta ya va bajo el minimapa). */
