@@ -127,7 +127,9 @@ function crearKit(ind, buf) {
     g.computeBoundingSphere();
     return g;
   }
-  return { ind, geo, fundir, material, materialInst, caja: n => ind[n] && { min: ind[n].min, max: ind[n].max } };
+  /* Una pieza del kit pasa a ser un modelo propio (mundo/js/modelado.js): misma caja de referencia, otra malla. */
+  const sustituir = (n, g, cj) => { cache.set(n, g); ind[n] = { ...ind[n], min: cj.min, max: cj.max }; };
+  return { ind, geo, fundir, sustituir, material, materialInst, caja: n => ind[n] && { min: ind[n].min, max: ind[n].max } };
 }
 
 // Geometria a partir de triangulos sueltos [[x,y,z]×3, color] (con indice,

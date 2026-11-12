@@ -34,6 +34,7 @@ import { crearParticulas } from './particulas.js?v=374';
 import { crearCielo } from './cielo.js?v=374';
 import { PERF } from './perf.js?v=374';
 import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=374';
+import { cargarModelado } from './modelado.js?v=374';
 import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=374';
 import { vestirKit, crearObra, animarObra } from './arquitectura.js?v=374';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=374';
@@ -863,6 +864,8 @@ const FLORA = {
 // tamaño en metros (alto, o ancho si es 'a'). Las hojas se tiñen con el color
 // de la zona. Sin el kit (no cargo) se usan las figuras de siempre.
 let KIT = null;
+/* Modelos propios hechos en Blender (mundo/js/modelado.js): donde su guion lo declara, sustituyen a los del kit. null = no llegaron. */
+let PAQ = null;
 const VAR_K = {
   pino: [['n_tree_pineTallA', 9], ['n_tree_pineTallC', 8.5], ['n_tree_pineTallA_detailed', 9]],
   nieve: [['n_tree_pineTallD', 7.5], ['n_tree_pineRoundC', 7]],
@@ -947,6 +950,53 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
   }
   return 1;
 }
+/* Flora con modelos propios: mismas posiciones, tamaños y colisiones; solo cambia la malla. Tres niveles de detalle:
+   el alto en las subceldas (48 m) pegadas al duende, el medio en el resto de la celda cercana y el bajo de lejos
+   (y siempre, con la vegetacion en «baja»). Devuelve los que no tienen modelo propio (siguen con el kit). */
+const LOD0_D2 = (CAL === 'alta' ? 46 : MOVIL ? 26 : 32) ** 2, mallasPropias = [];
+function floraPropia(tipo, todos, celdas, fina) {
+  const resto = [], sub = new Map(), SUB = TROZO / 2, ligero = CAL === 'baja';
+  for (const t of todos) {
+    const vars = PAQ.flora(tipo, t.zona, t.y < MUNDO.agua + 2.4);
+    if (!vars) { resto.push(t); continue; }
+    const vr = vars[Math.min(vars.length - 1, Math.floor(hashR(t.x | 0, t.z | 0, 11) * vars.length))];
+    const kx = Math.floor(t.x / SUB), kz = Math.floor(t.z / SUB), k = kx + '|' + kz + '|' + vr.n;
+    let g = sub.get(k); if (!g) sub.set(k, g = { vr, kx, kz, l: [] });
+    g.l.push(t);
+  }
+  if (!sub.size) return resto;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+  const hacer = (vr, l, lod) => {
+    const cj = PAQ.caja(vr.n), alto = cj.max[1] - cj.min[1];
+    const base = vr.alto ? vr.alto / (vr.modo === 'a' ? Math.max(cj.max[0] - cj.min[0], cj.max[2] - cj.min[2]) : cj.max[1]) : 1;
+    const im = new THREE.InstancedMesh(PAQ.geo(vr.n, lod), PAQ.material, l.length);
+    l.forEach((t, i) => {
+      e.set(0, t.rot, 0); q.setFromEuler(e);
+      const k = t.s * base; sc.set(k, k * (0.92 + hashR(t.x | 0, t.z | 0, 14) * 0.2), k); v.set(t.x, t.y, t.z);
+      m4.compose(v, q, sc); im.setMatrixAt(i, m4);
+      col.set(t.color || TINTE_ROCA[t.zona] || '#5f8f4a').offsetHSL(fina ? (hashR(t.x | 0, t.z | 0, 12) - 0.5) * 0.05 : 0, fina ? -0.1 - hashR(t.x | 0, t.z | 0, 13) * 0.14 : 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * (fina ? 0.17 : 0.12));
+      im.setColorAt(i, col);
+    });
+    im.computeBoundingSphere();
+    if (Q.sombras && lod < 2 && alto * base >= 5) im.castShadow = true;
+    im.visible = false; im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
+    escena.add(im); mallasPropias.push(im);
+    return im;
+  };
+  const lejos = new Map();
+  for (const g of sub.values()) {
+    const ck = (g.kx >> 1) + '|' + (g.kz >> 1);
+    let c = celdas.get(ck);
+    if (!c) celdas.set(ck, c = { x: ((g.kx >> 1) + 0.5) * TROZO, z: ((g.kz >> 1) + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] });
+    if (!c.subs) { c.subs = []; c.lod2 = []; }
+    const lk = ck + '|' + g.vr.n; let lj = lejos.get(lk);
+    if (!lj) lejos.set(lk, lj = { c, vr: g.vr, l: [] });
+    for (const t of g.l) lj.l.push(t);
+    if (!ligero) c.subs.push({ x: (g.kx + 0.5) * SUB, z: (g.kz + 0.5) * SUB, l0: [hacer(g.vr, g.l, 0)], l1: [hacer(g.vr, g.l, 1)] });
+  }
+  for (const lj of lejos.values()) lj.c.lod2.push(hacer(lj.vr, lj.l, 2));
+  return resto;
+}
 function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
@@ -992,7 +1042,7 @@ function crearFlora() {
   // (el verde puro de todas las copas iguales aplanaba el bosque). Se decide al cargar.
   const floraFina = FINO();
   for (const tipo in tipos) {
-    const todos = tipos[tipo];
+    const todos = PAQ ? floraPropia(tipo, tipos[tipo], celdas, floraFina) : tipos[tipo];
     const porCelda = new Map();
     for (const t of todos) { const ck = Math.floor(t.x / TROZO) + '|' + Math.floor(t.z / TROZO); let l = porCelda.get(ck); if (!l) porCelda.set(ck, l = []); l.push(t); }
     let destino = 'mallas';
@@ -1074,6 +1124,10 @@ function cullFlora() {
   for (const c of trozosFlora) {
     const d2 = (c.x - P.x) ** 2 + (c.z - P.z) ** 2, v = d2 < lim2, cerca = v && d2 < lod2;
     ver(c.mallas, v); ver(c.cerca, cerca); ver(c.lejos, v && !cerca);
+    if (c.subs) {
+      ver(c.lod2, v && (!cerca || !c.subs.length));
+      for (const sb of c.subs) { const fino = cerca && (sb.x - P.x) ** 2 + (sb.z - P.z) ** 2 < LOD0_D2; ver(sb.l0, fino); ver(sb.l1, cerca && !fino); }
+    }
   }
 }
 // El pueblo: casas, plaza, pozo y el portal a las mazmorras.
@@ -9885,6 +9939,8 @@ async function inicio() {
   // El kit de Kenney se baja mientras se construye el terreno (antes, despues).
   const kitP = PRUEBA.has('sinKenney') ? null : cargarKenney('/assets/3d/');
   if (kitP) kitP.catch(() => {});   // el fallo se trata abajo
+  const paqP = PRUEBA.has('sinModelado') ? null : cargarModelado('/assets/3d/', { uT: KIT_FX.uT, uViento: KIT_FX.uViento, uMusgo: KIT_FX.uMusgo, uBrillo: SOTO_FX.uBrillo });
+  if (paqP) paqP.catch(() => {});
   // La sesion web (puede refrescar el token por red) se pide ya, en paralelo con el terreno; tokenWeb nunca falla.
   const tokP = TG ? null : tokenWeb();
   if (!USAR_MODELOS) await Promise.all([cargarAnim(), cargarImg(A + 'skins/duende_anim.png')]);
@@ -9896,6 +9952,14 @@ async function inicio() {
     try { KIT = await Promise.race([kitP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
     catch (e) { console.warn('[3D] sin modelos del kit, figuras de siempre:', e); KIT = null; }
     if (KIT && GFX.efectivo !== 'minima') try { vestirKit(KIT.material, GFX.efectivo === 'baja' || MOVIL ? 128 : 256); } catch (e) { console.warn(e); }
+  }
+  if (paqP) {
+    try { PAQ = await Promise.race([paqP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 12000))]); }
+    catch (e) { console.warn('[3D] sin modelos propios, se ven los del kit:', e); PAQ = null; }
+    if (PAQ) {
+      if (KIT && KIT.sustituir) for (const k in PAQ.kit) try { KIT.sustituir(k, PAQ.geo(PAQ.kit[k], 0), PAQ.caja(PAQ.kit[k])); } catch (e) { console.warn(e); }
+      respaldosShader.push(['modelado', () => { const m2 = new THREE.MeshLambertMaterial({ vertexColors: true }); for (const im of mallasPropias) im.material = m2; }]);
+    }
   }
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
