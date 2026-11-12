@@ -33,6 +33,7 @@ import { crearParticulas } from './particulas.js?v=373';
 import { crearCielo } from './cielo.js?v=373';
 import { PERF } from './perf.js?v=373';
 import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=373';
+import { vestirKit, crearObra, animarObra } from './arquitectura.js?v=373';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=373';
 const MAQUINAS = maquinasAbismo();
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=373';
@@ -1170,8 +1171,14 @@ function crearPuebloKit() {
   const arco = new THREE.Mesh(new THREE.BoxGeometry(5.4, 1, 1.2), piedra); arco.position.set(px, py + 6.3, pz);
   const velo = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 5.4), new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
   velo.position.set(px, py + 2.9, pz);
-  escena.add(p1, p2, arco, velo);
-  dintelInca(px, py, pz, piedra); crearBanderines();
+  let obra = null;
+  try {
+    obra = crearObra({ escena, KIT, alturaEn, enCamino, ponerSolido, CASAS, CAMINOS, portal: { x: px, z: pz }, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), nivel: GFX.efectivo, sombras: Q.sombras,
+      evitar: [...NPCS3D.map(n => ({ x: n.x, z: n.z, r: 6 })), ...VECINOS.map(v => ({ x: v.x, z: v.z, r: 6 })), { x: px, z: pz, r: 9 }, { x: SPAWN3D.x, z: SPAWN3D.z, r: 6 }, { x: mx, z: mz, r: 6.5 }] });
+    for (const m of menhires) m.visible = false;
+  } catch (e) { console.warn('[3D] sin obra nueva:', e); }
+  if (obra) escena.add(velo); else { escena.add(p1, p2, arco, velo); dintelInca(px, py, pz, piedra); }
+  crearBanderines();
   return { x: px, z: pz, velo };
 }
 
@@ -1261,6 +1268,7 @@ const faroles = [];
   }
 })();
 // Claro del Titan: circulo de menhires donde aparece el jefe mundial.
+const menhires = [];   // los de caja; crearObra() los cambia por piedras talladas y los esconde
 (() => {
   const piedra = new THREE.MeshLambertMaterial({ color: 0x6b6478 });
   const runa = new THREE.MeshBasicMaterial({ color: 0xff6b3d });
@@ -1271,7 +1279,7 @@ const faroles = [];
     m.position.set(x, alturaEn(x, z) + alto / 2 - 0.3, z); m.rotation.y = -a; m.rotation.z = (i % 2 ? 0.06 : -0.05);
     const r = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.9), runa);
     r.position.set(0, alto * 0.15, 0.51); m.add(r);
-    escena.add(m);
+    escena.add(m); menhires.push(m);
   }
   const suelo = new THREE.Mesh(new THREE.RingGeometry(ARENA3D.r - 1.2, ARENA3D.r - 0.6, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff6b3d, transparent: true, opacity: 0.35, depthWrite: false }));
   suelo.position.set(ARENA3D.x, alturaEn(ARENA3D.x, ARENA3D.z) + 0.2, ARENA3D.z);
@@ -2836,7 +2844,7 @@ function modeloPuerta() {
   const obj = new THREE.Group();
   let mesh;
   if (KIT) {
-    const t = z => [['c_tower-square-base', 0], ['c_tower-square-mid', 1.01], ['c_tower-square-top-roof', 2.02]].map(([n, h]) => ({ n, y: h * 2.6, z, s: 2.6 }));
+    const t = z => [['c_tower-square-base', 0], ['c_tower-square-mid', 1.01], ['c_tower-square-top-roof', 2.02]].map(([n, h]) => ({ n, y: h * 2.6, z, s: 2.6, t: 3 }));
     mesh = new THREE.Mesh(KIT.fundir([{ n: 'c_metal-gate', sx: 8, sy: 8, sz: 6.4 }, ...t(-3.6), ...t(3.6)]), KIT.material);
   } else { mesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6, 5.6), new THREE.MeshLambertMaterial({ color: 0x4b4560 })); mesh.position.y = 3; }
   if (Q.sombras) mesh.castShadow = true;
@@ -9665,6 +9673,7 @@ function cuadroBucle(t) {
     }
   }
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
+  animarObra(t, clamp((nocheK - 0.3) * 2, 0, 1), lienzo.height);
   pintarObjetivo();
   if (toca(2, 100, t)) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
   if (toca(3, 333, t)) { pintarMisiones(); revisarAtrasTg(); }
@@ -9726,6 +9735,7 @@ async function inicio() {
   if (kitP) {
     try { KIT = await Promise.race([kitP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
     catch (e) { console.warn('[3D] sin modelos del kit, figuras de siempre:', e); KIT = null; }
+    if (KIT && GFX.efectivo !== 'minima') try { vestirKit(KIT.material, GFX.efectivo === 'baja' || MOVIL ? 128 : 256); } catch (e) { console.warn(e); }
   }
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
