@@ -91,6 +91,51 @@ export function crearMusica(opc = {}) {
   const capa = { acor: 1, mel: 1, cha: 0, bom: 0 }, capaAnt = { acor: 1, mel: 1, cha: 0, bom: 0 };
   const VIENTO = { cumbres: 0.05, abismo: 0.06, acantilados: 0.045, tormenta: 0.04, desierto: 0.03, castillo: 0.02 };
   const PAJAROS = { pueblo: 1, amanecer: 1, selva: 1.4, acantilados: 0.6 };
+  // Ambiente cercano (v374): fuego de faroles y antorchas, agua de la orilla, buhos de noche y campanas lejanas del pueblo.
+  const BUHOS = { noche: 1, selva: 0.8, amanecer: 0.6, castillo: 0.7, tormenta: 0.4, pueblo: 0.35 };
+  let fuegoG = null, aguaG = null, fuegoK = 0, aguaK = 0, sigChasq = 0;
+  function cercanos() {
+    if (!ctx || !fuegoG) return;
+    const t = ctx.currentTime;
+    fuegoG.gain.setTargetAtTime(0.05 * fuegoK, t, 0.5); bucle('fuego', fuegoK > 0);
+    aguaG.gain.setTargetAtTime(0.07 * aguaK, t, 0.7); bucle('agua', aguaK > 0);
+  }
+  function buho(t) {
+    const f0 = 330 + Math.random() * 50, n = Math.random() < 0.5 ? 2 : 3;
+    for (let i = 0; i < n; i++) {
+      const a = t + i * 0.42 + (i === 2 ? 0.1 : 0), dur = i === n - 1 ? 0.5 : 0.24, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(f0 * 1.04, a); o.frequency.exponentialRampToValueAtTime(f0 * 0.93, a + dur);
+      g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(0.028, a + 0.05); g.gain.linearRampToValueAtTime(0.02, a + dur * 0.6); g.gain.linearRampToValueAtTime(0, a + dur);
+      o.connect(g); g.connect(ambG); o.start(a); o.stop(a + dur + 0.05);
+    }
+  }
+  // Chasquido de la leña: un golpe corto de ruido agudo.
+  function chasquido(t) {
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = ctx._ruido; f.type = 'highpass'; f.frequency.value = 1800 + Math.random() * 2500;
+    g.gain.setValueAtTime(0.05 * fuegoK * (0.4 + Math.random() * 0.6), t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.035);
+    s.connect(f); f.connect(g); g.connect(ambG); s.start(t, Math.random() * 1.5); s.stop(t + 0.05);
+  }
+  // Campanada lejana: parciales de campana con caida larga, apagados por la distancia (k: 0..1 segun lo cerca del pueblo).
+  function campanas(n, k) {
+    if (!ctx || !activo || !ambG) return;
+    k = Math.max(0, Math.min(1, k == null ? 1 : +k || 0)); if (!k) return;
+    const t0 = ctx.currentTime + 0.3, lp = ctx.createBiquadFilter(), sal = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 900 + 1800 * k; sal.gain.value = 0.5 * k;
+    lp.connect(sal); sal.connect(ambG);
+    n = Math.max(1, Math.min(6, n | 0));
+    for (let i = 0; i < n; i++) {
+      const t = t0 + i * 1.9;
+      for (const [m, v, d] of [[1, 0.05, 3.4], [2.0, 0.03, 2.6], [2.76, 0.02, 1.8], [5.4, 0.008, 0.9]]) {
+        if (ligera && m > 2.5) continue;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 196 * m;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0004, t + d);
+        o.connect(g); g.connect(lp); o.start(t); o.stop(t + d + 0.05);
+      }
+    }
+    setTimeout(() => { try { sal.disconnect(); lp.disconnect(); } catch (e) {} }, (n * 1.9 + 5) * 1000);
+  }
 
   function arrancar() {
     // iPhone deja el contexto en 'interrupted' tras una llamada o al salir de Telegram: cualquier estado que no sea 'running' se retoma.
@@ -124,6 +169,15 @@ export function crearMusica(opc = {}) {
     vientoF.connect(vientoG); vientoG.connect(salida);
     bucles.viento = { s: null, entrada: vientoF, rate: 0.5, cero: 0 };
     ambG = ctx.createGain(); ambG.gain.value = 0; ambG.connect(salida); ambG.connect(eco);
+    // Fuego (faroles y antorchas cerca) y agua (orilla cerca): el mismo ruido, cada uno con su filtro. Van por
+    // ambG: callan con el silencio del juego y siguen el volumen del menu. Suenan solo con M.fuego(k) / M.agua(k) > 0.
+    const ff = ctx.createBiquadFilter(); ff.type = 'bandpass'; ff.frequency.value = 520; ff.Q.value = 0.5;
+    fuegoG = ctx.createGain(); fuegoG.gain.value = 0; ff.connect(fuegoG); fuegoG.connect(ambG);
+    bucles.fuego = { s: null, entrada: ff, rate: 0.6, cero: 0 };
+    const af = ctx.createBiquadFilter(); af.type = 'bandpass'; af.frequency.value = 900; af.Q.value = 0.45;
+    aguaG = ctx.createGain(); aguaG.gain.value = 0; af.connect(aguaG); aguaG.connect(ambG);
+    bucles.agua = { s: null, entrada: af, rate: 0.8, cero: 0 };
+    cercanos();
     vivo = true;
     reloj = ctx.currentTime + 0.2; sigPaso = reloj;
     volumen();
@@ -192,9 +246,11 @@ export function crearMusica(opc = {}) {
     const t = ctx.currentTime;
     // El viento sopla a rachas.
     vientoF.frequency.setTargetAtTime(300 + Math.random() * 500, t, 1.2);
+    if (fuegoK > 0 && activo && t > sigChasq) { chasquido(t + Math.random() * 0.15); sigChasq = t + (ligera ? 0.5 : 0.18) + Math.random() * 0.7; }
     if (sigAmb > t + 8 || sigAmb < t - 1) sigAmb = t + 0.5;
     if (sigAmb > t + 0.25) return;
     const lluvia = clima === 'lluvia' || clima === 'tormenta';
+    if (noche && !lluvia && BUHOS[zona] && Math.random() < 0.09 * BUHOS[zona]) buho(t + 0.6 + Math.random());
     if (zona === 'cavernas' || zona === 'abismo') { gota(t + Math.random() * 0.2); sigAmb = t + 0.8 + Math.random() * 2.4; }
     else if (noche) { if (!lluvia) for (let i = 0; i < 2; i++) grillo(t + i * 0.5 + Math.random() * 0.1); sigAmb = t + 1.4 + Math.random() * 1.8; }
     else if (PAJAROS[zona] && !lluvia) { pajaro(t + Math.random() * 0.3); sigAmb = t + (2.5 + Math.random() * 5) / PAJAROS[zona]; }
@@ -524,6 +580,10 @@ export function crearMusica(opc = {}) {
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,
+    // Ambiente cercano: fuego(k) y agua(k) con k 0..1 (lo cerca que esta); campanas(n, k) da n campanadas lejanas.
+    fuego(k) { k = Math.max(0, Math.min(1, +k || 0)); if (k === fuegoK) return; fuegoK = k; cercanos(); },
+    agua(k) { k = Math.max(0, Math.min(1, +k || 0)); if (k === aguaK) return; aguaK = k; cercanos(); },
+    campanas,
     // Silenciada, tras bajar el volumen se suspende el contexto: el bordon y la
     // lluvia dejan de gastar bateria aunque no se oigan.
     activo(v) { activo = v; if (v) arrancar(); volumen(); if (!v && ctx) setTimeout(() => { if (!activo && ctx.state === 'running') ctx.suspend().catch(() => {}); }, 1600); },
