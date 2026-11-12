@@ -36,7 +36,7 @@ import { PERF } from './perf.js?v=374';
 import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=374';
 import { cargarModelado } from './modelado.js?v=374';
 import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=374';
-import { vestirKit, crearObra, animarObra } from './arquitectura.js?v=374';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=374';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=374';
 const MAQUINAS = maquinasAbismo();
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=374';
@@ -1268,7 +1268,11 @@ function crearPueblo() {
 // campanario (antes molino; ya sin aspas).
 function crearPuebloKit() {
   const piedra = new THREE.MeshLambertMaterial({ color: 0x5b5470 });
+  /* Edificios modelados en Blender (arquitectura.js): donde hay modelo, sustituye a la casa del kit en el mismo sitio. */
+  let ED = null;
+  try { ED = crearEdificios({ escena, KIT, PAQ, alturaEn, CASAS, torre: { x: -17, z: 31, ry: 0.6 }, nivel: GFX.efectivo, sombras: Q.sombras }); } catch (e) { console.warn('[3D] sin edificios modelados, casas del kit:', e); }
   CASAS.forEach((c, i) => {
+    if (ED && ED.casas[i]) return;
     const nx = Math.max(2, Math.round(c.w / 2.6)), nz = Math.max(2, Math.round(c.d / 2.6));
     const m = new THREE.Mesh(KIT.fundir(piezasCasa(nx, nz, i + 1, TECHOS[i % TECHOS.length])), KIT.material);
     // La puerta mira a la plaza (girar 180° no cambia la caja de choque).
@@ -1330,7 +1334,7 @@ function crearPuebloKit() {
   const torre = new THREE.Mesh(KIT.fundir(piezasCasa(2, 2, 9, '#a4472e', 3)), KIT.material);
   torre.scale.set(2.4, 2.3, 2.4); if (Q.sombras) torre.castShadow = true;
   molinoAspas = null;
-  g.add(torre); escena.add(g);
+  g.add(torre); if (!(ED && ED.torre)) escena.add(g);
   ponerSolido(mx, mz, 3);
   // Portal de mazmorras.
   const px = 22, pz = -18, py = alturaEn(px, pz);

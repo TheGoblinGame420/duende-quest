@@ -78,11 +78,26 @@ export function vestirKit(material, tam) {
         vec3 c = diffuseColor.rgb;
         float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
         float calido = step(c.b * 1.35, c.r) * step(c.b, c.g * 1.02);
-        float t = vObraT;
+        /* Marca entera = pieza del kit; marca + 0,5 = edificio modelado en Blender (crearEdificios). */
+        float t = floor(vObraT + 0.1);
+        float oEd = step(0.25, vObraT - t);
         vec3 piedra = vec3(0.36, 0.345, 0.315) * oP * (0.78 + 0.6 * lum);
         vec3 lena = vec3(0.15, 0.092, 0.058) * oM * (0.55 + 1.7 * lum);
         float musgo = smoothstep(0.5, 0.72, oA) * (1.0 - smoothstep(0.15, 1.7, vObraY)) * 0.65;
-        if (t > 7.5) c = mix(vec3(0.36, 0.345, 0.315) * (0.6 + 0.75 * oA) * mix(1.0, oP, 0.22) * (0.78 + 0.6 * lum), vec3(0.05, 0.09, 0.03), musgo);
+        if (oEd > 0.5 && (t < 4.5 || t > 5.5 && t < 6.5 || t > 7.5)) {
+          /* Edificio modelado: el color del vertice ya trae tono, suciedad, musgo y oclusion horneados; aqui solo el grano. */
+          if (t > 7.5) c *= 0.75 + 0.5 * oA;
+          else if (t > 3.5) c *= (0.3 + 0.78 * oM) * (0.9 + 0.2 * oA);
+          else if (t > 2.5) c *= (0.22 + 0.86 * oP) * (0.86 + 0.28 * oA);
+          else if (t > 1.5) {
+            float paja = step(c.r * 0.5, c.g) * step(c.b, c.r * 0.6);
+            vec4 oH = texture2D(uObraTex, oUV * vec2(1.3, 0.21));
+            c *= mix(0.2 + 0.9 * oJ, (0.45 + 0.6 * oH.g * 1.6) * (0.8 + 0.4 * oA), paja);
+          }
+          else c *= 0.84 + 0.32 * oA;
+          obraLuz += c * 0.07 * uObraNoche;
+        }
+        else if (t > 7.5) c = mix(vec3(0.36, 0.345, 0.315) * (0.6 + 0.75 * oA) * mix(1.0, oP, 0.22) * (0.78 + 0.6 * lum), vec3(0.05, 0.09, 0.03), musgo);
         else if (t > 6.5) { obraLuz = c * 2.2; c *= 0.3; }
         else if (t > 5.5) c = calido > 0.5 ? lena : piedra;
         else if (t > 4.5) {
@@ -163,6 +178,66 @@ function texturaPlaza(N) {
 }
 
 let runasMat = null, llamas = null, humo = null;
+
+// ── Edificios del pueblo modelados enteros en Blender (tools/blender/modelos/edificios.py → assets/3d/dq_edificios.*) ──
+// Cada modelo declara su sitio en `sus`: { casa: indice de CASAS } o { torre: 1 } (el campanario), mas `humo` y `fuego`
+// (puntos en coordenadas del modelo). Van en el MISMO sitio y con el mismo giro que la casa del kit que sustituyen
+// (la caja de choque no cambia). Gancho usado: PAQ.geo(nombre, nivel) + KIT.material (el material de obra: sombreado
+// plano y textura por marca; las vidrieras se encienden de noche). No se usa propios() porque su material organico
+// no conoce vidrio, teja ni madera y mece con el viento; ni {'kit': ...} porque sustituye piezas sueltas, no la casa.
+// Tres niveles de detalle con THREE.LOD (lo cambia el propio dibujo, sin codigo por cuadro): un dibujo por edificio.
+// ctx: { escena, KIT, PAQ, alturaEn, CASAS, torre: { x, z, ry }, nivel, sombras }. Devuelve { casas: [bool], torre: bool } o null.
+let EDIF = null;
+const DIST_LOD = [0, 46, 115];
+export function crearEdificios(ctx) {
+  const { escena, KIT, PAQ, alturaEn, CASAS } = ctx;
+  EDIF = null;
+  if (!PAQ || !KIT) return null;
+  try { if (new URLSearchParams(location.search).has('sinEdificios')) return null; } catch (e) {}
+  const baja = ctx.nivel === 'minima' || ctx.nivel === 'baja', geos = new Map();
+  // La geometria del paquete con la marca + 0,5 (asi el material de obra sabe que el color viene horneado).
+  const geo = (n, lod) => {
+    const k = n + '|' + lod;
+    if (!geos.has(k)) {
+      const o = PAQ.geo(n, lod), g = new THREE.BufferGeometry(), t = new Float32Array(o.attributes.tinte.array);
+      for (let i = 0; i < t.length; i++) t[i] += 0.5;
+      g.setAttribute('position', o.attributes.position); g.setAttribute('color', o.attributes.color); g.setAttribute('tinte', new THREE.BufferAttribute(t, 1)); g.setIndex(o.index);
+      g.boundingSphere = o.boundingSphere.clone();
+      geos.set(k, g);
+    }
+    return geos.get(k);
+  };
+  const poner = (n, x, z, ry) => {
+    const lod = new THREE.LOD(), y = alturaEn(x, z);
+    lod.position.set(x, y, z); lod.rotation.y = ry;
+    // En minima y baja no se dibuja nunca el nivel alto.
+    const niveles = baja ? [[1, 0], [2, 70]] : [[0, DIST_LOD[0]], [1, DIST_LOD[1]], [2, DIST_LOD[2]]];
+    for (const [l, d] of niveles) {
+      const m = new THREE.Mesh(geo(n, l), KIT.material);
+      if (ctx.sombras) { m.castShadow = true; m.receiveShadow = true; }
+      lod.addLevel(m, d, 0.06);
+    }
+    escena.add(lod); lod.updateMatrix(); lod.updateMatrixWorld(true);
+    lod.traverse(o => { o.matrixAutoUpdate = false; });
+    const s = PAQ.modelos[n].sus || {}, cs = Math.cos(ry), sn = Math.sin(ry);
+    const m = p => [x + p[0] * cs + p[2] * sn, y + p[1], z - p[0] * sn + p[2] * cs, p[3]];
+    return { n, x, y, z, ry, lod, humo: (s.humo || []).map(m), fuego: (s.fuego || []).map(m) };
+  };
+  const casas = [], lista = [];
+  let torre = null;
+  for (const n in PAQ.modelos) {
+    const s = PAQ.modelos[n].sus || {};
+    if (s.casa != null && CASAS[s.casa] && !casas[s.casa]) {
+      const c = CASAS[s.casa];
+      // La puerta mira a la plaza (girar 180° no cambia la caja de choque): la misma regla que la casa del kit.
+      casas[s.casa] = poner(n, c.x, c.z, c.r + (Math.sin(c.r) * c.x + Math.cos(c.r) * c.z > 0 ? Math.PI : 0)); lista.push(n);
+    } else if (s.torre && ctx.torre && !torre) { torre = poner(n, ctx.torre.x, ctx.torre.z, ctx.torre.ry || 0); lista.push(n); }
+  }
+  if (!lista.length) return null;
+  EDIF = { casas, torre };
+  try { window.__dqEdif = { modelos: lista, niveles: baja ? 2 : 3, lods: () => [...casas, torre].filter(Boolean).map(e => e.n + ':' + e.lod.getCurrentLevel()) }; } catch (e) {}
+  return { casas: CASAS.map((c, i) => !!casas[i]), torre: !!torre };
+}
 
 // ctx: { escena, KIT, alturaEn, enCamino, ponerSolido, CASAS, CAMINOS, evitar:[{x,z,r}], portal:{x,z}, arena:{x,z,r}, hitos:[{x,z}], nivel, sombras }
 export function crearObra(ctx) {
@@ -274,7 +349,14 @@ export function crearObra(ctx) {
     }
   }
   // Antorcha junto a cada puerta y humo en cada chimenea (misma cuenta que piezasCasa de kenney.js).
+  // Edificio modelado: su antorcha de pared, su fragua o su horno y sus chimeneas vienen en el modelo.
+  const deModelo = (e, i) => {
+    for (const f of e.fuego) llama(f[0], f[1], f[2], f[3] || 0.55);
+    if (!baja) e.humo.forEach((h, j) => { for (let k = 0; k < 5; k++) { H.p.push(h[0], h[1], h[2]); H.a.push(1.6, k / 5 + rnd(i + j * 7, k) * 0.1, i + j * 3); } });
+  };
+  if (EDIF && EDIF.torre) deModelo(EDIF.torre, 9);
   CASAS.forEach((c, i) => {
+    if (EDIF && EDIF.casas[i]) { deModelo(EDIF.casas[i], i); return; }
     const nx = Math.max(2, Math.round(c.w / 2.6)), nz = Math.max(2, Math.round(c.d / 2.6)), ex = c.w / nx, ez = c.d / nz;
     const ry = c.r + (Math.sin(c.r) * c.x + Math.cos(c.r) * c.z > 0 ? Math.PI : 0), cs = Math.cos(ry), sn = Math.sin(ry), y = alturaEn(c.x, c.z);
     const m = (lx, lz) => [c.x + lx * cs + lz * sn, c.z - lx * sn + lz * cs];
