@@ -33,6 +33,7 @@ import { crearParticulas } from './particulas.js?v=373';
 import { crearCielo } from './cielo.js?v=373';
 import { PERF } from './perf.js?v=373';
 import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=373';
+import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=373';
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=373';
 const MAQUINAS = maquinasAbismo();
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=373';
@@ -212,6 +213,7 @@ const LUZ = { noche: 0.8, cavernas: 0.8, tormenta: 0.85, cueva: 0.42 };
 const C = h => new THREE.Color(h);
 // Colores del suelo ya convertidos (colorSuelo corre en cada vertice del terreno y pixel del minimapa).
 const SUELO_C = Object.fromEntries(Object.entries(SUELO).map(([k, v]) => [k, C(v)]));
+const C_LIMO = C('#39463c');
 const C_PLAZA = C('#cdb98a'), C_ROCA = C('#6b6460'), C_NIEVE = C('#f2f4ff'), C_ARENA = C('#e0cf96'), C_CAMINO = C('#a8865a');
 
 // ── ESCENA ──
@@ -301,6 +303,7 @@ let gradoU = null;   // uniformes vivos de la correccion de color (ShaderPass cl
 // Lo llama ambiente() (cada pocos segundos, no por cuadro) y aplicarGfx(): relleno, luz de borde de los
 // personajes, oclusion de base del kit y contraste segun la hora. Fuera de FINO() todo queda como antes.
 let acabZ = 'pueblo', acabDia = 1, acabNub = 1;
+const SOTO_FX = { uT: KIT_FX.uT, uViento: { value: 0 }, uBrillo: { value: 1 } }, sotoMallas = [];
 function acabadoLuz(z, dia, nub) {
   acabZ = z; acabDia = dia; acabNub = nub;
   const fino = FINO(), cueva = z === 'cueva';
@@ -312,7 +315,10 @@ function acabadoLuz(z, dia, nub) {
     // Borde: calido de dia, azul de luna y mas tenue de noche (antes era el mismo blanco calido a todas horas).
     LUZ_BORDE.value.copy(BORDE_NOCHE).lerp(BORDE_DIA, dia).multiplyScalar(BORDE_K * (0.7 + 0.45 * dia));
     KIT_FX.uAO.value = 0.3; BORDE_FX.value.set(1, 0.22);
-  } else { LUZ_BORDE.value.copy(BORDE_DIA).multiplyScalar(BORDE_K); KIT_FX.uAO.value = 0; BORDE_FX.value.set(0, 0); }
+    KIT_FX.uViento.value = 1; KIT_FX.uMusgo.value = 1; SOTO_FX.uViento.value = 1; SOTO_FX.uBrillo.value = 1.7 - 1.1 * dia;
+  } else { LUZ_BORDE.value.copy(BORDE_DIA).multiplyScalar(BORDE_K); KIT_FX.uAO.value = 0; BORDE_FX.value.set(0, 0); KIT_FX.uViento.value = 0; KIT_FX.uMusgo.value = 0; SOTO_FX.uViento.value = 0; }
+  /* El sotobosque (mundo/js/terreno.js) solo existe si el mundo se cargo en media o mas; si luego se baja la calidad, se esconde. */
+  if (sotoMallas.length && sotoMallas[0].material.visible !== fino) sotoMallas[0].material.visible = fino;
   if (gradoU) { gradoU.uCon.value = 1 + 0.12 * dia; gradoU.uTono.value = cueva ? 0.4 : 1; }
 }
 // Sombras del sol: 1 = 1024 px alrededor del jugador; 2 = 2048 px y mas alcance. Se encienden y apagan en vivo.
@@ -671,8 +677,14 @@ function crearTerreno() {
     const x = pos.getX(i), z = pos.getZ(i), h = alturaEn(x, z);
     pos.setY(i, h);
     colorSuelo(x, z, h, c);
+    /* Ambientacion medieval mistica: el suelo pierde saturacion y brillo (el minimapa conserva sus colores), y bajo el agua el fondo es limo oscuro que se ve desde la orilla. */
+    const gris = (c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722) * 0.86;
+    c.r = (c.r * 0.86 - gris) * 0.72 + gris; c.g = (c.g * 0.86 - gris) * 0.72 + gris; c.b = (c.b * 0.86 - gris) * 0.72 + gris;
+    if (h < MUNDO.agua) c.lerp(C_LIMO, clamp((MUNDO.agua - h) / 5, 0, 0.82));
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
+  /* dqM por vertice para el detalle del suelo (terreno.js): roca por pendiente, distancia al camino (tope 12 m) y orilla mojada. */
+  const fino = FINO(), dqM = fino ? new Float32Array(pos.count * 3) : null;
   // Acabado del suelo (de calidad media para arriba; se decide al cargar, como la vegetacion): manchas grandes
   // de pasto mas seco o mas fresco (ruido suave a dos escalas) y oclusion por relieve (hondonadas mas oscuras,
   // lomas un pelo mas claras). Solo cambia el color por vertice del terreno: cero coste por cuadro, y el
@@ -692,13 +704,25 @@ function crearTerreno() {
       const n = (suave(x, z, 30, 21) - 0.5) * 0.65 + (suave(x, z, 9, 22) - 0.5) * 0.35;   // -0.5..0.5
       const k = ao * (1 + n * 0.34);
       col[i * 3] *= k * (1 + n * 0.3); col[i * 3 + 1] *= k; col[i * 3 + 2] *= k * (1 - n * 0.22);
+      dqM[i * 3] = clamp((Math.hypot(hr - hl, hd - hu) / (2 * paso) - 0.42) * 2.6, 0, 1);
+      dqM[i * 3 + 1] = Math.min(12, enCamino(x, z));
+      dqM[i * 3 + 2] = h < 1.5 ? clamp((1.5 - h) / 1.3, 0, 1) : 0;
     }
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const matLiso = new THREE.MeshLambertMaterial({ vertexColors: true });
+  let matSuelo = matLiso;
+  if (fino) {
+    try {
+      g.setAttribute('dqM', new THREE.BufferAttribute(dqM, 3));
+      matSuelo = vestirSuelo(new THREE.MeshLambertMaterial({ vertexColors: true }), texturaSuelo(MOVIL ? 128 : 256), CAMINOS, MOVIL ? 2 : 4);
+    } catch (e) { console.warn('[3D] suelo liso', e); matSuelo = matLiso; }
+  }
+  const m = new THREE.Mesh(g, matSuelo);
   m.receiveShadow = Q.sombras;
   escena.add(m);
+  if (matSuelo !== matLiso) respaldosShader.push(['suelo', () => { m.material = matLiso; }]);
   const base = new THREE.MeshLambertMaterial({ color: 0x3a8fd0, transparent: true, opacity: 0.72 });
   let matAgua = base;
   try { matAgua = materialAgua(pos); } catch (e) { console.warn('[3D] agua simple', e); matAgua = base; }
@@ -762,22 +786,23 @@ function materialAgua(pos) {
           cos(q.y * 0.4 + t * 0.9) * 0.05 + cos(q.y * 1.1 - q.x * 0.5 + t * 1.5) * 0.035${baja ? '' : ' + cos((q.x + q.y) * 2.3 - t * 2.2) * 0.02'}));
         vec3 v = normalize(cameraPosition - vW);
         float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
-        vec3 col = mix(vec3(0.07, 0.42, 0.44), vec3(0.012, 0.09, 0.24), hondo);
+        vec3 col = mix(vec3(0.07, 0.27, 0.25), vec3(0.01, 0.06, 0.15), hondo);
         // Reflejo: a cada ola le toca su trozo de cielo (horizonte al mirar rasante, cenit hacia arriba) y las nubes que pasan.
         vec3 rf = reflect(-v, n); float ry = max(rf.y, 0.0);
         vec3 cieloR = mix(uCielo, uTop, pow(ry, 0.6) * 0.7);
         ${baja ? '' : `float nb = texture2D(dqRuido, rf.xz / (ry + 0.2) * 0.13 + dqDes.xy).r; float th = mix(0.8, 0.22, dqNub);
         cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);`}
-        col = mix(col, cieloR, 0.18 + 0.5 * fres) * uLuz;
+        col = mix(col, cieloR, 0.1 + 0.58 * fres) * uLuz;
         // Brillo del astro que se ve (sol, o luna de noche): destello fino y una estela ancha y suave.
         float nh = max(dot(n, normalize(uLuzD + v)), 0.0);
         col += uSolC * (pow(nh, 160.0) * 1.3 + pow(nh, 22.0) * 0.07);
-        float orilla = 1.0 - smoothstep(0.0, 1.1, p);
+        float orilla = 1.0 - smoothstep(0.0, 0.7, p);
         float ola = 0.5 + 0.5 * sin(p * 9.0 - t * 1.8 + sin(q.x * 0.25 + q.y * 0.2) * 2.0);
         float espuma = orilla * (0.35 + 0.65 * ola);
         ${baja ? '' : 'if (orilla > 0.01) espuma *= 0.55 + 0.9 * texture2D(dqRuido, q * 0.05 + vec2(t * 0.012, t * -0.007)).g;'}
-        col = mix(col, vec3(0.85, 0.92, 0.95) * uLuz, espuma * 0.65);
-        gl_FragColor = vec4(col, clamp(mix(0.5, 0.86, hondo) + fres * 0.1 + espuma * 0.35, 0.0, 0.95));
+        col = mix(col, vec3(0.8, 0.86, 0.86) * uLuz, espuma * 0.5);
+        /* Orilla clara: en lo poco hondo se ve el fondo (limo y piedra del terreno) y se va cerrando hacia lo profundo. */
+        gl_FragColor = vec4(col, clamp(mix(0.3, 0.9, smoothstep(0.0, 0.75, hondo)) + fres * 0.14 + espuma * 0.3, 0.0, 0.95));
         #include <colorspace_fragment>
         #include <fog_fragment>
       }`,
@@ -995,6 +1020,15 @@ function crearFlora() {
     });
   }
   trozosFlora.push(...celdas.values());
+  /* Sotobosque (terreno.js): troncos caidos, tocones con raices, helechos, piedras con musgo y setas que brillan junto a caminos y campamentos. Solo dibujo (sin colision), una malla por celda, de media para arriba. */
+  if (floraFina) {
+    try {
+      const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX });
+      for (const ml of soto.mallas) { escena.add(ml); sotoMallas.push(ml); }
+      trozosFlora.push(...soto.celdas);
+      respaldosShader.push(['soto', () => { for (const ml of sotoMallas) ml.visible = false; soto.material.visible = false; }]);
+    } catch (e) { console.warn('[3D] sin sotobosque', e); }
+  }
 }
 const TROZO = 96, trozosFlora = [];
 // Las celdas de flora mas alla de la niebla no se dibujan.
@@ -9647,6 +9681,7 @@ function cuadroBucle(t) {
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
   if (corcho) { const ahC = performance.now(), amC = (corcho.userData.am || []).some(a => ahC >= a && ahC < a + 120);
     corcho.position.y = corcho.userData.y0 + (pica > ahC ? -0.18 + Math.sin(t / 60) * 0.08 : amC ? -0.07 + Math.sin(ahC / 25) * 0.03 : Math.sin(t / 500) * 0.04); }
+  KIT_FX.uT.value = t / 1000;   /* viento de la flora y del sotobosque */
   if (agua && agua.material.uniforms) {
     // Agua viva: refleja el horizonte, brilla con el sol (o la luna) y se oscurece de noche.
     AGUA_U.uT.value = t / 1000; AGUA_U.uCielo.value.copy(nieblaAct); AGUA_U.uSol.value.copy(solDir);

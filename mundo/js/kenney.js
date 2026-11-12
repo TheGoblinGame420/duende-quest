@@ -34,7 +34,9 @@ async function leerBin(base) {
 
 // Oclusion falsa en la base (mundo.js pone uAO segun la calidad; 0 = apagada): la parte baja de casas,
 // troncos y matas se oscurece hacia el suelo (los primeros ~1,3 m) y la pieza queda asentada en el terreno.
-export const KIT_FX = { uAO: { value: 0 } };
+// Naturaleza viva (solo mallas instanciadas = flora; 0 = apagado): uViento mece hojas y hierba (uT = segundos),
+// uMusgo da tono desigual a las copas y cubre de musgo (el color de la instancia) las caras de piedra que miran arriba.
+export const KIT_FX = { uAO: { value: 0 }, uT: { value: 0 }, uViento: { value: 0 }, uMusgo: { value: 0 } };
 
 function crearKit(ind, buf) {
   const cache = new Map();
@@ -50,6 +52,18 @@ function crearKit(ind, buf) {
     // Hojas y hierba toman el color de la instancia (con el brillo de su
     // pieza); lo demas conserva su color.
     sh.uniforms.uAO = KIT_FX.uAO;
+    sh.uniforms.uT = KIT_FX.uT; sh.uniforms.uViento = KIT_FX.uViento; sh.uniforms.uMusgo = KIT_FX.uMusgo;
+    sh.fragmentShader = 'varying vec4 vDqMus;\n' + sh.fragmentShader.replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+      diffuseColor.rgb = mix(diffuseColor.rgb, vDqMus.rgb, vDqMus.a * smoothstep(0.35, 0.8, dot(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz))));`);
+    sh.vertexShader = 'uniform float uT;\nuniform float uViento;\nuniform float uMusgo;\nvarying vec4 vDqMus;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vDqMus = vec4(0.0);
+      #ifdef USE_INSTANCING_COLOR
+        vDqMus = vec4(instanceColor.xyz * 0.62, (1.0 - tinte) * uMusgo * step(max(color.r, max(color.g, color.b)) - min(color.r, min(color.g, color.b)), 0.07));
+        vColor.xyz *= 1.0 + uMusgo * (fract(sin(dot(position, vec3(12.9898, 78.233, 37.719))) * 43758.5453) - 0.5) * mix(0.14, 0.36, tinte);
+        float dqAlt = position.y * aoEsc;
+        float dqFase = uT * 1.6 + instanceMatrix[3].x * 0.21 + instanceMatrix[3].z * 0.17;
+        transformed.xz += uViento * tinte * smoothstep(0.0, 0.5, dqAlt) * clamp(0.12 + dqAlt * 0.15, 0.0, 1.0) * vec2(sin(dqFase) + 0.4 * sin(dqFase * 2.3 + position.y), cos(dqFase * 0.8) * 0.6) * 0.16 / aoEsc;
+      #endif`);
     sh.vertexShader = 'attribute float tinte;\nuniform float uAO;\n' + sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
       #ifdef USE_INSTANCING_COLOR
         vColor.xyz = mix(color, instanceColor.xyz * clamp(dot(color, vec3(0.2126, 0.7152, 0.0722)) / 0.28, 0.55, 1.5), tinte);
