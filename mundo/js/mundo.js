@@ -3680,6 +3680,92 @@ let movInputT = 0;
 for (const ev of ['pointermove', 'wheel', 'touchmove']) addEventListener(ev, () => { movInputT = performance.now(); }, { capture: true, passive: true });
 // Al volver de otra app (WhatsApp) cuenta como toque: no pausar a los pocos segundos.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) ultimoToqueT = performance.now(); });
+// ── Barra del celular (hb): toda casilla mide 44 px. Las que no caben en la fila van a una bandeja que abre el boton ↑.
+// El jugador elige cuales quedan en la fila: boton ORDEN de la bandeja, tocar dos casillas y cambian de lugar.
+// Se guarda por clase en localStorage dq3_barra_orden = { clase: ['h:<hab>', 'p:<poder>', ...] }. Sin nada guardado:
+// las primeras habilidades aprendidas y la pocion en la fila. En PC no hace nada.
+const HB_CLAVE = 'dq3_barra_orden';
+let hbEdit = false, hbSel = null, hbOrden = [], hbResizeT = 0;
+const hbId = d => (d.dataset.hab ? 'h:' + d.dataset.hab : 'p:' + d.dataset.pw);
+function hbLeer() { try { const o = JSON.parse(localStorage.getItem(HB_CLAVE) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function hbAbrir(si) {
+  const b = $('barra'), m = $('hb-mas'), ed = $('hb-editar');
+  b.classList.toggle('hb-abierta', si);
+  if (!si) { hbEdit = false; hbSel = null; b.classList.remove('hb-edit'); b.querySelectorAll('.hb-sel').forEach(x => x.classList.remove('hb-sel')); }
+  if (m) { m.textContent = si ? '✕' : '↑'; m.setAttribute('aria-expanded', si ? 'true' : 'false'); if (si) m.classList.remove('tuto-pulso'); }
+  if (ed) ed.textContent = hbEdit ? 'LISTO' : 'ORDEN';
+}
+function hbTocar(d) {
+  if (!hbSel) { hbSel = d; d.classList.add('hb-sel'); return; }
+  if (hbSel === d) { d.classList.remove('hb-sel'); hbSel = null; return; }
+  const i = hbOrden.indexOf(hbId(hbSel)), j = hbOrden.indexOf(hbId(d));
+  if (i >= 0 && j >= 0) {
+    const o = hbOrden.slice(); o[i] = hbOrden[j]; o[j] = hbOrden[i];
+    const t = hbLeer(); t[(yo && yo.clase) || '_'] = o;
+    try { localStorage.setItem(HB_CLAVE, JSON.stringify(t)); } catch (e) {}
+  }
+  hbSel.classList.remove('hb-sel'); hbSel = null;
+  hbOrdenar();
+}
+function hbOrdenar() {
+  const b = $('barra');
+  if (!MOVIL || !b || !yo) return;
+  const todas = [...b.querySelectorAll('[data-hab],[data-pw]')];
+  if (!todas.length) return;
+  todas.forEach((d, i) => {
+    if (d._hbI !== undefined) return;
+    d._hbI = i;
+    const usar = d.onclick;   /* el touchstart de pintarBarra llama a d.onclick(): pasa por aqui */
+    d.onclick = e => {
+      if (hbEdit && hbOrden.includes(hbId(d))) { hbTocar(d); return; }
+      usar(e);
+      if (d.parentNode && d.parentNode.id === 'hb-bandeja') hbAbrir(false);
+    };
+  });
+  todas.sort((x, y) => x._hbI - y._hbI);
+  let mas = $('hb-mas'), ban = $('hb-bandeja'), ed = $('hb-editar');
+  if (!mas) {
+    const boton = (id, titulo, fn) => {
+      const x = document.createElement('button'); x.id = id; x.type = 'button'; x.title = titulo; x.setAttribute('aria-label', titulo);
+      x.onclick = fn;
+      x.addEventListener('touchstart', e => { e.preventDefault(); fn(); }, { passive: false });
+      return x;
+    };
+    mas = boton('hb-mas', 'Más habilidades y objetos', () => hbAbrir(!b.classList.contains('hb-abierta')));
+    mas.textContent = '↑'; mas.setAttribute('aria-expanded', 'false');
+    ban = document.createElement('div'); ban.id = 'hb-bandeja';
+    ed = boton('hb-editar', 'Elegir qué va en la fila de abajo', () => {
+      hbEdit = !hbEdit; hbSel = null;
+      b.classList.toggle('hb-edit', hbEdit); b.querySelectorAll('.hb-sel').forEach(x => x.classList.remove('hb-sel'));
+      ed.textContent = hbEdit ? 'LISTO' : 'ORDEN';
+      if (hbEdit) aviso('Toca dos casillas y cambian de lugar. Las de la fila de abajo quedan siempre a la vista.');
+    });
+    ed.textContent = 'ORDEN';
+    ban.appendChild(ed); b.appendChild(mas); b.appendChild(ban);
+    b.classList.remove('hb-abierta', 'hb-edit'); hbEdit = false; hbSel = null;
+  }
+  for (const d of todas) b.insertBefore(d, mas);   /* deshace el reparto anterior */
+  // Acostado, las del arco (alrededor de ATACAR) no ocupan sitio en la fila.
+  const arco = matchMedia('(orientation:landscape) and (max-height:500px)').matches;
+  const cand = todas.filter(d => !(arco && d.classList.contains('arco')));
+  const ancho = b.clientWidth > 120 ? b.clientWidth : innerWidth - 16;
+  const cap = Math.max(3, Math.floor((ancho + 4) / 48));
+  if (cand.length <= cap) { mas.classList.remove('on'); hbOrden = []; if (b.classList.contains('hb-abierta')) hbAbrir(false); return; }
+  const n = cap - 1, porId = new Map(cand.map(d => [hbId(d), d]));
+  const apr = cand.filter(d => d.dataset.hab && !d.classList.contains('bloq')), poc = porId.get('p:pocion');
+  const def = [...apr.slice(0, poc ? n - 1 : n), ...(poc ? [poc] : []), ...cand].map(hbId);
+  const guard = hbLeer()[yo.clase || '_'];
+  hbOrden = [...new Set([...(Array.isArray(guard) ? guard : []), ...def])].filter(id => porId.has(id));
+  hbOrden.slice(0, n).forEach(id => b.insertBefore(porId.get(id), mas));
+  hbOrden.slice(n).forEach(id => ban.insertBefore(porId.get(id), ed));
+  mas.classList.add('on');
+  if (!b.classList.contains('hb-abierta')) mas.classList.toggle('tuto-pulso', !!ban.querySelector('.tuto-pulso'));
+}
+if (MOVIL) {
+  addEventListener('resize', () => { clearTimeout(hbResizeT); hbResizeT = setTimeout(hbOrdenar, 200); });
+  // Tocar fuera cierra la bandeja (ordenando no: se cierra con LISTO o con ✕).
+  addEventListener('pointerdown', e => { const b = $('barra'); if (b && !hbEdit && b.classList.contains('hb-abierta') && !(e.target && e.target.closest && e.target.closest('#barra'))) hbAbrir(false); }, true);
+}
 function pintarBarra() {
   try { marcaJefeIni(); } catch (e) {}   // jefeIni se declara mas abajo: antes de eso no hay jefes que medir
   if (!yo) return;
@@ -3727,6 +3813,7 @@ function pintarBarra() {
       b.appendChild(d);
     });
     pulsoHabNueva();
+    hbOrdenar();
   }
   $('acc-atk').classList.toggle('on', autoAtk);
   // En movil la barra no lleva el boton de ataque: ATACAR muestra si el automatico esta puesto.
