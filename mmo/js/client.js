@@ -21,6 +21,7 @@ import {
 import { iniciarRegalo } from './regalo.js?v=373';
 import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=373';
 import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=373';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque } from './fondo2d.js?v=373';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1522,11 +1523,14 @@ function dibujarPesquero() {
   if (!p) return;
   const x = p.x - camX;
   if (x < -80 || x > VW + 80) return;
-  g.globalAlpha = .85;
-  g.fillStyle = '#1e40af';
-  g.beginPath(); g.ellipse(x, SUELO - 2, 48, 9, 0, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#3b82f6';
-  g.beginPath(); g.ellipse(x, SUELO - 3, 40, 6, 0, 0, Math.PI * 2); g.fill();
+  if (FONDO2D) fondoEstanque(g, x, SUELO, frame);
+  else {
+    g.globalAlpha = .85;
+    g.fillStyle = '#1e40af';
+    g.beginPath(); g.ellipse(x, SUELO - 2, 48, 9, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#3b82f6';
+    g.beginPath(); g.ellipse(x, SUELO - 3, 40, 6, 0, 0, Math.PI * 2); g.fill();
+  }
   // Ondas
   const r = (frame % 90) / 90;
   g.globalAlpha = .5 * (1 - r);
@@ -4337,7 +4341,12 @@ function dibujarCapa(img, desplaz, sobreSuelo, fundir) {
   }
 }
 
+/* Fondo «medieval místico» procedural (fondo2d.js). Con localStorage dq_fondo2d = '0' vuelve el fondo clásico. */
+let FONDO2D = true; try { FONDO2D = localStorage.getItem('dq_fondo2d') !== '0'; } catch (e) {}
+const VF = { g, mp: null, id: '', camX: 0, VW: 800, VH, OY: 0, SUELO, frame: 0, ligero: false };
+function vistaFondo(mp) { VF.mp = mp; VF.id = mapaId; VF.camX = camX; VF.VW = VW; VF.OY = OY; VF.frame = frame; VF.ligero = ligero; return VF; }
 function dibujarFondo(mp) {
+  if (FONDO2D) { fondoCielo(vistaFondo(mp)); return; }
   const gr = g.createLinearGradient(0, -OY, 0, VH);
   gr.addColorStop(0, mp.paleta.cielo[0]); gr.addColorStop(1, mp.paleta.cielo[1]);
   g.fillStyle = gr; g.fillRect(0, -OY, VW, VH + OY);
@@ -4357,6 +4366,7 @@ function dibujarFondo(mp) {
 }
 
 function dibujarSuelo(mp) {
+  if (FONDO2D) { fondoMundo(VF); return; }
   g.fillStyle = mp.paleta.suelo; g.fillRect(0, SUELO, VW, VH - SUELO);
   g.fillStyle = mp.paleta.linea; g.fillRect(0, SUELO, VW, 3);
   g.globalAlpha = .12;
@@ -4416,7 +4426,7 @@ function dibujarAmbiente(mp) {
     const pisan = [P.x];
     for (const q of otros.values()) if (Math.abs(q.x - P.x) < VW) pisan.push(q.x);
     for (const o of mons.values()) if (!o.muereT && !MONSTRUOS[o.k].vuela && Math.abs(o.x - P.x) < VW) pisan.push(o.x);
-    g.save(); g.strokeStyle = mp.paleta.linea; g.lineWidth = 1.5; g.globalAlpha = .55 * hz;
+    g.save(); g.strokeStyle = FONDO2D ? fondoTono(mp) : mp.paleta.linea; g.lineWidth = 1.5; g.globalAlpha = (FONDO2D ? .8 : .55) * hz;
     g.beginPath();
     const x0 = Math.floor(camX / 26) * 26;
     for (let wx = x0; wx < camX + VW + 26; wx += 26) {
@@ -6444,7 +6454,10 @@ function bucle(t) {
   // veces avanzaba dos pasos de golpe y se notaba un tirón).
   const rx = P.x, ry = P.y;
   if (P.px !== undefined && Math.abs(P.x - P.px) < 60) { const k = acum / PASO; P.x = P.px + (rx - P.px) * k; P.y = P.py + (ry - P.py) * k; }
+  /* Medidor opcional (solo si alguien crea window.dq2dPerf = { n: 0, ms: 0 }): tiempo de dibujar() por cuadro. */
+  const med2d = window.dq2dPerf, t2d = med2d ? performance.now() : 0;
   try { dibujar(); } finally { P.x = rx; P.y = ry; }
+  if (med2d) { med2d.n++; med2d.ms += performance.now() - t2d; }
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
