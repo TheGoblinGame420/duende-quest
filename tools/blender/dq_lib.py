@@ -324,8 +324,19 @@ def hojas_sueltas(base, n=120, tam=0.35, semilla=0, fuera=0.08, color=(1, 1, 1),
     o = malla('hojas', verts, caras, marca, color)
     if centros is None:
         c = P.mean(0); centros = [c]
-    inflar(o, centros, inflado); poner_viento(o, 1.0); o['dq_afilado'] = 1
+    inflar(o, centros, inflado); poner_viento(o, 1.0); dos_caras(o); o['dq_afilado'] = 1
     return o
+
+
+def dos_caras(obj):
+    """Laminas sueltas (hojas, cintas, telas): el juego dibuja una sola cara, asi que se duplican dadas la vuelta.
+    Llamalo DESPUES de pintar e inflar (la copia hereda color, viento y normales infladas)."""
+    aplicar(obj); me = obj.data
+    bm = bmesh.new(); bm.from_mesh(me)
+    r = bmesh.ops.duplicate(bm, geom=bm.faces[:] + bm.edges[:] + bm.verts[:])
+    bmesh.ops.reverse_faces(bm, faces=[g for g in r['geom'] if isinstance(g, bmesh.types.BMFace)])
+    bm.to_mesh(me); bm.free(); me.update()
+    return obj
 
 
 # ── marcas, color y viento ──
@@ -513,6 +524,7 @@ def construir(m, solo_lod=None):
         else:
             obj = m['fn'](lod)
             if isinstance(obj, (list, tuple)): obj = unir(list(obj))
+            if m['lods'] == 'decimar': decimar(obj, m['tris'][0])   # el nivel alto tambien se ajusta a su limite
         obj.name = '%s_L%d' % (m['nombre'], lod)
         d = terminar(obj, m)
         lim = m['tris'][lod]

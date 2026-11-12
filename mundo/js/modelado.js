@@ -54,7 +54,7 @@ function crear(paqs, fx) {
   const modelos = {}, cache = new Map(), floraDe = {}, kit = {};
   for (const { j, buf } of paqs) for (const n in j.modelos) {
     const m = modelos[n] = { ...j.modelos[n], buf, familia: j.familia }, s = m.sus || {};
-    if (s.flora) (floraDe[s.flora] = floraDe[s.flora] || []).push({ n, alto: s.alto || 0, modo: s.modo || '', zonas: s.zonas || null, orilla: !!s.orilla, peso: s.peso || 1 });
+    if (s.flora) (floraDe[s.flora] = floraDe[s.flora] || []).push({ n, alto: s.tam || s.alto || 0, modo: s.modo || '', zonas: s.zonas || null, orilla: !!s.orilla, lejos: s.lejos && j.modelos[s.lejos] ? s.lejos : n });
     if (s.kit) kit[s.kit] = n;
   }
   // Geometria de un modelo en un nivel (0 alto, 1 medio, 2 bajo). Se crea una vez.
@@ -101,34 +101,63 @@ function crear(paqs, fx) {
   return { modelos, geo, flora, kit, material: materialOrganico(fx), caja: n => modelos[n] && { min: modelos[n].min, max: modelos[n].max }, tris: (n, lod) => modelos[n].lods[lod].i / 3 };
 }
 
+// Textura de detalle (una, de 128 px, hecha aqui): R = manchas de hojas (racimos claros con huecos oscuros),
+// G = veta de corteza y grano de piedra. Sin UV: se proyecta desde la posicion del modelo.
+function texturaDetalle(N) {
+  const d = new Uint8Array(N * N * 4), K = 10, h = (x, y, s) => { let n = (x | 0) * 374761393 + (y | 0) * 668265263 + s * 2654435761; n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967295; };
+  const rp = (x, y, px, py, s) => { const x0 = Math.floor(x), y0 = Math.floor(y), tx = x - x0, ty = y - y0, sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty), mx = v => ((v % px) + px) % px, my = v => ((v % py) + py) % py;
+    const a = h(mx(x0), my(y0), s), b = h(mx(x0 + 1), my(y0), s), c = h(mx(x0), my(y0 + 1), s), e = h(mx(x0 + 1), my(y0 + 1), s); return (a + (b - a) * sx) * (1 - sy) + (c + (e - c) * sx) * sy; };
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const u = x / N * K, v = y / N * K, cx = Math.floor(u), cy = Math.floor(v);
+    let f1 = 9;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const gx = cx + i, gy = cy + j, mx = ((gx % K) + K) % K, my = ((gy % K) + K) % K; f1 = Math.min(f1, Math.hypot(u - (gx + 0.15 + h(mx, my, 1) * 0.7), v - (gy + 0.15 + h(mx, my, 2) * 0.7))); }
+    const hoja = Math.min(1, Math.max(0, 0.92 - f1 * 0.95)) * 0.75 + rp(u * 3.2, v * 3.2, 32, 32, 3) * 0.25;
+    const veta = rp(u * 6.4, v * 0.8, 64, 8, 4) * 0.55 + rp(u * 12.8, v * 1.6, 128, 16, 5) * 0.25 + rp(u * 3.2, v * 3.2, 32, 32, 6) * 0.2;
+    const o = (y * N + x) * 4; d[o] = hoja * 255; d[o + 1] = veta * 255; d[o + 2] = 128; d[o + 3] = 255;
+  }
+  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true;
+  return t;
+}
+
 // Material de los modelos propios: color por vertice con sombreado suave. Marcas (`tinte`):
 //   1 hoja    → toma el color de la instancia (el verde de la zona) y se mece con el viento (dqW);
 //   3 piedra y 8 monolito → el musgo de la zona cubre lo que mira arriba;
 //   7 emisivo → brilla (mas de noche);  el resto → su color tal cual.
+// De calidad media para arriba (uMusgo = 1) suma el detalle de hoja y corteza y un borde de luz en el follaje.
 function materialOrganico(fx) {
   const mat = transparentar(new THREE.MeshLambertMaterial({ vertexColors: true }));
-  const prev = mat.onBeforeCompile, cero = { value: 0 };
+  const prev = mat.onBeforeCompile, cero = { value: 0 }, det = { value: texturaDetalle(128) };
   mat.onBeforeCompile = (sh, r) => {
     prev(sh, r);
-    sh.uniforms.uT = fx.uT || cero; sh.uniforms.uViento = fx.uViento || cero; sh.uniforms.uMusgo = fx.uMusgo || cero; sh.uniforms.uBrillo = fx.uBrillo || { value: 1 };
-    sh.vertexShader = '// dq:modelado\nattribute float tinte;\nattribute float dqW;\nuniform float uT;\nuniform float uViento;\nuniform float uMusgo;\nvarying vec4 vDqMus;\nvarying float vDqEmi;\n' + sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
+    sh.uniforms.uT = fx.uT || cero; sh.uniforms.uViento = fx.uViento || cero; sh.uniforms.uMusgo = fx.uMusgo || cero; sh.uniforms.uBrillo = fx.uBrillo || { value: 1 }; sh.uniforms.uDqDet = det;
+    sh.vertexShader = '// dq:modelado\nattribute float tinte;\nattribute float dqW;\nuniform float uT;\nuniform float uViento;\nuniform float uMusgo;\nvarying vec4 vDqMus;\nvarying vec3 vDqP;\nvarying vec3 vDqN;\nvarying vec2 vDqM;\n' + sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
       float dqHoja = step(0.5, tinte) * step(tinte, 1.5);
-      vDqEmi = step(6.5, tinte) * step(tinte, 7.5);
+      vDqM = vec2(dqHoja, step(6.5, tinte) * step(tinte, 7.5));
+      vDqP = position; vDqN = normal;
       vDqMus = vec4(0.0);
       #ifdef USE_INSTANCING_COLOR
         vColor.xyz = mix(color, instanceColor.xyz * color / vec3(0.12, 0.36, 0.08), dqHoja);
         vDqMus = vec4(instanceColor.xyz * 0.62, uMusgo * (step(2.5, tinte) * step(tinte, 3.5) + step(7.5, tinte)));
       #endif`).replace('#include <begin_vertex>', `#include <begin_vertex>
       #ifdef USE_INSTANCING
-        float dqEsc = length(instanceMatrix[1].xyz);
+        float dqEsc = max(length(instanceMatrix[1].xyz), 0.0001);
         float dqFase = uT * 1.6 + instanceMatrix[3].x * 0.21 + instanceMatrix[3].z * 0.17;
         float dqK = uViento * dqW / dqEsc;
         transformed.xz += dqK * clamp(position.y * dqEsc * 0.14, 0.0, 1.0) * 0.17 * vec2(sin(dqFase) + 0.4 * sin(dqFase * 2.3 + position.y), cos(dqFase * 0.8) * 0.6);
         transformed.y += dqK * dqHoja * 0.04 * sin(uT * 2.9 + dqFase + position.x * 1.7 + position.z * 2.3);
       #endif`);
-    sh.fragmentShader = '// dq:modelado\nuniform float uBrillo;\nvarying vec4 vDqMus;\nvarying float vDqEmi;\n' + sh.fragmentShader.replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
-      diffuseColor.rgb = mix(diffuseColor.rgb, vDqMus.rgb, vDqMus.a * smoothstep(0.45, 0.85, dot(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz))));`)
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n      totalEmissiveRadiance += diffuseColor.rgb * vDqEmi * uBrillo;');
+    sh.fragmentShader = '// dq:modelado\nuniform float uBrillo;\nuniform float uMusgo;\nuniform sampler2D uDqDet;\nvarying vec4 vDqMus;\nvarying vec3 vDqP;\nvarying vec3 vDqN;\nvarying vec2 vDqM;\n' + sh.fragmentShader.replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+      diffuseColor.rgb = mix(diffuseColor.rgb, vDqMus.rgb, vDqMus.a * smoothstep(0.45, 0.85, dot(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz))));
+      {
+        /* Sin UV: se proyecta por el eje que mas mira la cara (en hojas, manchas; en madera, veta a lo largo del tronco). */
+        vec3 dqA = abs(vDqN);
+        vec2 dqUV = dqA.y > 0.62 ? vDqP.xz : (dqA.x > dqA.z ? vDqP.zy : vDqP.xy);
+        vec4 dqD = texture2D(uDqDet, dqUV * mix(vec2(0.5, 0.16), vec2(0.36), vDqM.x));
+        float dqR = 1.0 - abs(dot(normal, normalize(vViewPosition)));
+        diffuseColor.rgb *= mix(1.0, (0.55 + 0.9 * mix(dqD.g, dqD.r, vDqM.x)) * (1.0 + vDqM.x * 0.45 * dqR * dqR * dqR), uMusgo * (1.0 - vDqM.y));
+      }`)
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n      totalEmissiveRadiance += diffuseColor.rgb * vDqM.y * uBrillo;');
   };
   mat.customProgramCacheKey = () => 'tapa-dqm';
   return mat;

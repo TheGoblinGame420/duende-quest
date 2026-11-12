@@ -27,8 +27,8 @@ const args = process.argv.slice(2);
 function blender(guion, extra) {
   const r = spawnSync(BLENDER, ['--background', '--factory-startup', '--python-exit-code', '1', '--python', path.join(AQUI, guion), '--', ...extra], { encoding: 'utf8', maxBuffer: 64 << 20 });
   const lineas = ((r.stdout || '') + (r.stderr || '')).split(/\r?\n/);
-  for (const l of lineas) if (/^\[dq\]|Error|error:|Traceback|^\s+File "|RuntimeError|SystemExit/.test(l)) console.log(l);
-  if (r.status !== 0) { console.error(lineas.slice(-25).join('\n')); throw new Error(guion + ' termino con error'); }
+  for (const l of lineas) if (/^\[dq\]|Error|error:|Traceback|^\s+File "|SystemExit/.test(l)) console.log(l);
+  if (r.status !== 0) { console.error('✗ ' + guion + ' terminó con error (código ' + r.status + '): mira la traza de arriba'); process.exit(1); }
 }
 
 function indice() {

@@ -950,26 +950,29 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
   }
   return 1;
 }
-/* Flora con modelos propios: mismas posiciones, tamaños y colisiones; solo cambia la malla. Tres niveles de detalle:
-   el alto en las subceldas (48 m) pegadas al duende, el medio en el resto de la celda cercana y el bajo de lejos
-   (y siempre, con la vegetacion en «baja»). Devuelve los que no tienen modelo propio (siguen con el kit). */
-const LOD0_D2 = (CAL === 'alta' ? 46 : MOVIL ? 26 : 32) ** 2, mallasPropias = [];
-function floraPropia(tipo, todos, celdas, fina) {
-  const resto = [], sub = new Map(), SUB = TROZO / 2, ligero = CAL === 'baja';
+/* Flora con modelos propios (mundo/js/modelado.js): mismas posiciones, tamaños y colisiones; solo cambia la malla.
+   Tres niveles de detalle: el bajo por celda (lejos), el medio por celda (las que tocan el circulo LOD1_R del duende)
+   y el alto arbol a arbol: los que estan a menos de LOD0_R pasan a UNA malla instanciada por modelo (lodCerca) y se
+   esconden de la de su celda. Con la vegetacion en «baja» todo baja un escalon: bajo por celda y medio junto al duende.
+   Devuelve los que no tienen modelo propio (siguen con el kit). */
+const LIGERA = CAL === 'baja', LOD0_R = CAL === 'alta' ? 40 : LIGERA ? 22 : MOVIL ? 24 : 30, LOD1_R = CAL === 'alta' ? 60 : MOVIL ? 30 : 36, CERCA_MAX = 96;
+const mallasPropias = [], cercaPropia = new Map(), ocultasPropias = [], suciasPropias = new Set();
+function floraPropia(tipo, todos, celdas, fina, fijo) {
+  const resto = [], grupos = new Map(), tocadas = new Set();
   for (const t of todos) {
-    const vars = PAQ.flora(tipo, t.zona, t.y < MUNDO.agua + 2.4);
+    const vars = fijo || PAQ.flora(tipo, t.zona, t.y < MUNDO.agua + 2.4);
     if (!vars) { resto.push(t); continue; }
     const vr = vars[Math.min(vars.length - 1, Math.floor(hashR(t.x | 0, t.z | 0, 11) * vars.length))];
-    const kx = Math.floor(t.x / SUB), kz = Math.floor(t.z / SUB), k = kx + '|' + kz + '|' + vr.n;
-    let g = sub.get(k); if (!g) sub.set(k, g = { vr, kx, kz, l: [] });
+    const kx = Math.floor(t.x / TROZO), kz = Math.floor(t.z / TROZO), k = kx + '|' + kz + '|' + vr.n;
+    let g = grupos.get(k); if (!g) grupos.set(k, g = { vr, kx, kz, l: [] });
     g.l.push(t);
   }
-  if (!sub.size) return resto;
+  if (!grupos.size) return resto;
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
-  const hacer = (vr, l, lod) => {
-    const cj = PAQ.caja(vr.n), alto = cj.max[1] - cj.min[1];
+  const hacer = (vr, l, lod, cupo) => {
+    const cj = PAQ.caja(vr.n);
     const base = vr.alto ? vr.alto / (vr.modo === 'a' ? Math.max(cj.max[0] - cj.min[0], cj.max[2] - cj.min[2]) : cj.max[1]) : 1;
-    const im = new THREE.InstancedMesh(PAQ.geo(vr.n, lod), PAQ.material, l.length);
+    const im = new THREE.InstancedMesh(PAQ.geo(vr.n, lod), PAQ.material, cupo || l.length);
     l.forEach((t, i) => {
       e.set(0, t.rot, 0); q.setFromEuler(e);
       const k = t.s * base; sc.set(k, k * (0.92 + hashR(t.x | 0, t.z | 0, 14) * 0.2), k); v.set(t.x, t.y, t.z);
@@ -977,25 +980,67 @@ function floraPropia(tipo, todos, celdas, fina) {
       col.set(t.color || TINTE_ROCA[t.zona] || '#5f8f4a').offsetHSL(fina ? (hashR(t.x | 0, t.z | 0, 12) - 0.5) * 0.05 : 0, fina ? -0.1 - hashR(t.x | 0, t.z | 0, 13) * 0.14 : 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * (fina ? 0.17 : 0.12));
       im.setColorAt(i, col);
     });
-    im.computeBoundingSphere();
-    if (Q.sombras && lod < 2 && alto * base >= 5) im.castShadow = true;
-    im.visible = false; im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
+    if (cupo) { im.count = 0; im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.instanceColor.setUsage(THREE.DynamicDrawUsage); }
+    else { im.computeBoundingSphere(); im.visible = false; }
+    if (Q.sombras && lod < 2 && cj.max[1] * base >= 5) im.castShadow = true;
+    im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
     escena.add(im); mallasPropias.push(im);
     return im;
   };
-  const lejos = new Map();
-  for (const g of sub.values()) {
-    const ck = (g.kx >> 1) + '|' + (g.kz >> 1);
+  for (const g of grupos.values()) {
+    const ck = g.kx + '|' + g.kz;
     let c = celdas.get(ck);
-    if (!c) celdas.set(ck, c = { x: ((g.kx >> 1) + 0.5) * TROZO, z: ((g.kz >> 1) + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] });
-    if (!c.subs) { c.subs = []; c.lod2 = []; }
-    const lk = ck + '|' + g.vr.n; let lj = lejos.get(lk);
-    if (!lj) lejos.set(lk, lj = { c, vr: g.vr, l: [] });
-    for (const t of g.l) lj.l.push(t);
-    if (!ligero) c.subs.push({ x: (g.kx + 0.5) * SUB, z: (g.kz + 0.5) * SUB, l0: [hacer(g.vr, g.l, 0)], l1: [hacer(g.vr, g.l, 1)] });
+    if (!c) celdas.set(ck, c = { x: (g.kx + 0.5) * TROZO, z: (g.kz + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] });
+    if (!c.propias) c.propias = { medio: [], lejos: [], porLejos: new Map() };
+    /* De lejos, las variantes de una especie comparten malla (la que su guion declara en 'lejos'): un dibujo menos por celda. */
+    if (!LIGERA) {
+      let lj = c.propias.porLejos.get(g.vr.lejos);
+      if (!lj) { c.propias.porLejos.set(g.vr.lejos, lj = { vr: { ...g.vr, n: g.vr.lejos }, l: [] }); tocadas.add(c); }
+      for (const t of g.l) lj.l.push(t);
+    }
+    const en = { n: g.vr.n, l: g.l, l1: hacer(g.vr, g.l, LIGERA ? 2 : 1), m0: null };
+    en.m0 = en.l1.instanceMatrix.array.slice();
+    if (!cercaPropia.has(en.n)) { const im = hacer(g.vr, g.l.slice(0, 1), LIGERA ? 1 : 0, CERCA_MAX); im.visible = false; cercaPropia.set(en.n, { im, n: 0 }); }
+    c.propias.medio.push(en);
   }
-  for (const lj of lejos.values()) lj.c.lod2.push(hacer(lj.vr, lj.l, 2));
+  for (const c of tocadas) { for (const lj of c.propias.porLejos.values()) c.propias.lejos.push(hacer(lj.vr, lj.l, 2)); c.propias.porLejos.clear(); }
   return resto;
+}
+/* Decorado propio colocado por codigo (no sembrado): copias de UN modelo con los mismos niveles de detalle y recorte.
+   lista: [{ x, y, z, rot, s, color, zona }]. Lo recibe crearObra (arquitectura.js) como `propios`. */
+function ponerPropios(nombre, lista) {
+  if (!PAQ || !PAQ.modelos[nombre] || !lista.length) return false;
+  const celdas = new Map();
+  floraPropia('', lista.map(t => ({ s: 1, rot: 0, ...t })), celdas, FINO(), [{ n: nombre, alto: 0, modo: '', lejos: nombre }]);
+  trozosFlora.push(...celdas.values());
+  return true;
+}
+/* Los arboles pegados al duende, con el modelo de mas detalle. Solo rehace las listas cuando el duende se ha movido 3 m. */
+let lodX = 1e9, lodZ = 1e9;
+function lodCerca() {
+  if ((P.x - lodX) ** 2 + (P.z - lodZ) ** 2 < 9) return;
+  lodX = P.x; lodZ = P.z;
+  for (let k = 0; k < ocultasPropias.length; k += 2) { const en = ocultasPropias[k], o = ocultasPropias[k + 1] * 16; en.l1.instanceMatrix.array.set(en.m0.subarray(o, o + 16), o); suciasPropias.add(en.l1); }
+  ocultasPropias.length = 0;
+  for (const cp of cercaPropia.values()) cp.n = 0;
+  const R2 = LOD0_R * LOD0_R;
+  for (const c of trozosFlora) {
+    if (!c.propias || Math.hypot(Math.max(Math.abs(c.x - P.x) - TROZO / 2, 0), Math.max(Math.abs(c.z - P.z) - TROZO / 2, 0)) > LOD0_R) continue;
+    for (const en of c.propias.medio) {
+      if (!en.l1.visible) continue;
+      const cp = cercaPropia.get(en.n), A = en.l1.instanceMatrix.array, B = cp.im.instanceMatrix.array, C1 = en.l1.instanceColor.array, C0 = cp.im.instanceColor.array;
+      for (let i = 0; i < en.l.length; i++) {
+        const t = en.l[i];
+        if ((t.x - P.x) ** 2 + (t.z - P.z) ** 2 > R2 || cp.n >= CERCA_MAX) continue;
+        B.set(en.m0.subarray(i * 16, i * 16 + 16), cp.n * 16); C0[cp.n * 3] = C1[i * 3]; C0[cp.n * 3 + 1] = C1[i * 3 + 1]; C0[cp.n * 3 + 2] = C1[i * 3 + 2]; cp.n++;
+        A.fill(0, i * 16, i * 16 + 11);   /* escala cero: ese arbol ya lo dibuja la malla de cerca */
+        ocultasPropias.push(en, i); suciasPropias.add(en.l1);
+      }
+    }
+  }
+  for (const im of suciasPropias) im.instanceMatrix.needsUpdate = true;
+  suciasPropias.clear();
+  for (const cp of cercaPropia.values()) { cp.im.count = cp.n; cp.im.visible = cp.n > 0; if (cp.n) { cp.im.instanceMatrix.needsUpdate = true; cp.im.instanceColor.needsUpdate = true; } }
 }
 function crearFlora() {
   const tipos = {};
@@ -1124,11 +1169,14 @@ function cullFlora() {
   for (const c of trozosFlora) {
     const d2 = (c.x - P.x) ** 2 + (c.z - P.z) ** 2, v = d2 < lim2, cerca = v && d2 < lod2;
     ver(c.mallas, v); ver(c.cerca, cerca); ver(c.lejos, v && !cerca);
-    if (c.subs) {
-      ver(c.lod2, v && (!cerca || !c.subs.length));
-      for (const sb of c.subs) { const fino = cerca && (sb.x - P.x) ** 2 + (sb.z - P.z) ** 2 < LOD0_D2; ver(sb.l0, fino); ver(sb.l1, cerca && !fino); }
+    if (c.propias) {
+      const medio = v && Math.hypot(Math.max(Math.abs(c.x - P.x) - TROZO / 2, 0), Math.max(Math.abs(c.z - P.z) - TROZO / 2, 0)) < LOD1_R;
+      const pr = c.propias, m1 = LIGERA ? v : medio;
+      if (pr.lejos.length && pr.lejos[0].visible !== (v && !m1)) for (const im of pr.lejos) im.visible = v && !m1;
+      if (pr.medio.length && pr.medio[0].l1.visible !== m1) { for (const en of pr.medio) en.l1.visible = m1; lodX = 1e9; }
     }
   }
+  if (cercaPropia.size) lodCerca();
 }
 // El pueblo: casas, plaza, pozo y el portal a las mazmorras.
 // Teja colonial y paja de ichu: el pueblo es andino.
@@ -1293,7 +1341,7 @@ function crearPuebloKit() {
   velo.position.set(px, py + 2.9, pz);
   let obra = null;
   try {
-    obra = crearObra({ escena, KIT, alturaEn, enCamino, ponerSolido, CASAS, CAMINOS, portal: { x: px, z: pz }, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), nivel: GFX.efectivo, sombras: Q.sombras,
+    obra = crearObra({ escena, KIT, PAQ, propios: ponerPropios, alturaEn, enCamino, ponerSolido, CASAS, CAMINOS, portal: { x: px, z: pz }, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), nivel: GFX.efectivo, sombras: Q.sombras,
       evitar: [...NPCS3D.map(n => ({ x: n.x, z: n.z, r: 6 })), ...VECINOS.map(v => ({ x: v.x, z: v.z, r: 6 })), { x: px, z: pz, r: 9 }, { x: SPAWN3D.x, z: SPAWN3D.z, r: 6 }, { x: mx, z: mz, r: 6.5 }] });
     for (const m of menhires) m.visible = false;
   } catch (e) { console.warn('[3D] sin obra nueva:', e); }
