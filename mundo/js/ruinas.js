@@ -74,11 +74,11 @@ export function crearRuinas(ctx) {
   const mallas = [], info = { sitios: 0, piezas: 0, muretes: 0, arcos: 0, menhires: 0, hitos: 0, entradas: 0, quitados: 0, runasQuitadas: 0 };
 
   // Un sitio: piezas fundidas por nivel de detalle dentro de un THREE.LOD (el motor elige el nivel con la camara).
-  const sitio = (padre, piezas, c, radio, sombra) => {
+  const sitio = (padre, piezas, c, radio, sombra, cerca) => {
     if (!piezas.length) return null;
     const lod = new THREE.LOD();
     lod.position.set(c.x, c.y, c.z);
-    const niveles = baja ? [[1, 0], [2, radio + 55]] : [[0, 0], [1, radio + (alta ? 52 : 36)], [2, radio + (alta ? 125 : 92)]];
+    const d0 = cerca || radio + 36, niveles = baja ? [[1, 0], [2, radio + 55]] : [[0, 0], [1, d0 * (alta ? 1.4 : 1)], [2, radio + (alta ? 125 : 92)]];
     for (const [nv, d] of niveles) {
       const m = new THREE.Mesh(fundir(PAQ, piezas, nv, c), PAQ.material);
       if (ctx.sombras) { m.castShadow = !!sombra && nv < 2; m.receiveShadow = true; }
@@ -164,17 +164,18 @@ export function crearRuinas(ctx) {
       zonas.push((x, y, z) => hitos.some(h => Math.abs(x - h.x) < 2 && Math.abs(z - h.z) < 2 && Math.hypot(x - h.x, z - h.z) < 1.95));
       zonasRuna.push((x, y, z) => hitos.some(h => Math.abs(x - h.x) < 1.4 && Math.abs(z - h.z) < 1.4));
     }
-    // Fuera lo viejo (de una pasada) y, con los tramos ya leidos, el cerco nuevo en cuatro cuartos.
+    // Fuera lo viejo (de una pasada) y, con los tramos ya leidos, el cerco nuevo por tramos.
     if (zonas.length) info.quitados = recortar(obra.geometry, 3, (x, y, z, t, my) => { for (const f of zonas) if (f(x, y, z, t, my)) return true; return false; });
     if (runas && zonasRuna.length) info.runasQuitadas = recortar(runas.geometry, 6, (x, y, z) => { for (const f of zonasRuna) if (f(x, y, z)) return true; return false; });
     if (arcos.length) {
-      const cuartos = [[], [], [], []], cuarto = a => Math.floor((((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI / 2)) % 4;
+      /* Ocho tramos de cerco: desde la plaza se ven en el nivel medio y solo el que tienes cerca sube al alto. */
+      const NC = 8, cuartos = Array.from({ length: NC }, () => []), cuarto = a => Math.floor((((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2 / NC)) % NC;
       for (const o of arcos) cuartos[cuarto(o.a)].push({ n: 'arco_camino', x: o.x, y: alturaEn(o.x, o.z), z: o.z, rot: -o.a, k: 0.95 + rnd(o.x, o.z) * 0.1 });
       for (const k of tramos.keys()) {
         const a = 0.05 + k * PASO, x = Math.cos(a) * RM, z = Math.sin(a) * RM;
         cuartos[cuarto(a)].push({ n: 'murete_' + 'abc'[Math.floor(rnd(k, 7) * 3) % 3], x, y: alturaEn(x, z), z, rot: -a + (rnd(k, 9) > 0.5 ? Math.PI : 0), s: 0.94 + rnd(k, 1) * 0.2, k: 0.9 + rnd(k, 4) * 0.2 });
       }
-      cuartos.forEach((l, q) => { const a = (q + 0.5) * Math.PI / 2, x = Math.cos(a) * RM * 0.9, z = Math.sin(a) * RM * 0.9; sitio(escena, l, { x, y: alturaEn(x, z) + 2, z }, 26, true); });
+      cuartos.forEach((l, q) => { const a = (q + 0.5) * Math.PI * 2 / NC, x = Math.cos(a) * RM, z = Math.sin(a) * RM; sitio(escena, l, { x, y: alturaEn(x, z) + 2, z }, 14, alta, 30); });   /* el cerco solo da sombra en alta: son ocho dibujos mas en el pase de sombras */
       info.arcos = arcos.length; info.muretes = tramos.size;
     }
   }
