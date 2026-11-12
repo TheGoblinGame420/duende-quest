@@ -103,7 +103,7 @@ export function crearAtmosfera({ escena, alturaEn, aguaEn, movil = false }) {
     return false;
   }
   function moverNiebla(e, fuerza) {
-    const quiero = nivel >= 2 && fuerza > 0.02;
+    const quiero = nivel >= 2 && fuerza > 0.06;   /* por debajo no se ve: ni se dibuja ni se recoloca */
     if (!quiero) { if (nb && nb.o.visible) nb.o.visible = false; return; }
     if (!nb) nb = crearNiebla();
     const n = nivel >= 4 ? NB_MAX : nivel === 3 ? (movil ? 12 : 16) : (movil ? 8 : 10);
