@@ -17,6 +17,8 @@ y boton.
 ## Texturas de partículas
 
 **Particle Pack** — Kenney. Licencia CC0.
+
+**Survival Kit, Graveyard Kit y Pirate Kit** — Kenney (kenney.nl). Licencia CC0. Lugares de la franja exterior de ORIGINS (v377): `assets/3d/lugares.*`, armados en `mundo/js/lugares.js`.
 https://kenney.nl/assets/particle-pack
 
 Se usan 3 de las 200 texturas, reescaladas de 512×512 a 64×64 (`assets/fx/`):

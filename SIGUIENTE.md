@@ -3716,3 +3716,10 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - PC: HUD sin Ajustes/Sonido/Inicio/2D (están en el Menú) y extras tras ⋯; máx. 3 avisos; Esc con objetivo explica que otro Esc abre el menú; título de zona en Cinzel con sombra; ventanas laterales casi a pantalla completa.
 - PWA: un solo manifiesto (/inicio/manifest.json, copiado en /manifest.json) para todas las páginas, con capturas (assets/capturas/origins-*.webp), atajos, display_override y launch_handler; /jugar/ enlaza el manifiesto; offline.html reintenta cada 10 s.
 - Pendiente: mundo más grande con más contenido (pide descargar packs CC0: confirmar con el dueño).
+
+## v377 (12-nov-2026)
+- Mundo de 1800 m: `MUNDO.lado` 1800, `limite` 880, `borde` 820 (cordillera). Terreno con SEG 320/230. Niebla del mapa 30x30 (`dq_niebla2`, migra la vieja de 22x22 con desfase de 4 celdas).
+- `camposExteriores` (mundo3d.js): 5 campamentos por zona entre 610 y 800 m, al final de la lista (los id de los demas no cambian), `exterior: true`.
+- `lugares3d()` / `LUGAR_DIST` (mundo3d.js): 10 lugares por angulo; `mundo/js/lugares.js` los arma con `assets/3d/lugares.*` (`node tools/kenney_build.mjs <kits> --lugares`, kits Survival/Graveyard/Pirate de Kenney, CC0). Descubrimiento en el cliente (`dq3_lugares`), pines en el mapa, titulo y lore.
+- Prueba visual: `mundo/ver_lugares.html?l=id` (no se publica).
+- Idea pendiente: talar arboles en el campamento de leñadores (madera para recetas nuevas).

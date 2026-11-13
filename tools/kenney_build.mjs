@@ -18,13 +18,34 @@ import path from 'path';
 import zlib from 'zlib';
 
 const RAIZ = process.argv[2];
+// --lugares: empaqueta los kits de supervivencia, cementerio y piratas (v376) en assets/3d/lugares.*
+const PAQUETE = process.argv.includes('--lugares') ? 'lugares' : 'kenney';
 if (!RAIZ) { console.error('Uso: node tools/kenney_build.mjs <carpeta de los kits>'); process.exit(1); }
-const KITS = {
+const KITS = PAQUETE === 'lugares' ? {
+  s: path.join(RAIZ, 'x_survival/Models/GLB format'),
+  g: path.join(RAIZ, 'x_graveyard/Models/GLB format'),
+  r: path.join(RAIZ, 'x_pirate/Models/GLB format'),
+} : {
   n: path.join(RAIZ, 'x_kenney_nature-kit/Models/GLTF format'),
   p: path.join(RAIZ, 'x_kenney_fantasy-town-kit_2.0/Models/GLB format'),
   c: path.join(RAIZ, 'x_kenney_castle-kit/Models/GLB format'),
 };
-const LISTA = {
+const LISTA = PAQUETE === 'lugares' ? {
+  s: ['barrel', 'barrel-open', 'bedroll', 'bedroll-frame', 'box', 'box-large', 'box-large-open', 'bucket', 'campfire-pit', 'campfire-stand', 'campfire-fishing-stand', 'chest',
+    'fence', 'fence-doorway', 'fence-fortified', 'resource-planks', 'resource-stone', 'resource-stone-large', 'resource-wood', 'signpost', 'signpost-single',
+    'structure', 'structure-canvas', 'structure-floor', 'structure-roof', 'tent', 'tent-canvas', 'tent-canvas-half', 'tool-axe', 'tool-pickaxe', 'tool-shovel',
+    'tree-log', 'tree-log-small', 'tree-trunk', 'workbench', 'workbench-anvil', 'workbench-grind', 'floor-old', 'metal-panel', 'structure-metal', 'structure-metal-roof'],
+  g: ['altar-stone', 'altar-wood', 'bench', 'bench-damaged', 'border-pillar', 'brick-wall', 'brick-wall-curve', 'brick-wall-end', 'candle', 'candle-multiple', 'coffin', 'coffin-old',
+    'column-large', 'cross', 'cross-column', 'cross-wood', 'crypt', 'crypt-a', 'crypt-b', 'crypt-large', 'crypt-large-roof', 'crypt-small', 'crypt-small-roof', 'debris', 'debris-wood',
+    'fence', 'fence-damaged', 'fence-gate', 'fire-basket', 'grave', 'grave-border', 'gravestone-bevel', 'gravestone-broken', 'gravestone-cross', 'gravestone-cross-large', 'gravestone-debris',
+    'gravestone-decorative', 'gravestone-roof', 'gravestone-round', 'gravestone-wide', 'iron-fence', 'iron-fence-border', 'iron-fence-border-column', 'iron-fence-border-gate', 'iron-fence-damaged',
+    'lantern-candle', 'lightpost-single', 'lightpost-double', 'pillar-large', 'pillar-obelisk', 'pillar-small', 'pillar-square', 'pine', 'pine-crooked', 'pumpkin', 'rocks', 'rocks-tall',
+    'stone-wall', 'stone-wall-column', 'stone-wall-damaged', 'trunk', 'trunk-long', 'urn-round', 'urn-square', 'hay-bale'],
+  r: ['barrel', 'boat-row-large', 'boat-row-small', 'bottle-large', 'cannon', 'cannon-mobile', 'cannon-ball', 'chest', 'crate', 'crate-bottles', 'flag', 'flag-high', 'flag-pirate', 'flag-pirate-high',
+    'mast', 'mast-ropes', 'palm-bend', 'palm-detailed-bend', 'palm-detailed-straight', 'palm-straight', 'platform', 'platform-planks', 'rocks-a', 'rocks-b', 'rocks-c', 'rocks-sand-a', 'rocks-sand-b',
+    'ship-large', 'ship-medium', 'ship-pirate-medium', 'ship-small', 'ship-wreck', 'ship-ghost', 'structure', 'structure-fence', 'structure-platform', 'structure-platform-dock', 'structure-platform-dock-small',
+    'structure-roof', 'tower-complete-large', 'tower-complete-small', 'tower-base', 'tower-base-door', 'tower-middle', 'tower-middle-windows', 'tower-roof', 'tower-top', 'tower-watch', 'castle-wall', 'castle-gate'],
+} : {
   n: ['tree_default', 'tree_oak', 'tree_fat', 'tree_tall', 'tree_simple', 'tree_simple_dark', 'tree_pineTallA_detailed', 'tree_pineTallA', 'tree_pineTallC',
     'tree_pineTallD', 'tree_pineSmallB', 'tree_pineRoundC', 'tree_palmTall', 'tree_palmBend',
     'plant_bushLarge', 'plant_bushDetailed', 'plant_bush', 'cactus_tall', 'cactus_short',
@@ -161,7 +182,7 @@ for (const k of Object.keys(LISTA)) for (const n of LISTA[k]) {
 }
 fs.mkdirSync('assets/3d', { recursive: true });
 const todo = Buffer.concat(trozos);
-fs.writeFileSync('assets/3d/kenney.bin', todo);
-fs.writeFileSync('assets/3d/kenney.bin.gz', zlib.gzipSync(todo, { level: 9 }));
-fs.writeFileSync('assets/3d/kenney.json', JSON.stringify(indice));
+fs.writeFileSync('assets/3d/' + PAQUETE + '.bin', todo);
+fs.writeFileSync('assets/3d/' + PAQUETE + '.bin.gz', zlib.gzipSync(todo, { level: 9 }));
+fs.writeFileSync('assets/3d/' + PAQUETE + '.json', JSON.stringify(indice));
 console.log(Object.keys(indice).length, 'modelos,', total, 'vertices,', (off / 1024).toFixed(0), 'KB');

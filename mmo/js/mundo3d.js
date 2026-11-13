@@ -19,8 +19,9 @@
 
 import { alturaAbismo, camposAbismo } from './abismo3d.js';
 export const MUNDO = {
-  lado: 1320,          // el mapa va de -660 a 660 en x y en z
-  limite: 640,         // hasta aqui se puede caminar (el borde es montaña)
+  lado: 1800,          // el mapa va de -900 a 900 en x y en z (v376: antes 1320)
+  limite: 880,         // hasta aqui se puede caminar (el borde es montaña)
+  borde: 820,          // desde aqui sube la cordillera del borde (antes 580): la franja nueva tiene los LUGARES3D
   agua: 0,             // nivel del mar
   pueblo: { x: 0, z: 0, radio: 70 },
   velocidad: 7,        // metros por segundo a pie (la de WoW)
@@ -115,7 +116,7 @@ export function alturaEn(x, z) {
   // Caminos de tierra del pueblo a cada zona: casi llanos.
   // El borde del mundo sube como una cordillera.
   const r = Math.max(Math.abs(x), Math.abs(z));
-  if (r > 580) h += ((r - 580) / 60) ** 2 * 28;
+  if (r > MUNDO.borde) h += ((r - MUNDO.borde) / 60) ** 2 * 28;
   return h;
 }
 // Pendiente aproximada (para no poner campamentos en precipicios).
@@ -227,7 +228,74 @@ export function campamentos(MAPAS, MONSTRUOS) {
   for (const cp of l) if (ZONAS_PRIMERA_HORA.includes(cp.zona) && !cp.jefe && cp.n === 2 && !l.some(o => o !== cp && o.zona === cp.zona && !o.jefe && Math.hypot(o.x - cp.x, o.z - cp.z) < 55)) cp.n = 3;
   l.push(...camposAbismo(l.length));   // los de elite del Abismo de Eter
   for (const [zona, k, x, z, cuantos] of PUENTES3D) if (MONSTRUOS[k]) l.push({ id: l.length, zona, x, z, k, n: cuantos, jefe: false, puente: true });
+  l.push(...camposExteriores(l.length, MAPAS, MONSTRUOS));   // v376: la franja nueva del borde (600-800 m) tambien tiene vida
   return (_campos = l);
+}
+
+// ── FRANJA EXTERIOR (v376) ──
+// El mundo crecio de 1320 a 1800 m: entre los 600 y los 800 m del centro cada zona gana tierra nueva.
+// Ahi van campamentos de los monstruos mas fuertes de la zona (al final de la lista: los id de los
+// demas no cambian) y los LUGARES3D, sitios con nombre que se descubren al llegar.
+function camposExteriores(id0, MAPAS, MONSTRUOS) {
+  const l = [];
+  let n = 0;
+  for (const id of IDS) {
+    const mp = MAPAS[id];
+    if (!mp || !mp.monstruos || !mp.monstruos.length) continue;
+    const r = rng(7001 + n * 104729), puntos = [];
+    for (let i = 0; i < 500 && puntos.length < 5; i++) {
+      const ang = r() * Math.PI * 2, dist = 610 + r() * 190;
+      const x = Math.round(Math.cos(ang) * dist), z = Math.round(Math.sin(ang) * dist);
+      if (zonaEn(x, z) !== id || Math.max(Math.abs(x), Math.abs(z)) > MUNDO.borde - 15) continue;
+      if (alturaEn(x, z) < MUNDO.agua + (id === 'abismo' ? -3.5 : 0.8) || pendienteEn(x, z) > 0.55) continue;
+      if (puntos.some(p => Math.hypot(p.x - x, p.z - z) < 40)) continue;
+      puntos.push({ x, z });
+    }
+    const tipos = mp.monstruos.filter(k => MONSTRUOS[k] && !MONSTRUOS[k].jefe).sort((a, b) => MONSTRUOS[a].nivel - MONSTRUOS[b].nivel);
+    const altos = tipos.slice(Math.floor(tipos.length / 2));
+    puntos.forEach((p, i) => { if (altos.length) l.push({ id: id0 + l.length, zona: id, x: p.x, z: p.z, k: altos[i % altos.length], n: 2 + (i % 2), jefe: false, exterior: true }); });
+    n++;
+  }
+  return l;
+}
+// Lugares con nombre de la franja exterior: [id, nombre, angulo en grados (atan2 z,x), estilo, lore]. La zona sale del sitio.
+// estilo = el kit con que se arma en el cliente (mundo/js/lugares.js). Se colocan hacia fuera desde el
+// centro de su zona, en tierra firme y poco empinada; la caleta busca la orilla.
+const LUGARES_DEF = [
+  ['panteon',   'Panteón de los Ñaupas',      -135,       'panteon',  'Aquí descansan los primeros duendes del valle. De noche, las velas se encienden solas.'],
+  ['lenadores', 'Campamento de los Leñadores', -60,    'lenadores',  'Los leñadores del pueblo cortan aquí la madera para las casas y las ollas de chicha.'],
+  ['naufragio', 'Naufragio del Galeón Negro',  50,       'naufragio',  'Un barco pirata que la tormenta tiró selva adentro. Dicen que su cofre sigue enterrado.'],
+  ['atalaya',   'Atalaya de la Tormenta',      150,    'atalaya',  'Desde lo alto, los vigías avisaban al pueblo cuando bajaban los rayos de los Picos.'],
+  ['vigia',     'Torre del Vigía del Desierto',190,    'vigia',  'Una torre de piedra que guía a las caravanas entre las dunas doradas.'],
+  ['cripta',    'Cripta del Rey Olvidado',     -100,    'cripta',  'Antes del Rey Goblin hubo otro rey. Su nombre se borró de todas las piedras menos de esta.'],
+  ['puesto',    'Puesto de Avanzada del Ocaso', -25,    'puesto',  'El último refugio antes de las cumbres: fogata, tiendas y herramientas para el frío.'],
+  ['mina',      'Mina Abandonada',             20,    'mina',  'Los mineros se fueron de golpe y dejaron todo. Algo los asustó en las Cavernas.'],
+  ['caleta',    'Caleta del Pirata Cojo',      95,      'caleta',  'Un muelle escondido donde los piratas cambiaban perlas del Abismo por chicha morada.'],
+  ['santuario', 'Santuario de los Acantilados',120, 'santuario',  'Columnas y altares de una magia vieja. El viento suena aquí como una quena.'],
+];
+let _lugares = null;
+export const LUGAR_DIST = 45;   // a esta distancia del centro se descubre
+export function lugares3d() {
+  if (_lugares) return _lugares;
+  const l = [];
+  for (const [id, nombre, grados, estilo, lore] of LUGARES_DEF) {
+    const a0 = grados * Math.PI / 180, costa = estilo === 'caleta';
+    let mejor = null;
+    for (let k = 0; k < 400 && !mejor; k++) {
+      const a = a0 + ((k % 9) - 4) * 0.02, R = 700 + (Math.floor(k / 9) % 2 ? 1 : -1) * Math.floor(k / 18) * 8;
+      if (R < 600 || R > 790) continue;
+      const x = Math.round(Math.cos(a) * R), z = Math.round(Math.sin(a) * R), h = alturaEn(x, z);
+      if (pendienteEn(x, z) > (costa ? 0.25 : 0.32)) continue;
+      const orilla = alturaEn(x - Math.cos(a) * 25, z - Math.sin(a) * 25) < MUNDO.agua - 0.5 || alturaEn(x + Math.cos(a) * 25, z + Math.sin(a) * 25) < MUNDO.agua - 0.5;
+      if (costa ? !(h > MUNDO.agua + 0.4 && h < MUNDO.agua + 3 && orilla) : h < MUNDO.agua + 1) continue;
+      mejor = { x, z };
+    }
+    if (!mejor) {   // sin sitio ideal: el punto de tierra mas cercano al rayo
+      for (let R = 700; R > 600 && !mejor; R -= 10) { const x = Math.round(Math.cos(a0) * R), z = Math.round(Math.sin(a0) * R); if (alturaEn(x, z) > MUNDO.agua + 0.5) mejor = { x, z }; }
+    }
+    if (mejor) l.push({ id, nombre, zona: zonaEn(mejor.x, mejor.z), estilo, lore, x: mejor.x, z: mejor.z, ry: Math.atan2(-mejor.x, -mejor.z) });
+  }
+  return (_lugares = l);
 }
 
 // ── PUNTOS DE REAPARICION ──

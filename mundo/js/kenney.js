@@ -9,7 +9,7 @@
 // (los troncos y piedras quedan como estan).
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { transparentar } from './tapa.js?v=376';
+import { transparentar } from './tapa.js?v=377';
 
 const LIN = new Float32Array(256);
 for (let i = 0; i < 256; i++) { const c = i / 255; LIN[i] = c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }
@@ -19,16 +19,22 @@ export function cargarKenney(base) {
   if (!promesa) promesa = Promise.all([fetch(base + 'kenney.json').then(r => { if (!r.ok) throw new Error('kenney.json ' + r.status); return r.json(); }), leerBin(base)]).then(([ind, buf]) => crearKit(ind, buf));
   return promesa;
 }
-async function leerBin(base) {
+// Otro paquete con el mismo formato (v376: 'lugares', kits de supervivencia, cementerio y piratas).
+const paquetes = new Map();
+export function cargarPaquete(base, nombre) {
+  if (!paquetes.has(nombre)) paquetes.set(nombre, Promise.all([fetch(base + nombre + '.json').then(r => { if (!r.ok) throw new Error(nombre + '.json ' + r.status); return r.json(); }), leerBin(base, nombre)]).then(([ind, buf]) => crearKit(ind, buf)));
+  return paquetes.get(nombre);
+}
+async function leerBin(base, nombre = 'kenney') {
   // El binario va tambien comprimido (230 KB en vez de 1,1 MB).
   if (typeof DecompressionStream === 'function') {
     try {
-      const r = await fetch(base + 'kenney.bin.gz');
+      const r = await fetch(base + nombre + '.bin.gz');
       if (r.ok) return await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
     } catch (e) { /* sin gzip: el normal */ }
   }
-  const r = await fetch(base + 'kenney.bin');
-  if (!r.ok) throw new Error('kenney.bin ' + r.status);
+  const r = await fetch(base + nombre + '.bin');
+  if (!r.ok) throw new Error(nombre + '.bin ' + r.status);
   return r.arrayBuffer();
 }
 

@@ -516,12 +516,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 376;
+export const VERSION = 377;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 143, fecha: '12 nov 2026', solo3d: true, items: [
+    '🗺 El mundo de ORIGINS creció: de 1320 a 1800 metros por lado. Cada zona gana tierra nueva hacia el borde, con campamentos de sus monstruos más fuertes.',
+    '🏛 10 lugares nuevos por descubrir en el borde del mundo: Panteón de los Ñaupas, Cripta del Rey Olvidado, Caleta del Pirata Cojo, Naufragio del Galeón Negro, Mina Abandonada y más.',
+    '? En el mapa salen como signos de interrogación: llega a cada uno para descubrirlo, leer su historia y completar los 10.',
+  ] },
   { n: 142, fecha: '12 nov 2026', solo3d: true, items: [
     '🎒 Mochila → Materiales: qué tienes, dónde se consigue cada cosa, para qué sirve y qué puedes fabricar ya con la Artesana Lila (con un botón para marcarla en el mapa).',
     '✓ La primera vez que recoges un material te explicamos para qué sirve, y te avisamos cuando ya te alcanza para una receta.',

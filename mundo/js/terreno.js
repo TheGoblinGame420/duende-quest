@@ -171,11 +171,12 @@ const MATORRAL = { noche: 0.07, selva: 0.07, castillo: 0.03, cavernas: 0.03, aca
 // Devuelve celdas { x, z, mallas, cerca, lejos } con la forma de las de la flora (el mismo recorte por distancia).
 export function crearSotobosque(d) {
   const T = plantillas(), celdas = new Map(), PASO = 3.5;
-  for (let x = -600; x <= 600; x += PASO) for (let z = -600; z <= 600; z += PASO) {
+  const LIM = d.lim || 600, LUGS = d.lugares || [];   /* v376: el mundo crecio (d.lim = MUNDO.borde) y los lugares del borde quedan despejados */
+  for (let x = -LIM; x <= LIM; x += PASO) for (let z = -LIM; z <= LIM; z += PASO) {
     const ix = Math.round(x * 2), iz = Math.round(z * 2);
     if (hash2(ix, iz, 43) >= 0.3) continue;   /* el 70 % se descarta antes de mirar nada */
     const jx = x + (hash2(ix, iz, 41) - 0.5) * PASO, jz = z + (hash2(ix, iz, 42) - 0.5) * PASO;
-    if (Math.hypot(jx, jz) < 34) continue;
+    if (Math.hypot(jx, jz) < 34 || LUGS.some(l => Math.abs(l.x - jx) < 24 && Math.abs(l.z - jz) < 24)) continue;
     const cam = d.enCamino(jx, jz);
     if (cam < 3.6) continue;
     const zona = d.zonaEn(jx, jz), lista = SOTO[zona];

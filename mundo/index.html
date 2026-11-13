@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/inicio/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=376" defer></script>
+<script src="/js/pwa.js?v=377" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=376"></script>
+<script src="/js/origen.js?v=377"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -118,40 +118,40 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=376" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=377" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=376">
-<link rel="modulepreload" href="/mmo/js/data.js?v=376">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=376">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=376">
-<link rel="modulepreload" href="/mundo/js/objetivos.js?v=376">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=376">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=376">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=376">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=376">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=376">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=376">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=376">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=376">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=376">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=376">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=376">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=376">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=376">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=376">
-<link rel="modulepreload" href="/mmo/js/caso.js?v=376">
-<link rel="modulepreload" href="/mundo/js/caso.js?v=376">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=376">
-<link rel="modulepreload" href="/mundo/js/vecinos.js?v=376">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=377">
+<link rel="modulepreload" href="/mmo/js/data.js?v=377">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=377">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=377">
+<link rel="modulepreload" href="/mundo/js/objetivos.js?v=377">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=377">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=377">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=377">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=377">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=377">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=377">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=377">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=377">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=377">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=377">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=377">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=377">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=377">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=377">
+<link rel="modulepreload" href="/mmo/js/caso.js?v=377">
+<link rel="modulepreload" href="/mundo/js/caso.js?v=377">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=377">
+<link rel="modulepreload" href="/mundo/js/vecinos.js?v=377">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
 <script>(function(){try{var l=document.createElement('link');l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href=typeof DecompressionStream==='function'?'/assets/3d/kenney.bin.gz':'/assets/3d/kenney.bin';document.head.appendChild(l);}catch(e){}})();</script>
 <style>
 /* Iconos propios del juego (tools/iconos/): la fuente "DQ Iconos" dibuja los simbolos y emojis del texto como glifos serios de un solo color. Va primera en --sans y --px; unicode-range la limita a simbolos, asi las letras siguen en la fuente de siempre. */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=376) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=377) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"DQ Iconos","Press Start 2P",monospace;--sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;--oro2:#c9a227;--marco:rgba(201,162,39,.42);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);touch-action:none;user-select:none;-webkit-user-select:none;}
@@ -1386,7 +1386,7 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
   <div class="fila"><span>📢 Comunidad oficial</span><b style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sec" id="com-canal" style="padding:5px 10px;font-size:12px">Canal (novedades)</button><button type="button" class="btn sec" id="com-grupo" style="padding:5px 10px;font-size:12px">Grupo (jugadores)</button></b></div>
   <div class="fila" id="fila-avtg"><span>🔔 Avisos por Telegram</span><b><button type="button" class="btn sec" id="b-avtg" style="padding:5px 10px;font-size:12px">Avísame</button></b></div>
   <p style="margin:4px 0 0;font-size:11px;color:var(--txt3)">Esos dos WhatsApp son los únicos números oficiales. Nunca te pediremos contraseñas ni pagos por privado.</p>
-  <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
+  <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, Survival Kit, Graveyard Kit, Pirate Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
   <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">CLASSIC (2D)</a><a class="btn sec" href="/inicio/" style="flex:1;text-align:center;text-decoration:none">Inicio</a><a class="btn sec" href="#" data-instalar hidden style="display:none;flex:1;text-align:center;text-decoration:none">⬇ Instalar</a></p>
 </div></div>
 
@@ -1399,8 +1399,8 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=376" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=376"></script>
+<script src="/js/config.js?v=377" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=377"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

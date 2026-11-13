@@ -14,44 +14,46 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=376';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=376';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=376';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=376';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=376';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=376';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=376';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=376';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=376';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=376';
-import { crearMusica } from './musica.js?v=376';
-import { crearSonidos } from './sonidos.js?v=376';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=376';
-import { construirCueva } from './cueva.js?v=376';
-import { TAPA, transparentar } from './tapa.js?v=376';
-import { construirAbismo } from './abismo.js?v=376';
-import { crearParticulas } from './particulas.js?v=376';
-import { crearCielo } from './cielo.js?v=376';
-import { PERF } from './perf.js?v=376';
-import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=376';
-import { cargarModelado } from './modelado.js?v=376';
-import { crearRuinas } from './ruinas.js?v=376';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=376';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=376';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=376';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=377';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=377';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=377';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=377';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=377';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=377';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=377';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=377';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=377';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=377';
+import { crearMusica } from './musica.js?v=377';
+import { crearSonidos } from './sonidos.js?v=377';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=377';
+import { construirCueva } from './cueva.js?v=377';
+import { TAPA, transparentar } from './tapa.js?v=377';
+import { construirAbismo } from './abismo.js?v=377';
+import { crearParticulas } from './particulas.js?v=377';
+import { crearCielo } from './cielo.js?v=377';
+import { PERF } from './perf.js?v=377';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=377';
+import { construirLugares } from './lugares.js?v=377';
+import { cargarModelado } from './modelado.js?v=377';
+import { crearRuinas } from './ruinas.js?v=377';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=377';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=377';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=377';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=376';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=376';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=376';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=376';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=376';
-import { PISTAS } from '/mmo/js/caso.js?v=376';
-import { htmlCaso } from './caso.js?v=376';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=376';
-import { crearRituales } from './rituales.js?v=376';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=376';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=376';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=376';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=377';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=377';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=377';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=377';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=377';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=377';
+import { PISTAS } from '/mmo/js/caso.js?v=377';
+import { htmlCaso } from './caso.js?v=377';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=377';
+import { crearRituales } from './rituales.js?v=377';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=377';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=377';
+import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=377';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -680,7 +682,7 @@ ajustar();
 const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transition = ''; $('carga-i').style.transform = `scaleX(${k})`; if (k >= 0.7) $('carga-i').classList.add('latido'); if (txt) $('carga-s').textContent = Math.round(k * 100) + '% · ' + txt; };
 
 // ── TERRENO ──
-const LADO = MUNDO.lado, SEG = MOVIL ? 180 : 240;
+const LADO = MUNDO.lado, SEG = MOVIL ? 230 : 320;   /* v376: el mundo crecio de 1320 a 1800 m; ~5,6 m por celda como antes */
 function distSeg(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az, t = clamp(((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz), 0, 1);
   return Math.hypot(px - (ax + dx * t), pz - (az + dz * t));
@@ -1050,8 +1052,10 @@ function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
   const paso = CAL === 'baja' ? 11 : MOVIL ? 9 : 7;   // en baja, ~33% menos arboles y rocas
-  for (let x = -600; x <= 600; x += paso) for (let z = -600; z <= 600; z += paso) {
+  const LUGS = lugares3d(), FL = MUNDO.borde + 20;
+  for (let x = -FL; x <= FL; x += paso) for (let z = -FL; z <= FL; z += paso) {
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
+    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
     const zona = zonaEn(jx, jz);
     const h = alturaEn(jx, jz);
     if (h < 0.5 || pendienteEn(jx, jz) > 0.95) continue;
@@ -1155,7 +1159,7 @@ function crearFlora() {
   /* Sotobosque (terreno.js): troncos caidos, tocones con raices, helechos, piedras con musgo y setas que brillan junto a caminos y campamentos. Solo dibujo (sin colision), una malla por celda, de media para arriba. */
   if (floraFina) {
     try {
-      const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX });
+      const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX, lim: MUNDO.borde, lugares: lugares3d() });
       for (const ml of soto.mallas) { escena.add(ml); sotoMallas.push(ml); }
       trozosFlora.push(...soto.celdas);
       respaldosShader.push(['soto', () => { for (const ml of sotoMallas) ml.visible = false; soto.material.visible = false; }]);
@@ -5699,9 +5703,10 @@ function pintarMini() {
   x.beginPath(); x.moveTo(0, -8); x.lineTo(5.5, 6); x.lineTo(0, 3); x.lineTo(-5.5, 6); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
 // ── NIEBLA DEL MAPA: celdas de 22x22 que se descubren al caminar (solo cliente, en localStorage) ──
-const NIEBLA_N = 22, niebla = new Uint8Array(NIEBLA_N * NIEBLA_N);
+const NIEBLA_N = 30, niebla = new Uint8Array(NIEBLA_N * NIEBLA_N);   /* v376: 30x30 celdas de 60 m (mundo de 1800 m) */
 let nieblaCambio = false, nieblaGuardadaT = 0;
-try { const s = localStorage.getItem('dq_niebla') || ''; if (s.length === niebla.length && /^[01]+$/.test(s)) for (let i = 0; i < s.length; i++) niebla[i] = s.charCodeAt(i) === 49 ? 1 : 0; } catch (e) {}
+try { const s = localStorage.getItem('dq_niebla2') || ''; if (s.length === niebla.length && /^[01]+$/.test(s)) for (let i = 0; i < s.length; i++) niebla[i] = s.charCodeAt(i) === 49 ? 1 : 0;
+  else { const v = localStorage.getItem('dq_niebla') || ''; if (v.length === 484 && /^[01]+$/.test(v)) for (let j = 0; j < 22; j++) for (let i = 0; i < 22; i++) niebla[(j + 4) * NIEBLA_N + i + 4] = v.charCodeAt(j * 22 + i) === 49 ? 1 : 0; } } catch (e) {}
 function celdaNiebla(wx, wz) {
   const [cx, cz] = aMapa(wx, wz, NIEBLA_N);
   return [Math.max(0, Math.min(NIEBLA_N - 1, Math.floor(cx))), Math.max(0, Math.min(NIEBLA_N - 1, Math.floor(cz)))];
@@ -5715,7 +5720,7 @@ function marcarCeldasNiebla(cx, cz, r) {
 function guardarNiebla(forzar) {
   if (!nieblaCambio || (!forzar && Date.now() - nieblaGuardadaT < 10000)) return;
   nieblaGuardadaT = Date.now(); nieblaCambio = false;
-  try { localStorage.setItem('dq_niebla', Array.from(niebla).join('')); } catch (e) {}
+  try { localStorage.setItem('dq_niebla2', Array.from(niebla).join('')); } catch (e) {}
 }
 function marcarNiebla(wx, wz) { const [cx, cz] = celdaNiebla(wx, wz); marcarCeldasNiebla(cx, cz, 1); guardarNiebla(false); }
 // Mirador revelado: su hito y 3 celdas a la redonda quedan vistos.
@@ -5843,6 +5848,38 @@ function irArtesana() {
   try { if ($('v-inv') && $('v-inv').classList.contains('on')) cerrar('v-inv'); } catch (e) {}
   aviso('📍 Artesana Lila marcada: sigue la marca del minimapa hasta el pueblo.');
 }
+// ── LUGARES DE LA FRANJA EXTERIOR (v376) ──
+// El mundo crecio a 1800 m: entre los 600 y 800 m del centro hay sitios con nombre (mmo/js/mundo3d.js
+// LUGARES3D) armados con los kits CC0 de Kenney (mundo/js/lugares.js). Se descubren al llegar (dq3_lugares).
+const LUGARES3D = lugares3d();
+const ICONO_LUGAR = { panteon: '✝', cripta: '💀', santuario: '🏛', lenadores: '🪓', puesto: '⛺', mina: '⛏', vigia: '🗼', atalaya: '🗼', naufragio: '⚓', caleta: '⚓' };
+let LUGARES = null, lugaresVistos = {};
+try { lugaresVistos = JSON.parse(localStorage.getItem('dq3_lugares') || '{}') || {}; } catch (e) {}
+function cargarLugares() {
+  if (PRUEBA.has('sinLugares')) return;
+  cargarPaquete('/assets/3d/', 'lugares').then(K2 => {
+    LUGARES = construirLugares({ escena, KIT: K2, lugares: LUGARES3D, alturaEn, agua: MUNDO.agua, ponerSolido, sombras: Q.sombras, ligero: GFX.efectivo === 'minima' || GFX.efectivo === 'baja' });
+    LUGARES.visibilidad(P.x, P.z, escena.fog.far);
+  }).catch(e => console.warn('[3D] sin lugares de la franja exterior:', e));
+}
+function descubrirLugar(l) {
+  lugaresVistos[l.id] = Date.now();
+  try { localStorage.setItem('dq3_lugares', JSON.stringify(lugaresVistos)); } catch (e) {}
+  const n = Object.keys(lugaresVistos).filter(k => LUGARES3D.some(x => x.id === k)).length;
+  const t = $('titulo-zona'), tn = $('tz-n'), ts = $('tz-s');
+  if (t && tn && ts) { tn.textContent = l.nombre; ts.textContent = 'Lugar descubierto · ' + n + '/' + LUGARES3D.length; t.style.opacity = 1; document.body.classList.add('tz-on'); clearTimeout(t._t); t._t = setTimeout(() => { t.style.opacity = 0; document.body.classList.remove('tz-on'); }, 3600); }
+  try { SON.tocar('logro', { vol: 0.5 }); } catch (e) {}
+  setTimeout(() => aviso('🗺 ' + l.lore), 1500);
+  try { const [cx, cz] = celdaNiebla(l.x, l.z); marcarCeldasNiebla(cx, cz, 1); guardarNiebla(true); } catch (e) {}
+  if (n === LUGARES3D.length) setTimeout(() => aviso('🏆 ¡Descubriste los ' + n + ' lugares del borde del mundo!', 'ok', 1), 5000);
+}
+setInterval(() => {
+  try {
+    if (!yo || !P || enCueva(P.x) || enAbismo(P.x)) return;
+    if (LUGARES) LUGARES.visibilidad(P.x, P.z, escena.fog.far);
+    for (const l of LUGARES3D) if (!lugaresVistos[l.id] && Math.hypot(l.x - P.x, l.z - P.z) < LUGAR_DIST) { descubrirLugar(l); break; }
+  } catch (e) {}
+}, 1000);
 function ponerDestino(wx, wz) {
   destino3 = wx == null ? null : { x: Math.round(wx), z: Math.round(wz) };
   try { if (destino3) localStorage.setItem('dq_destino3', JSON.stringify(destino3)); else localStorage.removeItem('dq_destino3'); } catch (e) {}
@@ -5925,6 +5962,8 @@ function mapaDibujar() {
     if (e >= 0.9 && mo && mo.nivel && !fuera(px, pz, 30)) texto('Nv ' + mo.nivel, px, pz + rI + 8, '#fecaca');
   }
   if (MAPA_F.miradores) for (const hi of MV.hitos) pin(sx(hi.x), sz(hi.z), '🔭', '#fde047');
+  /* Lugares de la franja exterior (v376): descubiertos con su icono y nombre; los demas, un ? para ir a buscarlos. */
+  for (const l of LUGARES3D) { const lx = sx(l.x), lz = sz(l.z), ya = !!lugaresVistos[l.id]; pin(lx, lz, ya ? (ICONO_LUGAR[l.estilo] || '★') : '?', ya ? '#f0abfc' : '#8b7fc7', rI, ya ? '#fff' : '#c4b5fd'); if (ya && e >= 0.6 && !fuera(lx, lz, 90)) texto(l.nombre, lx, lz - rI - 8, '#f5d0fe'); }
   // Arena del jefe mundial.
   if (MAPA_F.jefes || (mundial3 && mundial3.vivo)) { const ax = sx(ARENA3D.x), az = sz(ARENA3D.z), viva = mundial3 && mundial3.vivo; pin(ax, az, '⚔', viva ? '#ff6b3d' : '#c4a484'); if (!fuera(ax, az, 80)) texto(ARENA3D.nombre, ax, az - rI - 8, viva ? '#ff9a7a' : '#f1e3d3'); }
   // Pueblo y portal: de lejos el portal se separa del pueblo lo justo para que se distingan.
@@ -10102,6 +10141,7 @@ async function inicio() {
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
+  cargarLugares();   /* v376: no espera: los lugares del borde aparecen cuando llega su paquete */
   try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
   crearCofres3();
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);

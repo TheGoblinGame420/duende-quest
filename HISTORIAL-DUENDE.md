@@ -111,6 +111,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v374 | Ambientación medieval mística: terreno y sotobosque con texturas procedurales, arquitectura de piedra y madera, atmósfera y sonido ambiente, fondo nuevo de CLASSIC, barra de habilidades móvil de 44 px, hoja de ruta honesta y portada más corta | **B** |
 | v375 | Modelado propio en Blender (tools/blender, mundo/js/modelado.js): árboles con follaje recortado, rocas y naturaleza menor, edificios del pueblo enteros, objetos y mobiliario, ruinas, portales y entradas. Cinco paquetes en assets/3d con 3 niveles de detalle y respaldo al kit. |
 | v376 | Artesanía explicada (Mochila → Materiales, avisos de material nuevo y receta lista, marcar a la Artesana), HUD de PC limpio, Esc explica el menú, título de zona legible, ventanas altas en PC, PWA única con capturas y atajos, reconexión sin señal | Opus |
+| v377 | Mundo de 1800 m (antes 1320): franja exterior con 31 campamentos de los monstruos fuertes de cada zona y 10 lugares con nombre hechos con los kits CC0 de Kenney (supervivencia, cementerio, piratas), descubribles y marcados en el mapa | Opus |
 
 ## Reglas del dueño (siguen vigentes)
 

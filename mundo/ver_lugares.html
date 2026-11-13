@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Lugares de la franja exterior</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }</script>
+<style>html,body{margin:0;background:#20283a;color:#fff;font:13px system-ui}#c{display:block}#t{position:fixed;left:10px;top:8px;text-shadow:0 1px 2px #000}</style></head>
+<body><div id="t"></div><canvas id="c"></canvas>
+<script type="module">
+// Herramienta de prueba (no se publica: .assetsignore): dibuja un lugar de mmo/js/mundo3d.js LUGARES3D con su
+// terreno, de dia, desde arriba. ?l=id&d=distancia
+import * as THREE from 'three';
+import { lugares3d, alturaEn, MUNDO } from '/mmo/js/mundo3d.js';
+import { cargarPaquete } from '/mundo/js/kenney.js';
+import { construirLugares } from '/mundo/js/lugares.js';
+const q = new URLSearchParams(location.search), L = lugares3d().find(l => l.id === (q.get('l') || 'panteon'));
+const W = 1280, H = 720, r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace;
+const es = new THREE.Scene(); es.background = new THREE.Color('#9ad0ff');
+es.add(new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.1)); const sol = new THREE.DirectionalLight(0xfff2dd, 1.3); sol.position.set(120, 200, 80); es.add(sol);
+const R = 60, N = 120, g = new THREE.PlaneGeometry(R * 2, R * 2, N, N).rotateX(-Math.PI / 2), p = g.attributes.position;
+for (let i = 0; i < p.count; i++) p.setY(i, alturaEn(L.x + p.getX(i), L.z + p.getZ(i)));
+g.computeVertexNormals();
+const suelo = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: '#7f9a5a', flatShading: true })); suelo.position.set(L.x, 0, L.z); es.add(suelo);
+const agua = new THREE.Mesh(new THREE.PlaneGeometry(R * 2, R * 2).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#3c7fb0', transparent: true, opacity: 0.8 })); agua.position.set(L.x, MUNDO.agua, L.z); es.add(agua);
+const K = await cargarPaquete('/assets/3d/', 'lugares');
+construirLugares({ escena: es, KIT: K, lugares: [L], alturaEn, agua: MUNDO.agua, ponerSolido() {}, sombras: false });
+// Duende de referencia: 1,75 m
+const ref = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.75, 8).translate(0, 0.875, 0), new THREE.MeshLambertMaterial({ color: '#4ade80' }));
+ref.position.set(L.x + Math.sin(L.ry) * 14, alturaEn(L.x + Math.sin(L.ry) * 14, L.z + Math.cos(L.ry) * 14), L.z + Math.cos(L.ry) * 14); es.add(ref);
+const d = +(q.get('d') || 38), cam = new THREE.PerspectiveCamera(50, W / H, 0.5, 600), y0 = alturaEn(L.x, L.z);
+cam.position.set(L.x + Math.sin(L.ry) * d, y0 + d * 0.7, L.z + Math.cos(L.ry) * d); cam.lookAt(L.x, y0 + 2, L.z);
+r.render(es, cam);
+document.getElementById('t').textContent = L.nombre + ' · ' + L.zona + ' · (' + L.x + ', ' + L.z + ') · cilindro verde = duende 1,75 m';
+window.listo = true;
+</script></body></html>
