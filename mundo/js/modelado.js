@@ -202,7 +202,7 @@ function materialOrganico(fx, follaje, ligera) {
         float dqRapido = mix(dqBajo / 15.0, dqEsq.y * (1.0 - dqCartel), dqCarta);
         float dqFase = uT * 1.25 + instanceMatrix[3].x * 0.21 + instanceMatrix[3].z * 0.17;
         /* Dos frecuencias: el tronco y la copa entera se balancean despacio; la hoja tiembla rapido encima. */
-        transformed.xz += uViento * dqLento / dqEsc * clamp(position.y * dqEsc * 0.14, 0.0, 1.0) * 0.2 * vec2(sin(dqFase) + 0.4 * sin(dqFase * 2.3 + position.y * 0.5), cos(dqFase * 0.8) * 0.6);
+        transformed.xz += uViento * dqLento / dqEsc * clamp(position.y * dqEsc * 0.14, 0.0, 1.0) * 0.17 * vec2(sin(dqFase) + 0.4 * sin(dqFase * 2.3 + position.y * 0.5), cos(dqFase * 0.8) * 0.6);
         float dqF2 = uT * 4.7 + dqFase * 3.0 + position.x * 1.7 + position.z * 2.3 + position.y * 1.1;
         transformed += uViento * dqRapido * dqHoja / dqEsc * (vec3(0.0, 0.035, 0.0) * sin(dqF2 * 0.62) + normal * (0.012 + 0.03 * dqCarta) * sin(dqF2));
         /* Sin tarjetas (calidad baja, o la textura no llego): se pliegan en un punto y no se dibujan. */
@@ -215,7 +215,8 @@ function materialOrganico(fx, follaje, ligera) {
           float dqG = (fract(sin(dot(position, vec3(12.9898, 78.233, 37.719))) * 43758.5453) - 0.5) * 1.3 + 0.07 * uViento * sin(dqF2 * 0.5);
           vec2 dqUp = normalize(normalize(transformedNormal).xy + vec2(0.0, 0.3));
           dqUp = vec2(dqUp.x * cos(dqG) - dqUp.y * sin(dqG), dqUp.x * sin(dqG) + dqUp.y * cos(dqG));
-          float dqLado = (0.3 + 0.15 * dqBajo) * dqEsc;
+          /* Pegado a la camara (el duende bajo la copa) el racimo se encoge: no tapa media pantalla. */
+          float dqLado = (0.3 + 0.15 * dqBajo) * dqEsc * smoothstep(0.8, 3.2, -mvPosition.z);
           mvPosition.xy += (vec2(dqUp.y, -dqUp.x) * dqQ.x + dqUp * (dqQ.y + 0.32)) * dqLado;
           mvPosition.z += dqLado * 0.38;   /* un poco hacia la camara: el racimo queda por delante de la masa de la que sale */
           gl_Position = projectionMatrix * mvPosition;
@@ -247,5 +248,6 @@ function materialOrganico(fx, follaje, ligera) {
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n      totalEmissiveRadiance += diffuseColor.rgb * vDqM.y * uBrillo;');
   };
   mat.customProgramCacheKey = () => 'tapa-dqm2';
+  mat.userData.dqCartas = cartas;   /* para medir: 0 pliega las tarjetas, 1 las dibuja */
   return mat;
 }

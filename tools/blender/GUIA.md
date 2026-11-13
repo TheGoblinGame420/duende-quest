@@ -70,3 +70,11 @@ def menhir_a(lod):                       # lod: 0 alto, 1 medio, 2 bajo. Devuelv
 - Las láminas sueltas necesitan `dos_caras` (el juego dibuja una sola cara).
 - Un tubo de pocos lados ya sale suave; con tapas planas llama a `suavizar(o, 30)`.
 - Blender tarda ~1 s por modelo; la primera foto con EEVEE, ~25 s (`--rapido` usa Workbench).
+
+## Follaje con hojas recortadas (lo usa `arboles.py`; vale para cualquier familia)
+- **Una sola textura**, `assets/3d/dq_follaje.png` (256 px, la hornea `arboles.py` con `textura('follaje', fn)`; el juego la baja a 128 en calidad baja). Canales: R recorte de los racimos, G corteza con el relieve ya iluminado, B claro y oscuro de las hojas. 4 celdas de racimos: 0 hoja ancha, 1 hoja menuda, 2 rama de conífera, 3 rama colgante. No añadas otra textura: si te falta un racimo, pídelo para esta.
+- Marcas nuevas: `fronda` 9 (lámina recortada con la textura; necesita UV) y `nucleo` 10 (la masa interior de una copa con racimos: el juego la oscurece mientras los dibuja). Las dos toman el color de la zona, como `hoja`.
+- `carteles([{o, tam, celda, col, n}])`: racimos que siempre miran a la cámara y apuntan hacia fuera de la copa (2 triángulos cada uno, rompen la silueta desde cualquier lado; `tam` 0,45–2,55 m). `tarjetas([{o, lado, sube, uv, col, n}])`: láminas fijas de dos caras (4 triángulos; `uv=celda_uv(k)` está en `arboles.py`). Para una copa entera: `copa(..., cartas=(alto, medio), celda=, tam=)` de `arboles.py`.
+- En calidad baja y mínima, o si la textura no llega, los racimos no se dibujan: **el modelo tiene que verse bien solo con su masa** (pruébalo con `dq3_calidad = baja`). En el nivel bajo de detalle (lod 2) no pongas racimos.
+- Viento en dos frecuencias: `poner_viento(o, rápido, lento=)`. `lento` es el balanceo de todo el árbol (tronco incluido: `mecer(o)` de `arboles.py` lo pone según la altura) y `rápido` el temblor de la hoja. Sin `lento`, vale lo mismo que el rápido (como antes).
+- El paquete sale en formato v3 solo si algún nivel lleva UV; `modelado.js` lee v2 y v3.
