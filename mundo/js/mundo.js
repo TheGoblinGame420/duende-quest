@@ -14,46 +14,46 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=377';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=377';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=377';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=377';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=377';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=377';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=377';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=377';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=377';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=377';
-import { crearMusica } from './musica.js?v=377';
-import { crearSonidos } from './sonidos.js?v=377';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=377';
-import { construirCueva } from './cueva.js?v=377';
-import { TAPA, transparentar } from './tapa.js?v=377';
-import { construirAbismo } from './abismo.js?v=377';
-import { crearParticulas } from './particulas.js?v=377';
-import { crearCielo } from './cielo.js?v=377';
-import { PERF } from './perf.js?v=377';
-import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=377';
-import { construirLugares } from './lugares.js?v=377';
-import { cargarModelado } from './modelado.js?v=377';
-import { crearRuinas } from './ruinas.js?v=377';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=377';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=377';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=377';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=378';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=378';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=378';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=378';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=378';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=378';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=378';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=378';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=378';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=378';
+import { crearMusica } from './musica.js?v=378';
+import { crearSonidos } from './sonidos.js?v=378';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=378';
+import { construirCueva } from './cueva.js?v=378';
+import { TAPA, transparentar } from './tapa.js?v=378';
+import { construirAbismo } from './abismo.js?v=378';
+import { crearParticulas } from './particulas.js?v=378';
+import { crearCielo } from './cielo.js?v=378';
+import { PERF } from './perf.js?v=378';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=378';
+import { construirLugares } from './lugares.js?v=378';
+import { cargarModelado } from './modelado.js?v=378';
+import { crearRuinas } from './ruinas.js?v=378';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=378';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=378';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=378';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=377';
-import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=377';   // v376: lugares con nombre de la franja exterior
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=377';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=377';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=377';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=377';
-import { PISTAS } from '/mmo/js/caso.js?v=377';
-import { htmlCaso } from './caso.js?v=377';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=377';
-import { crearRituales } from './rituales.js?v=377';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=377';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=377';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=377';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=378';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=378';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=378';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=378';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=378';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=378';
+import { PISTAS } from '/mmo/js/caso.js?v=378';
+import { htmlCaso } from './caso.js?v=378';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=378';
+import { crearRituales } from './rituales.js?v=378';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=378';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=378';
+import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=378';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -79,6 +79,7 @@ const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio
 const imgLore = () => (modoAnuncio() ? '/assets/skins/skin_bruja.png' : '/assets/lore/chicha-duende-playa.jpg');
 // Embudo de la carga (/js/origen.js → /mmo/ev): un aviso por paso y sesion. Sin origen.js no hace nada.
 const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'origins'); } catch (er) {} };
+let talando = false;   // el ultimo punto que se empezo a recoger era un arbol (texto «Talando…»)
 let escAviso = 0;   // Esc con objetivo: se explica 2 veces que el siguiente Esc abre el menu
 let golpe1Ok = false;   // embudo: el primer 'atk3' mandado (paso 'golpe1') va una sola vez
 paso('carga_ini');
@@ -1052,10 +1053,10 @@ function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
   const paso = CAL === 'baja' ? 11 : MOVIL ? 9 : 7;   // en baja, ~33% menos arboles y rocas
-  const LUGS = lugares3d(), FL = MUNDO.borde + 20;
+  const LUGS = lugares3d(), FL = MUNDO.borde + 20, TALA = nodos3d(MAPAS, MONSTRUOS).filter(n => n.tipo === 'madera');   /* v378: los arboles talables se ven solos, sin otro arbol encima */
   for (let x = -FL; x <= FL; x += paso) for (let z = -FL; z <= FL; z += paso) {
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
-    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
+    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26) || TALA.some(n => Math.abs(n.x - jx) < 6 && Math.abs(n.z - jz) < 6)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
     const zona = zonaEn(jx, jz);
     const h = alturaEn(jx, jz);
     if (h < 0.5 || pendienteEn(jx, jz) > 0.95) continue;
@@ -1428,6 +1429,26 @@ const nodosMesh = (() => {
       out[tipo].mallas.push(im);
     }
   }
+  // Arboles talables (v378): tronco, dos copas y una cinta naranja que los distingue; al talarlos se
+  // esconden y queda el tocon (malla aparte, siempre visible) hasta que vuelven a crecer.
+  const lm = NODOS.filter(n => n.tipo === 'madera');
+  out.madera = { l: lm, mallas: [] };
+  const partesA = [
+    [new THREE.CylinderGeometry(0.3, 0.38, 3, 7), '#6b4a2b', 2, false],
+    [new THREE.ConeGeometry(1.7, 3.2, 7), '#2f6b3a', 4.4, false],
+    [new THREE.ConeGeometry(1.25, 2.4, 7), '#3b7d45', 5.9, false],
+    [new THREE.CylinderGeometry(0.42, 0.42, 0.4, 10, 1, true), '#ff9d1a', 1.5, true],
+    [new THREE.CylinderGeometry(0.4, 0.4, 0.18, 10, 1, true), '#ff9d1a', 2.3, true],
+  ];
+  const ponA = (geo, color, alto, basico, lista) => {
+    const im = new THREE.InstancedMesh(geo, basico ? new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }) : new THREE.MeshLambertMaterial({ color, flatShading: true }), Math.max(1, lista.length));
+    im.count = lista.length;
+    lista.forEach((n, k) => { v.set(n.x, alturaEn(n.x, n.z) + alto, n.z); q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), n.i * 1.7); m4.compose(v, q, sc); im.setMatrixAt(k, m4); });
+    im.userData = { brilla: false, veces: 1, alto }; escena.add(im); return im;
+  };
+  for (const [geo, color, alto, basico] of partesA) out.madera.mallas.push(ponA(geo, color, alto, basico, lm));
+  ponA(new THREE.CylinderGeometry(0.42, 0.5, 0.5, 7), '#7a5634', 0.25, false, lm);   // tocon
+  for (const n of lm) ponerSolido(n.x, n.z, 0.45);
   return out;
 })();
 // Esconde o muestra un punto (todas sus piezas).
@@ -2881,7 +2902,7 @@ function recibir(m) {
     case 'pedidoSol': case 'factura': case 'pedidoYape': V.alPedido(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
     case 'pw': if (m.p === miId) { if (m.i === 0) SON.tocar('cura', { vol: 0.8 }); else sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); } break;   // la pocion: campanitas de curacion
     case 'cast':
-      if (m.p === miId) { atkBuf = 0; lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (' + K('E', '¡TIRAR!') + ' para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
+      if (m.p === miId) { atkBuf = 0; lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? (talando ? 'Talando…' : 'Recolectando…') : m.id === 'pescar' ? 'Pescando… (' + K('E', '¡TIRAR!') + ' para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
         if (m.id === 'pescar') ponerCorcho(); }
       else { const o = otros.get(m.p); if (o) o.lanza = performance.now() + m.ms; }
       break;
@@ -5109,7 +5130,7 @@ function abrirNpc(tipo) {
   } else {
     const mat = yo.mat || {};
     const tengo = Object.entries(MATERIALES).filter(([k]) => mat[k]).map(([k, d]) => `<span style="white-space:nowrap"><img src="${A}items/equipo/${d.icono}.png" style="width:18px;vertical-align:middle;image-rendering:pixelated"> ${mat[k]}</span>`).join(' · ');
-    cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (${K('tecla E', 'botón RECOGER')} junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
+    cu.innerHTML = `<p>Recoge hierbas 🌿, minerales ⛏ y tala árboles marcados con cinta naranja 🪓 por el mundo (${K('tecla E', 'botón RECOGER')} junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
       + `<p style="margin:6px 0"><b>📖 Recetario: ${RECETAS.filter(r => (yo.recetas || {})[r.id]).length}/${RECETAS.length}</b></p>`
       + RECETAS.map(r => {
         const ok = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
@@ -8331,7 +8352,7 @@ function hablar() {
   if (lanzando && lanzando.id === 'pescar') { if (performance.now() - (hablar.esperaT || 0) > 2000) { hablar.esperaT = performance.now(); aviso('🎣 Espera a que pique: el botón se pondrá ¡TIRAR!'); } return; }
   // Recoger o pescar: quieto y sin ataque automatico (antes se cancelaba solo con "Te moviste").
   const quieto = id => { autoAtk = false; pintarBarra(); const t = performance.now(); lanzando = { id, ini: t, fin: t + 2500, pre: true }; P.vx = P.vz = 0; };
-  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { quieto('recolectar'); mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { quieto('pescar'); mandar({ t: 'pescar' }); return; } }
+  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { talando = nd.tipo === 'madera'; quieto('recolectar'); mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { quieto('pescar'); mandar({ t: 'pescar' }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
@@ -9958,7 +9979,7 @@ function cuadroBucle(t) {
       b.style.display = n || cf || nd ? 'block' : 'none';
       if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : n.tipo === 'res' ? '✨ ' + n.nombre : (ROL_NPC[n.tipo] ? ROL_NPC[n.tipo] + ' · ' : 'Hablar con ') + n.nombre);
       else if (cf) b.textContent = (MOVIL ? '' : 'E · ') + 'Abrir ' + NOMBRE_COFRE[cf.tipo];
-      else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
+      else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + (nd.tipo === 'madera' ? 'Talar árbol' : 'Recoger ' + MATERIALES[nd.tipo].nombre);
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (toca(1, 1000, t)) revisarNodos();

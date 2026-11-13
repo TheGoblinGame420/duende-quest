@@ -3723,3 +3723,7 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - `lugares3d()` / `LUGAR_DIST` (mundo3d.js): 10 lugares por angulo; `mundo/js/lugares.js` los arma con `assets/3d/lugares.*` (`node tools/kenney_build.mjs <kits> --lugares`, kits Survival/Graveyard/Pirate de Kenney, CC0). Descubrimiento en el cliente (`dq3_lugares`), pines en el mapa, titulo y lore.
 - Prueba visual: `mundo/ver_lugares.html?l=id` (no se publica).
 - Idea pendiente: talar arboles en el campamento de leñadores (madera para recetas nuevas).
+
+## v378 (13-nov-2026)
+- Talar: `arbolesTalables` al final de `nodos3d` (tipo `madera`, mismos indices de siempre para plantas y vetas). Servidor: `terminarRecoleccion3d` da solo madera y su toast. Cliente: arbol con cintas naranjas, tocon siempre visible, «Talar árbol»/«Talando…», flora despejada a 6 m.
+- `MATERIALES.madera` (icono `assets/items/equipo/I_Madera.png`, dibujado) y recetas `tablas`, `brea`, `fogata`, `carbon` (solo3d). Pruebas en el arnés (recolección 3D).

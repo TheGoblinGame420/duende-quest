@@ -516,12 +516,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 377;
+export const VERSION = 378;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 144, fecha: '13 nov 2026', solo3d: true, items: [
+    '🪓 Ya se pueden talar árboles: los marcados con cinta naranja dan Madera. Hay muchos junto al Campamento de los Leñadores y algunos en el Bosque Nocturno, las Colinas Rojas y la Selva.',
+    '🌲 Al talarlo queda el tocón y el árbol vuelve a crecer en unos minutos.',
+    '🔥 Recetas nuevas con la Artesana Lila: Escudos de tabla, Brea de fuego, Pescado a la brasa y Carbón arcano.',
+  ] },
   { n: 143, fecha: '12 nov 2026', solo3d: true, items: [
     '🗺 El mundo de ORIGINS creció: de 1320 a 1800 metros por lado. Cada zona gana tierra nueva hacia el borde, con campamentos de sus monstruos más fuertes.',
     '🏛 10 lugares nuevos por descubrir en el borde del mundo: Panteón de los Ñaupas, Cripta del Rey Olvidado, Caleta del Pirata Cojo, Naufragio del Galeón Negro, Mina Abandonada y más.',
@@ -2005,6 +2010,8 @@ export const MATERIALES = {
   esencia: { nombre: 'Esencia Abisal',    icono: 'S_Shadow06', donde: 'Jefes de mazmorra y de banda de Nv 40 o más (en CLASSIC)', uso: 'Runas permanentes (desde Nv 40)' },
   // De la pesca (PESCA): el pescado en cualquier pesquero, el dorado a veces.
   pescado:    { nombre: 'Pescado',    icono: 'I_C_RawFish', donde: 'Pescando en el muelle del pueblo o en el pesquero de cada zona', uso: 'Pescado frito (pociones), ceviche (+oro) y la olla de chicha' },
+  // Talando arboles en ORIGINS (v378): los del Campamento de los Leñadores y algunos de las primeras zonas.
+  madera:     { nombre: 'Madera',     icono: 'I_Madera', donde: 'Talando árboles marcados con un hacha en ORIGINS: hay muchos junto al Campamento de los Leñadores y algunos en el Bosque Nocturno, las Colinas Rojas y la Selva', uso: 'Escudos de tabla, brea de fuego, fogata con pescado y carbón para cristales' },
   pez_dorado: { nombre: 'Pez Dorado', icono: 'I_FishTail', donde: 'A veces, al pescar (5 %)', uso: 'Sudado Dorado: más daño y menos daño recibido' },
 };
 // Material raro de las zonas altas: [nivel minimo de la zona, probabilidad]
@@ -2047,6 +2054,11 @@ export const RECETAS = [
   { id: 'chichaE', nombre: 'Chicha Morada del Duende', icono: 'I_Bottle02', pide: { hierba: 5, flor: 1 }, da: { elixir: 'chichaE' }, desc: 'La bebida del Cántaro: +10% de oro y +5% de experiencia por caza durante 30 min (persiste al morir)', oculta: 1, pista: 'Hierbas con una flor que solo sale de noche…' },
   { id: 'vasoOlla', nombre: 'Olla de la casa', icono: 'I_Bottle02', pide: { hierba: 4, pescado: 2 }, da: { vasos: 1 }, desc: 'La receta de Mama Asiri: un vaso de chicha para tomar cuando quieras (+10% XP de caza y vida poco a poco, 20 min)', solo3d: 1 },
   { id: 'mazamorra', nombre: 'Mazamorra Morada', icono: 'I_C_Pie', pide: { hierba: 4, mineral: 2, pescado: 1 }, da: { pw: { pocion: 5, escudo: 1 } }, desc: 'Postre de maíz morado: 5 pociones y un escudo', oculta: 1, pista: 'Hierbas, piedra y un pescadito para el postre…' },
+  // Con madera (v378, solo en ORIGINS: ahi se tala).
+  { id: 'tablas', nombre: 'Escudos de tabla ×2', icono: 'item_shield', dir: 'items/', pide: { madera: 4 }, da: { pw: { escudo: 2 } }, desc: 'Dos escudos de invulnerabilidad, de tabla dura', solo3d: 1 },
+  { id: 'brea', nombre: 'Brea de fuego ×3', icono: 'skill_fire', dir: 'items/', pide: { madera: 3, mineral: 2 }, da: { pw: { fuego: 3 } }, desc: 'Tres golpes de fuego', solo3d: 1 },
+  { id: 'fogata', nombre: 'Pescado a la brasa ×4', icono: 'I_C_Fish', pide: { madera: 2, pescado: 2 }, da: { pw: { pocion: 4 } }, desc: 'Cuatro pociones de vida, asadas en la fogata', solo3d: 1 },
+  { id: 'carbon', nombre: 'Carbón arcano', icono: 'I_Crystal01', pide: { madera: 6, mineral: 2 }, da: { mat: { cristal: 1 } }, desc: '6 maderas y 2 minerales se queman lento en 1 Cristal Arcano', solo3d: 1 },
   { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)', oculta: 1, pista: 'Algo con pescado y un pez que brilla…' },
 ];
 

@@ -405,7 +405,23 @@ export function nodos3d(MAPAS, MONSTRUOS) {
     }
     n++;
   }
+  l.push(...arbolesTalables(l.length, campos));   // v378: al final, los indices de plantas y vetas no cambian
   return (_nodos = l);
+}
+
+// ── ARBOLES TALABLES (v378) ──
+// Puntos de recoleccion de tipo 'madera' con la forma de un arbol (el cliente lo dibuja; al talarlo queda
+// el tocon hasta que vuelve a crecer, como las plantas). 12 alrededor del Campamento de los Leñadores y 3
+// cerca del centro de cada zona de la primera hora, para que el novato lo descubra pronto.
+function arbolesTalables(i0, campos) {
+  const l = [], libre = (x, z) => alturaEn(x, z) > MUNDO.agua + 0.8 && pendienteEn(x, z) < 0.45 && !campos.some(p => Math.hypot(p.x - x, p.z - z) < 14) && !l.some(p => Math.hypot(p.x - x, p.z - z) < 6);
+  const len = lugares3d().find(x => x.id === 'lenadores');
+  if (len) { const r = rng(5501); for (let k = 0; k < 300 && l.length < 12; k++) { const a = r() * Math.PI * 2, d = 17 + r() * 14, x = Math.round(len.x + Math.cos(a) * d), z = Math.round(len.z + Math.sin(a) * d); if (libre(x, z)) l.push({ i: i0 + l.length, zona: zonaEn(x, z), x, z, tipo: 'madera' }); } }
+  ZONAS_PRIMERA_HORA.forEach((id, n) => {
+    const c = ZONAS3D[id], r = rng(6607 + n * 31); let k = 0;
+    for (let t = 0; t < 300 && k < 3; t++) { const a = r() * Math.PI * 2, d = 20 + r() * 60, x = Math.round(c.x + Math.cos(a) * d), z = Math.round(c.z + Math.sin(a) * d); if (zonaEn(x, z) === id && libre(x, z)) { l.push({ i: i0 + l.length, zona: id, x, z, tipo: 'madera' }); k++; } }
+  });
+  return l;
 }
 
 // ── CORRIENTES DE VIENTO DEL MUNDO ABIERTO ──

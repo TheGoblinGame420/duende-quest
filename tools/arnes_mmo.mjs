@@ -1364,6 +1364,18 @@ async function pruebasRecoleccion3d() {
   s.p = { x: art.x + 1, z: art.z }; const p0 = s.c.pw.pocion || 0;
   await s.mandar({ t: 'fabricar', id: 'pociones' });
   chequear(s.c.mat.hierba === 0 && (s.c.pw.pocion || 0) === p0 + 3, 'la Artesana del 3D fabrica pociones');
+  // v378: talar arboles da madera (sin cristal ni raros) y la madera sirve en la Artesana.
+  const ar = W.nodos3d(D.MAPAS, D.MONSTRUOS).find(x => x.tipo === 'madera');
+  chequear(!!ar && W.nodos3d(D.MAPAS, D.MONSTRUOS).filter(x => x.tipo === 'madera').length >= 15, 'hay arboles talables en el mundo');
+  s.p = { x: ar.x + 1, z: ar.z }; s.c.mat = {}; s.limpiar();
+  await s.mandar({ t: 'recolectar', i: ar.i });
+  for (let i = 0; i < 17; i++) tick(1);
+  chequear((s.c.mat.madera || 0) >= 1 && !s.c.mat.cristal && !s.c.mat.mithril && s.ultimos('toast').some(x => /Madera/.test(x.m)), 'talar un arbol da madera y nada mas');
+  s.limpiar(); await s.mandar({ t: 'recolectar', i: ar.i });
+  chequear(!s.cast && s.ultimos('no').some(x => /talaste/.test(x.m)), 'el arbol talado tarda en volver a crecer');
+  s.c.mat.madera = 4; s.p = { x: art.x + 1, z: art.z }; const e0 = s.c.pw.escudo || 0;
+  await s.mandar({ t: 'fabricar', id: 'tablas' });
+  chequear(s.c.mat.madera === 0 && (s.c.pw.escudo || 0) === e0 + 2, 'con 4 maderas la Artesana hace escudos de tabla');
   await dejar(s);
 }
 

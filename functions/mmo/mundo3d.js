@@ -1187,7 +1187,7 @@ export const Mundo3D = {
     const n = nodos3d(MAPAS, MONSTRUOS)[m.i | 0];
     if (!n) return;
     if (dist(s.p, n) > RECOGER_DIST + 1) return this.no(s, 'Acércate más para recoger.');
-    if (Date.now() < ((s.c.nodos || {})['3d:' + n.i] || 0)) return this.no(s, 'Ya lo recogiste: vuelve a crecer en unos minutos.');
+    if (Date.now() < ((s.c.nodos || {})['3d:' + n.i] || 0)) return this.no(s, n.tipo === 'madera' ? 'Ya talaste ese árbol: vuelve a crecer en unos minutos.' : 'Ya lo recogiste: vuelve a crecer en unos minutos.');
     this.desmontar(s);
     s.cast = { h: 'recolectar', fin: Date.now() + RECOLECTAR_MS, tg: 0, nodo: n.i };
     this.aDe(s, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });   // solo a quien lo ve
@@ -1206,6 +1206,13 @@ export const Mundo3D = {
     const cant = 1 + (Math.random() < 0.5 ? 1 : 0) + (nv >= 30 ? 1 : 0);
     c.mat[n.tipo] = Math.min(999, (c.mat[n.tipo] || 0) + cant);
     let extra = '';
+    if (n.tipo === 'madera') {   // v378: el arbol da solo madera (sin cristal ni raros de veta o planta)
+      s.sucio = true;
+      this.enviar(s, { t: 'recogido3', i: n.i, en: NODO_CADA_MS, tipo: n.tipo, cant });
+      this.enviar(s, { t: 'toast', m: `🪓 +${cant} ${MATERIALES.madera.nombre}`, ok: true });
+      this.progresoTarea && this.progresoTarea(s, 'recoger');
+      return this.actualizarYo(s);
+    }
     if (Math.random() < 0.06 + nv / 800) { c.mat.cristal = Math.min(999, (c.mat.cristal || 0) + 1); extra = ' y 1 Cristal Arcano'; }
     let raros = 0;
     for (const [nvMin, p] of RARO_ZONA) if (nv >= nvMin && Math.random() < p) raros++;
