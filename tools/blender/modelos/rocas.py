@@ -400,11 +400,13 @@ def _menhir(lod, s=3):
     cortar(o, azar(s), 5, (0.02, 0.1), 0.3)
     pie = [piedra(s + 5, (0.5, 0.42, 0.34), (0.82, -0.35, 0.02), 7, subdiv=3), piedra(s + 6, (0.36, 0.3, 0.24), (-0.8, 0.3, -0.03), 6, subdiv=3)]
     o = unir([o] + pie); asentar(o)
-    decimar(o, (680, 230, 78)[lod])
+    decimar(o, (640, 220, 78)[lod])
     pintar_roca(o, 'ruina', s, None, 'monolito'); suavizar(o, (38, 44, 50)[lod])
     if lod == 2: return o
     g = [(0, 0.12, 3.5, 0.42), (1, 0.08, 2.86, 0.44), (2, 0.04, 2.2, 0.46), (3, 0.0, 1.52, 0.48)]
-    return [o, runas(o, g if lod == 0 else g[:3], '#7a4fe0', 0.055 if lod == 0 else 0.07)]
+    t = [(4, -0.1, 3.3, 0.42), (0, -0.06, 2.62, 0.44), (2, -0.02, 1.9, 0.46)]     # por detras, otras tres
+    an = 0.055 if lod == 0 else 0.07
+    return [o, runas(o, g if lod == 0 else g[:3], '#7a4fe0', an), runas(o, t if lod == 0 else t[:2], '#7a4fe0', an, frente=(0, 1, 0))]
 
 
 def _columna(lod, s=5):
@@ -721,7 +723,7 @@ def _magico(lod, s=1, alto=6.6, abrir=1.0):
     """Arbol arcano: tronco palido retorcido en espiral, tres brazos y copas en nube que toman el color de la zona;
     de las ramas cuelgan frutos de eter que brillan."""
     rng = azar(s); a0 = rng.uniform(0, PI2)
-    an = (9, 6, 4)[lod]; lados = (8, 6, 4)[lod]
+    an = (9, 5, 3)[lod]; lados = (8, 5, 3)[lod]
     eje = curva([(0, 0, -0.7), (0.12 * math.cos(a0), 0.12 * math.sin(a0), 1.3), (-0.2 * math.cos(a0 + 1), -0.2 * math.sin(a0 + 1), 2.6), (0.1, 0.05, 3.7)], an)
     t = np.linspace(0, 1, an); rad = 0.3 * (1 - 0.5 * t) + 0.3 * np.exp(-t * 7)
     tr = tubo(eje, rad, lados, 'tronco', 'madera', '#5a4a66', punta=False, perfil=(lambda t, a: 1 + 0.16 * math.cos(a * 3)) if lod < 2 else None, giro=3.4)
@@ -752,7 +754,7 @@ def _magico(lod, s=1, alto=6.6, abrir=1.0):
         bolas.append((c[0], c[1], c[2], R * 1.15, R * 1.15, R * 0.62))
         for q in range(3):
             a = rng.uniform(0, PI2); bolas.append((c[0] + math.cos(a) * R * 0.75, c[1] + math.sin(a) * R * 0.75, c[2] + rng.uniform(-0.2, 0.3), R * 0.6, R * 0.6, R * 0.42))
-    copa = masa(bolas, (0.24, 0.3, 0.42)[lod], (430, 190, 62)[lod], 0.14, 1.2, s, 'hoja', 0.7)
+    copa = masa(bolas, (0.24, 0.3, 0.42)[lod], (430, 150, 46)[lod], 0.14, 1.2, s, 'hoja', 0.7)
     zc = np.array([c[2] for c in cen]); Pc = pos(copa); N = normales(copa)
     luz = np.clip(0.52 + 0.55 * N[:, 2] + 0.22 * (Pc[:, 2] - zc.min()) / 2.0, 0.3, 1.35)
     poner_color(copa, np.c_[luz * 1.02, luz * 0.94, luz * 1.06] * (1 + 0.16 * ruido_fbm(Pc, 1.4, s + 8, 2))[:, None])
@@ -824,7 +826,7 @@ def basalto_penasco(lod):
 
 
 # Pilares del castillo.
-T_PILAR = (800, 280, 90)
+T_PILAR = (800, 300, 90)
 @modelo('menhir_runas', sustituye={'flora': 'pilar', 'tam': 5.3}, tris=T_PILAR)
 def menhir_runas(lod): return _menhir(lod)
 
@@ -849,10 +851,10 @@ def cristal_arcano_a(lod): return _racimo(13, ARCANO, lod, 'aguja')
 def cristal_arcano_b(lod): return _racimo(21, ARCANO, lod, 'abanico')
 
 # Arbol magico.
-@modelo('arcano_a', sustituye={'flora': 'magico', 'tam': 6.6}, tris=(1100, 420, 150))
+@modelo('arcano_a', sustituye={'flora': 'magico', 'tam': 6.6}, tris=(1100, 340, 110))
 def arcano_a(lod): return _magico(lod, 4)
 
-@modelo('arcano_b', sustituye={'flora': 'magico', 'tam': 6.0, 'lejos': 'arcano_a'}, tris=(1100, 420, 150))
+@modelo('arcano_b', sustituye={'flora': 'magico', 'tam': 6.0, 'lejos': 'arcano_a'}, tris=(1100, 340, 110))
 def arcano_b(lod): return _magico(lod, 12, abrir=1.2)
 
 # Setas grandes.
