@@ -1188,6 +1188,27 @@ let molinoAspas = null;
 // Banderines de aguayo colgados entre casas de la plaza: una sola malla
 // instanciada (cuerda y banderines), con caida en catenaria.
 const AGUAYO = ['#c0262d', '#f2c23a', '#2f62c0', '#2a8a4a', '#e86a1a'];
+/* Objetos y mobiliario propios (paquete «objetos», tools/blender/modelos/objetos.py) colocados por codigo: farol, fuente,
+   puesto, banco, carro, mesas, olla, horno, cofres... Copias de UN modelo con el nivel de detalle que toca a la calidad.
+   lista: [{ x, z, y, ry, s, color }]. Con varias copias (o con color: el del toldo, marca «hoja») es UNA malla instanciada;
+   una copia sin color es una malla normal (asi la piedra no toma el musgo de instancia). null = no hay paquete: el que
+   llama deja lo de antes. */
+const lodObjeto = () => GFX.efectivo === 'minima' ? 2 : (GFX.efectivo === 'baja' || (MOVIL && GFX.efectivo === 'media')) ? 1 : 0;
+function objetosPropios(nombre, lista) {
+  if (!PAQ || !PAQ.modelos[nombre] || !lista.length) return null;
+  /* Los que se repiten (faroles, puestos, barriles) van en calidad media con el nivel medio: el alto queda para alta y ultra. */
+  const geo = PAQ.geo(nombre, Math.max(lodObjeto(), lista.length > 2 && GFX.efectivo === 'media' ? 1 : 0)), o = new THREE.Object3D(), col = new THREE.Color();
+  const inst = lista.length > 1 || !!lista[0].color, m = inst ? new THREE.InstancedMesh(geo, PAQ.material, lista.length) : new THREE.Mesh(geo, PAQ.material);
+  lista.forEach((t, i) => {
+    o.position.set(t.x, t.y != null ? t.y : alturaEn(t.x, t.z), t.z); o.rotation.set(0, t.ry || 0, 0); o.scale.setScalar(t.s || 1); o.updateMatrix();
+    if (inst) { m.setMatrixAt(i, o.matrix); m.setColorAt(i, col.set(t.color || '#4a5a34')); } else { m.position.copy(o.position); m.rotation.copy(o.rotation); m.scale.copy(o.scale); m.updateMatrix(); m.updateMatrixWorld(); }
+  });
+  if (inst) m.computeBoundingSphere();
+  if (Q.sombras) { m.castShadow = true; m.receiveShadow = true; }
+  m.matrixAutoUpdate = false; m.matrixWorldAutoUpdate = false;
+  escena.add(m); mallasPropias.push(m);
+  return m;
+}
 function crearBanderines() {
   // 0-4 no: esa cuerda atravesaba el campanario (-17, 31).
   const pares = [[2, 5], [1, 4], [5, 0]], paso = (CAL === 'baja' || POBRE) ? 2.2 : 1.1;
@@ -1292,22 +1313,26 @@ function crearPuebloKit() {
     return m;
   };
   // Faroles del kit (la luz de noche sigue siendo la misma pieza).
+  const farolesP = objetosPropios('farol', faroles.map((fa, i) => ({ x: fa.x, z: fa.z, ry: i * 1.3 })));
   for (const fa of faroles) {
     fa.p.visible = false;
-    pon([{ n: 'p_lantern' }], fa.x, fa.z, 0, 2.2, 0.3);
+    if (farolesP) ponerSolido(fa.x, fa.z, 0.3); else pon([{ n: 'p_lantern' }], fa.x, fa.z, 0, 2.2, 0.3);
     fa.f.position.y = fa.y + 2.95; fa.f.scale.setScalar(0.55); if (fa.halo) fa.halo.position.y = fa.f.position.y;
   }
   // Fuente de la plaza (donde estaba el pozo).
-  pon([{ n: 'p_fountain-round-detail' }], 0, 0, 0, 2.4, 2.5);
+  if (objetosPropios('fuente', [{ x: 0, z: 0 }])) ponerSolido(0, 0, 2.5); else pon([{ n: 'p_fountain-round-detail' }], 0, 0, 0, 2.4, 2.5);
+  /* Puestos, bancos y barriles propios: se juntan aqui y salen en una malla instanciada por modelo (el color es el del toldo). */
+  const hayPuesto = !!(PAQ && PAQ.modelos.puesto), puestosP = [], bancosP = [], taburetesP = [], barrilesP = [], cajonesP = [], TOLDOS = ['#8a3b2e', '#4f6b46', '#9a7b3c'];
   // Chichería de Mama Asiri: puesto, dos ollas de barro y la banderita morada en su palo.
   {
     const na = NPCS3D.find(n => n.tipo === 'chichera');
     if (na) {
       const dx = na.x / Math.hypot(na.x, na.z), dz = na.z / Math.hypot(na.x, na.z), bx = na.x + dx * 2.2, bz = na.z + dz * 2.2;
-      pon([{ n: 'p_stall-green' }], bx, bz, Math.atan2(dx, dz) + Math.PI, 2.2, 1.3);
+      if (hayPuesto) { puestosP.push({ x: bx, z: bz, ry: Math.atan2(dx, dz) + Math.PI, s: 0.92, color: '#5b3a7a' }); ponerSolido(bx, bz, 1.3); } else pon([{ n: 'p_stall-green' }], bx, bz, Math.atan2(dx, dz) + Math.PI, 2.2, 1.3);
       const barro = new THREE.MeshLambertMaterial({ color: 0x8a4a2a }), morado = new THREE.MeshLambertMaterial({ color: 0x7c3aed, side: THREE.DoubleSide }), palo = new THREE.MeshLambertMaterial({ color: 0x6b4a2b });
       const olla = new THREE.CylinderGeometry(0.34, 0.26, 0.5, 10);
-      for (const [ox, oz] of [[-dz * 1.6, dx * 1.6], [-dz * 2.2, dx * 2.2]]) { const m = new THREE.Mesh(olla, barro); m.position.set(na.x + ox, alturaEn(na.x + ox, na.z + oz) + 0.25, na.z + oz); escena.add(m); }
+      /* La olla morada sobre su fogon (modelo propio) ocupa el sitio de las dos ollas de barro. */
+      if (!objetosPropios('olla_chicha', [{ x: na.x - dz * 1.9, z: na.z + dx * 1.9, ry: Math.atan2(dx, dz) + Math.PI }])) for (const [ox, oz] of [[-dz * 1.6, dx * 1.6], [-dz * 2.2, dx * 2.2]]) { const m = new THREE.Mesh(olla, barro); m.position.set(na.x + ox, alturaEn(na.x + ox, na.z + oz) + 0.25, na.z + oz); escena.add(m); }
       const fx = na.x + dz * 1.9, fz = na.z - dx * 1.9, fy = alturaEn(fx, fz);
       const asta = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 3.4, 6), palo); asta.position.set(fx, fy + 1.7, fz); escena.add(asta);
       const tela = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.6), morado); tela.position.set(fx + 0.5, fy + 3.05, fz); escena.add(tela);
@@ -1322,13 +1347,20 @@ function crearPuebloKit() {
     const x = Math.cos(a) * 12, z = Math.sin(a) * 12;
     if (!libre(x, z)) continue;
     const ry = Math.atan2(x, z) + Math.PI;
-    pon([{ n: puestos[k] }, { n: 'p_stall-bench', x: 0.75 }, { n: 'p_stall-stool', x: -0.75, z: 0.2 }], x, z, ry, 2.4, 1.3);
+    if (hayPuesto) {
+      /* Mismo sitio y mismo choque; a los lados, banco y taburete o barriles y un cajon (donde iban el banco y el taburete del kit). */
+      const cs = Math.cos(ry), sn = Math.sin(ry), loc = (lx, lz, g) => ({ x: x + lx * cs + lz * sn, z: z - lx * sn + lz * cs, ry: ry + g });
+      puestosP.push({ x, z, ry, color: TOLDOS[k % 3] }); ponerSolido(x, z, 1.3);
+      if (k % 2) { barrilesP.push(loc(1.75, -0.35, k), loc(1.85, 0.42, k * 2.1)); cajonesP.push(loc(-1.8, 0.4, 0.3)); }
+      else { bancosP.push(loc(1.8, 0, Math.PI / 2)); taburetesP.push(loc(-1.8, 0.48, k)); }
+    } else pon([{ n: puestos[k] }, { n: 'p_stall-bench', x: 0.75 }, { n: 'p_stall-stool', x: -0.75, z: 0.2 }], x, z, ry, 2.4, 1.3);
     k++;
   }
+  objetosPropios('puesto', puestosP); objetosPropios('banco', bancosP); objetosPropios('taburete', taburetesP); objetosPropios('barril', barrilesP); objetosPropios('cajon', cajonesP);
   // Carros junto a dos casas.
   for (const [ci, n] of [[0, 'p_cart'], [3, 'p_cart-high']]) {
     const c = CASAS[ci], x = c.x + Math.cos(c.r) * (c.w / 2 + 2.2), z = c.z - Math.sin(c.r) * (c.w / 2 + 2.2);
-    pon([{ n }], x, z, c.r + 0.4, 2.6, 1.2);
+    if (objetosPropios(n === 'p_cart' ? 'carro' : 'carro_alto', [{ x, z, ry: c.r + 0.4 }])) ponerSolido(x, z, 1.2); else pon([{ n }], x, z, c.r + 0.4, 2.6, 1.2);
   }
   // Campanario: torre de tres plantas con teja colonial (sin aspas de molino).
   const mx = -17, mz = 31, my = alturaEn(mx, mz) - 0.25;
@@ -4990,29 +5022,36 @@ function crearPuestosVecinos() {
   const gTabla = new THREE.BoxGeometry(1, 1, 1), gOlla = new THREE.SphereGeometry(1, 10, 8), gCil = new THREE.CylinderGeometry(1, 1, 1, 10), gVaso = new THREE.CylinderGeometry(1, 0.72, 1, 8);
   const pieza = (g, ge, ma, x, y, z, sx, sy, sz) => { const m = new THREE.Mesh(ge, ma); m.position.set(x, y, z); m.scale.set(sx, sy, sz); g.add(m); return m; };
   const grupo = new THREE.Group();
+  /* Modelo propio (paquete «objetos») en el sitio (lx, lz) del grupo g, con su giro. false = no hay: se arman las piezas de siempre. */
+  const propio = (n, g, lx, lz) => { const cs = Math.cos(g.rotation.y), sn = Math.sin(g.rotation.y); return !!objetosPropios(n, [{ x: g.position.x + lx * cs + lz * sn, z: g.position.z - lx * sn + lz * cs, ry: g.rotation.y }]); };
   const plantar = (v, ad) => { const a = Math.atan2(-v.x, -v.z), x = v.x + Math.sin(a) * ad, z = v.z + Math.cos(a) * ad, g = new THREE.Group(); g.position.set(x, alturaEn(x, z), z); g.rotation.y = a; grupo.add(g); ponerSolido(x, z, 1.15); return g; };
   // Mesa de la Chichera, delante de su puesto: la olla morada y los vasos servidos.
   { const v = NPCS3D.find(n => n.tipo === 'chichera');
     if (v) {
       const g = plantar(v, 1.7);
+      if (!propio('mesa_chichera', g, 0, 0)) {
       pieza(g, gTabla, madera, 0, 0.42, 0, 2.3, 0.84, 1);
       pieza(g, gOlla, barro, -0.6, 1.14, 0, 0.42, 0.34, 0.42);
       pieza(g, gCil, chicha, -0.6, 1.46, 0, 0.31, 0.03, 0.31);
       for (let i = 0; i < 4; i++) pieza(g, gVaso, chicha, 0.2 + (i % 2) * 0.42, 0.95, i < 2 ? -0.2 : 0.2, 0.09, 0.2, 0.09);
+      }
     } }
   // Horno de la Abuela: horno de barro con su boca y mesa con panes.
   { const v = VECINOS.find(n => n.id === 'sisa'), g = plantar(v, 1.6);
+    if (!propio('mesa_panes', g, 0, 0)) {
     pieza(g, gTabla, madera, 0, 0.42, 0, 2.2, 0.84, 1);
     for (let i = 0; i < 6; i++) pieza(g, gOlla, pan, -0.65 + (i % 3) * 0.65, 0.92, i < 3 ? -0.22 : 0.22, 0.2, 0.09, 0.13);
-    pieza(g, gOlla, barro, 1.7, 0.6, -2.5, 1.05, 0.95, 1.05); pieza(g, gOlla, negro, 1.7, 0.55, -1.55, 0.36, 0.42, 0.12);
+    }
+    if (!propio('horno', g, 1.7, -2.5)) { pieza(g, gOlla, barro, 1.7, 0.6, -2.5, 1.05, 0.95, 1.05); pieza(g, gOlla, negro, 1.7, 0.55, -1.55, 0.36, 0.42, 0.12); }
     const sn = Math.sin(g.rotation.y), cs = Math.cos(g.rotation.y);
     ponerSolido(g.position.x + cs * 1.7 - sn * 2.5, g.position.z - sn * 1.7 - cs * 2.5, 1.05); }
   // Narradores de zona: un farol que se enciende al anochecer, como los de la plaza.
   const gFarol = new THREE.OctahedronGeometry(0.38, 0);
   for (const v of VECINOS) if (v.zona !== 'pueblo') {
     const x = v.x + 1.6, z = v.z + 1.1, y = alturaEn(x, z);
-    pieza(grupo, gCil, palo, x, y + 1.6, z, 0.12, 3.2, 0.12);
-    const f = new THREE.Mesh(gFarol, farolMat); f.position.set(x, y + 3.35, z); grupo.add(f);
+    const farolP = objetosPropios('farol', [{ x, z, ry: v.x }]);
+    if (!farolP) pieza(grupo, gCil, palo, x, y + 1.6, z, 0.12, 3.2, 0.12);
+    const f = new THREE.Mesh(gFarol, farolMat); f.position.set(x, y + (farolP ? 2.95 : 3.35), z); if (farolP) f.scale.setScalar(0.55); grupo.add(f);
     ponerSolido(x, z, 0.3);
   }
   escena.add(aplanarInstancias(grupo));
@@ -6409,11 +6448,14 @@ function crearCofres3() {
   const oro = new THREE.MeshLambertMaterial({ color: '#facc15', flatShading: true });
   for (const c of COFRES3) {
     const g = new THREE.Group(), madera = new THREE.MeshLambertMaterial({ color: COLOR_COFRE[c.tipo], flatShading: true });
-    const caja = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); caja.position.y = 0.3;
-    for (const x of [-0.4, 0.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.78), oro); b.position.set(x, 0.31, 0); g.add(b); }
+    /* Cofre propio (paquete «objetos»): caja y tapa por separado; la tapa gira en la misma bisagra. Sin paquete, el de cajas. */
+    const nP = 'cofre_' + ({ comun: 'madera', epico: 'hierro', legendario: 'dorado' })[c.tipo], hayP = !!(PAQ && PAQ.modelos[nP + '_base'] && PAQ.modelos[nP + '_tapa']);
+    const caja = hayP ? new THREE.Mesh(PAQ.geo(nP + '_base', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); if (!hayP) caja.position.y = 0.3;
+    if (!hayP) for (const x of [-0.4, 0.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.78), oro); b.position.set(x, 0.31, 0); g.add(b); }
     const tapa = new THREE.Group(); tapa.position.set(0, 0.6, -0.375);
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); t.position.set(0, 0, 0.375); tapa.add(t);
-    const cierre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.06), oro); cierre.position.set(0, -0.02, 0.76); tapa.add(cierre);
+    const t = hayP ? new THREE.Mesh(PAQ.geo(nP + '_tapa', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); if (!hayP) t.position.set(0, 0, 0.375); tapa.add(t);
+    if (hayP) mallasPropias.push(caja, t);
+    const cierre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.06), oro); cierre.position.set(0, -0.02, 0.76); if (!hayP) tapa.add(cierre);
     const gema = new THREE.Mesh(new THREE.OctahedronGeometry(c.tipo === 'legendario' ? 0.28 : 0.2, 0), new THREE.MeshBasicMaterial({ color: c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#fde68a' }));
     gema.position.y = 1.5;
     g.add(caja, tapa, gema);
