@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 374;
+export const VERSION = 375;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 141, fecha: '12 nov 2026', solo3d: true, items: [
+    '🌳 Árboles nuevos, modelados uno a uno: copas con hojas de verdad, corteza con grietas y viento en ramas y tronco.',
+    '🏠 El pueblo estrena casas enteras: taberna, herrería con fragua, casa del sabio con torre, horno y campanario, con ventanas que se encienden de noche.',
+    '🪨 Rocas con estratos y musgo, cristales que brillan, setas gigantes, flores andinas y palmeras nuevas en cada zona.',
+    '🧰 Cofres de madera, hierro y oro, fuente de la plaza, faroles, puestos de mercado, carros, barriles y la olla morada de la chichera.',
+    '🗿 Portal de mazmorras, menhires, arcos de camino, hitos de zona y entradas de la Cueva y el Abismo, en piedra antigua con runas que brillan de noche.',
+  ] },
   { n: 140, fecha: '12 nov 2026', items: [
     '🏰 El mundo cambia de piel: plaza empedrada, casas de piedra y madera con ventanas encendidas de noche, arcos, menhires con runas y antorchas.',
     '🌲 Bosque más vivo: caminos de piedra, troncos con musgo, helechos, setas que brillan de noche, niebla baja y luciérnagas.',

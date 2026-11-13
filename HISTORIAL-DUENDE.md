@@ -109,6 +109,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v372 | Ronda AAA: menú de sistema y gráficos en 6 niveles, fuente DQ Iconos (176 glifos), 17 skins 3D rehechas del arte del dueño, arquetipos de combate y remates, interpolación sin tirones y rendimiento (matrices 3,5→0,66 ms) | **B** |
 | v373 | Mundo abierto: cielo y cordillera, luz y materiales, 15 monstruos rehechos, HUD móvil despejado y mapa nuevo, ranking con todos (invitados incluidos), marionetas 2D en CLASSIC, rituales de mañana y noche, bot en el grupo (/grupo), alertas al dueño (/alertas) y portada de memecoin | **B** |
 | v374 | Ambientación medieval mística: terreno y sotobosque con texturas procedurales, arquitectura de piedra y madera, atmósfera y sonido ambiente, fondo nuevo de CLASSIC, barra de habilidades móvil de 44 px, hoja de ruta honesta y portada más corta | **B** |
+| v375 | Modelado propio en Blender (tools/blender, mundo/js/modelado.js): árboles con follaje recortado, rocas y naturaleza menor, edificios del pueblo enteros, objetos y mobiliario, ruinas, portales y entradas. Cinco paquetes en assets/3d con 3 niveles de detalle y respaldo al kit. |
 
 ## Reglas del dueño (siguen vigentes)
 
