@@ -113,6 +113,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v376 | Artesanía explicada (Mochila → Materiales, avisos de material nuevo y receta lista, marcar a la Artesana), HUD de PC limpio, Esc explica el menú, título de zona legible, ventanas altas en PC, PWA única con capturas y atajos, reconexión sin señal | Opus |
 | v377 | Mundo de 1800 m (antes 1320): franja exterior con 31 campamentos de los monstruos fuertes de cada zona y 10 lugares con nombre hechos con los kits CC0 de Kenney (supervivencia, cementerio, piratas), descubribles y marcados en el mapa | Opus |
 | v378 | Talar árboles: 21 árboles talables (12 en el Campamento de los Leñadores, 3 por zona de la primera hora) como puntos de recolección de tipo madera, tocón que vuelve a crecer, material Madera y 4 recetas nuevas solo en ORIGINS | Opus |
+| v379 | Talar cualquier árbol de la flora fuera del pueblo (mensaje talar validado en el servidor: distancia, zona, 5 min por árbol y 120 talas al día); el dueño no encontraba los árboles marcados | Opus |
 
 ## Reglas del dueño (siguen vigentes)
 

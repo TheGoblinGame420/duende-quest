@@ -19,7 +19,7 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir, costoReparacion,
-  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe, MISIONES,
+  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, TALA, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe, MISIONES,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe, TIPO_HAB, DEBIL_EMO, premioBestiario,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, revivirEn3d, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn, corrienteEnMundo } from '../../mmo/js/mundo3d.js';
@@ -252,6 +252,7 @@ export const Mundo3D = {
       case 'retoResp': return this.respuestaDuelo(s, m);
       case 'look': return this.cambiarLook(s, m);
       case 'recolectar': return this.recolectar3d(s, m);
+      case 'talar': return this.talar3d(s, m);
       case 'pescar': return this.pescar3d(s);
       case 'tirar': return this.tirar(s, m);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
@@ -1192,7 +1193,46 @@ export const Mundo3D = {
     s.cast = { h: 'recolectar', fin: Date.now() + RECOLECTAR_MS, tg: 0, nodo: n.i };
     this.aDe(s, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });   // solo a quien lo ve
   },
+  // v379: talar cualquier arbol del mundo abierto. Los arboles los pone el cliente (flora determinista), asi
+  // que el servidor valida lo que puede: fuera del pueblo, la cueva y el Abismo, a TALA.dist m de donde
+  // esta el duende, en tierra firme, una vez por celda de 4 m cada 5 min y TALA.porDia talas al dia.
+  talar3d(s, m) {
+    if (s.muerto || s.cast || this.aura(s, 'aturdido')) return;
+    if (s.h > 4) return this.no(s, 'Aterriza primero.');
+    const x = +m.x, z = +m.z;
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+    const zona = zonaEn(x, z);
+    if (zona === 'pueblo' || zona === 'cueva' || zona === 'eter') return this.no(s, 'Aquí no se tala: busca un árbol fuera del pueblo.');
+    if (dist(s.p, { x, z }) > TALA.dist + 1 || alturaEn(x, z) < MUNDO.agua + 0.3) return this.no(s, 'Acércate más al árbol.');
+    const c = s.c, ahora = Date.now(), hoy = hoyUTC();
+    if (!c.tala || c.tala.d !== hoy) c.tala = { d: hoy, n: 0 };
+    if (c.tala.n >= TALA.porDia) return this.no(s, 'Ya talaste mucho hoy: los árboles necesitan descansar hasta mañana.');
+    const clave = 't:' + Math.round(x / TALA.celda) + ',' + Math.round(z / TALA.celda);
+    if (ahora < ((c.nodos || {})[clave] || 0)) return this.no(s, 'Ya talaste ese árbol: vuelve a dar madera en unos minutos.');
+    this.desmontar(s);
+    s.cast = { h: 'recolectar', fin: ahora + RECOLECTAR_MS, tg: 0, tala: { x, z, clave } };
+    this.aDe(s, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });
+  },
+  terminarTala3d(s, ca) {
+    const c = s.c, tl = ca.tala, ahora = Date.now();
+    if (!tl || dist(s.p, tl) > TALA.dist + 2) return;
+    c.nodos = c.nodos || {};
+    if (ahora < (c.nodos[tl.clave] || 0)) return;
+    for (const k in c.nodos) if (c.nodos[k] < ahora) delete c.nodos[k];
+    c.nodos[tl.clave] = ahora + NODO_CADA_MS;
+    if (!c.tala || c.tala.d !== hoyUTC()) c.tala = { d: hoyUTC(), n: 0 };
+    c.tala.n++;
+    c.mat = c.mat || {};
+    const cant = 1 + (Math.random() < 0.5 ? 1 : 0);
+    c.mat.madera = Math.min(999, (c.mat.madera || 0) + cant);
+    s.sucio = true;
+    this.enviar(s, { t: 'talado3', x: tl.x, z: tl.z, en: NODO_CADA_MS, cant });
+    this.enviar(s, { t: 'toast', m: `🪓 +${cant} ${MATERIALES.madera.nombre}`, ok: true });
+    this.progresoTarea && this.progresoTarea(s, 'recoger');
+    this.actualizarYo(s);
+  },
   terminarRecoleccion3d(s, ca) {
+    if (ca.tala) return this.terminarTala3d(s, ca);
     const c = s.c;
     const n = nodos3d(MAPAS, MONSTRUOS)[ca.nodo];
     if (!n || dist(s.p, n) > RECOGER_DIST + 2) return;

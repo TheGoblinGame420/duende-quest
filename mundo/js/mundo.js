@@ -14,46 +14,47 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=378';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=378';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=378';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=378';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=378';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=378';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=378';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=378';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=378';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=378';
-import { crearMusica } from './musica.js?v=378';
-import { crearSonidos } from './sonidos.js?v=378';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=378';
-import { construirCueva } from './cueva.js?v=378';
-import { TAPA, transparentar } from './tapa.js?v=378';
-import { construirAbismo } from './abismo.js?v=378';
-import { crearParticulas } from './particulas.js?v=378';
-import { crearCielo } from './cielo.js?v=378';
-import { PERF } from './perf.js?v=378';
-import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=378';
-import { construirLugares } from './lugares.js?v=378';
-import { cargarModelado } from './modelado.js?v=378';
-import { crearRuinas } from './ruinas.js?v=378';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=378';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=378';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=378';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=379';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=379';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=379';   // meta del talento elegido a Nv 7 en la barra de XP
+import { TALA as TALA_R } from '/mmo/js/data.js?v=379';   // v379: talar cualquier arbol
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=379';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=379';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=379';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=379';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=379';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=379';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=379';
+import { crearMusica } from './musica.js?v=379';
+import { crearSonidos } from './sonidos.js?v=379';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=379';
+import { construirCueva } from './cueva.js?v=379';
+import { TAPA, transparentar } from './tapa.js?v=379';
+import { construirAbismo } from './abismo.js?v=379';
+import { crearParticulas } from './particulas.js?v=379';
+import { crearCielo } from './cielo.js?v=379';
+import { PERF } from './perf.js?v=379';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=379';
+import { construirLugares } from './lugares.js?v=379';
+import { cargarModelado } from './modelado.js?v=379';
+import { crearRuinas } from './ruinas.js?v=379';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=379';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=379';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=379';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=378';
-import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=378';   // v376: lugares con nombre de la franja exterior
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=378';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=378';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=378';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=378';
-import { PISTAS } from '/mmo/js/caso.js?v=378';
-import { htmlCaso } from './caso.js?v=378';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=378';
-import { crearRituales } from './rituales.js?v=378';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=378';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=378';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=378';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=379';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=379';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=379';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=379';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=379';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=379';
+import { PISTAS } from '/mmo/js/caso.js?v=379';
+import { htmlCaso } from './caso.js?v=379';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=379';
+import { crearRituales } from './rituales.js?v=379';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=379';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=379';
+import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=379';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1069,7 +1070,7 @@ function crearFlora() {
         if (campos.some(c => Math.hypot(c.x - jx, c.z - jz) < 7) || VECINOS.some(v => Math.hypot(v.x - jx, v.z - jz) < 5)) break;
         const s = 0.75 + hashR(x, z, 4) * 0.6;
         (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color, zona });
-        if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s }); }
+        if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s, t: tipo }); }
         if (SOLIDO[tipo]) ponerSolido(jx, jz, SOLIDO[tipo] * s);
         break;
       }
@@ -1463,6 +1464,25 @@ function mostrarNodo(n, si) {
     }
     im.instanceMatrix.needsUpdate = true;
   }
+}
+// v379: cualquier arbol de la flora (pinos, redondos, secos, palmeras, magicos) se puede talar fuera del pueblo.
+// Se busca en la rejilla de 8 m de la camara (los arboles altos ya estan ahi). El servidor valida y da la madera.
+const TALABLES = new Set(['pino', 'nieve', 'redondo', 'muerto', 'palma', 'magico']);
+const talados = new Map();   // clave de celda -> performance.now() en que vuelve a dar madera
+const claveTala = (x, z) => 't:' + Math.round(x / TALA_R.celda) + ',' + Math.round(z / TALA_R.celda);
+function arbolCercano() {
+  if (!P || P.vuela || P.planea || zonaEn(P.x, P.z) === 'pueblo' || enCueva(P.x) || enAbismo(P.x)) return null;
+  const gx = Math.floor(P.x / REJ), gz = Math.floor(P.z / REJ), ahora = performance.now();
+  let mejor = null, md = TALA_R.dist - 0.6;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const l = rejilla.get((gx + i) + ',' + (gz + j)); if (!l) continue;
+    for (const a of l) {
+      if (!TALABLES.has(a.t)) continue;
+      const d = Math.hypot(a.x - P.x, a.z - P.z);
+      if (d < md && !(talados.get(claveTala(a.x, a.z)) > ahora)) { md = d; mejor = a; }
+    }
+  }
+  return mejor;
 }
 function nodoCercano() {
   const ahora = performance.now();
@@ -2867,6 +2887,7 @@ function recibir(m) {
       break;
     case 'atp3': { const de = m.p === miId ? P : otros.get(m.p), a = m.tg === miId ? P : otros.get(m.tg); if (de && !(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (de && a && m.v && !(de === P && performance.now() - (P.proyLocalT || 0) < 700)) proyectil(de, a, '#f0abfc'); break; }
     case 'nodos3': for (const [i, ms] of m.l) { if (!NODOS[i]) continue; nodoListo.set(i, performance.now() + ms); mostrarNodo(NODOS[i], false); } break;
+    case 'talado3': talados.set(claveTala(m.x, m.z), performance.now() + m.en); try { FX.emitir(m.x, alturaEn(m.x, m.z) + 1.2, m.z, { n: 14, color: '#c08a4a', vel: 3, vida: 0.9, grav: 9, radio: 0.6, tam: 1 }); } catch (e) {} sfx('moneda', 0.3); break;
     case 'recogido3': if (NODOS[m.i]) { nodoListo.set(m.i, performance.now() + m.en); mostrarNodo(NODOS[m.i], false); sfx('moneda', 0.3); } break;
     // Alguien busca grupo para la Cueva de los Goblins: aviso con «Unirme» (lfgUnir, como CLASSIC).
     // Peleando, muerto, en la cueva o ya en grupo se descarta (no se encola).
@@ -8352,7 +8373,7 @@ function hablar() {
   if (lanzando && lanzando.id === 'pescar') { if (performance.now() - (hablar.esperaT || 0) > 2000) { hablar.esperaT = performance.now(); aviso('🎣 Espera a que pique: el botón se pondrá ¡TIRAR!'); } return; }
   // Recoger o pescar: quieto y sin ataque automatico (antes se cancelaba solo con "Te moviste").
   const quieto = id => { autoAtk = false; pintarBarra(); const t = performance.now(); lanzando = { id, ini: t, fin: t + 2500, pre: true }; P.vx = P.vz = 0; };
-  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { talando = nd.tipo === 'madera'; quieto('recolectar'); mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { quieto('pescar'); mandar({ t: 'pescar' }); return; } }
+  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { talando = nd.tipo === 'madera'; quieto('recolectar'); mandar({ t: 'recolectar', i: nd.i }); return; } const ar = arbolCercano(); if (ar) { talando = true; quieto('recolectar'); mandar({ t: 'talar', x: Math.round(ar.x * 10) / 10, z: Math.round(ar.z * 10) / 10 }); return; } if (aguaCerca()) { quieto('pescar'); mandar({ t: 'pescar' }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
@@ -9975,17 +9996,18 @@ function cuadroBucle(t) {
     ambiente(z);
     cullFlora();
     if (yo) {
-      const n = npcCercano(), cf = n ? null : cofreCercano(), nd = n || cf ? null : nodoCercano(); const b = $('hablar');
-      b.style.display = n || cf || nd ? 'block' : 'none';
+      const n = npcCercano(), cf = n ? null : cofreCercano(), nd = n || cf ? null : nodoCercano(), ar = n || cf || nd ? null : arbolCercano(); const b = $('hablar');
+      b.style.display = n || cf || nd || ar ? 'block' : 'none';
       if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : n.tipo === 'res' ? '✨ ' + n.nombre : (ROL_NPC[n.tipo] ? ROL_NPC[n.tipo] + ' · ' : 'Hablar con ') + n.nombre);
       else if (cf) b.textContent = (MOVIL ? '' : 'E · ') + 'Abrir ' + NOMBRE_COFRE[cf.tipo];
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + (nd.tipo === 'madera' ? 'Talar árbol' : 'Recoger ' + MATERIALES[nd.tipo].nombre);
+      else if (ar) b.textContent = (MOVIL ? '' : 'E · ') + 'Talar árbol';
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (toca(1, 1000, t)) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela && !P.planea; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : /pique/.test(b.textContent) ? 'ESPERA…' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranking/.test(b.textContent) ? 'RANKING' : 'HABLAR';
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela && !P.planea; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Talar/.test(b.textContent) ? 'TALAR' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : /pique/.test(b.textContent) ? 'ESPERA…' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranking/.test(b.textContent) ? 'RANKING' : 'HABLAR';
       const tira = ver && typeof pica === 'number' && pica > performance.now();   // la pica: boton rojo y grande, imposible de no ver
       if (tira) { u.textContent = '¡TIRAR!'; u.classList.add('grande', 'on'); } else if (u.classList.contains('on')) u.classList.remove('grande', 'on');
       if (ver) u.style.fontSize = u.textContent.length > 7 ? '10px' : ''; }

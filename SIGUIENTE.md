@@ -3727,3 +3727,6 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 ## v378 (13-nov-2026)
 - Talar: `arbolesTalables` al final de `nodos3d` (tipo `madera`, mismos indices de siempre para plantas y vetas). Servidor: `terminarRecoleccion3d` da solo madera y su toast. Cliente: arbol con cintas naranjas, tocon siempre visible, «Talar árbol»/«Talando…», flora despejada a 6 m.
 - `MATERIALES.madera` (icono `assets/items/equipo/I_Madera.png`, dibujado) y recetas `tablas`, `brea`, `fogata`, `carbon` (solo3d). Pruebas en el arnés (recolección 3D).
+
+## v379 (13-nov-2026)
+- El dueño probó y «no funciona talar»: solo servían 21 árboles marcados. Ahora `arbolCercano()` (cliente) busca cualquier árbol de la rejilla de flora (`t` = tipo) y manda `{ t: 'talar', x, z }`; servidor `talar3d`/`terminarTala3d` valida zona (no pueblo/cueva/Abismo), distancia `TALA.dist`, celda de 4 m con 5 min y `TALA.porDia` = 120 (data.js). Mensaje de vuelta `talado3`. Pruebas en el arnés.

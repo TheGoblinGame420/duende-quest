@@ -516,12 +516,16 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 378;
+export const VERSION = 379;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 145, fecha: '13 nov 2026', solo3d: true, items: [
+    '🪓 Ahora se puede talar CUALQUIER árbol del mundo abierto (pinos, robles, palmeras, árboles secos y mágicos): acércate y toca «Talar árbol» (tecla E en PC, botón TALAR en el celular).',
+    '🌲 Cada árbol vuelve a dar madera a los 5 minutos. Dentro del pueblo no se tala.',
+  ] },
   { n: 144, fecha: '13 nov 2026', solo3d: true, items: [
     '🪓 Ya se pueden talar árboles: los marcados con cinta naranja dan Madera. Hay muchos junto al Campamento de los Leñadores y algunos en el Bosque Nocturno, las Colinas Rojas y la Selva.',
     '🌲 Al talarlo queda el tocón y el árbol vuelve a crecer en unos minutos.',
@@ -2011,7 +2015,7 @@ export const MATERIALES = {
   // De la pesca (PESCA): el pescado en cualquier pesquero, el dorado a veces.
   pescado:    { nombre: 'Pescado',    icono: 'I_C_RawFish', donde: 'Pescando en el muelle del pueblo o en el pesquero de cada zona', uso: 'Pescado frito (pociones), ceviche (+oro) y la olla de chicha' },
   // Talando arboles en ORIGINS (v378): los del Campamento de los Leñadores y algunos de las primeras zonas.
-  madera:     { nombre: 'Madera',     icono: 'I_Madera', donde: 'Talando árboles marcados con un hacha en ORIGINS: hay muchos junto al Campamento de los Leñadores y algunos en el Bosque Nocturno, las Colinas Rojas y la Selva', uso: 'Escudos de tabla, brea de fuego, fogata con pescado y carbón para cristales' },
+  madera:     { nombre: 'Madera',     icono: 'I_Madera', donde: 'Talando cualquier árbol fuera del pueblo en ORIGINS (tecla E o botón TALAR junto al tronco)', uso: 'Escudos de tabla, brea de fuego, fogata con pescado y carbón para cristales' },
   pez_dorado: { nombre: 'Pez Dorado', icono: 'I_FishTail', donde: 'A veces, al pescar (5 %)', uso: 'Sudado Dorado: más daño y menos daño recibido' },
 };
 // Material raro de las zonas altas: [nivel minimo de la zona, probabilidad]
@@ -2024,6 +2028,9 @@ export const raroDe = tipo => (tipo === 'hierba' ? 'flor' : 'mithril');
 export const ESENCIA_NV = 40;
 export const esenciaJefe = (banda, k) => (banda ? 2 : 1 + (k ? 1 : 0));
 export const NODO_CADA_MS = 5 * 60000;
+// Talar cualquier arbol del mundo abierto de ORIGINS (v379): el mismo arbol (celda de TALA.celda m) vuelve a dar
+// madera a los NODO_CADA_MS; como mucho TALA.porDia talas al dia por personaje. TALA.dist: metros al tronco.
+export const TALA = { celda: 4, porDia: 120, dist: 4.5 };
 export const RECOLECTAR_MS = 1500;
 export const ELIXIR_MS = 30 * 60000;
 // Vaso de Chicha Morada del Duende (functions/mmo/vasos.js): bendicion que se gana

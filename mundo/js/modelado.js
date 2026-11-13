@@ -15,7 +15,7 @@
 // Si el indice o un paquete no llegan, el mundo se ve con el kit de siempre.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { transparentar } from './tapa.js?v=378';
+import { transparentar } from './tapa.js?v=379';
 
 const V = new URL(import.meta.url).search;   // el mismo ?v= del modulo
 const LIN = new Float32Array(256);

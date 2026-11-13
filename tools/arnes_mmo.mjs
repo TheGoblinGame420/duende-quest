@@ -1376,6 +1376,23 @@ async function pruebasRecoleccion3d() {
   s.c.mat.madera = 4; s.p = { x: art.x + 1, z: art.z }; const e0 = s.c.pw.escudo || 0;
   await s.mandar({ t: 'fabricar', id: 'tablas' });
   chequear(s.c.mat.madera === 0 && (s.c.pw.escudo || 0) === e0 + 2, 'con 4 maderas la Artesana hace escudos de tabla');
+  // v379: talar cualquier arbol del mundo abierto (mensaje 'talar' con la posicion del tronco).
+  const zc = W.ZONAS3D.noche; s.c.mat = {}; s.limpiar();
+  s.p = { x: zc.x, z: zc.z };
+  await s.mandar({ t: 'talar', x: zc.x + 30, z: zc.z });
+  chequear(!s.cast && s.ultimos('no').length, 'lejos del arbol no se tala');
+  s.limpiar(); s.p = { x: 0, z: 10 };
+  await s.mandar({ t: 'talar', x: 1, z: 10 });
+  chequear(!s.cast && s.ultimos('no').some(x => /pueblo/.test(x.m)), 'en el pueblo no se tala');
+  s.limpiar(); s.p = { x: zc.x, z: zc.z };
+  await s.mandar({ t: 'talar', x: zc.x + 2, z: zc.z });
+  chequear(s.cast && s.cast.tala, 'junto a un arbol empieza a talar');
+  for (let i = 0; i < 17; i++) tick(1);
+  chequear((s.c.mat.madera || 0) >= 1 && s.ultimos('talado3').length === 1 && s.c.tala && s.c.tala.n === 1, 'talar cualquier arbol da madera y cuenta para el tope diario');
+  s.limpiar(); await s.mandar({ t: 'talar', x: zc.x + 2.4, z: zc.z + 0.3 });
+  chequear(!s.cast && s.ultimos('no').some(x => /talaste/.test(x.m)), 'el mismo arbol no da madera otra vez enseguida');
+  s.c.tala.n = D.TALA.porDia; s.limpiar(); await s.mandar({ t: 'talar', x: zc.x - 3, z: zc.z });
+  chequear(!s.cast && s.ultimos('no').some(x => /mucho hoy/.test(x.m)), 'hay tope diario de talas');
   await dejar(s);
 }
 
