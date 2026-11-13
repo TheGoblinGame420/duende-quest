@@ -35,6 +35,7 @@ import { crearCielo } from './cielo.js?v=374';
 import { PERF } from './perf.js?v=374';
 import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=374';
 import { cargarModelado } from './modelado.js?v=374';
+import { crearRuinas } from './ruinas.js?v=374';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
 import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=374';
 import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=374';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=374';
@@ -10076,6 +10077,7 @@ async function inicio() {
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
+  try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
   crearCofres3();
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   abismo.dueno(asedio && asedio.dueno);
