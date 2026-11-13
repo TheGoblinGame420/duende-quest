@@ -1,8 +1,8 @@
 {
   "id": "/inicio/",
-  "name": "$DUENDE — CLASSIC y ORIGINS",
-  "short_name": "$DUENDE",
-  "description": "El MMORPG de los duendes: $DUENDE CLASSIC (2D) y $DUENDE ORIGINS (3D) con el mismo personaje. Gratis, sin descargas pesadas.",
+  "name": "Duende Quest — MMORPG de duendes",
+  "short_name": "Duende Quest",
+  "description": "MMORPG gratis de duendes hecho en Perú: mundo abierto 3D (ORIGINS) y clásico 2D (CLASSIC) con el mismo personaje. Se juega desde el navegador.",
   "start_url": "/inicio/?app=1",
   "scope": "/",
   "display": "standalone",
@@ -42,26 +42,74 @@
   ],
   "shortcuts": [
     {
-      "name": "$DUENDE ORIGINS (3D)",
+      "name": "Duende Quest ORIGINS (3D)",
       "short_name": "ORIGINS",
-      "url": "/mundo/",
+      "description": "Mundo abierto 3D",
+      "url": "/mundo/?app=1",
       "icons": [
         {
           "src": "/assets/ui/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "$DUENDE CLASSIC (2D)",
+      "name": "Duende Quest CLASSIC (2D)",
       "short_name": "CLASSIC",
-      "url": "/mmo/",
+      "description": "Mazmorras, Torre y banda en 2D",
+      "url": "/mmo/?app=1",
       "icons": [
         {
           "src": "/assets/ui/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
+    },
+    {
+      "name": "Arcade",
+      "short_name": "Arcade",
+      "description": "Oleadas y jefes en pixel-art",
+      "url": "/game.html",
+      "icons": [
+        {
+          "src": "/assets/ui/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "/assets/capturas/origins-wide.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "ORIGINS: mundo abierto 3D"
+    },
+    {
+      "src": "/assets/capturas/mmo-jefe-selva.png",
+      "sizes": "1160x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CLASSIC: jefe de la selva"
+    },
+    {
+      "src": "/assets/capturas/origins-narrow.webp",
+      "sizes": "412x915",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "ORIGINS en el celular"
     }
   ]
 }

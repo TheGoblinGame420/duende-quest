@@ -18,9 +18,9 @@
 <main>
   <img src="/assets/ui/icon-192.png" alt="">
   <h1>Sin conexión</h1>
-  <p>El mundo de los duendes es online: necesitas internet para jugar. En cuanto vuelva la conexión, entra de nuevo.</p>
+  <p>Duende Quest es un juego en línea y necesita internet. Tu duende está guardado: en cuanto vuelva la señal te reconectamos solos.</p><p id="est" style="font-size:13px;color:#8b84b0;margin-top:-10px">Buscando señal…</p>
   <button onclick="location.reload()">Reintentar</button>
 </main>
-<script>addEventListener('online', () => location.reload());</script>
+<script>addEventListener('online', () => location.reload());var n=0;setInterval(function(){n++;document.getElementById('est').textContent='Buscando señal… (intento '+n+')';fetch('/sw.js?r='+Date.now(),{method:'HEAD',cache:'no-store'}).then(function(r){if(r.ok)location.reload();}).catch(function(){});},10000);</script>
 </body>
 </html>

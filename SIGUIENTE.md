@@ -3710,3 +3710,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Filtro: nombres reservados y máximo 4 cifras en nombres nuevos, normalización de teléfonos, frases de cobro y dominios no oficiales (`DOMINIO_OFICIAL` en social.js; añadir ahí un dominio propio si se compra).
 - Portada: un solo botón de jugar, web3 y DexScreener se cargan al usarse, chicha enlazada; /chicha/ abre con el juego; `not_found_handling = 404-page` con 404.html.
 - Arnés: 1300 bien, 0 mal (colisión de ids f7/f8 corregida en pruebasFiltro).
+
+## v376 (12-nov-2026)
+- Artesanía explicada: `MATERIALES` con `donde`/`uso` (data.js), pestaña MATERIALES en la mochila (ventanas.js htmlMateriales), avisos de material nuevo y receta lista (mundo.js materialNuevo, clave `dq3_matvisto`), botón «Marcar a la Artesana» (irArtesana → ponerDestino).
+- PC: HUD sin Ajustes/Sonido/Inicio/2D (están en el Menú) y extras tras ⋯; máx. 3 avisos; Esc con objetivo explica que otro Esc abre el menú; título de zona en Cinzel con sombra; ventanas laterales casi a pantalla completa.
+- PWA: un solo manifiesto (/inicio/manifest.json, copiado en /manifest.json) para todas las páginas, con capturas (assets/capturas/origins-*.webp), atajos, display_override y launch_handler; /jugar/ enlaza el manifiesto; offline.html reintenta cada 10 s.
+- Pendiente: mundo más grande con más contenido (pide descargar packs CC0: confirmar con el dueño).

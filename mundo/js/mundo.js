@@ -14,44 +14,44 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=375';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=375';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=375';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=375';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=375';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=375';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=375';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=375';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=375';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=375';
-import { crearMusica } from './musica.js?v=375';
-import { crearSonidos } from './sonidos.js?v=375';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=375';
-import { construirCueva } from './cueva.js?v=375';
-import { TAPA, transparentar } from './tapa.js?v=375';
-import { construirAbismo } from './abismo.js?v=375';
-import { crearParticulas } from './particulas.js?v=375';
-import { crearCielo } from './cielo.js?v=375';
-import { PERF } from './perf.js?v=375';
-import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=375';
-import { cargarModelado } from './modelado.js?v=375';
-import { crearRuinas } from './ruinas.js?v=375';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=375';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=375';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=375';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=376';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=376';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=376';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=376';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=376';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=376';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=376';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=376';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=376';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=376';
+import { crearMusica } from './musica.js?v=376';
+import { crearSonidos } from './sonidos.js?v=376';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=376';
+import { construirCueva } from './cueva.js?v=376';
+import { TAPA, transparentar } from './tapa.js?v=376';
+import { construirAbismo } from './abismo.js?v=376';
+import { crearParticulas } from './particulas.js?v=376';
+import { crearCielo } from './cielo.js?v=376';
+import { PERF } from './perf.js?v=376';
+import { cargarKenney, piezasCasa, KIT_FX } from './kenney.js?v=376';
+import { cargarModelado } from './modelado.js?v=376';
+import { crearRuinas } from './ruinas.js?v=376';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=376';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=376';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=376';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=375';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=375';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=375';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=375';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=375';
-import { PISTAS } from '/mmo/js/caso.js?v=375';
-import { htmlCaso } from './caso.js?v=375';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=375';
-import { crearRituales } from './rituales.js?v=375';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=375';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=375';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=375';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=376';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=376';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=376';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=376';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=376';
+import { PISTAS } from '/mmo/js/caso.js?v=376';
+import { htmlCaso } from './caso.js?v=376';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=376';
+import { crearRituales } from './rituales.js?v=376';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=376';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=376';
+import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=376';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -77,6 +77,7 @@ const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio
 const imgLore = () => (modoAnuncio() ? '/assets/skins/skin_bruja.png' : '/assets/lore/chicha-duende-playa.jpg');
 // Embudo de la carga (/js/origen.js → /mmo/ev): un aviso por paso y sesion. Sin origen.js no hace nada.
 const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'origins'); } catch (er) {} };
+let escAviso = 0;   // Esc con objetivo: se explica 2 veces que el siguiente Esc abre el menu
 let golpe1Ok = false;   // embudo: el primer 'atk3' mandado (paso 'golpe1') va una sola vez
 paso('carga_ini');
 // En Telegram los enlaces a CLASSIC llevan la sesion (el #tgWebAppData): sin ella entraba como invitado.
@@ -2434,7 +2435,7 @@ function recibir(m) {
       for (const p of m.jugadores) agregarOtro(p);
       break;
     case 'yo': {
-      const antes = yo; yo = m.yo; if (yo.vaso && yo.vaso.ms > 0) { P.au = P.au || {}; P.au.vaso = performance.now() + yo.vaso.ms; } pintarTemp3(); puntoTienda(); puntoMochila();
+      const antes = yo; yo = m.yo; materialNuevo(antes, yo); if (yo.vaso && yo.vaso.ms > 0) { P.au = P.au || {}; P.au.vaso = performance.now() + yo.vaso.ms; } pintarTemp3(); puntoTienda(); puntoMochila();
       if (esIAB) franjaIAB();   // tras la primera mision: pasar el duende a Chrome/Safari
       // Enlace de grupo (refGrupo3): una sola vez, ya con clase; se limpia el #g= de la barra.
       if (refGrupo3 && yo.clase) {
@@ -4417,7 +4418,7 @@ function pintarAviso(txt, tipo, prio, deCola) {
     }
     if (tr.length > 1) { avisoVisto.set(txt, Date.now()); for (let i = tr.length - 1; i > 0; i--) colaAvisos.unshift({ txt: tr[i], tipo, prio, vence: Date.now() + 45000 }); txt = tr[0]; }
   }
-  const max = COMPACTO ? 2 : 4;
+  const max = COMPACTO ? 2 : 3;   /* PC: 3 a la vista (con 4-5 se tapaba la escena al entrar); el resto espera */
   if (!COMPACTO && avisos.children.length >= max) {
     // Lleno: sale el de menor prioridad (el mas viejo si empatan); si todos pesan mas, este espera.
     let v = null; for (const c of avisos.children) if (!v || (c._prio || 2) > (v._prio || 2)) v = c;
@@ -5203,7 +5204,7 @@ function pintarRanking(r) {
   chipsNpc($('npc-c'), 'sabio');
 }
 // Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
-const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado, probarSkin, probarMontura, vibSel });
+const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, irArtesana, telegram: () => !!TG && !forzarInvitado, probarSkin, probarMontura, vibSel });
 $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
@@ -5817,6 +5818,30 @@ function mapaEnMundo() { return !enCueva(P.x) && !enAbismo(P.x); }
 function mapaCentrar() {
   if (mapaEnMundo()) { MV.cx = P.x; MV.cz = P.z; } else { MV.cx = 0; MV.cz = 0; }
   mapaLimitar(); mapaPedir();
+}
+// Artesania (v376): la primera vez que llega cada material se explica para que sirve y donde se usa;
+// y la primera vez que alcanza para una receta, se avisa (una vez por receta y equipo: dq3_matvisto).
+function materialNuevo(antes, ahora) {
+  if (!antes || !ahora || !ahora.mat) return;
+  let visto = {}; try { visto = JSON.parse(localStorage.getItem('dq3_matvisto') || '{}') || {}; } catch (e) {}
+  let cambio = false;
+  for (const k in ahora.mat) {
+    if (!(ahora.mat[k] > ((antes.mat || {})[k] || 0)) || visto[k] || !MATERIALES[k]) continue;
+    visto[k] = 1; cambio = true;
+    const d = MATERIALES[k];
+    setTimeout(() => aviso('🎒 ' + d.nombre + ': sirve para ' + (d.uso || 'recetas de la Artesana') + '. Llévalo a la Artesana Lila, en el pueblo (Mochila → Materiales).'), 1200);
+  }
+  const mat = ahora.mat, hechas = ahora.recetas || {};
+  const r = RECETAS.find(x => (!x.oculta || hechas[x.id]) && !visto['r:' + x.id] && Object.entries(x.pide).every(([k, n]) => (mat[k] || 0) >= n));
+  if (r) { visto['r:' + r.id] = 1; cambio = true; setTimeout(() => aviso('✓ Ya puedes fabricar ' + r.nombre + ' con la Artesana Lila. Mochila → Materiales → «Marcar a la Artesana».'), 2600); }
+  if (cambio) try { localStorage.setItem('dq3_matvisto', JSON.stringify(visto)); } catch (e) {}
+}
+function irArtesana() {
+  const a = NPCS3D.find(n => n.id === 'artesana');
+  if (!a) return;
+  ponerDestino(a.x, a.z);
+  try { if ($('v-inv') && $('v-inv').classList.contains('on')) cerrar('v-inv'); } catch (e) {}
+  aviso('📍 Artesana Lila marcada: sigue la marca del minimapa hasta el pueblo.');
 }
 function ponerDestino(wx, wz) {
   destino3 = wx == null ? null : { x: Math.round(wx), z: Math.round(wz) };
@@ -7800,7 +7825,7 @@ addEventListener('keydown', e => {
   if (cod === 'KeyL' && !e.repeat) V.abrirLogros();
   if (cod === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
   // Esc: primero suelta el objetivo; sin objetivo ni nada abierto, abre el menu del juego.
-  if (e.code === 'Escape') { if (objetivo || objetivoP || autoAtk) { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); } else if (!e.repeat && MENU && !cineEst) MENU.abrir(); }
+  if (e.code === 'Escape') { if (objetivo || objetivoP || autoAtk) { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); if ((escAviso = (escAviso | 0) + 1) <= 2) aviso('Objetivo quitado · pulsa Esc otra vez para abrir el ⚙ Menú'); } else if (!e.repeat && MENU && !cineEst) MENU.abrir(); }
 });
 addEventListener('blur', () => { atkMantener = false; clearTimeout(tMayus); tMayus = 0; });
 addEventListener('keyup', e => { const cod = MAPA_T[e.code] || e.code; teclas[cod] = false; if (cod === 'Digit1' || cod === 'KeyZ') atkMantener = false; if (cod === 'ShiftLeft' || cod === 'ShiftRight') mayusEsquiva(); if (cod === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto

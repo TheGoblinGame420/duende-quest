@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 375;
+export const VERSION = 376;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 142, fecha: '12 nov 2026', solo3d: true, items: [
+    '🎒 Mochila → Materiales: qué tienes, dónde se consigue cada cosa, para qué sirve y qué puedes fabricar ya con la Artesana Lila (con un botón para marcarla en el mapa).',
+    '✓ La primera vez que recoges un material te explicamos para qué sirve, y te avisamos cuando ya te alcanza para una receta.',
+    '🖥 Pantalla más limpia en PC: Ajustes, Sonido, Inicio y CLASSIC viven en el ⚙ Menú, y lo ocasional va tras ⋯. Máximo 3 avisos a la vez.',
+    '📖 Mochila, tienda y libro más grandes en PC: se ven varios objetos sin bajar tanto.',
+    '📲 Una sola app para instalar, con capturas, atajos a ORIGINS, CLASSIC y Arcade, y reconexión sola si se va la señal.',
+  ] },
   { n: 141, fecha: '12 nov 2026', solo3d: true, items: [
     '🌳 Árboles nuevos, modelados uno a uno: copas con hojas de verdad, corteza con grietas y viento en ramas y tronco.',
     '🏠 El pueblo estrena casas enteras: taberna, herrería con fragua, casa del sabio con torre, horno y campanario, con ventanas que se encienden de noche.',
@@ -1983,17 +1990,17 @@ export function zonaDeNivel(nivel) {
 // del pueblo fabrica consumibles y elixires. Otro motivo para recorrer el
 // mundo, que no depende de matar.
 export const MATERIALES = {
-  hierba:  { nombre: 'Hierba Duende',     icono: 'I_Leaf' },
-  mineral: { nombre: 'Mineral de Hierro', icono: 'I_Rock01' },
-  cristal: { nombre: 'Cristal Arcano',    icono: 'I_Crystal01' },
+  hierba:  { nombre: 'Hierba Duende',     icono: 'I_Leaf', donde: 'Plantas verdes de cualquier zona fuera del pueblo', uso: 'Pociones de vida, elixires y la chicha' },
+  mineral: { nombre: 'Mineral de Hierro', icono: 'I_Rock01', donde: 'Vetas de roca de cualquier zona fuera del pueblo', uso: 'Escudos, Elixir de Piel de Piedra y Cristal Arcano (8 minerales = 1 cristal)' },
+  cristal: { nombre: 'Cristal Arcano',    icono: 'I_Crystal01', donde: 'Se refina con la Artesana: 8 Mineral de Hierro', uso: 'Los elixires de 30 minutos (fuerza, piedra y sabiduría)' },
   // De nivel alto: en las zonas Nv 30+ las plantas dan Flor de Luna y las
   // vetas Mithril; la Esencia la sueltan los jefes de mazmorra y de banda.
-  flor:    { nombre: 'Flor de Luna',      icono: 'S_Magic02' },
-  mithril: { nombre: 'Mithril',           icono: 'E_Metal07' },
-  esencia: { nombre: 'Esencia Abisal',    icono: 'S_Shadow06' },
+  flor:    { nombre: 'Flor de Luna',      icono: 'S_Magic02', donde: 'Plantas de las zonas de Nv 30 o más (o destilando hierbas)', uso: 'La Chicha Morada del Duende y las runas permanentes' },
+  mithril: { nombre: 'Mithril',           icono: 'E_Metal07', donde: 'Vetas de las zonas de Nv 30 o más', uso: 'Runas permanentes (desde Nv 40)' },
+  esencia: { nombre: 'Esencia Abisal',    icono: 'S_Shadow06', donde: 'Jefes de mazmorra y de banda de Nv 40 o más (en CLASSIC)', uso: 'Runas permanentes (desde Nv 40)' },
   // De la pesca (PESCA): el pescado en cualquier pesquero, el dorado a veces.
-  pescado:    { nombre: 'Pescado',    icono: 'I_C_RawFish' },
-  pez_dorado: { nombre: 'Pez Dorado', icono: 'I_FishTail' },
+  pescado:    { nombre: 'Pescado',    icono: 'I_C_RawFish', donde: 'Pescando en el muelle del pueblo o en el pesquero de cada zona', uso: 'Pescado frito (pociones), ceviche (+oro) y la olla de chicha' },
+  pez_dorado: { nombre: 'Pez Dorado', icono: 'I_FishTail', donde: 'A veces, al pescar (5 %)', uso: 'Sudado Dorado: más daño y menos daño recibido' },
 };
 // Material raro de las zonas altas: [nivel minimo de la zona, probabilidad]
 // de uno extra por recogida (se tiran los dos).

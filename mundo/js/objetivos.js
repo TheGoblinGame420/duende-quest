@@ -9,10 +9,10 @@
 // mismos mensajes y ventanas del juego. Lo que depende de mundo.js llega por `c`.
 //
 // El premio real no cambia con la historia: 2 litros en Nv 60 con sus requisitos.
-import { MISIONES, MONSTRUOS, MAPAS, CHICHA, mesChicha, DIARIA, premioDiaria, EXPEDICION, horaFelizTiempos, zonaDeNivel } from '/mmo/js/data.js?v=375';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=375';
-import { encargosDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=375';
-import * as LORE from './lore.js?v=375';
+import { MISIONES, MONSTRUOS, MAPAS, CHICHA, mesChicha, DIARIA, premioDiaria, EXPEDICION, horaFelizTiempos, zonaDeNivel } from '/mmo/js/data.js?v=376';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=376';
+import { encargosDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=376';
+import * as LORE from './lore.js?v=376';
 
 const { CAPITULOS, capituloDe, LORE_ZONAS, LORE_MISIONES } = LORE;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]));

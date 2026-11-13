@@ -110,6 +110,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v373 | Mundo abierto: cielo y cordillera, luz y materiales, 15 monstruos rehechos, HUD móvil despejado y mapa nuevo, ranking con todos (invitados incluidos), marionetas 2D en CLASSIC, rituales de mañana y noche, bot en el grupo (/grupo), alertas al dueño (/alertas) y portada de memecoin | **B** |
 | v374 | Ambientación medieval mística: terreno y sotobosque con texturas procedurales, arquitectura de piedra y madera, atmósfera y sonido ambiente, fondo nuevo de CLASSIC, barra de habilidades móvil de 44 px, hoja de ruta honesta y portada más corta | **B** |
 | v375 | Modelado propio en Blender (tools/blender, mundo/js/modelado.js): árboles con follaje recortado, rocas y naturaleza menor, edificios del pueblo enteros, objetos y mobiliario, ruinas, portales y entradas. Cinco paquetes en assets/3d con 3 niveles de detalle y respaldo al kit. |
+| v376 | Artesanía explicada (Mochila → Materiales, avisos de material nuevo y receta lista, marcar a la Artesana), HUD de PC limpio, Esc explica el menú, título de zona legible, ventanas altas en PC, PWA única con capturas y atajos, reconexión sin señal | Opus |
 
 ## Reglas del dueño (siguen vigentes)
 

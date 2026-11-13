@@ -18,14 +18,14 @@ import {
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
-  EXPEDICION, premioExpedicion, MATERIALES,
+  EXPEDICION, premioExpedicion, MATERIALES, RECETAS,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, atencionAhora, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=375';
-import { LORE_MONSTRUOS } from './lore.js?v=375';
+} from '/mmo/js/data.js?v=376';
+import { LORE_MONSTRUOS } from './lore.js?v=376';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -396,10 +396,37 @@ function pintarInventario() {
   const y = H.yo(); if (!y) return;
   const id = IDS.inv;
   parte(id, 'sub').innerHTML = `<span><b>${esc(y.nombre)}</b> · Nv ${y.nivel}</span><span>${oro(y.oro)}</span><span>Bolsa <b>${(y.bolsa || []).length}/${BOLSA_MAX}</b></span>`;
-  pintarTabs(id, [['equipo', 'EQUIPO'], ['skin', 'SKINS'], ['arma', 'ARMAS']], est.inv, 'itab');
+  const nMat = Object.values(y.mat || {}).reduce((a, n) => a + (n | 0), 0);
+  pintarTabs(id, [['equipo', 'EQUIPO'], ['mat', 'MATERIALES', nMat ? String(nMat) : ''], ['skin', 'SKINS'], ['arma', 'ARMAS']], est.inv, 'itab');
   const c = parte(id, 'cuerpo');
-  c.innerHTML = (est.inv === 'equipo' ? htmlFilaMejor(y) + htmlVaso(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
+  c.innerHTML = est.inv === 'mat' ? htmlMateriales(y) : (est.inv === 'equipo' ? htmlFilaMejor(y) + htmlVaso(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
   dibujarHojas(c);
+}
+// Materiales (v376): que tienes, donde sale cada uno, para que sirve y que puedes fabricar ya.
+// Las recetas secretas (oculta) que aun no hiciste salen como «receta secreta», sin nombre.
+function htmlMateriales(y) {
+  const mat = y.mat || {}, hechas = y.recetas || {};
+  const visible = r => !r.oculta || hechas[r.id];
+  const cabe = r => Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
+  const listas = RECETAS.filter(r => visible(r) && cabe(r));
+  let h = '<p class="vv-p" style="margin-top:0">Lo que recoges en el mundo se convierte en <b>pociones, escudos y elixires</b> con la <b>Artesana Lila</b>, en el pueblo. Ningún material se vende ni se pierde.</p>';
+  h += '<div class="vv-fila2">' + btn('📍 Marcar a la Artesana Lila en el mapa', 'irArtesana', {}, '') + '</div>';
+  h += listas.length
+    ? '<div class="vv-nota" style="margin:8px 0;padding:8px 10px;border:1px solid rgba(74,222,128,.45);border-radius:8px;background:rgba(74,222,128,.08);color:#d1fae5"><b>✓ Ya puedes fabricar:</b> ' + listas.map(r => esc(r.nombre)).join(' · ') + '</div>'
+    : '<div class="vv-nota" style="margin:8px 0">Aún no te alcanza para ninguna receta: la más fácil son <b>Pociones ×3</b> (3 Hierba Duende).</div>';
+  for (const [k, d] of Object.entries(MATERIALES)) {
+    const n = mat[k] | 0;
+    const usos = RECETAS.filter(r => r.pide[k]);
+    const nombres = usos.map(r => visible(r) ? esc(r.nombre) + ' (' + r.pide[k] + ')' : 'una receta secreta').filter((v, i, a) => a.indexOf(v) === i);
+    h += `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);${n ? '' : 'opacity:.6'}">`
+      + `<img src="/assets/items/equipo/${d.icono}.png" alt="" width="32" height="32" style="image-rendering:pixelated;flex:0 0 32px;background:rgba(255,255,255,.05);border-radius:6px">`
+      + `<div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b> <span style="color:${n ? '#ffd84a' : 'var(--txt3)'};font-weight:700">×${n}</span>`
+      + (d.uso ? `<div class="vv-p" style="margin:2px 0"><b style="color:var(--txt)">Sirve para:</b> ${esc(d.uso)}</div>` : '')
+      + (d.donde ? `<div class="vv-p" style="margin:2px 0"><b style="color:var(--txt)">Dónde:</b> ${esc(d.donde)}</div>` : '')
+      + (nombres.length ? `<div class="vv-nota" style="margin:2px 0">Recetas: ${nombres.join(' · ')}</div>` : '')
+      + '</div></div>';
+  }
+  return h;
 }
 // Vaso de chicha en la bolsa: se toma de aqui (el servidor no gasta otro si ya hay uno activo).
 function htmlVaso(y) {
@@ -1349,6 +1376,7 @@ const ACC = {
     if (it && (it.r >= 2 || it.cj) && !confirmar('vender:' + it.id)) { marcarSeguro(b); return; }
     H.sfx('moneda', 0.3); H.mandar({ t: 'item', a: 'vender', id: b.dataset.id });
   },
+  irArtesana: () => { H.sfx('boton', 0.3); if (H.irArtesana) H.irArtesana(); },
   tomarVaso: () => { H.sfx('boton', 0.3); H.mandar({ t: 'vaso', a: 'tomar' }); },
   mejor: () => {
     const y = H.yo(); if (!y) return;
@@ -1592,6 +1620,7 @@ export function iniciarVentanas(opciones) {
     yo: o.yo || (() => null),
     aviso: o.aviso || (() => {}),
     sfx: o.sfx || (() => {}),
+    irArtesana: o.irArtesana || null,
     abrir: o.abrir || (id => document.getElementById(id).classList.add('on')),
     cerrar: o.cerrar || (id => document.getElementById(id).classList.remove('on')),
     telegram: o.telegram,             // opcional: () => true si se paga con Stars

@@ -3,7 +3,7 @@
 // Una sola columna de pistas y las cuatro caras en dos columnas: se lee a 360x640,
 // a 640x360 y en PC. Sin datos de pago ni nada del HUD.
 // ═══════════════════════════════════════════════════════
-import { CASO, PISTAS, APUNTES, SOSPECHOSOS, VERDAD, estadoSospechoso, reaccionCaso } from '/mmo/js/caso.js?v=375';
+import { CASO, PISTAS, APUNTES, SOSPECHOSOS, VERDAD, estadoSospechoso, reaccionCaso } from '/mmo/js/caso.js?v=376';
 
 const COLOR = { sospecha: '#fca5a5', duda: '#fde68a', limpio: '#4ade80', nadie: '#cbd5e1', culpable: '#f0abfc' };
 
