@@ -12,6 +12,18 @@
 # dq_lib: ao=0, porque la de la biblioteca arranca a 3 cm y mancha lo que queda bajo un marco).
 # `sustituye` lleva datos para el juego: {'casa': indice de CASAS | 'torre': 1, 'humo': [[x,y,z]],
 # 'fuego': [[x,y,z,tam]]} en coordenadas del juego (x, alto, z) relativas al origen del modelo.
+#
+# GANCHOS (probados los tres el 12-nov-2026, con capturas):
+#   · USADO: PAQ.geo(nombre, nivel) + KIT.material. crearEdificios() pone un THREE.LOD por edificio (alto hasta 72 m,
+#     medio hasta 165 m, bajo mas lejos; en minima y baja nunca el alto) con el material de obra: valen todas las marcas.
+#     La marca va con + 0,5 para que el material sepa que el color viene horneado (no lo reinterpreta como en el kit).
+#   · propios(nombre, [{x, y, z, rot, s}]): FUNCIONA (coloca las copias con sus niveles y su recorte), pero dibuja con el
+#     material organico: sombreado suave, sin sillares ni tejas ni vidrieras de noche, el musgo de la zona tiñe la piedra
+#     y, si el modelo llevara `viento`, se meceria. Sirve para decorado suelto (menhires, tocones), no para edificios.
+#   · {'kit': 'p_chimney'}: FUNCIONA (KIT.sustituir cambia la malla de la pieza: las casas del kit salieron con la
+#     chimenea nueva), pero quien llama a fundir() con `t:` pisa las marcas del modelo (piezasCasa lo hace) y solo llega
+#     el nivel alto. Sirve para piezas sueltas del kit (farol, fuente, puesto), no para sustituir una casa entera.
+# Para ver el pueblo como antes: /mundo/?sinEdificios (casas del kit).
 # ═══════════════════════════════════════════════════════
 import math
 import numpy as np
@@ -301,19 +313,22 @@ def faldon(G, E0, E1, C0, C1, color, nh=None, ns=None, paso=0.05, pandeo=0.0, bo
         e = E0 + (E1 - E0) * s; c = C0 + (C1 - C0) * s
         return e + (c - e) * t - Z3 * pandeo * 4 * s * (1 - s) * (0.35 + 0.65 * t)
     for k in range(nh):
-        t0 = k / nh; t1 = min(1.0, (k + 1.3) / nh) if G.lod < 2 else 1.0
+        t0 = k / nh; t1 = min(1.0, (k + 1.6) / nh) if G.lod < 2 else 1.0   # se mete bien debajo de la siguiente: no se ve hueco ni a contraluz
         tono = 1 + rng.uniform(-0.1, 0.1)
-        V = []; C = []
+        V = []; C = []; pie = []
         for j in range(ns + 1):
             s = j / ns
             jit = (rng.uniform(-1, 1) if G.lod < 2 else 0.0)
             lev = paso * (1 + 0.5 * rng.uniform(-1, 1)) if G.lod < 2 else 0.0
             V.append(punto(s, t0) + nrm * (lev if k or G.lod < 2 else 0) - sube * (borde * jit if k == 0 else borde * 0.6 * jit))
             V.append(punto(s, t1) + nrm * (0.0 if k < nh - 1 else paso * 0.4))
+            pie.append(V[-2] - nrm * (lev + 0.02) + sube * 0.03)
             m = tono * (1 + rng.uniform(-0.13, 0.13)); C.append(base * m * 1.06); C.append(base * m * 0.86)
         F = [(2 * j, 2 * j + 2, 2 * j + 3, 2 * j + 1) for j in range(ns)]
         if pico and k == nh - 1: F = [(2 * j, 2 * j + 2, 2 * j + 1) for j in range(ns)]
         G.pieza(V, F, 'teja', np.array(C), hacia=nrm)
+        if G.lod == 0 and paso >= 0.08:   # canto grueso (paja): se ve el espesor de cada capa
+            G.pieza([V[2 * j] for j in range(ns + 1)] + pie, [(j, j + 1, ns + 2 + j, ns + 1 + j) for j in range(ns)], 'teja', np.array([C[2 * j] * 0.6 for j in range(ns + 1)] * 2), hacia=-sube)
     return nrm
 
 
