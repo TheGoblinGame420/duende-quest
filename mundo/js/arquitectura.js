@@ -188,7 +188,7 @@ let runasMat = null, llamas = null, humo = null;
 // Tres niveles de detalle con THREE.LOD (lo cambia el propio dibujo, sin codigo por cuadro): un dibujo por edificio.
 // ctx: { escena, KIT, PAQ, alturaEn, CASAS, torre: { x, z, ry }, nivel, sombras }. Devuelve { casas: [bool], torre: bool } o null.
 let EDIF = null;
-const DIST_LOD = [0, 46, 115];
+const DIST_LOD = [0, 72, 165];   /* desde la plaza, todas las casas en su nivel alto */
 export function crearEdificios(ctx) {
   const { escena, KIT, PAQ, alturaEn, CASAS } = ctx;
   EDIF = null;
@@ -211,7 +211,7 @@ export function crearEdificios(ctx) {
     const lod = new THREE.LOD(), y = alturaEn(x, z);
     lod.position.set(x, y, z); lod.rotation.y = ry;
     // En minima y baja no se dibuja nunca el nivel alto.
-    const niveles = baja ? [[1, 0], [2, 70]] : [[0, DIST_LOD[0]], [1, DIST_LOD[1]], [2, DIST_LOD[2]]];
+    const niveles = baja ? [[1, 0], [2, 80]] : [[0, DIST_LOD[0]], [1, DIST_LOD[1]], [2, DIST_LOD[2]]];
     for (const [l, d] of niveles) {
       const m = new THREE.Mesh(geo(n, l), KIT.material);
       if (ctx.sombras) { m.castShadow = true; m.receiveShadow = true; }
@@ -221,7 +221,7 @@ export function crearEdificios(ctx) {
     lod.traverse(o => { o.matrixAutoUpdate = false; });
     const s = PAQ.modelos[n].sus || {}, cs = Math.cos(ry), sn = Math.sin(ry);
     const m = p => [x + p[0] * cs + p[2] * sn, y + p[1], z - p[0] * sn + p[2] * cs, p[3]];
-    return { n, x, y, z, ry, lod, humo: (s.humo || []).map(m), fuego: (s.fuego || []).map(m) };
+    return { n, x, y, z, ry, lod, humo: (s.humo || []).map(m), fuego: (s.fuego || []).map(m), luz: (s.luz || []).map(m) };
   };
   const casas = [], lista = [];
   let torre = null;
@@ -352,6 +352,8 @@ export function crearObra(ctx) {
   // Edificio modelado: su antorcha de pared, su fragua o su horno y sus chimeneas vienen en el modelo.
   const deModelo = (e, i) => {
     for (const f of e.fuego) llama(f[0], f[1], f[2], f[3] || 0.55);
+    /* Halo de las vidrieras encendidas (solo de noche; tipo 2 ambar, 3 violeta): puntos de la misma malla de llamas. */
+    if (!baja) for (const w of e.luz) { L.p.push(w[0], w[1], w[2]); L.a.push(4.4, rnd(w[0], w[2]) * 6.28, w[3] ? 3 : 2); }
     if (!baja) e.humo.forEach((h, j) => { for (let k = 0; k < 5; k++) { H.p.push(h[0], h[1], h[2]); H.a.push(1.6, k / 5 + rnd(i + j * 7, k) * 0.1, i + j * 3); } });
   };
   if (EDIF && EDIF.torre) deModelo(EDIF.torre, 9);
@@ -398,7 +400,7 @@ export function crearObra(ctx) {
   if (ctx.nivel !== 'minima' && L.p.length) llamas = puntos(L, `
     float lejos = 1.0 - smoothstep(110.0, 170.0, vDat.y);
     if (vDat.x < 0.5) { float g = 1.0 - smoothstep(0.0, 1.0, length(vec2(q.x * 2.9, (q.y + 0.08) * 1.9))); gl_FragColor = vec4(mix(vec3(1.0, 0.36, 0.06), vec3(1.0, 0.86, 0.5), g * g) * g * 1.5 * lejos, 1.0); }
-    else { float g = 1.0 - smoothstep(0.0, 1.0, d); gl_FragColor = vec4(vec3(1.0, 0.6, 0.24) * g * g * (0.07 + 0.4 * uObraNoche) * vK * lejos, 1.0); }`, true);
+    else { float g = 1.0 - smoothstep(0.0, 1.0, d); gl_FragColor = vec4((vDat.x > 2.5 ? vec3(0.6, 0.42, 1.0) : vec3(1.0, 0.6, 0.24)) * g * g * (vDat.x > 1.5 ? 0.26 * uObraNoche : 0.07 + 0.4 * uObraNoche) * vK * lejos, 1.0); }`, true);
   if (H.p.length) humo = puntos(H, `
     float a = (1.0 - smoothstep(0.2, 1.0, d)) * vK * (1.0 - vK) * 4.0 * 0.3 * (1.0 - smoothstep(70.0, 130.0, vDat.y));
     gl_FragColor = vec4(mix(vec3(0.66, 0.66, 0.68), vec3(0.16, 0.16, 0.2), uObraNoche), a);`, false);

@@ -57,7 +57,7 @@ def _col(c):
 class Obra:
     """Acumula piezas (vertices, caras, marca por cara, color por vertice) y al final hace UNA malla."""
     def __init__(s, lod, semilla=1):
-        s.lod = lod; s.V = []; s.F = []; s.M = []; s.C = []; s.rng = azar(semilla); s.humo = []; s.fuego = []
+        s.lod = lod; s.V = []; s.F = []; s.M = []; s.C = []; s.rng = azar(semilla); s.humo = []; s.fuego = []; s.luces = []
 
     def pieza(s, verts, caras, marca, color, dentro=None, hacia=None, ref=None):
         """dentro: punto interior (las caras miran hacia fuera de el). hacia: vector al que miran. ref(centro) → vector."""
@@ -179,6 +179,7 @@ def contraventanas(G, ca, u0, u1, z0, z1, color, fuera=0.03, lados=(1, 1)):
 def vidrio(G, ca, u0, u1, z0, z1, luz, fuera=0.02, punta=0.0):
     """Vidriera (el plomo lo dibuja el juego). luz: color, o None si esta a oscuras. punta: remate en pico."""
     c = luz or APAGADA
+    if luz: G.luces.append((ca.p((u0 + u1) / 2, (z0 + z1) / 2, 0.3), (u1 - u0) * (z1 - z0), luz))
     if punta: ca.poli(G, [(u0, z0), (u1, z0), (u1, z1 - punta), ((u0 + u1) / 2, z1), (u0, z1 - punta)], fuera, 'vidrio', c)
     else: ca.quad(G, u0, u1, z0, z1, fuera, 'vidrio', c)
 
@@ -291,7 +292,7 @@ def faldon(G, E0, E1, C0, C1, color, nh=None, ns=None, paso=0.05, pandeo=0.0, bo
     Cada hilada levanta su borde de abajo sobre la anterior; los vertices bailan un poco (tejas irregulares)."""
     E0, E1, C0, C1 = [np.asarray(x, dtype=float) for x in (E0, E1, C0, C1)]
     largo = float(np.linalg.norm(E1 - E0)); cae = float(np.linalg.norm((C0 + C1) / 2 - (E0 + E1) / 2))
-    nh = nh or (max(3, round(cae / 0.62)), 3, 1)[G.lod]; ns = ns or (max(2, round(largo / 1.25)), 2, 1)[G.lod]
+    nh = nh or (max(3, round(cae / 0.62)), 4, 1)[G.lod]; ns = ns or (max(2, round(largo / 0.95)), 3, 1)[G.lod]
     nrm = np.cross(E1 - E0, C0 - E0); nrm /= np.linalg.norm(nrm)
     if nrm[2] < 0: nrm = -nrm
     rng = azar(semilla + 77); base = _col(color); pico = np.linalg.norm(C1 - C0) < 1e-6
@@ -486,6 +487,24 @@ def lenera(G, x0, x1, y, z=0.0, filas=3, eje='x'):
             G.pieza(V[:5], [tuple(range(5))], 'liso', '#a8875c', hacia=-d); G.pieza(V[5:], [tuple(range(5))], 'liso', '#a8875c', hacia=d)
 
 
+def hiedra(G, ca, u, z0, ancho, alto, semilla=1, fuera=0.05):
+    """Mata de hiedra trepando por la pared: una lamina pegada al muro, de borde roto, mas ancha abajo."""
+    if G.lod == 2: return
+    rng = azar(semilla); nu = (7, 3)[G.lod]; nv = (9, 4)[G.lod]; V = []; C = []; F = []
+    for j in range(nv + 1):
+        t = j / nv; an = ancho * (1 - 0.55 * t ** 1.4) * (1 + 0.25 * math.sin(t * 7 + semilla))
+        cu = u + ancho * 0.22 * math.sin(t * 2.6 + semilla * 1.3)
+        for i in range(nu + 1):
+            V.append(ca.p(cu + an * (i / nu - 0.5) + rng.uniform(-0.09, 0.09), z0 + alto * t + rng.uniform(-0.1, 0.1) * (j > 0), fuera * rng.uniform(0.5, 1.3)))
+            C.append(hexlin(('#2c3a1e', '#34421f', '#3d4a26', '#27331a')[int(rng.integers(0, 4))]) * rng.uniform(0.8, 1.25))
+    for j in range(nv):
+        for i in range(nu):
+            borde = i == 0 or i == nu - 1 or j == nv - 1
+            if rng.random() < (0.42 if borde else 0.08): continue
+            a = j * (nu + 1) + i; F.append((a, a + 1, a + nu + 2, a + nu + 1))
+    G.pieza(V, F, 'liso', np.array(C), hacia=ca.n)
+
+
 # ── acabado: irregularidad, color y oclusion ──
 def oclusion(obj, fuerza=0.8, dist=2.4, rayos=28, sep=0.1, semilla=1):
     """Oclusion ambiental por vertice (rayos contra el propio modelo y el suelo), saliendo `sep` de la cara."""
@@ -509,7 +528,7 @@ def oclusion(obj, fuerza=0.8, dist=2.4, rayos=28, sep=0.1, semilla=1):
     return 1 - fuerza * (1 - ao)
 
 
-def acabar(G, nombre, torcer=0.02, musgo=0.5, ao=0.68):
+def acabar(G, nombre, torcer=0.02, musgo=0.36, ao=0.68):
     """De las piezas a la malla: quita lo «perfecto», pinta manchas, humedad, musgo y hollin, y hornea la oclusion."""
     o = G.objeto(nombre); me = o.data
     P = pos(o); C = color_de(o); n = len(P)
@@ -560,9 +579,14 @@ def _meta(G, sus):
     j = lambda p: [round(float(p[0]), 2), round(float(p[2]), 2), round(float(-p[1]), 2)]
     if G.lod == 0:
         sus['humo'] = [j(p) for p in G.humo]; sus['fuego'] = [j(p) + [t] for p, t in G.fuego]
+        # Halo de luz de noche: las tres vidrieras encendidas mas grandes que no esten pegadas entre si.
+        el = []
+        for (p, a, c) in sorted(G.luces, key=lambda x: -x[1]):
+            if len(el) < 3 and all(np.linalg.norm(p - q) > 3.5 for q, _ in el): el.append((p, c))
+        sus['luz'] = [j(p) + [1 if c == VIOLETA else 0] for p, c in el]
 
 
-def definir(nombre, sus, tris, fn, semilla=1, musgo=0.5):
+def definir(nombre, sus, tris, fn, semilla=1, musgo=0.36):
     @modelo(nombre, sustituye=sus, tris=tris, ao=0, lods='propio')
     def _f(lod):
         G = Obra(lod, semilla)
@@ -669,6 +693,7 @@ def casa_piedra(G):
     if G.lod < 2:
         ca = B['D']; G.pieza([ca.p(d * 0.52, HONDO, 0), ca.p(d * 0.52 + 0.8, HONDO, 0), ca.p(d * 0.52 + 0.8, 3.0, 0), ca.p(d * 0.52, 3.0, 0), ca.p(d * 0.52, HONDO, 0.75), ca.p(d * 0.52 + 0.8, HONDO, 0.75), ca.p(d * 0.52 + 0.8, 1.6, 0.6), ca.p(d * 0.52, 1.6, 0.6)],
                              [(4, 5, 6, 7), (7, 6, 2, 3), (0, 4, 7, 3), (1, 2, 6, 5)], 'piedra', PIEDRA[1], dentro=ca.p(d * 0.52 + 0.4, 1.0, 0.2))
+    hiedra(G, B['I'], d * 0.52, 0.2, 2.6, 4.6, 4); hiedra(G, B['T'], w * 0.72, 0.2, 2.0, 3.2, 9)
     alto = tejado(G, x0, x1, y0, y1, h, 52, 'y', PIZARRA, alero=0.4, hastial='escalonado', semilla=61, pandeo=0.05, luz_hastial=l[6] or '')
     chimenea(G, x0 + 1.5, y1 - 2.6, alto(x0 + 1.5, 0) - 0.9, alto(0, 0) + 0.9, 0.95, 0.95)
 
@@ -754,6 +779,7 @@ def herreria(G):
         G.caja((xm + 0.75, y0 + 3.6, 0.38), (0.8, 1.5, 0.76), 'piedra', PIEDRA[2], None, 'zZ'); G.caja((xm + 0.75, y0 + 3.6, 0.68), (0.62, 1.3, 0.02), 'liso', '#1c2a33', None, 'zxXyY')
         G.torno([(0.42, 0.0), (0.5, 0.3), (0.36, 0.72), (0.14, 0.82)], 7, (x1 - 1.2, y0 + 1.5, 0.02), 'liso', '#4a4034')
     lenera(G, xm + 0.5, xm + 2.6, y1 - 1.0, 0.05, 3)
+    hiedra(G, B['I'], d * 0.55, 0.2, 2.2, 2.9, 21)
 
 
 # 3 · Casa del sabio (9 × 10): casa de piedra con pizarra y un torreon ochavado de chapitel en la esquina del frente.
@@ -794,6 +820,8 @@ def sabio(G):
         ct = cara_torre(k, 8.2); ventana(G, ct, ct.L / 2, 8.2, 0.55, 1.5, VIOLETA, contras=None, punta=0.35)
         if k % 2 == 0: ct = cara_torre(k, 3.4); ventana(G, ct, ct.L / 2, 3.4, 0.5, 1.25, LUZ[k % 3] if k != 0 else None, contras=None, punta=0.3)
         elif G.lod == 0: ct = cara_torre(k, 6.1); ventana(G, ct, ct.L / 2, 6.1, 0.4, 0.9, None, contras=None, punta=0.25)
+    if G.lod < 2: ct = cara_torre(L8 - 1, 2.0); hiedra(G, ct, ct.L * 0.5, 0.2, 1.7, 5.8, 6)
+    hiedra(G, B['T'], w * 0.7, 0.2, 2.4, 2.6, 12)
     # Veleta: aguja de hierro con una media luna.
     if G.lod < 2:
         zt = ht + 5.2
@@ -870,6 +898,7 @@ def campanario(G):
         e3 = lado_en(3.4); e6 = lado_en(5.9)
         if k != 'F': ca = caras(-e3, e3, -e3, e3)[k]; ventana(G, ca, ca.L / 2, 3.4, 0.4, 1.1, None, contras=None, punta=0.22)
         ca = caras(-e6, e6, -e6, e6)[k]; ventana(G, ca, ca.L / 2, 5.9, 0.45, 1.25, LUZ[0] if k in 'FD' else None, contras=None, punta=0.25)
+    hiedra(G, Bb['I'], a * 0.9, 0.3, 2.4, 6.2, 15, 0.06); hiedra(G, Bb['T'], a * 1.3, 0.3, 1.8, 3.4, 16, 0.06)
     # Cornisa y cuerpo de campanas: cuatro machones de esquina y un arco por lado.
     if G.lod < 2: G.torno([((e - 0.02) * 1.4142, hb - 0.3), ((e + 0.22) * 1.4142, hb - 0.05), ((e + 0.22) * 1.4142, hb + 0.14)], 4, (0, 0, 0), 'piedra', PIEDRA[2], math.pi / 4, tapa=True)
     else: G.pieza([(-e, -e, hb), (e, -e, hb), (e, e, hb), (-e, e, hb)], [(0, 1, 2, 3)], 'piedra', PIEDRA[2], hacia=Z3)
@@ -914,4 +943,4 @@ definir('casa_sabio', CASAS_SUS[3], (4000, 1400, 300), sabio, 13)
 definir('taberna', CASAS_SUS[4], (4200, 1400, 280), taberna, 14)
 definir('horno_abuela', CASAS_SUS[5], T_CASA, horno, 15)
 definir('casa_piedra', CASAS_SUS[6], T_CASA, casa_piedra, 16)
-definir('campanario', dict(torre=1), (3600, 1200, 260), campanario, 17, musgo=0.4)
+definir('campanario', dict(torre=1), (3600, 1200, 260), campanario, 17, musgo=0.3)
