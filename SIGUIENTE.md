@@ -3735,3 +3735,6 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Juego aparte en `/chicha-wars/` (index.html + js/datos.js, arte.js, juego.js). Cocinar (ollas, fuego, hornillas, maíz), vender a clientes, espantar duendes por oleadas, mejoras, misiones diarias, racha, pase de temporada (premium pendiente de servidor), skins de chichera/chichero, progreso sin conexión (8 h). Guardado local `cw_estado`.
 - Arte vectorial provisional; `assets/chicha-wars/sprites.json` + PNG del dueño lo reemplazan (lista en CHICHA-WARS-ARTE.md).
 - Pendiente: cuenta compartida con Duende Quest y cambio de moneda con tope, pase premium manual, mercado entre jugadores, Mini App de Telegram.
+
+## Chicha Wars v2 (14-nov-2026)
+- Cuenta en el servidor por HTTP (`POST /mmo/cw` → `functions/mmo/chichawars.js`, worker.js y `run_worker_first`): misma identidad de Duende Quest (tg/web/inv + uidPrincipal), sin entrar al mundo. Guarda la partida (`cw:<uid>`), abonos con ack, cambio 10 monedas = 1 oro (tope 1000/día, solo cuentas, necesita personaje en DQ), mercado `cwm` de maíz y vasos con depósito y 5 % de comisión, pase premium por código `CW-XXXXXX` que el dueño activa desde el panel del dueño del propio juego. 18 pruebas en el arnés.

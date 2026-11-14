@@ -23,7 +23,7 @@ not_found_handling = "404-page"
 # Object). /interno/* NO va: solo existe dentro del Durable Object
 # (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
 # nueva, AGREGARLA aqui si tambien coincide con un archivo; si no, ya llega al Worker.
-run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev"]
+run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev", "/mmo/cw"]
 # (/api/medir, el ID del pixel de Meta para js/medir.js, ya entra por /api/*.)
 
 # Medicion de anuncios de Meta (pixel + Conversions API): APAGADA mientras no

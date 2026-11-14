@@ -58,6 +58,7 @@ import { Rituales } from './rituales.js';
 import { Dios } from './dios.js';
 import { RankTodos } from './ranktodos.js';
 import { Viajes } from './viajes.js';
+import { ChichaWars } from './chichawars.js';
 import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
 import { instalarGrupo } from './grupo.js';
@@ -306,6 +307,8 @@ export class MmoWorld {
     if (url.pathname.startsWith('/interno/')) return this.interno(request, url.pathname.slice(9));
     // Embudo de la carga (beacon ya validado por worker.js): retencion.js
     if (url.pathname === '/mmo/ev' && request.method === 'POST') return this.evRecibir(request);
+    // Chicha Wars (chichawars.js): su partida, el cambio a oro y el mercado, por HTTP (no entra al mundo).
+    if (url.pathname === '/mmo/cw' && request.method === 'POST') return this.cwHttp(request);
     if (request.headers.get('Upgrade') !== 'websocket') {
       // Estado publico para la portada: conectados ahora y jugadores distintos
       // de hoy (este ultimo se recalcula como mucho cada minuto).
@@ -4131,6 +4134,7 @@ Object.assign(MmoWorld.prototype, Dios);
 Object.assign(MmoWorld.prototype, RankTodos);
 // Piedras de viaje entre zonas visitadas: functions/mmo/viajes.js
 Object.assign(MmoWorld.prototype, Viajes);
+Object.assign(MmoWorld.prototype, ChichaWars);
 // El mundo abierto 3D (mismo personaje, otro mundo): functions/mmo/mundo3d.js
 Object.assign(MmoWorld.prototype, Mundo3D);
 Object.assign(MmoWorld.prototype, Cueva3D);

@@ -71,6 +71,14 @@ export default {
       } catch (e) {}
       return nada;
     }
+    // Chicha Wars (functions/mmo/chichawars.js): su cuenta, cambio a oro y mercado, por HTTP al mismo Durable Object.
+    if (path === '/mmo/cw') {
+      if (request.method !== 'POST' || !env.MMO) return new Response(null, { status: 405 });
+      try {
+        const ip = request.headers.get('CF-Connecting-IP') || '';
+        return await env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/mmo/cw', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: await request.text() });
+      } catch (e) { console.error('[MMO cw]', e); return new Response(JSON.stringify({ ok: false, m: 'Servidor no disponible' }), { status: 503 }); }
+    }
     // DUENDE QUEST ONLINE: todo el mundo vive en un solo Durable Object.
     if (path === '/mmo/ws') {
       if (!env.MMO) return new Response('MMO no configurado', { status: 503 });

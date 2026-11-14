@@ -620,6 +620,7 @@ async function pruebas() {
   await pruebasPrimeraHora3d();
   await pruebasAmbiente3d();
   await pruebasRecoleccion3d();
+  await pruebasChichaWars();
   await pruebasLook3d();
   await pruebasCueva3d();
   await pruebasDueloPesca3d();
@@ -1336,6 +1337,61 @@ async function pruebasLook3d() {
   await a.mandar({ t: 'look', look: { cara: 99, cuerpo: -1, altura: 9, pelo: 'x', colorPelo: 2.5, extra: 'hack' } });
   chequear(a.c.look.cara === 0 && a.c.look.cuerpo === 1 && a.c.look.altura === 1.12 && a.c.look.pelo === 1 && a.c.look.colorPelo === 1 && !('extra' in a.c.look), 'valores inválidos se limpian');
   for (const s of [a, b]) await dejar(s);
+}
+
+// ── CHICHA WARS (functions/mmo/chichawars.js) ──
+async function pruebasChichaWars() {
+  console.log('Chicha Wars: cuenta, cambio a oro, mercado y pase');
+  const ids = { a: { uid: 'web:cw-a', nombre: 'Chichera A', cuenta: true, dueno: false }, b: { uid: 'web:cw-b', nombre: 'Chichero B', cuenta: true, dueno: false }, inv: { uid: 'inv:cw-i', nombre: '', cuenta: false, dueno: false }, dueno: { uid: 'tg:cw-d', nombre: 'Dueño', cuenta: true, dueno: true } };
+  const orig = mundo.cwIdentidad;
+  mundo.cwIdentidad = async auth => ids[auth && auth.quien] || null;
+  const pedir = async (quien, cuerpo) => (await mundo.cwHttp(new Request('https://mmo/mmo/cw', { method: 'POST', headers: { 'CF-Connecting-IP': '10.9.' + quien.length + '.1' }, body: JSON.stringify({ auth: { quien }, ...cuerpo }) }))).json();
+  const est = (m, maiz, stock) => ({ v: 1, monedas: m, maiz, stock });
+  let r = await pedir('a', { a: 'guardar', est: est(5000, 100, 50) });
+  chequear(r.ok && r.cuenta, 'guarda la partida de una cuenta');
+  r = await pedir('a', { a: 'cargar' });
+  chequear(r.ok && r.est && r.est.monedas === 5000, 'la partida vuelve al cargar');
+  r = await pedir('nadie', { a: 'cargar' });
+  chequear(!r.ok && r.auth === false, 'sin identidad no se carga nada');
+  r = await pedir('inv', { a: 'cambiar', est: est(9999, 0, 0), oro: 10 });
+  chequear(!r.ok && /cuenta/.test(r.m), 'un invitado no cambia monedas a oro');
+  r = await pedir('a', { a: 'cambiar', est: est(5000, 100, 50), oro: 10 });
+  chequear(!r.ok && /Duende Quest/.test(r.m), 'sin personaje en Duende Quest no hay donde recibir el oro');
+  await state.storage.put('c:web:cw-a', { uid: 'web:cw-a', nombre: 'Chichera A', oro: 100, nivel: 3 });
+  r = await pedir('a', { a: 'cambiar', est: est(5000, 100, 50), oro: 300 });
+  const c = await state.storage.get('c:web:cw-a');
+  chequear(r.ok && r.hecho.monedas === -3000 && c.oro === 400, '3000 monedas se cambian por 300 oro de Duende Quest');
+  r = await pedir('a', { a: 'cambiar', est: est(90000, 100, 50), oro: 800 });
+  chequear(!r.ok && /700/.test(r.m), 'hay tope de 1000 oro al dia');
+  r = await pedir('a', { a: 'vender', est: est(2000, 100, 50), tipo: 'maiz', n: 40, precio: 1.5 });
+  chequear(r.ok && r.hecho.maiz === -40, 'vender maiz lo saca de la partida (deposito)');
+  r = await pedir('a', { a: 'vender', est: est(2000, 60, 50), tipo: 'maiz', n: 10, precio: 99 });
+  chequear(!r.ok, 'el precio tiene limites');
+  r = await pedir('b', { a: 'mercado', tipo: 'maiz' });
+  const an = r.mercado && r.mercado.find(x => x.n === 40);
+  chequear(!!an && !an.mio, 'el otro jugador ve la venta en el mercado');
+  r = await pedir('b', { a: 'comprar', est: est(10, 0, 0), id: an.id });
+  chequear(!r.ok && /alcanzan/.test(r.m), 'sin monedas no se compra');
+  r = await pedir('b', { a: 'comprar', est: est(500, 0, 0), id: an.id });
+  chequear(r.ok && r.hecho.monedas === -60 && r.hecho.maiz === 40, 'comprar paga y entrega el maiz');
+  r = await pedir('a', { a: 'cargar' });
+  chequear(r.abonos.some(x => x.monedas === 57), 'al vendedor le llega lo vendido menos el 5 %');
+  const idAb = r.abonos.find(x => x.monedas === 57).id;
+  r = await pedir('a', { a: 'guardar', est: est(2057, 60, 50), ack: [idAb] });
+  chequear(!r.abonos.some(x => x.id === idAb), 'el abono confirmado ya no se repite');
+  r = await pedir('a', { a: 'vender', est: est(2057, 60, 50), tipo: 'vasos', n: 20, precio: 4 });
+  const mio = (await pedir('a', { a: 'mercado', tipo: 'vasos' })).mios[0];
+  r = await pedir('a', { a: 'retirar', est: est(2057, 60, 30), id: mio.id });
+  chequear(r.ok && r.hecho.stock === 20, 'retirar una venta devuelve los vasos');
+  r = await pedir('a', { a: 'pedirPase' });
+  const cod = r.cod;
+  chequear(r.ok && /^CW-[0-9A-F]{6}$/.test(cod) && !r.premium, 'pedir el pase premium da un codigo');
+  r = await pedir('b', { a: 'darPase', cod });
+  chequear(!r.ok, 'solo el dueño activa el pase');
+  r = await pedir('dueno', { a: 'darPase', cod });
+  const ra = await pedir('a', { a: 'cargar' });
+  chequear(r.ok && ra.premium && ra.abonos.some(x => x.premium), 'el dueño activa el pase con el codigo y le llega al jugador');
+  mundo.cwIdentidad = orig;
 }
 
 // ── RECOLECCION Y ARTESANIA EN EL 3D ──

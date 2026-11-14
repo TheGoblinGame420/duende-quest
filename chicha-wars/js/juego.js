@@ -6,8 +6,9 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=380';
-import * as A from './arte.js?v=380';
+import * as D from './datos.js?v=381';
+import * as A from './arte.js?v=381';
+import { pedir } from './red.js?v=381';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -36,6 +37,51 @@ function guardar() { E.t = Date.now(); try { localStorage.setItem('cw_estado', J
 setInterval(guardar, 5000);
 addEventListener('pagehide', guardar);
 document.addEventListener('visibilitychange', () => { if (document.hidden) guardar(); });
+
+// ── CUENTA EN EL SERVIDOR (red.js → functions/mmo/chichawars.js) ──
+// La partida se guarda tambien en tu cuenta de Duende Quest cada 30 s: si abres el juego en otro aparato
+// con la misma cuenta, sigues donde te quedaste. Lo que llega de fuera (ventas, pase) son abonos.
+const NUBE = { ok: false, cuenta: false, dueno: false, premium: false, cod: '', cambio: 0, ack: [], mercado: [], mios: [], tipoM: 'maiz' };
+E.abHechos = E.abHechos || [];
+function aplicar(r) {
+  if (!r || !r.ok) { if (r && r.m && !r.red && r.auth !== false) aviso(r.m, 'err'); return false; }
+  NUBE.ok = true; NUBE.cuenta = !!r.cuenta; NUBE.dueno = !!r.dueno; NUBE.cod = r.cod || ''; NUBE.cambio = r.cambio || 0;
+  if (r.premium && !E.pase.premium) { E.pase.premium = true; marcarTab('pase'); }
+  NUBE.premium = !!r.premium;
+  for (const ab of r.abonos || []) {
+    if (!E.abHechos.includes(ab.id)) {
+      E.abHechos.push(ab.id); if (E.abHechos.length > 80) E.abHechos.shift();
+      if (ab.monedas) E.monedas += ab.monedas;
+      if (ab.premium) E.pase.premium = true;
+      if (ab.txt) aviso(ab.txt, 'ok');
+      son('moneda');
+    }
+    if (!NUBE.ack.includes(ab.id)) NUBE.ack.push(ab.id);
+  }
+  if (r.hecho) { for (const k of ['monedas', 'maiz', 'stock']) if (r.hecho[k]) E[k] = Math.max(0, E[k] + r.hecho[k]); }
+  if (r.mercado) NUBE.mercado = r.mercado;
+  if (r.mios) NUBE.mios = r.mios;
+  return true;
+}
+async function subir() {
+  guardar();
+  const ack = NUBE.ack.slice();
+  const r = await pedir('guardar', { est: E, ack });
+  if (aplicar(r)) NUBE.ack = NUBE.ack.filter(id => !ack.includes(id));
+  guardar();
+}
+async function bajar() {
+  const r = await pedir('cargar');
+  if (!r || !r.ok) return;
+  // La partida de la cuenta es mas nueva (otro aparato): se usa esa (una vez por sesion, sin bucles).
+  let ya = ''; try { ya = sessionStorage.getItem('cw_bajado') || ''; } catch (e) {}
+  if (r.est && (r.est.t || 0) > (E.t || 0) + 5000 && !ya) {
+    try { sessionStorage.setItem('cw_bajado', '1'); localStorage.setItem('cw_estado', JSON.stringify(r.est)); } catch (e) {}
+    location.reload(); return;
+  }
+  aplicar(r); pintarPanel(); subir();
+}
+setInterval(subir, 30000);
 
 // ── SONIDO (sintetizado, sin archivos) ──
 let AC = null;
@@ -301,7 +347,7 @@ function pintarHud() {
   const nv = nivelPase(), k = (E.pase.xp % D.PASE.xpNivel) / D.PASE.xpNivel;
   const s = fmt(E.monedas) + '|' + fmt(E.maiz) + '|' + E.stock + '|' + nv + '|' + Math.round(k * 50);
   if (s === hudPrev) return; hudPrev = s;
-  $('h-monedas').textContent = fmt(E.monedas); $('h-maiz').textContent = fmt(E.maiz) + ' kg'; $('h-vasos').textContent = E.stock;
+  $('h-monedas').textContent = fmt(E.monedas); $('h-maiz').textContent = E.maiz >= 10000 ? Math.floor(E.maiz / 1000) + 'k' : fmt(E.maiz); $('h-vasos').textContent = E.stock;
   $('h-pase').textContent = nv >= D.PASE.niveles ? 'MAX' : nv; $('h-pase-b').style.width = (nv >= D.PASE.niveles ? 100 : k * 100) + '%';
   if (tab === 'mejoras' || tab === 'cocina' || tab === 'mercado') pintarPanelSuave();
 }
@@ -315,7 +361,7 @@ function aviso(t, tipo) {
 // ── PANELES ──
 let tab = 'cocina';
 function marcarTab(id) { const b = document.querySelector(`.tab[data-t="${id}"]`); if (b && tab !== id) b.classList.add('punto'); }
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); });
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); });
 let panelPrev = '';
 function pintarPanelSuave() { const h = htmlPanel(); if (h !== panelPrev) { panelPrev = h; $('panel').innerHTML = h; } }
 function pintarPanel() { panelPrev = htmlPanel(); $('panel').innerHTML = panelPrev; $('panel').scrollTop = 0; }
@@ -380,11 +426,32 @@ function htmlPanel() {
   if (tab === 'mercado') {
     let h = '<div class="sub">Maíz morado para tus ollas</div>';
     for (const [kg, c] of D.MAIZ.paquetes) h += `<div class="card"><div class="ico">🌽</div><div class="tx"><b>${kg} kg de maíz morado</b><small>Alcanza para ${Math.floor(kg / D.MAIZ.porVaso)} vasos</small></div>${costoBtn(c, 'maiz', { kg, c })}</div>`;
-    h += `<div class="card proximo"><div class="ico">🤝</div><div class="tx"><b>Mercado entre jugadores</b><small>Muy pronto: con tu cuenta de Duende Quest podrás vender y comprar maíz, ollas y skins con otros jugadores, con monedas del juego.</small></div></div>`;
+    h += htmlCuenta();
     h += `<a class="card enlace" href="${D.WHATSAPP_CHICHA}" target="_blank" rel="noopener"><div class="ico">🥤</div><div class="tx"><b>¿Quieres chicha morada de verdad?</b><small>Pídela por WhatsApp al +51 916 778 731 (número oficial)</small></div></a>`;
     return h;
   }
   return '';
+}
+// Cambio a oro y mercado entre jugadores (necesitan la cuenta de Duende Quest).
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function htmlCuenta() {
+  let h = '';
+  if (!NUBE.ok) return `<div class="card proximo"><div class="ico">☁</div><div class="tx"><b>Conectando con tu cuenta…</b><small>El cambio a oro y el mercado entre jugadores necesitan conexión.</small></div></div>`;
+  if (!NUBE.cuenta) return `<a class="card enlace" href="/mmo/" target="_blank" rel="noopener"><div class="ico">👤</div><div class="tx"><b>Entra con tu cuenta de Duende Quest</b><small>Juegas como invitado. Con tu cuenta (correo o Telegram) guardas la partida en la nube, cambias monedas por oro de Duende Quest y usas el mercado entre jugadores.</small></div></a>`;
+  const libre = 1000 - NUBE.cambio;
+  h += `<div class="sub">Cambiar monedas por oro de Duende Quest</div><div class="card"><div class="ico">⇄</div><div class="tx"><b>10 monedas = 1 oro</b><small>Hoy puedes cambiar ${libre} oro más (máximo 1000 al día). Llega a tu duende al instante.</small></div></div>`;
+  h += `<div class="elige">${[10, 100, 500].map(o => btn(`${o} oro`, 'cambiar', { o }, E.monedas < o * 10 || o > libre, 'oro')).join('')}</div>`;
+  h += `<div class="sub">Mercado entre jugadores</div><div class="elige">${btn('Maíz morado', 'tipoM', { k: 'maiz' }, false, NUBE.tipoM === 'maiz' ? 'on' : '')}${btn('Vasos de chicha', 'tipoM', { k: 'vasos' }, false, NUBE.tipoM === 'vasos' ? 'on' : '')}</div>`;
+  const uni = NUBE.tipoM === 'maiz' ? 'kg' : 'vasos', icoM = NUBE.tipoM === 'maiz' ? '🌽' : '🥤';
+  const lista = NUBE.mercado.filter(x => !x.mio);
+  h += lista.length ? lista.map(x => `<div class="card"><div class="ico">${icoM}</div><div class="tx"><b>${x.n} ${uni} · ${x.precio} c/u</b><small>Vende ${esc(x.quien)}</small></div>${costoBtn(Math.ceil(x.n * x.precio), 'comprar', { id: x.id })}</div>`).join('')
+    : `<div class="consejo" style="margin-bottom:8px">Nadie vende ${NUBE.tipoM === 'maiz' ? 'maíz' : 'vasos'} ahora. ¡Sé el primero!</div>`;
+  const tengo = NUBE.tipoM === 'maiz' ? Math.floor(E.maiz) : E.stock, rango = NUBE.tipoM === 'maiz' ? '0,5 a 5' : '1 a 40';
+  h += `<div class="card vender"><div class="tx"><b>Vender ${NUBE.tipoM === 'maiz' ? 'maíz' : 'vasos'}</b><small>Tienes ${tengo} ${uni}. Precio por unidad de ${rango} monedas. El mercado se queda con el 5 %.</small>
+    <div class="form"><label>Cantidad<input id="v-n" type="number" inputmode="numeric" min="5" value="${Math.min(50, Math.max(5, tengo))}"></label><label>Precio c/u<input id="v-p" type="number" inputmode="decimal" step="0.5" value="${NUBE.tipoM === 'maiz' ? 1.5 : 4}"></label>${btn('Publicar', 'vender', {}, tengo < 5, 'oro')}</div></div></div>`;
+  if (NUBE.mios.length) h += `<div class="sub">Tus ventas</div>` + NUBE.mios.map(x => `<div class="card"><div class="ico">${x.tipo === 'maiz' ? '🌽' : '🥤'}</div><div class="tx"><b>${x.n} ${x.tipo === 'maiz' ? 'kg' : 'vasos'} · ${x.precio} c/u</b><small>Esperando comprador</small></div>${btn('Retirar', 'retirar', { id: x.id })}</div>`).join('');
+  if (NUBE.dueno) h += `<div class="sub">Panel del dueño</div><div class="card"><div class="tx"><b>Activar pase premium</b><small>Cuando ya cobraste, pon el código que te mandó el jugador.</small><div class="form"><label>Código<input id="d-cod" placeholder="CW-XXXXXX" autocapitalize="characters"></label>${btn('Activar', 'darPase', {}, false, 'oro')}</div></div></div>`;
+  return h;
 }
 // Dibujo de las miniaturas de skins (despues de pintar el panel).
 new MutationObserver(() => { document.querySelectorAll('canvas.mini').forEach(c => { if (c.dataset.ok) return; c.dataset.ok = 1; const g = c.getContext('2d'), s = D.SKINS[c.dataset.skin]; g.scale(0.4, 0.4); (s.para === 'chichero' ? A.chichero : A.chichera)(g, 112, 268, 1, 'quieta', 1, s.paleta); }); }).observe($('panel'), { childList: true });
@@ -407,12 +474,46 @@ $('panel').addEventListener('click', ev => {
     lista.push(n);
     if (p.tipo === 'monedas') E.monedas += p.n; else if (p.tipo === 'maiz') E.maiz += p.n; else if (!E.skins.includes(p.id)) { E.skins.push(p.id); aviso('👑 ¡Skin nueva: ' + D.SKINS[p.id].nombre + '! Póntela en «Skins».', 'ok'); }
     son('mejora');
-  } else if (a === 'premium') { abrirModal(`<h2>★ Pase premium</h2><p>El pase premium duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y la Chichera dorada).</p><p>Se activará con tu cuenta de Duende Quest y pago manual (Yape, SOL o Stars), igual que las skins de Duende Quest. <b>Llega en la próxima versión</b>: tu progreso del pase se guarda y podrás reclamar todo lo premium de los niveles que ya tengas.</p>`); }
+  } else if (a === 'premium') { pedirPremium(); return; }
   else if (a === 'personaje') { E.personaje = d.k; son('tap'); }
   else if (a === 'skin') { E.skin[E.personaje] = d.id; son('mejora'); pose('celebra', 1); }
   else if (a === 'ir') { document.querySelector(`.tab[data-t="${d.t}"]`).click(); return; }
+  else if (a === 'tipoM') { NUBE.tipoM = d.k; NUBE.mercado = []; pintarPanel(); cargarMercado(); return; }
+  else if (['cambiar', 'vender', 'comprar', 'retirar', 'darPase'].includes(a)) { accionNube(a, d); return; }
   guardar(); pintarPanel(); pintarHud();
 });
+
+async function cargarMercado() { const r = await pedir('mercado', { tipo: NUBE.tipoM }); if (aplicar(r) && tab === 'mercado') pintarPanel(); }
+let ocupado = false;
+async function accionNube(a, d) {
+  if (ocupado) return; ocupado = true;
+  try {
+    guardar();
+    let datos = { est: E };
+    if (a === 'cambiar') datos.oro = +d.o;
+    if (a === 'vender') { datos.tipo = NUBE.tipoM; datos.n = +($('v-n') || {}).value; datos.precio = +($('v-p') || {}).value; }
+    if (a === 'comprar' || a === 'retirar') datos.id = d.id;
+    if (a === 'darPase') datos = { cod: ($('d-cod') || {}).value || '' };
+    const r = await pedir(a, datos);
+    if (aplicar(r)) {
+      son('mejora');
+      aviso(a === 'cambiar' ? `✓ +${r.hecho.oro} oro en tu duende de Duende Quest` : a === 'vender' ? '✓ Publicado en el mercado' : a === 'comprar' ? '✓ Compra hecha' : a === 'retirar' ? '✓ Venta retirada' : '✓ ' + ((r.hecho && r.hecho.ok) || 'Hecho'), 'ok');
+      guardar();
+      if (a !== 'cambiar' && a !== 'darPase') await cargarMercado();
+    }
+  } finally { ocupado = false; pintarPanel(); pintarHud(); }
+}
+async function pedirPremium() {
+  if (E.pase.premium) return;
+  if (!NUBE.cuenta) { abrirModal(`<h2>★ Pase premium</h2><p>Duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y Chichera dorada).</p><p>Para comprarlo necesitas entrar con tu cuenta de Duende Quest (correo o Telegram): así el pase queda guardado aunque cambies de celular.</p><p><a href="/mmo/" target="_blank" rel="noopener" style="color:#ffd166">Entrar o crear mi cuenta →</a></p>`); return; }
+  const r = await pedir('pedirPase');
+  if (!aplicar(r)) return;
+  const txt = encodeURIComponent('Hola, quiero el pase premium de Chicha Wars. Mi código es ' + NUBE.cod);
+  abrirModal(`<h2>★ Pase premium</h2><p>Duplica los premios de la temporada y trae skins exclusivas. Lo que ya ganaste en el carril premium se reclama en cuanto se active.</p>
+    <p>Tu código de pedido:</p><div class="logo" style="font-size:30px">${NUBE.cod}</div>
+    <p>Escríbele al creador del juego por WhatsApp con tu código: te dice el precio y cómo pagar (Yape, SOL o Stars). Cuando confirme tu pago, el pase se activa solo en tu cuenta.</p>
+    <a class="b oro grande" href="https://wa.me/51900877863?text=${txt}" target="_blank" rel="noopener">WhatsApp +51 900 877 863</a>`);
+}
 
 // ── VENTANAS ──
 function abrirModal(html, alCerrar) {
@@ -445,5 +546,6 @@ A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sp
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
 inicio();
 requestAnimationFrame(cuadro);
+bajar();
 // Para pruebas (consola): __cw.avanzar(segundos) corre el juego sin esperar.
 window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); } };
