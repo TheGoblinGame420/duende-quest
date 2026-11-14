@@ -190,5 +190,17 @@
 },
 "fondo_mercado_noche": {
 "src": "fondo_mercado_noche.webp"
+},
+"puesto_toldo_0": {
+"src": "puesto_toldo_0.webp"
+},
+"puesto_toldo_1": {
+"src": "puesto_toldo_1.webp"
+},
+"puesto_toldo_2": {
+"src": "puesto_toldo_2.webp"
+},
+"puesto_mostrador": {
+"src": "puesto_mostrador.webp"
 }
 }

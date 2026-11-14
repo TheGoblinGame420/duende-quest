@@ -6,10 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=387';
-import * as A from './arte.js?v=387';
-import { pedir } from './red.js?v=387';
-import * as R from './rig.js?v=387';
+import * as D from './datos.js?v=388';
+import * as A from './arte.js?v=388';
+import { pedir } from './red.js?v=388';
+import * as R from './rig.js?v=388';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -27,6 +27,7 @@ function nuevo() {
     oleada: 1, pase: { xp: 0, premium: false, g: [], p: [] }, mis: null, racha: { dia: '', n: 0, cobrado: '' },
     stats: { vasos: 0, duendes: 0, tandas: 0, mejoras: 0, oleadas: 0, dorados: 0, jefes: 0, pociones: 0, herencias: 0, oleadaMax: 0 },
     ing: { pina: 0, manzana: 0, canela: 0, limon: 0, azucar: 0 }, poc: {}, act: {}, fama: { n: 1, p: 0 }, rs: 0, ganado: 0, logros: [],
+    saz: { n: 1, xp: 0, hab: {}, pend: 0 },
     eq: { cucharon: 0, tabla: 0, exprimidor: 0, colador: 0, vaso: 0, jarra: 0 }, rafaga: 0,
     personaje: 'chichera', skin: { chichera: 'clasica', chichero: 'clasico' }, skins: ['clasica', 'clasico'],
     t: Date.now(), sonido: true, elegido: false,
@@ -109,11 +110,13 @@ const HR = id => D.HERRAMIENTAS[id].niv[E.eq[id]];
 const nOllas = () => D.HORNILLAS[E.nv.hornillas].n;
 // Hervor Cosmico (cucharon legendario): x3 de velocidad 10 s de cada minuto.
 const hervor = () => !!HR('cucharon').hervor && (Date.now() / 1000) % 60 < 10;
-const activo = id => (E.act[id] || 0) > Date.now();   // pocion del Taller en efecto
-const segTanda = () => D.FUEGOS[E.nv.fuego].seg / (1 + HR('cucharon').coccion) / (1 + HR('tabla').corte * 0.25) / (hervor() ? 3 : 1) / (activo('fuego') ? 2 : 1) / (1 + E.rs * D.HERENCIA.coccion);
+const activo = id => (E.act[id] || 0) > Date.now();
+const hab = id => E.saz.hab[id] || 0;   // estrellas de un utensilio de batalla
+const habTotal = () => Object.values(E.saz.hab).reduce((a, b) => a + b, 0);   // pocion del Taller en efecto
+const segTanda = () => D.FUEGOS[E.nv.fuego].seg / (1 + HR('cucharon').coccion) / (1 + HR('tabla').corte * 0.25) / (hervor() ? 3 : 1) / (activo('fuego') ? 2 : 1) / (1 + E.rs * D.HERENCIA.coccion) / (1 + hab('fuego') * 0.08);
 const vasosOlla = i => Math.round(D.OLLAS[E.nv.ollas[i]].vasos * (1 + HR('cucharon').prod));
 const maizOlla = i => D.OLLAS[E.nv.ollas[i]].vasos * D.MAIZ.porVaso * (1 - HR('tabla').ahorro);
-const precio = () => D.RECETAS[E.nv.receta].precio * (1 + HR('vaso').venta) * (1 + HR('colador').calidad) * (HR('colador').nectar ? 2 : 1) * (1 + (HR('jarra').temp || 0)) * (activo('receta') ? 1.5 : 1) * (1 + E.rs * D.HERENCIA.precio);
+const precio = () => D.RECETAS[E.nv.receta].precio * (1 + HR('vaso').venta) * (1 + HR('colador').calidad) * (HR('colador').nectar ? 2 : 1) * (1 + (HR('jarra').temp || 0)) * (activo('receta') ? 1.5 : 1) * (1 + E.rs * D.HERENCIA.precio) * (1 + hab('fiesta') * 0.08);
 const capStock = () => Math.round(D.STOCK_BASE * (1 + HR('jarra').cap));
 const horaPunta = () => (Date.now() / 1000) % D.HORA_PUNTA.cada < D.HORA_PUNTA.dura;
 const segCliente = () => D.TOLDOS[E.nv.toldo].seg / (1 + HR('colador').rep) / (horaPunta() ? D.HORA_PUNTA.mult : 1) / (activo('reloj') ? 2 : 1);
@@ -249,19 +252,21 @@ function texto(px, py, txt, color = '#ffe082', tam = 26) { textos.push({ x: px, 
 function spawnDuende(k) {
   const n = E.oleada;
   const VAR = { ladron: ['pirata', 'vampiro', 'esqueleto'], rapido: ['lobo'], gordo: ['momia'], gancho: ['bruja'], jefe: ['jefe'], dorado: ['lobo', 'pirata'] }[k] || ['pirata'];
+  if (k === 'jefe') { alertaJefe = 2.8; vibrar(120); }
   if (k === 'dorado') { duendes.push({ rig: R.rigNuevo(), k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(520, 610), vida: 1, max: 1, vel: D.DUENDES.dorado.vel, lleva: 0, huye: false, golpe: 0, robaT: 0 }); return; }
   duendes.push({ rig: R.rigNuevo(), k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(480, 600), vida: D.vidaDuende(k, n), max: D.vidaDuende(k, n), vel: D.DUENDES[k].vel * azar(0.9, 1.1), lleva: 0, huye: false, golpe: 0, robaT: 0 });
 }
-function golpear(d, n) {
-  d.vida -= n; d.golpe = 0.35;
+function golpear(d, n, auto) {
+  d.vida -= n; d.golpe = auto ? 0.18 : 0.35;
   d.rig.flash = 1; d.rig.sy.golpe(-4); d.rig.bend.golpe(5); d.rig.head.golpe(6); d.x += D.DUENDES[d.k].jefe ? 4 : 12;
-  paro = Math.max(paro, D.DUENDES[d.k].jefe ? 0.07 : 0.045); temblar(D.DUENDES[d.k].jefe ? 5 : 2.5);
+  if (!auto) { paro = Math.max(paro, D.DUENDES[d.k].jefe ? 0.07 : 0.045); temblar(D.DUENDES[d.k].jefe ? 5 : 2.5); }
   parts.push({ x: d.x, y: d.y - A.altoDuende(d.k, 0.8) * 0.5, anillo: true, t: 0, vida: 0.3, r: 10, color: '#fff' });
-  combo = T - comboT < 0.9 ? combo + 1 : 1; comboT = T; if (combo >= 3) comboVer = 1;
+  if (!auto) { combo = T - comboT < 0.9 ? combo + 1 : 1; comboT = T; if (combo >= 3) comboVer = 1; }
   particulas(d.x, d.y - 60, 6, '#d65caa', { vel: 200 });
   texto(d.x, d.y - 110, '-' + n, '#ff8a80', 24);
   if (d.vida <= 0) {
-    const pr = D.DUENDES[d.k].dorado ? D.premioDorado(E.oleada) : D.premioDuende(d.k, E.oleada);
+    const pr = Math.round((D.DUENDES[d.k].dorado ? D.premioDorado(E.oleada) : D.premioDuende(d.k, E.oleada)) * (1 + hab('oro') * 0.2));
+    ganarSazon(D.SAZ_XP[d.k] || 1); if (D.DUENDES[d.k].jefe) setTimeout(ruleta, 1400);
     if (D.DUENDES[d.k].dorado) { aviso('✨ ¡Atrapaste al duende dorado! +' + pr + ' monedas', 'ok'); son('nivel'); particulas(d.x, d.y - 60, 24, '#ffd54a', { vel: 320, moneda: true }); }
     E.monedas += pr; E.stats.duendes++; sumar('espanta'); xp(D.XP.duende);
     const def = D.DUENDES[d.k]; if (def.jefe) E.stats.jefes++; if (def.dorado) E.stats.dorados++;
@@ -274,8 +279,73 @@ function golpear(d, n) {
     texto(d.x, d.y - 90, '+' + pr, '#ffd54a', 28);
     d.muerto = true;
     voladores.push({ k: d.k, var: d.var, x: d.x, y: d.y, vx: 160 + Math.random() * 120, vy: -380 - Math.random() * 120, rot: 0, vr: 7 + Math.random() * 5, rig: d.rig, t: 0 });
-    temblar(D.DUENDES[d.k].jefe ? 9 : 4);
+    if (!auto || D.DUENDES[d.k].jefe) temblar(D.DUENDES[d.k].jefe ? 9 : 4);
   }
+}
+
+// ── SAZON: espantar duendes llena la barra; al subir eliges 1 de 3 utensilios de batalla ──
+let pausa = false, proy = [], rayos = [], alertaJefe = 0;
+const cdA = {};
+function ganarSazon(n) { const s = E.saz; s.xp += n; while (s.xp >= D.sazReq(s.n)) { s.xp -= D.sazReq(s.n); s.n++; s.pend++; } }
+function opcionesHab() {
+  const tengo = Object.keys(E.saz.hab).length;
+  return Object.keys(D.HABILIDADES).filter(id => hab(id) < D.MAX_EST && (hab(id) > 0 || tengo < D.MAX_HAB)).sort(() => Math.random() - 0.5).slice(0, 3);
+}
+const estrellas = e => '★'.repeat(e) + '☆'.repeat(D.MAX_EST - e);
+function elegirHab() {
+  const ops = opcionesHab();
+  if (!ops.length) { const g = 40 * E.oleada * E.saz.pend; E.monedas += g; E.saz.pend = 0; aviso('🌶 ¡Sazón al máximo! +' + fmt(g) + ' monedas', 'ok'); return; }
+  pausa = true; son('nivel'); vibrar(40);
+  $('modal-c').innerHTML = `<div class="hab-t">¡Sazón nivel ${E.saz.n - E.saz.pend + 1}!</div><p>Elige un utensilio para tu puesto</p><div class="habs">${ops.map(id => { const h = D.HABILIDADES[id], e = hab(id);
+    return `<button class="habc${h.pasiva ? ' pas' : ''}" data-id="${id}">${e ? '' : '<i class="nuevo">¡Nuevo!</i>'}<img src="${IMG}${h.img}.webp" alt=""><b>${h.nombre}</b><span class="est">${estrellas(e + 1)}</span><small>${h.d(e + 1)}</small></button>`; }).join('')}</div>
+    <small class="hab-pie">Tus utensilios pelean solos. Su daño crece con tu Cucharón. Duran hasta la próxima Herencia.</small>`;
+  $('modal').classList.add('on');
+  $('modal-c').querySelectorAll('.habc').forEach(b => b.onclick = () => {
+    if (!pausa) return;   // un solo toque por eleccion
+    const id = b.dataset.id; E.saz.hab[id] = Math.min(D.MAX_EST, hab(id) + 1); E.saz.pend = Math.max(0, E.saz.pend - 1);
+    $('modal').classList.remove('on'); $('modal-c').innerHTML = ''; pausa = false; ultimo = performance.now();
+    son('mejora'); pose('celebra', 1); particulas(110, 420, 18, '#ffd54a', { vel: 260 }); aviso('✨ ' + D.HABILIDADES[id].nombre + ' ' + '★'.repeat(hab(id)), 'ok'); guardar();
+  });
+}
+const vivos = () => duendes.filter(d => !d.muerto && !d.huye && !D.DUENDES[d.k].dorado && d.x < W + 10);
+function armas(dt) {
+  const V = vivos(), b = dano();
+  for (const id of ['cucharon', 'limon', 'hervor', 'canela', 'tabla']) {
+    const e = hab(id); if (!e) continue;
+    cdA[id] = (cdA[id] ?? 1) - dt; if (cdA[id] > 0 || !V.length) continue;
+    if (id === 'cucharon') { cdA[id] = 1.5; for (const d of [...V].sort((p, q) => p.x - q.x).slice(0, 1 + (e > 2) + (e > 4))) proy.push({ tipo: 'cuch', x: 96, y: 430, d, t: 0, dur: 0.36, dmg: b * (1 + e) }); rigCh.bend.golpe(3); }
+    else if (id === 'limon') { cdA[id] = 3.2; for (const d of [...V].sort(() => Math.random() - 0.5).slice(0, 1 + e)) proy.push({ tipo: 'limon', d, t: 0, dur: 0.45, dmg: b * (1 + Math.ceil(e / 2)) }); }
+    else if (id === 'hervor') { cdA[id] = 5; const d0 = V.reduce((p, q) => p.x < q.x ? p : q); rayos.push({ y: d0.y - 45, t: 0 }); for (const d of V) if (Math.abs(d.y - d0.y) < 50) golpear(d, b * (2 + 2 * e), true); son('golpe'); temblar(2); }
+    else if (id === 'canela') { cdA[id] = 6; let m = V[0], mn = -1; for (const p of V) { const n = V.filter(q => Math.hypot(p.x - q.x, p.y - q.y) < 90).length; if (n > mn) { mn = n; m = p; } } proy.push({ tipo: 'canela', x: 96, y: 430, tx: m.x, ty: m.y - 40, t: 0, dur: 0.55, dmg: b * (3 + 3 * e), r: 80 + 8 * e }); }
+    else if (id === 'tabla') { const cerca = V.filter(d => d.x < W / 2 + 150); if (!cerca.length) { cdA[id] = 0.3; continue; } cdA[id] = 9 - e; for (const d of cerca) { d.x += 150; d.robaT = 0; golpear(d, b, true); } parts.push({ x: 170, y: 470, anillo: true, t: 0, vida: 0.5, r: 60, color: '#ffe082' }); son('golpe'); }
+  }
+  for (const p of proy) {
+    p.t += dt / p.dur; if (p.t < 1 || p.hecho) continue; p.hecho = true;
+    if (p.tipo === 'canela') { for (const d of vivos()) if (Math.hypot(d.x - p.tx, d.y - 40 - p.ty) < p.r) golpear(d, p.dmg, true); particulas(p.tx, p.ty, 22, '#ff9a3c', { vel: 300 }); parts.push({ x: p.tx, y: p.ty, anillo: true, t: 0, vida: 0.4, r: p.r * 0.5, color: '#ffb74d' }); temblar(3); son('golpe'); }
+    else if (!p.d.muerto) { golpear(p.d, p.dmg, true); if (p.tipo === 'limon') particulas(p.d.x, p.d.y - 60, 8, '#e6ee5a', { vel: 160 }); }
+  }
+  proy = proy.filter(p => p.t < 1); for (const ry of rayos) ry.t += dt; rayos = rayos.filter(ry => ry.t < 0.4);
+  alertaJefe = Math.max(0, alertaJefe - dt);
+}
+// Ruleta de la Abuela: premio al vencer al Rey de los Ladrones.
+function ruleta() {
+  if (enPortada) return;
+  const P = [['monedas', fmt(60 * E.oleada) + ' monedas', 'ico_monedas'], ['maiz', '80 kg de maíz', 'ing_maiz'], ['ing', '5 ingredientes', 'ico_ingredientes'], ['pocion', 'Una poción', 'ico_magia'],
+    ['estrella', '+1 ★ a un utensilio', 'cucharon_5'], ['monedasG', fmt(200 * E.oleada) + ' monedas', 'ico_monedas'], ['ing8', '8 ingredientes', 'ing_pina'], ['maizG', '150 kg de maíz', 'ing_maiz']];
+  const g = Math.floor(Math.random() * P.length), k = P[g][0]; let txt = P[g][1];
+  if (k === 'monedas') E.monedas += 60 * E.oleada; else if (k === 'monedasG') E.monedas += 200 * E.oleada; else if (k === 'maiz') E.maiz += 80; else if (k === 'maizG') E.maiz += 150;
+  else if (k === 'ing') darIng(5); else if (k === 'ing8') darIng(8);
+  else if (k === 'pocion') { const ids = Object.keys(D.POCIONES).filter(id => D.POCIONES[id].fama <= Math.max(2, E.fama.n)), id = ids[Math.floor(Math.random() * ids.length)]; E.poc[id] = (E.poc[id] || 0) + 1; txt = 'Poción: ' + D.POCIONES[id].nombre; }
+  else { const ids = Object.keys(E.saz.hab).filter(id => hab(id) < D.MAX_EST); if (ids.length) { const id = ids[Math.floor(Math.random() * ids.length)]; E.saz.hab[id]++; txt = D.HABILIDADES[id].nombre + ' ' + '★'.repeat(hab(id)); } else { E.monedas += 200 * E.oleada; txt = fmt(200 * E.oleada) + ' monedas'; } }
+  guardar(); pausa = true;
+  abrirModal(`<div class="hab-t">Ruleta de la Abuela</div><p>¡Venciste al Rey! Te llevas un premio.</p><div class="ruleta">${P.map(q => `<div class="rul"><img src="${IMG}${q[2]}.webp" alt=""><small>${q[1]}</small></div>`).join('')}</div><p class="rul-res" id="rul-res">&nbsp;</p>`,
+    { txt: 'Cobrar', f: () => { pausa = false; ultimo = performance.now(); pose('celebra', 1.5); pintarPanel(); } });
+  const ok = $('modal-ok'), cel = [...$('modal-c').querySelectorAll('.rul')]; ok.disabled = true;
+  let i = 0, total = P.length * 3 + g, ms = 55;
+  const paso = () => { cel.forEach((c, j) => c.classList.toggle('on', j === i % P.length)); son('tap');
+    if (i >= total) { cel[g].classList.add('gana'); $('rul-res').textContent = '🎁 ' + txt; ok.disabled = false; son('nivel'); vibrar(60); return; }
+    i++; ms += i > total - 8 ? 45 : 4; setTimeout(paso, ms); };
+  paso();
 }
 
 // ── TOQUES ──
@@ -326,7 +396,7 @@ function cuadro(ahora) {
   let dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
   if (paro > 0) { paro -= dt; dt = dt * 0.08; }   // pausa de golpe: el mundo casi se congela un instante
   T += dt;
-  if (E.elegido && !enPortada) logica(dt); else { animarCh(dt); }
+  if (E.elegido && !enPortada && !pausa) logica(dt); else { animarCh(dt); }
   dibujar();
   requestAnimationFrame(cuadro);
 }
@@ -342,6 +412,7 @@ setInterval(() => {
 function logica(dt) {
   const ahoraMs = Date.now();
   if (E.monedas > monPrev) E.ganado += E.monedas - monPrev; monPrev = E.monedas;
+  if (E.saz.pend > 0 && !$('modal').classList.contains('on')) { elegirHab(); if (pausa) return; }
   // ollas
   let cocinando = false;
   for (let i = 0; i < nOllas(); i++) {
@@ -385,10 +456,11 @@ function logica(dt) {
   proxOleada -= dt;
   if (proxOleada <= 0) {
     colaSpawn.push(...D.oleada(E.oleada)); proxOleada = D.OLEADA_SEG;
+    { const ht = habTotal(), tipos = D.oleada(E.oleada).filter(k => k !== 'jefe'); for (let i = 0; i < Math.min(30, Math.round(ht * 1.3)); i++) colaSpawn.splice(Math.floor(Math.random() * colaSpawn.length), 0, tipos[i % tipos.length]); }
     if (E.oleada % 10 === 0) aviso('👑 ¡Llega el Rey de los Ladrones! Tócalo muchas veces.', 'err');
   }
   tSpawn -= dt;
-  if (colaSpawn.length && tSpawn <= 0) { spawnDuende(colaSpawn.shift()); tSpawn = 0.9; if (!colaSpawn.length) { E.oleada++; E.stats.oleadas++; E.stats.oleadaMax = Math.max(E.stats.oleadaMax || 0, E.oleada); sumar('oleada'); } }
+  if (colaSpawn.length && tSpawn <= 0) { spawnDuende(colaSpawn.shift()); tSpawn = Math.max(0.22, 0.9 - colaSpawn.length * 0.03); if (!colaSpawn.length) { E.oleada++; E.stats.oleadas++; E.stats.oleadaMax = Math.max(E.stats.oleadaMax || 0, E.oleada); sumar('oleada'); } }
   // duendes
   const metaX = W / 2 + 10;
   for (const d of duendes) {
@@ -418,6 +490,7 @@ function logica(dt) {
     }
   }
   duendes = duendes.filter(d => !d.muerto && d.x < W + 80);
+  armas(dt);
   // ayudante con honda
   if (ayud().golpe) { ayudT -= dt; if (ayudT <= 0) { ayudT = 2; const d = duendes.filter(dd => !dd.muerto).sort((a, b) => a.x - b.x)[0]; if (d) { piedras.push({ x0: W - 52, y0: 395, d, t: 0 }); rigAy.bend.golpe(-4); rigAy.sy.golpe(-2); } } }
   for (const pd of piedras) { pd.t += dt * 2.6; if (pd.t >= 1 && !pd.hecho) { pd.hecho = true; if (!pd.d.muerto) { particulas(pd.d.x, pd.d.y - 60, 5, '#9e9e9e', { vel: 110 }); golpear(pd.d, ayud().golpe); } } }
@@ -457,7 +530,7 @@ function dibujar() {
   A.VASO_SPR.k = 'vaso_' + (E.eq.vaso + 1);
   // cartel de la chicheria
   x.save(); x.font = '22px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#fff3c4'; x.strokeStyle = '#3e2716'; x.lineWidth = 5;
-  x.strokeText('CHICHA MORADA', W / 2, PISO - 268); x.fillText('CHICHA MORADA', W / 2, PISO - 268); x.restore();
+  /* el letrero se quito: ahi van la barra de sazon y los utensilios */ x.restore();
   // ollas y fuegos
   for (let i = 0; i < nOllas(); i++) {
     const o = E.ollas[i], cocina = !!o.fin;
@@ -476,7 +549,7 @@ function dibujar() {
   // personajes ordenados por profundidad
   const orden = [...duendes.filter(d => !d.muerto).map(d => ({ y: d.y, f: () => {
     const im = A.img('duende_' + d.var);
-    if (im) { R.dibujarRig(x, im, d.x, d.y, A.altoDuende(d.k, 0.8), d.rig, !!d.huye, D.DUENDES[d.k].dorado ? 'sepia(1) saturate(3.2) hue-rotate(-8deg) brightness(1.15)' : ''); if (d.lleva && d.huye) A.dibujarVaso(x, d.x + 18, d.y - A.altoDuende(d.k, 0.8) * 0.6 + d.rig.dy, 0.8); }
+    if (im) { (d.rig.legAmp > 0.04 ? R.dibujarHoja : R.dibujarRig)(x, im, d.x, d.y, A.altoDuende(d.k, 0.8), d.rig, !!d.huye, D.DUENDES[d.k].dorado ? 'sepia(1) saturate(3.2) hue-rotate(-8deg) brightness(1.15)' : '', d.rig.legPh); if (d.lleva && d.huye) A.dibujarVaso(x, d.x + 18, d.y - A.altoDuende(d.k, 0.8) * 0.6 + d.rig.dy, 0.8); }
     else A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye, var: d.var });
     const hb = A.altoDuende(d.k, 0.8) + 8;
     if (D.DUENDES[d.k].alcance && d.robaT > 0 && !d.huye) {   // la cuerda del gancho hasta las jarras
@@ -525,10 +598,36 @@ function dibujar() {
       x.strokeText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.fillText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.restore();
     }
   }
+  for (const ry of rayos) { const al = 1 - ry.t / 0.4; x.save(); x.globalAlpha = al; const gr = x.createLinearGradient(0, ry.y - 22, 0, ry.y + 22); gr.addColorStop(0, 'rgba(214,92,170,0)'); gr.addColorStop(0.35, '#d65caa'); gr.addColorStop(0.5, '#fff'); gr.addColorStop(0.65, '#d65caa'); gr.addColorStop(1, 'rgba(214,92,170,0)'); x.fillStyle = gr; x.fillRect(130, ry.y - 22, W, 44); x.restore(); }
+  for (const p of proy) {
+    const k = Math.min(1, p.t); let px, py, im, s = 40, rot = T * 18;
+    if (p.tipo === 'cuch') { px = p.x + (p.d.x - p.x) * k; py = p.y + (p.d.y - 60 - p.y) * k - Math.sin(k * Math.PI) * 40; im = A.img('cucharon_' + (E.eq.cucharon + 1)); s = 46; }
+    else if (p.tipo === 'limon') { px = p.d.x; py = p.d.y - 60 - (1 - k) * 280; im = A.img('ing_limon'); s = 28; rot = T * 6; }
+    else { px = p.x + (p.tx - p.x) * k; py = p.y + (p.ty - p.y) * k - Math.sin(k * Math.PI) * 110; im = A.img('ing_canela'); s = 32; }
+    if (im) { const q = s / Math.max(im.width, im.height); x.save(); x.translate(px, py); x.rotate(rot); x.drawImage(im, -im.width * q / 2, -im.height * q / 2, im.width * q, im.height * q); x.restore(); }
+  }
   // COMBO grande al centro
   if (comboVer > 0 && combo >= 3) { const s = 1 + Math.max(0, comboVer - 0.8) * 2.5; x.save(); x.globalAlpha = Math.min(1, comboVer * 2); x.translate(W / 2, 205); x.scale(s, s); x.rotate(-0.06); x.font = '38px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 8; x.strokeStyle = '#3a1d00'; const g = x.createLinearGradient(0, -30, 0, 10); g.addColorStop(0, '#fff3b0'); g.addColorStop(1, '#f6a01e'); x.fillStyle = g; x.strokeText('COMBO ×' + combo, 0, 0); x.fillText('COMBO ×' + combo, 0, 0); x.restore(); }
   R.vineta(x, W, H);
   if (!E.elegido) return;
+  { // barra de sazon (o la vida del Rey) y utensilios de batalla
+    const jefe = duendes.find(d => !d.muerto && D.DUENDES[d.k].jefe), bx = 14, by = 70, bw = W - 28;
+    x.save(); x.fillStyle = 'rgba(15,6,20,.78)'; x.beginPath(); x.roundRect(bx, by, bw, 14, 7); x.fill();
+    const k = jefe ? Math.max(0, jefe.vida / jefe.max) : E.saz.xp / D.sazReq(E.saz.n), gr = x.createLinearGradient(bx, 0, bx + bw, 0);
+    if (jefe) { gr.addColorStop(0, '#ffb300'); gr.addColorStop(1, '#e53935'); } else { gr.addColorStop(0, '#9be36f'); gr.addColorStop(1, '#2e9d57'); }
+    if (k > 0.01) { x.fillStyle = gr; x.beginPath(); x.roundRect(bx + 1.5, by + 1.5, (bw - 3) * Math.min(1, k), 11, 5.5); x.fill(); }
+    x.strokeStyle = '#ffe9b0'; x.lineWidth = 1.5; x.beginPath(); x.roundRect(bx, by, bw, 14, 7); x.stroke();
+    x.font = '12px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = '#1a0a1e'; x.fillStyle = '#fff';
+    const tb = jefe ? '👑 Rey de los Ladrones' : 'Sazón ' + E.saz.n; x.strokeText(tb, W / 2, by + 11); x.fillText(tb, W / 2, by + 11);
+    let ix = 14; for (const [id, e] of Object.entries(E.saz.hab)) { const im = A.img(D.HABILIDADES[id].img);
+      x.fillStyle = 'rgba(15,6,20,.72)'; x.beginPath(); x.roundRect(ix, 89, 28, 28, 7); x.fill(); x.strokeStyle = e >= D.MAX_EST ? '#ffd54a' : 'rgba(255,233,176,.5)'; x.lineWidth = 1.5; x.stroke();
+      if (im) { const q = 22 / Math.max(im.width, im.height); x.drawImage(im, ix + 14 - im.width * q / 2, 102 - im.height * q / 2, im.width * q, im.height * q); }
+      x.font = '11px "Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 3; x.strokeStyle = '#1a0a1e'; x.fillStyle = '#ffd54a'; x.strokeText(e, ix + 27, 117); x.fillText(e, ix + 27, 117); ix += 32; }
+    x.restore();
+    if (alertaJefe > 0) { const pu = 0.5 + 0.5 * Math.sin(T * 14); x.save(); x.fillStyle = `rgba(200,20,20,${0.12 + 0.12 * pu})`; x.fillRect(0, 0, W, H);
+      x.translate(W / 2, 230); x.scale(1 + pu * 0.06, 1 + pu * 0.06); x.font = '40px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 8; x.strokeStyle = '#3a0000'; x.fillStyle = '#fff';
+      x.strokeText('¡ASALTO DEL REY!', 0, 0); x.fillText('¡ASALTO DEL REY!', 0, 0); x.font = '54px "DQ Iconos", system-ui'; x.fillStyle = '#ffd54a'; x.strokeText('⚠', 0, -52); x.fillText('⚠', 0, -52); x.restore(); }
+  }
   // proxima oleada
   x.save(); x.font = '17px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = colaSpawn.length ? '#ff8a80' : '#fff';
   if (horaPunta()) { x.save(); x.font = '16px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'left'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = '#ffd54a'; x.strokeText('🔔 Hora punta', 12, PISO + 24); x.fillText('🔔 Hora punta', 12, PISO + 24); x.restore(); }
@@ -791,7 +890,7 @@ $('panel').addEventListener('click', ev => {
     if (!confirmaH) { confirmaH = true; pintarPanelSuave(); setTimeout(() => { confirmaH = false; }, 6000); return; }
     confirmaH = false; const b0 = nuevo();
     E.stats.oleadaMax = Math.max(E.stats.oleadaMax || 0, E.oleada); E.stats.herencias++;
-    E.rs += g; E.ganado = 0; E.monedas = b0.monedas; E.maiz = b0.maiz; E.stock = 0; E.nv = b0.nv; E.ollas = b0.ollas; E.oleada = 1;
+    E.rs += g; E.ganado = 0; E.monedas = b0.monedas; E.maiz = b0.maiz; E.stock = 0; E.nv = b0.nv; E.saz = b0.saz; proy = []; rayos = []; E.ollas = b0.ollas; E.oleada = 1;
     duendes = []; colaSpawn = []; proxOleada = 12; monPrev = E.monedas; subMej = 'puesto';
     son('nivel'); pose('celebra', 2.5); temblar(6); particulas(W / 2, 260, 40, '#ffd54a', { vel: 360, moneda: true });
     abrirModal(`<h2>La herencia de la Abuela</h2><p>«Toma, ${E.personaje === 'chichero' ? 'hijito' : 'hijita'}: mis recetas secretas.» Recibes <b>${g}</b> Recetas Secretas. Ahora tienes ${E.rs}: tu chicha vale +${Math.round(E.rs * D.HERENCIA.precio * 100)} % y se cocina +${Math.round(E.rs * D.HERENCIA.coccion * 100)} % más rápido, para siempre.</p><p>Tu puesto vuelve a empezar, pero conservas tus herramientas, tu fama, el pase y tus pociones.</p>`);
@@ -880,6 +979,7 @@ $('p-como').onclick = () => { son('tap'); abrirModal(`<h2>Cómo se juega</h2><ul
   <li><img src="/assets/chicha-wars/olla_1.webp" alt=""><span>Tus ollas cocinan solas. Tócalas para remover (salen antes) y para servir cuando están listas.</span></li>
   <li><img src="/assets/chicha-wars/casera.webp" alt=""><span>Los clientes compran los vasos de tus jarras. Si se llenan, vende al por mayor.</span></li>
   <li><img src="/assets/chicha-wars/duende_pirata.webp" alt=""><span>Los duendes vienen en oleadas a robarte: tócalos para espantarlos. Sueltan ingredientes.</span></li>
+  <li><img src="/assets/chicha-wars/tabla_3.webp" alt=""><span>Cada duende espantado sube tu Sazón. Al llenarse la barra eliges 1 de 3 utensilios que pelean solos: cucharón volador, lluvia de limón, canela explosiva…</span></li>
   <li><img src="/assets/chicha-wars/cucharon_3.webp" alt=""><span>Con las monedas mejora ollas, fuego, recetas y herramientas. Con ingredientes prepara pociones en el Taller.</span></li>
   <li><img src="/assets/chicha-wars/ico_pergamino.webp" alt=""><span>Sube tu Fama, completa el Pase y, cuando quieras, recibe la Herencia de la Abuela para volver más fuerte.</span></li>
   <li><img src="/assets/chicha-wars/ico_reloj.webp" alt=""><span>Aunque cierres el juego, tu puesto sigue vendiendo unas horas.</span></li></ul>`); };
@@ -912,4 +1012,4 @@ pintarPanel(); pintarHud();
 requestAnimationFrame(cuadro);
 bajar();
 // Para pruebas (consola): __cw.avanzar(segundos) corre el juego sin esperar.
-window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, jugar() { portadaLista(); if (enPortada) $('p-jugar').click(); }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };
+window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, saz(n = 10) { ganarSazon(n); }, ruleta() { ruleta(); }, jugar() { portadaLista(); if (enPortada) $('p-jugar').click(); }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };

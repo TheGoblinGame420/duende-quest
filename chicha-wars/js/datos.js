@@ -252,3 +252,19 @@ export const LOGROS = [
   ...esc('lh', 'herencias', n => n === 1 ? 'Recibe tu primera herencia' : `Recibe ${n} herencias`, [[1, 0, 10], [5, 0, 20]]),
   ...esc('ll', 'herrLeg', n => 'Consigue una herramienta legendaria', [[1, 10000, 15]]),
 ];
+
+// ── SAZON Y UTENSILIOS DE BATALLA (bucle de partida: espantas → sube la sazon → eliges 1 de 3) ──
+// Duran hasta la siguiente Herencia. Como mucho MAX_HAB distintos, cada uno hasta MAX_EST estrellas.
+export const sazReq = n => 5 + n * 4;
+export const SAZ_XP = { ladron: 1, rapido: 1, gordo: 3, gancho: 2, jefe: 20, dorado: 5 };
+export const MAX_HAB = 6, MAX_EST = 5;
+export const HABILIDADES = {
+  cucharon: { nombre: 'Cucharón volador', img: 'cucharon_3', d: e => `Lanza ${1 + (e > 2) + (e > 4)} ${e > 2 ? 'cucharones' : 'cucharón'} al duende más cercano. Daño ×${1 + e}` },
+  limon:    { nombre: 'Lluvia de limón', img: 'ing_limon', d: e => `Caen limones sobre ${1 + e} duendes. Daño ×${1 + Math.ceil(e / 2)}` },
+  hervor:   { nombre: 'Chorro hirviente', img: 'olla_3', d: e => `Un chorro de chicha hirviendo barre una fila entera. Daño ×${2 + 2 * e}` },
+  canela:   { nombre: 'Canela explosiva', img: 'ing_canela', d: e => `Bomba de canela en el grupo más grande. Daño ×${3 + 3 * e}` },
+  tabla:    { nombre: 'Tabla escudo', img: 'tabla_3', d: e => `Una onda empuja lejos a los duendes que llegan al puesto, cada ${9 - e} s` },
+  oro:      { nombre: 'Colador de oro', img: 'colador_3', pasiva: true, d: e => `+${20 * e} % de monedas por cada duende` },
+  fuego:    { nombre: 'Fuego vivo', img: 'ico_fogata', pasiva: true, d: e => `+${8 * e} % de velocidad de cocción` },
+  fiesta:   { nombre: 'Vaso de fiesta', img: 'vaso_3', pasiva: true, d: e => `+${8 * e} % de precio por vaso` },
+};

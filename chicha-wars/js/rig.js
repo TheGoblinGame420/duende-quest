@@ -115,3 +115,41 @@ export function vineta(x, W, H) {
   }
   x.drawImage(_vin, 0, 0);
 }
+
+// ── HOJA DE SPRITES ──
+// De un dibujo quieto se hornean 12 cuadros de caminata en un lienzo aparte: el cuerpo sube y baja, la cabeza
+// se mece y cada pierna (mitad izquierda y derecha de los pies) avanza y se levanta en contrafase.
+// Dibujar un cuadro ya hecho cuesta una sola llamada: hace posibles las hordas de 40 duendes en un celular.
+const HOJAS = new Map(), FR = 12;
+export function hoja(img, hpx = 240) {
+  let hj = HOJAS.get(img); if (hj) return hj;
+  const s = hpx / img.height, w = Math.ceil(img.width * s), fw = w + Math.ceil(hpx * 0.26), fh = Math.ceil(hpx * 1.1);
+  const c = document.createElement('canvas'); c.width = fw * FR; c.height = fh;
+  const g = c.getContext('2d'), NS = 40, sh = img.height / NS, dh = hpx / NS;
+  for (let f = 0; f < FR; f++) {
+    const ph = f / FR * Math.PI * 2, ox = f * fw + fw / 2, bob = -Math.abs(Math.sin(ph)) * hpx * 0.03;
+    for (let i = 0; i < NS; i++) {
+      const t = 1 - (i + 0.5) / NS, y = fh - hpx + i * dh;
+      let dx = -0.07 * t * t * hpx + Math.sin(ph) * 0.012 * hpx * t;
+      if (t > 0.72) dx += Math.sin(ph + 0.9) * 0.016 * hpx * ((t - 0.72) / 0.28);
+      if (t < 0.34) {
+        const q = 1 - t / 0.34;
+        for (const [lado, sg] of [[0, 1], [1, -1]]) {
+          const ldx = Math.cos(ph) * sg * 0.05 * hpx * q, ldy = -Math.max(0, Math.sin(ph) * sg) * 0.06 * hpx * q + bob * (1 - q);
+          g.drawImage(img, lado * img.width / 2, i * sh, img.width / 2, sh + 0.5, ox - w / 2 + lado * w / 2 + dx + ldx, y + ldy, w / 2 + 0.7, dh + 0.9);
+        }
+      } else g.drawImage(img, 0, i * sh, img.width, sh + 0.5, ox - w / 2 + dx, y + bob, w, dh + 0.9);
+    }
+  }
+  hj = { c, fw, fh, hpx }; HOJAS.set(img, hj); return hj;
+}
+export function dibujarHoja(x, img, px, py, h, r, flip, filtro, fase) {
+  const hj = hoja(img), f = ((Math.floor(fase / (Math.PI * 2) * FR) % FR) + FR) % FR, k = h / hj.hpx;
+  const sy = Math.max(0.6, Math.min(1.45, r.sy.v)), sx = 1 / Math.sqrt(sy);
+  x.save(); x.globalAlpha = 0.24 * r.alpha; x.fillStyle = '#000'; x.beginPath(); x.ellipse(px, py, hj.fw * k * 0.3, hj.fw * k * 0.075, 0, 0, Math.PI * 2); x.fill(); x.restore();
+  x.save(); x.translate(px + r.bend.v * h * 0.4, py); if (flip) x.scale(-1, 1); x.scale(sx, sy);
+  if (r.alpha < 1) x.globalAlpha = r.alpha;
+  if (filtro || r.flash > 0.05) x.filter = (filtro || '') + (r.flash > 0.05 ? ` brightness(${1 + r.flash * 1.6}) saturate(${1 - r.flash * 0.5})` : '');
+  x.drawImage(hj.c, f * hj.fw, 0, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
+  x.restore();
+}

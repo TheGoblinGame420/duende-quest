@@ -5,7 +5,7 @@
 // spr() las usa en lugar de estos dibujos sin cambiar el juego.
 // Origen de cada figura: los pies (x, y). s = escala.
 // ═══════════════════════════════════════════════════════
-import * as R from './rig.js?v=387';
+import * as R from './rig.js?v=388';
 const TINTA = '#2a1712';
 const PI = Math.PI;
 
@@ -375,6 +375,14 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
   for (let j = 0; j < 6; j++) for (let i = 0; i < 9; i++) { x.beginPath(); x.ellipse((i + (j % 2) * 0.5) * W / 8, piso + 14 + j * 26, 22, 9, 0, 0, PI * 2); x.stroke(); }
   x.restore();
   }
+  // puesto modelado en Blender (tools/cw_puesto_blender.py): postes y toldo detras de los clientes
+  _noche = noche;
+  const ip = img('puesto_toldo_' + Math.min(2, toldo));
+  if (ip) {
+    x.save(); if (noche) x.filter = 'brightness(.6) saturate(.9)'; x.drawImage(ip, 0, piso - 290, W, 315); x.restore();
+    if (noche) for (const px of [60, W - 60]) { const g = x.createRadialGradient(px, piso - 175, 2, px, piso - 175, 90); g.addColorStop(0, 'rgba(255,200,90,.45)'); g.addColorStop(1, 'rgba(255,200,90,0)'); x.fillStyle = g; x.fillRect(px - 90, piso - 265, 180, 180); }
+    return;
+  }
   // puesto: postes y toldo de rayas
   const tTop = piso - 250, tBot = piso - 205;
   for (const px of [36, W - 36]) { rr(x, px - 7, tTop + 10, 14, piso - tTop - 10, 4); trazo(x, '#7a4e2b', 3); }
@@ -393,7 +401,10 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
 }
 
 // Mostrador del puesto (se dibuja despues de los clientes: les tapa las piernas).
+let _noche = false;
 export function mostrador(x, W, piso) {
+  const im3 = img('puesto_mostrador');
+  if (im3) { x.save(); if (_noche) x.filter = 'brightness(.66) saturate(.9)'; x.drawImage(im3, 0, piso - 290, W, 315); x.restore(); return; }
   rr(x, 14, piso - 62, W - 28, 30, 6); trazo(x, grad(x, piso - 62, piso - 32, '#8d5a34'), 3);
   rr(x, 24, piso - 34, W - 48, 34, 4); trazo(x, grad(x, piso - 34, piso, '#6d4426'), 3);
   x.save(); x.globalAlpha = 0.25; x.strokeStyle = '#3e2716'; x.lineWidth = 2;
