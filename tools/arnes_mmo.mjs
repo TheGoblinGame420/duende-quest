@@ -1391,6 +1391,10 @@ async function pruebasChichaWars() {
   r = await pedir('dueno', { a: 'darPase', cod });
   const ra = await pedir('a', { a: 'cargar' });
   chequear(r.ok && ra.premium && ra.abonos.some(x => x.premium), 'el dueño activa el pase con el codigo y le llega al jugador');
+  await pedir('a', { a: 'guardar', est: { ...est(100, 1, 1), oleada: 14 } });
+  await pedir('b', { a: 'guardar', est: { ...est(100, 1, 1), oleada: 9 } });
+  r = await pedir('b', { a: 'ranking' });
+  chequear(r.ok && r.ranking[0].o === 14 && r.ranking[0].n === 'Chichera A' && r.mio === 2, 'ranking de oleadas ordenado con mi puesto');
   mundo.cwIdentidad = orig;
 }
 

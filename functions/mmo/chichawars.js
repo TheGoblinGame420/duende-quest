@@ -70,6 +70,20 @@ export const ChichaWars = {
     return r;
   },
 
+  // Ranking de la oleada mas alta (los 50 mejores). La oleada la manda el cliente: sirve para la beta, no es a prueba de trampas.
+  async cwRanking(id, est) {
+    const o = Math.floor(Number(est.oleada) || 0);
+    if (o < 2) return;
+    const l = (await this.state.storage.get('cwr')) || [];
+    let e = l.find(x => x.uid === id.uid);
+    if (e && e.o >= o) return;
+    const nombre = (id.nombre || (id.cuenta ? 'Chichera' : 'Invitado')).slice(0, 16) + (id.cuenta ? '' : ' ' + id.uid.slice(-3));
+    if (!e) { e = { uid: id.uid, n: nombre, o, t: Date.now() }; l.push(e); } else { e.o = o; e.n = nombre; e.t = Date.now(); }
+    l.sort((a, b) => b.o - a.o || a.t - b.t);
+    if (l.length > 50) l.length = 50;
+    await this.state.storage.put('cwr', l);
+  },
+
   async cwHttp(request) {
     // Tope por IP: 90 peticiones por minuto (guardar cada 30 s + acciones sobra).
     const ip = request.headers.get('CF-Connecting-IP') || '';
@@ -94,7 +108,14 @@ export const ChichaWars = {
     if (a === 'cargar') { await guardar(); return resp({ est: r.est }); }
     if (a === 'guardar') {
       const est = limpiarEst(b.est); if (!est) return no('Partida no válida.');
-      r.est = est; r.t = Date.now(); await guardar(); return resp({});
+      r.est = est; r.t = Date.now(); await guardar();
+      await this.cwRanking(id, est);
+      return resp({});
+    }
+    if (a === 'ranking') {
+      const l = (await this.state.storage.get('cwr')) || [];
+      const i = l.findIndex(x => x.uid === id.uid);
+      return resp({ ranking: l.slice(0, 20).map((x, k) => ({ p: k + 1, n: x.n, o: x.o, yo: x.uid === id.uid })), mio: i >= 0 ? i + 1 : 0 });
     }
     // Las acciones de dinero del juego leen la partida que llega con la peticion (la mas nueva).
     const conEst = () => { const est = limpiarEst(b.est); if (!est) return null; r.est = est; return est; };

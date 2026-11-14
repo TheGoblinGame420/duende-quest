@@ -6,10 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=384';
-import * as A from './arte.js?v=384';
-import { pedir } from './red.js?v=384';
-import * as R from './rig.js?v=384';
+import * as D from './datos.js?v=385';
+import * as A from './arte.js?v=385';
+import { pedir } from './red.js?v=385';
+import * as R from './rig.js?v=385';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -347,7 +347,7 @@ function logica(dt) {
       d.rig.legPh += mov ? d.vel * vel * dt * 0.11 : 0; d.rig.legAmp += ((mov ? (d.k === 'rapido' ? 0.13 : 0.09) : 0) - d.rig.legAmp) * Math.min(1, dt * 8);
       d.rig.lean.obj = mov ? -0.07 : 0;   /* se inclina hacia donde corre (al huir la imagen va volteada) */ d.rig.breathe = Math.sin(T * 3 + d.y) * 0.02;
       d.rig.dy = mov ? -Math.abs(Math.sin(d.rig.legPh)) * 7 : 0;
-      if (D.DUENDES[d.k].jefe && mov && Math.abs(Math.sin(d.rig.legPh)) < 0.08) temblar(2);
+      if (D.DUENDES[d.k].jefe && mov && Math.abs(Math.sin(d.rig.legPh)) < 0.08) { temblar(3); if (Math.random() < 0.5) parts.push({ x: d.x + azar(-20, 20), y: d.y, vx: azar(-60, 60), vy: -60, g: 200, vida: 0.5, t: 0, r: azar(3, 6), color: 'rgba(160,120,80,.7)' }); }
       R.rigPaso(d.rig, dt); }
     if (def.dorado) { d.x -= d.vel * dt; if (d.x < -70) d.muerto = true; if (Math.random() < 0.3) parts.push({ x: d.x + azar(-10, 10), y: d.y - azar(20, 90), vx: 0, vy: -20, g: 0, vida: 0.6, t: 0, r: azar(1.5, 3.5), color: '#ffe082' }); continue; }
     if (d.huye) { d.x += d.vel * 1.15 * dt; continue; }
@@ -427,6 +427,18 @@ function dibujar() {
     if (im) { R.dibujarRig(x, im, d.x, d.y, A.altoDuende(d.k, 0.8), d.rig, !!d.huye, D.DUENDES[d.k].dorado ? 'sepia(1) saturate(3.2) hue-rotate(-8deg) brightness(1.15)' : ''); if (d.lleva && d.huye) A.dibujarVaso(x, d.x + 18, d.y - A.altoDuende(d.k, 0.8) * 0.6 + d.rig.dy, 0.8); }
     else A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye, var: d.var });
     const hb = A.altoDuende(d.k, 0.8) + 8;
+    if (D.DUENDES[d.k].alcance && d.robaT > 0 && !d.huye) {   // la cuerda del gancho hasta las jarras
+      const k = Math.min(1, d.robaT / 1.5), hx = d.x - 30, hy = d.y - 70, tx = hx + (W - 82 - hx) * k, ty = hy + (PISO - 80 - hy) * k - Math.sin(k * Math.PI) * 30;
+      x.save(); x.strokeStyle = '#e8e0c8'; x.lineWidth = 2; x.beginPath(); x.moveTo(hx, hy); x.quadraticCurveTo((hx + tx) / 2, Math.min(hy, ty) - 40, tx, ty); x.stroke();
+      x.lineWidth = 3; x.strokeStyle = '#9e9e9e'; x.beginPath(); x.arc(tx, ty + 6, 6, 0, Math.PI); x.stroke(); x.restore();
+    }
+    if (D.DUENDES[d.k].jefe) {   // corona y nombre del Rey de los Ladrones
+      const cy = d.y - A.altoDuende(d.k, 0.8) * 0.93 + d.rig.dy, cx = d.x + d.rig.bend.v * 40;
+      x.save(); x.translate(cx, cy); x.rotate(Math.sin(T * 3) * 0.08); x.beginPath(); x.moveTo(-22, 0); x.lineTo(-24, -24); x.lineTo(-11, -12); x.lineTo(0, -30); x.lineTo(11, -12); x.lineTo(24, -24); x.lineTo(22, 0); x.closePath();
+      const gg = x.createLinearGradient(0, -30, 0, 0); gg.addColorStop(0, '#fff1a8'); gg.addColorStop(1, '#d4a017'); x.fillStyle = gg; x.fill(); x.lineWidth = 2.5; x.strokeStyle = '#5a3a00'; x.stroke();
+      x.fillStyle = '#e53935'; x.beginPath(); x.arc(0, -8, 4, 0, Math.PI * 2); x.fill(); x.restore();
+      x.save(); x.font = '14px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = '#ffd54a'; x.strokeText('Rey de los Ladrones', d.x, d.y - hb - 6); x.fillText('Rey de los Ladrones', d.x, d.y - hb - 6); x.restore();
+    }
     if (d.max > 1) { x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(d.x - 24, d.y - hb, 48, 6); x.fillStyle = '#ef5350'; x.fillRect(d.x - 24, d.y - hb, 48 * Math.max(0, d.vida / d.max), 6); }
   } })), { y: 590, f: () => { const sk = D.SKINS[E.skin[E.personaje]], im = A.img(SPR_PJ[E.personaje]); if (im) R.dibujarRig(x, im, 70, 590, 205, rigCh, false, sk.filtro); else (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...sk.paleta, filtro: sk.filtro }); } }];
   if (E.nv.ayudante > 0 && A.img('ayudante')) orden.push({ y: 455, f: () => R.dibujarRig(x, A.img('ayudante'), W - 46, 455, 112, rigAy, true) });
@@ -493,7 +505,7 @@ function aviso(t, tipo) {
 // ── PANELES ──
 let tab = 'cocina';
 function marcarTab(id) { const b = document.querySelector(`.tab[data-t="${id}"]`); if (b && tab !== id) b.classList.add('punto'); }
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); });
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); if (tab === 'misiones') cargarRanking(); });
 let panelPrev = '';
 function pintarPanelSuave() { const h = htmlPanel(); if (h !== panelPrev) { panelPrev = h; $('panel').innerHTML = h; } }
 function pintarPanel() { panelPrev = htmlPanel(); const pn = $('panel'); pn.innerHTML = panelPrev; pn.scrollTop = 0; pn.classList.remove('entra'); void pn.offsetWidth; pn.classList.add('entra'); clearTimeout(pintarPanel.t); pintarPanel.t = setTimeout(() => pn.classList.remove('entra'), 450); }
@@ -560,6 +572,7 @@ function htmlPanel() {
   }
   if (tab === 'misiones') {
     let h = '<div class="sub">Se renuevan a medianoche (hora de Perú)</div>';
+    h += htmlRanking();
     for (const [i, m] of E.mis.l.entries()) {
       const def = D.MISIONES.find(x => x.id === m.id);
       h += `<div class="card"><div class="ico">${m.hecho ? '✓' : '🎯'}</div><div class="tx"><b>${def.txt(m.n)}</b><div class="barra"><i style="width:${m.prog / m.n * 100}%"></i></div><small>${fmt(m.prog)} / ${fmt(m.n)} · +${def.premio} monedas y ${D.XP.mision} XP de pase</small></div>${btn(m.cobrado ? '✓' : 'Cobrar', 'mision', { i }, !m.hecho || m.cobrado, m.hecho && !m.cobrado ? 'oro' : '')}</div>`;
@@ -596,6 +609,14 @@ function htmlPanel() {
     return h;
   }
   return '';
+}
+// Ranking de la oleada mas alta (servidor: cwRanking).
+let RANK = null;
+async function cargarRanking() { const r = await pedir('ranking'); if (r && r.ok) { RANK = r; if (tab === 'misiones') pintarPanel(); } }
+function htmlRanking() {
+  if (!RANK) return '<div class="card proximo"><div class="ico">🏆</div><div class="tx"><b>Ranking de oleadas</b><small>Cargando…</small></div></div>';
+  const fila = x => `<div class="rk${x.yo ? ' yo' : ''}"><b>${x.p}</b><span>${esc(x.n)}</span><i>Oleada ${x.o}</i></div>`;
+  return `<div class="card rank"><div class="tx"><b>🏆 Ranking de oleadas</b><small>Aguanta más oleadas que nadie. ${RANK.mio ? 'Vas en el puesto ' + RANK.mio + '.' : 'Supera la oleada 2 para entrar.'}</small><div class="rks">${RANK.ranking.slice(0, 10).map(fila).join('') || '<small>Aún no hay nadie: ¡sé el primero!</small>'}</div></div></div>`;
 }
 // Cambio a oro y mercado entre jugadores (necesitan la cuenta de Duende Quest).
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -696,7 +717,12 @@ function abrirModal(html, alCerrar) {
   $('modal').classList.add('on');
   $('modal-ok').onclick = () => { $('modal').classList.remove('on'); if (alCerrar) alCerrar.f(); };
 }
-$('b-sonido').onclick = () => { E.sonido = !E.sonido; $('b-sonido').textContent = E.sonido ? '🔊' : '🔇'; guardar(); };
+// Musica de fondo (la de Duende Quest), baja; arranca con el primer toque (los navegadores no dejan antes).
+const MUSICA = new Audio('/audio/bg_music.mp3'); MUSICA.loop = true; MUSICA.volume = 0.28;
+const musica = () => { try { if (E.sonido && !document.hidden) MUSICA.play().catch(() => {}); else MUSICA.pause(); } catch (e) {} };
+addEventListener('pointerdown', musica, { once: true });
+document.addEventListener('visibilitychange', musica);
+$('b-sonido').onclick = () => { E.sonido = !E.sonido; $('b-sonido').textContent = E.sonido ? '🔊' : '🔇'; musica(); guardar(); };
 $('b-sonido').textContent = E.sonido ? '🔊' : '🔇';
 
 function inicio() {
