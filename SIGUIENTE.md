@@ -3738,3 +3738,5 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 
 ## Chicha Wars v2 (14-nov-2026)
 - Cuenta en el servidor por HTTP (`POST /mmo/cw` → `functions/mmo/chichawars.js`, worker.js y `run_worker_first`): misma identidad de Duende Quest (tg/web/inv + uidPrincipal), sin entrar al mundo. Guarda la partida (`cw:<uid>`), abonos con ack, cambio 10 monedas = 1 oro (tope 1000/día, solo cuentas, necesita personaje en DQ), mercado `cwm` de maíz y vasos con depósito y 5 % de comisión, pase premium por código `CW-XXXXXX` que el dueño activa desde el panel del dueño del propio juego. 18 pruebas en el arnés.
+
+- Precio del pase premium de Chicha Wars: S/ 10 por temporada (decisión del dueño, 14-nov-2026), pago único por Yape o equivalente en SOL o Stars.

@@ -6,9 +6,9 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=381';
-import * as A from './arte.js?v=381';
-import { pedir } from './red.js?v=381';
+import * as D from './datos.js?v=382';
+import * as A from './arte.js?v=382';
+import { pedir } from './red.js?v=382';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -404,7 +404,7 @@ function htmlPanel() {
   if (tab === 'pase') {
     const nv = nivelPase();
     let h = `<div class="pase-cab"><b>${D.PASE.temporada}</b><small>Nivel ${nv} de ${D.PASE.niveles} · termina el 31 de diciembre</small><div class="barra"><i style="width:${(E.pase.xp % D.PASE.xpNivel) / D.PASE.xpNivel * 100}%"></i></div>
-      ${E.pase.premium ? '<small class="premium-on">★ Pase premium activo</small>' : btn('★ Pase premium', 'premium', {}, false, 'premium')}</div>`;
+      ${E.pase.premium ? '<small class="premium-on">★ Pase premium activo</small>' : btn('★ Pase premium · S/ 10', 'premium', {}, false, 'premium')}</div>`;
     const txtP = p => p.tipo === 'skin' ? '👑 ' + D.SKINS[p.id].nombre : p.tipo === 'maiz' ? p.n + ' kg maíz' : fmt(p.n) + ' monedas';
     for (const r of D.PREMIOS_PASE) {
       const alc = nv >= r.n, g = E.pase.g.includes(r.n), p = E.pase.p.includes(r.n);
@@ -505,13 +505,13 @@ async function accionNube(a, d) {
 }
 async function pedirPremium() {
   if (E.pase.premium) return;
-  if (!NUBE.cuenta) { abrirModal(`<h2>★ Pase premium</h2><p>Duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y Chichera dorada).</p><p>Para comprarlo necesitas entrar con tu cuenta de Duende Quest (correo o Telegram): así el pase queda guardado aunque cambies de celular.</p><p><a href="/mmo/" target="_blank" rel="noopener" style="color:#ffd166">Entrar o crear mi cuenta →</a></p>`); return; }
+  if (!NUBE.cuenta) { abrirModal(`<h2>★ Pase premium · S/ 10</h2><p>Duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y Chichera dorada).</p><p>Para comprarlo necesitas entrar con tu cuenta de Duende Quest (correo o Telegram): así el pase queda guardado aunque cambies de celular.</p><p><a href="/mmo/" target="_blank" rel="noopener" style="color:#ffd166">Entrar o crear mi cuenta →</a></p>`); return; }
   const r = await pedir('pedirPase');
   if (!aplicar(r)) return;
-  const txt = encodeURIComponent('Hola, quiero el pase premium de Chicha Wars. Mi código es ' + NUBE.cod);
+  const txt = encodeURIComponent('Hola, quiero el pase premium de Chicha Wars (S/ 10). Mi código es ' + NUBE.cod);
   abrirModal(`<h2>★ Pase premium</h2><p>Duplica los premios de la temporada y trae skins exclusivas. Lo que ya ganaste en el carril premium se reclama en cuanto se active.</p>
     <p>Tu código de pedido:</p><div class="logo" style="font-size:30px">${NUBE.cod}</div>
-    <p>Escríbele al creador del juego por WhatsApp con tu código: te dice el precio y cómo pagar (Yape, SOL o Stars). Cuando confirme tu pago, el pase se activa solo en tu cuenta.</p>
+    <p>Escríbele al creador del juego por WhatsApp con tu código: cuesta <b>S/ 10</b> por toda la temporada (hasta el 31 de diciembre), pago único por Yape o su equivalente en SOL o Stars. Cuando confirme tu pago, el pase se activa solo en tu cuenta.</p>
     <a class="b oro grande" href="https://wa.me/51900877863?text=${txt}" target="_blank" rel="noopener">WhatsApp +51 900 877 863</a>`);
 }
 
