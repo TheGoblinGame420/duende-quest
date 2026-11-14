@@ -153,3 +153,72 @@ export function dibujarHoja(x, img, px, py, h, r, flip, filtro, fase) {
   x.drawImage(hj.c, f * hj.fw, 0, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
   x.restore();
 }
+
+// ── HOJAS CON MALLA (titere) ──
+// Deforma el dibujo con una rejilla de triangulos y hornea F cuadros. campo(X, Y, ph) devuelve [dx, dy] en
+// fracciones del alto (X = u·ancho/alto, Y: 0 coronilla → 1 pies). Como el campo es continuo, el dibujo no se
+// rompe: respira, inclina la cabeza, mueve un brazo o la falda, igual que un titere de malla.
+const MALLAS = new Map(), GX = 10, GY = 16;
+function tri(g, img, s, d) {
+  const cx = (d[0] + d[2] + d[4]) / 3, cy = (d[1] + d[3] + d[5]) / 3, e = 1.06;   // un poco mas grande: tapa las costuras
+  g.save(); g.beginPath(); g.moveTo(cx + (d[0] - cx) * e, cy + (d[1] - cy) * e); g.lineTo(cx + (d[2] - cx) * e, cy + (d[3] - cy) * e); g.lineTo(cx + (d[4] - cx) * e, cy + (d[5] - cy) * e); g.closePath(); g.clip();
+  const den = s[0] * (s[3] - s[5]) + s[2] * (s[5] - s[1]) + s[4] * (s[1] - s[3]);
+  const a = (d[0] * (s[3] - s[5]) + d[2] * (s[5] - s[1]) + d[4] * (s[1] - s[3])) / den, b = (d[1] * (s[3] - s[5]) + d[3] * (s[5] - s[1]) + d[5] * (s[1] - s[3])) / den;
+  const c = (d[0] * (s[4] - s[2]) + d[2] * (s[0] - s[4]) + d[4] * (s[2] - s[0])) / den, dd = (d[1] * (s[4] - s[2]) + d[3] * (s[0] - s[4]) + d[5] * (s[2] - s[0])) / den;
+  const ex = (d[0] * (s[2] * s[5] - s[4] * s[3]) + d[2] * (s[4] * s[1] - s[0] * s[5]) + d[4] * (s[0] * s[3] - s[2] * s[1])) / den, fy = (d[1] * (s[2] * s[5] - s[4] * s[3]) + d[3] * (s[4] * s[1] - s[0] * s[5]) + d[5] * (s[0] * s[3] - s[2] * s[1])) / den;
+  g.setTransform(a, b, c, dd, ex, fy); g.drawImage(img, 0, 0); g.restore();
+}
+export function hojaMalla(img, clave, F, campo, hpx = 280) {
+  let m = MALLAS.get(img); if (!m) MALLAS.set(img, m = {}); if (m[clave]) return m[clave];
+  const asp = img.width / img.height, w = hpx * asp, mg = hpx * 0.15, fw = Math.ceil(w + mg * 2), fh = Math.ceil(hpx + mg);
+  const cols = Math.min(F, 6), c = document.createElement('canvas'); c.width = fw * cols; c.height = fh * Math.ceil(F / cols); const g = c.getContext('2d');
+  for (let f = 0; f < F; f++) {
+    const ph = f / F * Math.PI * 2, P = [], ox = (f % cols) * fw, oy = Math.floor(f / cols) * fh;
+    for (let j = 0; j <= GY; j++) for (let i = 0; i <= GX; i++) { const u = i / GX, v = j / GY, [dx, dy] = campo(u * asp, v, ph, asp); P.push(ox + mg + u * w + dx * hpx, oy + fh - hpx + v * hpx + dy * hpx); }
+    g.save(); g.beginPath(); g.rect(ox, oy, fw, fh); g.clip();
+    for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) {
+      const k0 = (j * (GX + 1) + i) * 2, k1 = k0 + 2, k2 = k0 + (GX + 1) * 2, k3 = k2 + 2;
+      const x0 = i / GX * img.width, x1 = (i + 1) / GX * img.width, y0 = j / GY * img.height, y1 = (j + 1) / GY * img.height;
+      tri(g, img, [x0, y0, x1, y0, x0, y1], [P[k0], P[k0 + 1], P[k1], P[k1 + 1], P[k2], P[k2 + 1]]);
+      tri(g, img, [x1, y0, x1, y1, x0, y1], [P[k1], P[k1 + 1], P[k3], P[k3 + 1], P[k2], P[k2 + 1]]);
+    }
+    g.restore();
+  }
+  return (m[clave] = { c, fw, fh, hpx, F, cols });
+}
+const sua = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+// Campos de movimiento. cfg: { cuello, falda, brazos: [{ pu, pv, cu, cv, r, amp, fase }] } (u, v en fracciones del dibujo).
+export function campo(cfg, modo) {
+  return (X, Y, ph, asp) => {
+    const pies = sua((1 - Y) / 0.12); let dx = 0, dy = 0;
+    const giro = (px, py, ang, peso) => { const co = Math.cos(ang) - 1, si = Math.sin(ang); dx += ((X - px) * co - (Y - py) * si) * peso; dy += ((X - px) * si + (Y - py) * co) * peso; };
+    if (modo === 'camina') {
+      dy -= Math.abs(Math.sin(ph)) * 0.022 * sua((0.86 - Y) / 0.3); dx += Math.sin(ph) * 0.012 * (1 - Y);
+      giro(asp / 2, cfg.cuello, Math.sin(ph + 0.8) * 0.04, sua((cfg.cuello + 0.04 - Y) / 0.08));
+    } else {
+      const k = modo === 'accion' ? 2 : 1;                       // la accion da dos vueltas por ciclo
+      dy -= Math.sin(ph) * 0.009 * sua((0.78 - Y) / 0.4);         // respira: el torso sube y baja
+      dx += Math.sin(ph + 1) * (modo === 'accion' ? 0.016 : 0.008) * Math.pow(1 - Y, 1.4);
+      giro(asp / 2, cfg.cuello, Math.sin(ph * k - 0.6) * (modo === 'accion' ? 0.06 : 0.035), sua((cfg.cuello + 0.04 - Y) / 0.08));
+      if (cfg.falda) dx += Math.sin(ph * k - Y * 7) * 0.011 * sua((Y - 0.58) / 0.2);
+      for (const [n, b] of (cfg.brazos || []).entries()) {
+        const amp = b.amp * (modo === 'accion' && n === 0 ? 3.2 : 1);
+        giro(b.pu * asp, b.pv, Math.sin(ph * k + (b.fase || 0)) * amp, Math.exp(-(((X - b.cu * asp) ** 2 + (Y - b.cv) ** 2) / (b.r * b.r))));
+      }
+    }
+    return [dx * pies, dy * pies];
+  };
+}
+// Dibuja el cuadro f (puede ser decimal) de una hoja, con los muelles del rig encima (aplastar, inclinarse, salto, destello).
+export function dibujarCuadro(x, hj, f, px, py, h, r, flip, filtro) {
+  const F = hj.F || FR, cols = hj.cols || F, fi = ((Math.floor(f) % F) + F) % F, fj = (fi + 1) % F, mez = hj.cols ? f - Math.floor(f) : 0, k = h / hj.hpx;
+  const sy = Math.max(0.6, Math.min(1.45, r.sy.v)), sx = 1 / Math.sqrt(sy), alto = Math.max(0, -r.dy);
+  x.save(); x.globalAlpha = 0.24 * r.alpha * Math.max(0.3, 1 - alto / 120); x.fillStyle = '#000'; x.beginPath(); x.ellipse(px + r.dx, py, hj.fw * k * 0.3 * Math.max(0.5, 1 - alto / 200), hj.fw * k * 0.075, 0, 0, Math.PI * 2); x.fill(); x.restore();
+  x.save(); x.translate(px + r.dx, py + r.dy); if (r.rot) x.rotate(r.rot); if (flip) x.scale(-1, 1);
+  x.transform(1, 0, -(r.bend.v + r.lean.v) * 0.9, 1, 0, 0); x.scale(sx, sy);
+  if (r.alpha < 1) x.globalAlpha = r.alpha;
+  if (filtro || r.flash > 0.05) x.filter = (filtro || '') + (r.flash > 0.05 ? ` brightness(${1 + r.flash * 1.6}) saturate(${1 - r.flash * 0.5})` : '');
+  x.drawImage(hj.c, (fi % cols) * hj.fw, Math.floor(fi / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
+  if (mez > 0.02) { x.globalAlpha *= mez; x.drawImage(hj.c, (fj % cols) * hj.fw, Math.floor(fj / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k); }   // fundido al cuadro siguiente: se ve fluido
+  x.restore();
+}

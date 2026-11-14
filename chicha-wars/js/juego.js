@@ -6,10 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=388';
-import * as A from './arte.js?v=388';
-import { pedir } from './red.js?v=388';
-import * as R from './rig.js?v=388';
+import * as D from './datos.js?v=389';
+import * as A from './arte.js?v=389';
+import { pedir } from './red.js?v=389';
+import * as R from './rig.js?v=389';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -219,6 +219,12 @@ let duendes = [], clientes = [], parts = [], textos = [];
 let proxCliente = 2, proxOleada = 12, colaSpawn = [], tSpawn = 0, ayudT = 0;
 let poseAct = 'quieta', poseHasta = 0, T = 0;
 const rigCh = R.rigNuevo(), rigAy = R.rigNuevo();
+// Titeres: hojas de sprites con malla (rig.js). cuello y brazos en fracciones del dibujo; el primer brazo es el del cucharon.
+const TIT = {
+  chichera_maestra: { cuello: 0.30, falda: true, brazos: [{ pu: 0.30, pv: 0.40, cu: 0.10, cv: 0.30, r: 0.17, amp: 0.035 }, { pu: 0.70, pv: 0.42, cu: 0.88, cv: 0.36, r: 0.13, amp: 0.03, fase: 1.5 }] },
+  _: { cuello: 0.27 },
+};
+const titere = (k, im, modo) => R.hojaMalla(im, modo, modo === 'idle' ? 16 : 12, R.campo(TIT[k] || TIT._, modo));
 let chVy = 0;
 function pose(p, seg) {
   if (p === 'espanta') { rigCh.bend.golpe(3.4); rigCh.head.golpe(4); rigCh.sy.golpe(-2.2); }   // se lanza hacia los duendes
@@ -523,7 +529,7 @@ function dibujar() {
   if (temblor > 0.05) { x.translate((Math.random() - 0.5) * temblor * 2, (Math.random() - 0.5) * temblor * 2); temblor *= 0.86; } else temblor = 0;
   const noche = new Date().getHours() >= 19 || new Date().getHours() < 6;
   A.fondo(x, W, H, PISO, T, noche, E.nv.toldo);
-  for (const c of clientes) { const ks = A.clienteSpr(c.i), im = ks && A.img(ks); if (im && c.rig) { R.dibujarRig(x, im, c.x, PISO - 20, 150, c.rig, false); if (c.feliz) { x.save(); x.font = '22px "DQ Iconos", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ff5c8a'; x.fillText('♥', c.x + 26, PISO - 182 + Math.sin(T * 6) * 3 + c.rig.dy); x.restore(); } } else A.cliente(x, c.x, PISO - 20, 0.85, c.i, T, c.est !== 'espera', c.feliz); }
+  for (const c of clientes) { const ks = A.clienteSpr(c.i), im = ks && A.img(ks); if (im && c.rig) { const mv = c.est !== 'espera'; R.dibujarCuadro(x, titere(ks, im, mv ? 'camina' : 'idle'), mv ? c.rig.legPh / (Math.PI * 2) * 12 : T * 5.5 + c.i * 3, c.x, PISO - 20, 150, c.rig, false); if (c.feliz) { x.save(); x.font = '22px "DQ Iconos", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ff5c8a'; x.fillText('♥', c.x + 26, PISO - 182 + Math.sin(T * 6) * 3 + c.rig.dy); x.restore(); } } else A.cliente(x, c.x, PISO - 20, 0.85, c.i, T, c.est !== 'espera', c.feliz); }
   for (const c of clientes) if (c.est === 'espera') { const bx = c.x + 30, by = PISO - 200 + (c.rig ? c.rig.dy : 0); x.save(); x.fillStyle = 'rgba(255,255,255,.95)'; x.strokeStyle = '#2a1712'; x.lineWidth = 2.5; x.beginPath(); x.roundRect(bx - 18, by - 22, 36, 30, 10); x.fill(); x.stroke(); x.beginPath(); x.moveTo(bx - 6, by + 8); x.lineTo(bx - 12, by + 16); x.lineTo(bx + 2, by + 8); x.fill(); x.restore(); A.dibujarVaso(x, bx, by + 4, 0.7); if (E.stock <= 0) { x.save(); x.strokeStyle = '#e53935'; x.lineWidth = 3; x.beginPath(); x.moveTo(bx - 12, by - 16); x.lineTo(bx + 12, by + 4); x.stroke(); x.restore(); } }
   A.mostrador(x, W, PISO);
   A.estante(x, W - 82, PISO - 62, E.stock, capStock(), E.eq.jarra);
@@ -565,8 +571,8 @@ function dibujar() {
       x.save(); x.font = '14px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = '#ffd54a'; x.strokeText('Rey de los Ladrones', d.x, d.y - hb - 6); x.fillText('Rey de los Ladrones', d.x, d.y - hb - 6); x.restore();
     }
     if (d.max > 1) { x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(d.x - 24, d.y - hb, 48, 6); x.fillStyle = '#ef5350'; x.fillRect(d.x - 24, d.y - hb, 48 * Math.max(0, d.vida / d.max), 6); }
-  } })), { y: 590, f: () => { const sk = D.SKINS[E.skin[E.personaje]], im = A.img(SPR_PJ[E.personaje]); if (im) R.dibujarRig(x, im, 70, 590, 205, rigCh, false, sk.filtro); else (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...sk.paleta, filtro: sk.filtro }); } }];
-  if (E.nv.ayudante > 0 && A.img('ayudante')) orden.push({ y: 455, f: () => R.dibujarRig(x, A.img('ayudante'), W - 46, 455, 112, rigAy, true) });
+  } })), { y: 590, f: () => { const sk = D.SKINS[E.skin[E.personaje]], im = A.img(SPR_PJ[E.personaje]); if (im) { const acc = poseAct === 'remueve'; R.dibujarCuadro(x, titere(SPR_PJ[E.personaje], im, acc ? 'accion' : 'idle'), acc ? T * 9 : T * 5.5, 70, 590, 205, rigCh, false, sk.filtro); } else (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...sk.paleta, filtro: sk.filtro }); } }];
+  if (E.nv.ayudante > 0 && A.img('ayudante')) orden.push({ y: 455, f: () => R.dibujarCuadro(x, titere('ayudante', A.img('ayudante'), 'idle'), T * 5.5 + 4, W - 46, 455, 112, rigAy, true) });
   for (const v of voladores) orden.push({ y: 999, f: () => { const im = A.img('duende_' + v.var); if (!im) return; x.save(); x.translate(v.x, v.y - 50); x.rotate(v.rot); x.translate(-v.x, -(v.y - 50)); R.dibujarRig(x, im, v.x, v.y, A.altoDuende(v.k, 0.8), v.rig, true); x.restore(); } });
   orden.sort((a, b) => a.y - b.y).forEach(o => o.f());
   // piedras del ayudante en arco
@@ -1006,7 +1012,8 @@ function ajustar() {
   lienzo.width = Math.round(r.width * dpr); lienzo.height = Math.round(r.height * dpr);
 }
 addEventListener('resize', ajustar); ajustar();
-A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista(); });
+A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista();
+  setTimeout(() => { const im = A.img(SPR_PJ[E.personaje]); if (im) { titere(SPR_PJ[E.personaje], im, 'idle'); titere(SPR_PJ[E.personaje], im, 'accion'); } }, 400); });
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
 pintarPanel(); pintarHud();
 requestAnimationFrame(cuadro);
