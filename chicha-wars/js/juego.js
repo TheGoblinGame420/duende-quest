@@ -6,10 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=386';
-import * as A from './arte.js?v=386';
-import { pedir } from './red.js?v=386';
-import * as R from './rig.js?v=386';
+import * as D from './datos.js?v=387';
+import * as A from './arte.js?v=387';
+import { pedir } from './red.js?v=387';
+import * as R from './rig.js?v=387';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -321,16 +321,24 @@ function recoger(i) {
 }
 
 // ── BUCLE ──
-let ultimo = performance.now();
+let ultimo = performance.now(), enPortada = true;
 function cuadro(ahora) {
   let dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
   if (paro > 0) { paro -= dt; dt = dt * 0.08; }   // pausa de golpe: el mundo casi se congela un instante
   T += dt;
-  if (E.elegido) logica(dt); else { animarCh(dt); }
+  if (E.elegido && !enPortada) logica(dt); else { animarCh(dt); }
   dibujar();
   requestAnimationFrame(cuadro);
 }
 let monPrev = E.monedas;
+const ritmo = [];   // [seg, ganado] del ultimo minuto → monedas por minuto en el HUD
+setInterval(() => {
+  if (enPortada || !E.elegido) return;
+  const s = Date.now() / 1000; ritmo.push([s, E.ganado]); while (ritmo.length > 1 && s - ritmo[0][0] > 60) ritmo.shift();
+  const d = E.ganado - ritmo[0][1], seg = s - ritmo[0][0];
+  if (d < 0) { ritmo.length = 0; return; }
+  $('h-rate').textContent = seg >= 8 && d > 0 ? '+' + fmt(Math.round(d / seg * 60)) + '/min' : '';
+}, 2000);
 function logica(dt) {
   const ahoraMs = Date.now();
   if (E.monedas > monPrev) E.ganado += E.monedas - monPrev; monPrev = E.monedas;
@@ -850,6 +858,36 @@ document.addEventListener('visibilitychange', musica);
 $('b-sonido').onclick = () => { E.sonido = !E.sonido; $('b-sonido').textContent = E.sonido ? '🔊' : '🔇'; musica(); guardar(); };
 $('b-sonido').textContent = E.sonido ? '🔊' : '🔇';
 
+// ── PORTADA (pantalla de inicio): el puesto no corre hasta que tocas JUGAR ──
+const portada = $('portada');
+function pintarPortada() {
+  const nocheP = new Date().getHours() >= 19 || new Date().getHours() < 6;
+  portada.querySelector('.p-fondo').style.backgroundImage = `url(/assets/chicha-wars/fondo_mercado_${nocheP ? 'noche' : 'dia'}.webp)`;
+  $('p-pj').src = '/assets/chicha-wars/' + SPR_PJ[E.personaje] + '.webp';
+  $('p-res').textContent = E.elegido ? `Fama ${E.fama.n} · Oleada ${E.oleada}${E.rs ? ' · ' + E.rs + ' Recetas Secretas' : ''} · ${fmt(E.monedas)} monedas` : 'Tu puesto te espera en la plaza';
+  $('p-son').textContent = 'Sonido: ' + (E.sonido ? 'sí' : 'no');
+  $('p-ver').textContent = 'v' + (new URL(import.meta.url).searchParams.get('v') || '');
+}
+let listo = false, primeraVez = true;
+function portadaLista() { if (listo) return; listo = true; const b = $('p-jugar'); b.disabled = false; b.textContent = E.elegido ? 'CONTINUAR' : 'JUGAR'; }
+function abrirPortada() { enPortada = true; guardar(); pintarPortada(); $('p-jugar').textContent = E.elegido ? 'CONTINUAR' : 'JUGAR'; portada.classList.remove('sale'); portada.classList.add('on'); }
+$('p-jugar').onclick = () => {
+  son('nivel'); portada.classList.add('sale');
+  setTimeout(() => { portada.classList.remove('on', 'sale'); enPortada = false; ultimo = performance.now(); monPrev = E.monedas; if (primeraVez) { primeraVez = false; inicio(); } }, 430);
+};
+$('p-son').onclick = () => { $('b-sonido').click(); pintarPortada(); };
+$('p-como').onclick = () => { son('tap'); abrirModal(`<h2>Cómo se juega</h2><ul class="como">
+  <li><img src="/assets/chicha-wars/olla_1.webp" alt=""><span>Tus ollas cocinan solas. Tócalas para remover (salen antes) y para servir cuando están listas.</span></li>
+  <li><img src="/assets/chicha-wars/casera.webp" alt=""><span>Los clientes compran los vasos de tus jarras. Si se llenan, vende al por mayor.</span></li>
+  <li><img src="/assets/chicha-wars/duende_pirata.webp" alt=""><span>Los duendes vienen en oleadas a robarte: tócalos para espantarlos. Sueltan ingredientes.</span></li>
+  <li><img src="/assets/chicha-wars/cucharon_3.webp" alt=""><span>Con las monedas mejora ollas, fuego, recetas y herramientas. Con ingredientes prepara pociones en el Taller.</span></li>
+  <li><img src="/assets/chicha-wars/ico_pergamino.webp" alt=""><span>Sube tu Fama, completa el Pase y, cuando quieras, recibe la Herencia de la Abuela para volver más fuerte.</span></li>
+  <li><img src="/assets/chicha-wars/ico_reloj.webp" alt=""><span>Aunque cierres el juego, tu puesto sigue vendiendo unas horas.</span></li></ul>`); };
+$('p-rank').onclick = async () => { son('tap'); abrirModal(htmlRanking()); await cargarRanking(); if ($('modal').classList.contains('on') && RANK) $('modal-c').innerHTML = htmlRanking() + '<button class="b oro grande" id="modal-ok">Cerrar</button>', $('modal-ok').onclick = () => $('modal').classList.remove('on'); };
+$('b-menu').onclick = () => { son('tap'); abrirPortada(); };
+pintarPortada();
+setTimeout(portadaLista, 7000);   // por si alguna imagen tarda: nunca se queda en «Cargando»
+
 function inicio() {
   if (!E.elegido) {
     abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); } });
@@ -868,10 +906,10 @@ function ajustar() {
   lienzo.width = Math.round(r.width * dpr); lienzo.height = Math.round(r.height * dpr);
 }
 addEventListener('resize', ajustar); ajustar();
-A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); });
+A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista(); });
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
-inicio();
+pintarPanel(); pintarHud();
 requestAnimationFrame(cuadro);
 bajar();
 // Para pruebas (consola): __cw.avanzar(segundos) corre el juego sin esperar.
-window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };
+window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, jugar() { portadaLista(); if (enPortada) $('p-jugar').click(); }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };

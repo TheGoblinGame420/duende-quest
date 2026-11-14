@@ -5,7 +5,7 @@
 // spr() las usa en lugar de estos dibujos sin cambiar el juego.
 // Origen de cada figura: los pies (x, y). s = escala.
 // ═══════════════════════════════════════════════════════
-import * as R from './rig.js?v=386';
+import * as R from './rig.js?v=387';
 const TINTA = '#2a1712';
 const PI = Math.PI;
 
@@ -348,7 +348,11 @@ export function cliente(x, px, py, s, i, t, camina, feliz) {
 
 // ── FONDO: puesto de mercado andino ──
 export function fondo(x, W, H, piso, t, noche, toldo) {
-  if (spr(x, noche ? 'fondo_mercado_noche' : 'fondo_mercado_dia', W / 2, H, H)) return;
+  const im3d = img(noche ? 'fondo_mercado_noche' : 'fondo_mercado_dia');
+  if (im3d) {   // plaza modelada en Blender (tools/cw_fondo_blender.py); las nubes pasan por delante del cielo
+    x.drawImage(im3d, 0, 0, W, H);
+    x.save(); x.beginPath(); x.rect(0, 0, W, piso * 0.42); x.clip(); R.nubes(x, W, piso, t, noche); x.restore();
+  } else {
   const cielo = x.createLinearGradient(0, 0, 0, piso);
   if (noche) { cielo.addColorStop(0, '#0e1236'); cielo.addColorStop(1, '#3b2a6b'); } else { cielo.addColorStop(0, '#7ec8f2'); cielo.addColorStop(1, '#ffe1b0'); }
   x.fillStyle = cielo; x.fillRect(0, 0, W, piso);
@@ -370,6 +374,7 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
   x.save(); x.globalAlpha = 0.18; x.strokeStyle = '#3e2716';
   for (let j = 0; j < 6; j++) for (let i = 0; i < 9; i++) { x.beginPath(); x.ellipse((i + (j % 2) * 0.5) * W / 8, piso + 14 + j * 26, 22, 9, 0, 0, PI * 2); x.stroke(); }
   x.restore();
+  }
   // puesto: postes y toldo de rayas
   const tTop = piso - 250, tBot = piso - 205;
   for (const px of [36, W - 36]) { rr(x, px - 7, tTop + 10, 14, piso - tTop - 10, 4); trazo(x, '#7a4e2b', 3); }

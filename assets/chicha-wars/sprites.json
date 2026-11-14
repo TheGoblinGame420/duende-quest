@@ -184,5 +184,11 @@
 },
 "duende_jefe": {
 "src": "duende_jefe.webp"
+},
+"fondo_mercado_dia": {
+"src": "fondo_mercado_dia.webp"
+},
+"fondo_mercado_noche": {
+"src": "fondo_mercado_noche.webp"
 }
 }

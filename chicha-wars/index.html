@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=386) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=387) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{--bg:#1d0f22;--panel:#2a1830;--panel2:#341d3b;--borde:rgba(246,181,46,.28);--txt:#fbf3ff;--txt2:#cdb8d6;--oro:#f6b52e;--mor:#8e3fbf;--ros:#e05a9c;--ok:#7bd88f;--err:#ff6b6b;
   --t:"DQ Iconos","Lilita One",system-ui,sans-serif;--s:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -82,6 +82,36 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 #modal-c .resumen{margin-top:12px}
 .logo{font:44px/1 var(--t);letter-spacing:.03em;background:linear-gradient(180deg,#ffe082,#f6a01e 55%,#c0264b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1.5px #3a1d00;margin:4px 0 6px}
 .alerta-t{color:#ffab91!important}
+#b-menu{pointer-events:auto;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--borde);background:rgba(20,8,26,.78);color:#fff;font:16px var(--t);margin-left:2px}
+#h-rate{position:absolute;left:10px;top:100%;margin-top:2px;font:11px var(--t);color:#c5e1a5;text-shadow:0 1px 2px #000,0 0 4px #000;white-space:nowrap}
+#hud .chip{position:relative}
+#portada{position:fixed;inset:0;z-index:15;display:none;max-width:480px;margin:0 auto;overflow:hidden;background:#140a18}
+#portada.on{display:block}
+#portada.sale{animation:pSale .45s ease-in forwards}
+@keyframes pSale{to{opacity:0;transform:scale(1.08)}}
+.p-fondo{position:absolute;inset:-4%;background:#2b3a66 center 30%/cover no-repeat;animation:pZoom 26s ease-in-out infinite alternate}
+@keyframes pZoom{from{transform:scale(1) translateY(0)}to{transform:scale(1.12) translateY(-2%)}}
+.p-luz{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,214,120,.28),transparent 55%),linear-gradient(180deg,rgba(20,6,26,.15) 0,rgba(20,6,26,0) 30%,rgba(20,6,26,.55) 62%,rgba(20,6,26,.96) 88%)}
+.p-cab{position:absolute;left:0;right:0;top:calc(7% + env(safe-area-inset-top));text-align:center;animation:pCae .7s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pCae{from{transform:translateY(-60px) scale(.8);opacity:0}}
+.p-logo{font:64px/0.9 var(--t);letter-spacing:.02em;filter:drop-shadow(0 6px 0 #3a1200) drop-shadow(0 12px 18px rgba(0,0,0,.55))}
+.p-logo span,.p-logo b{display:block;font-weight:400;background:linear-gradient(180deg,#fff3b0,#ffc531 45%,#f0761b 80%,#c0264b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:2.5px #3a1200}
+.p-logo b{font-size:84px;background-image:linear-gradient(180deg,#ffd9f2,#e05a9c 45%,#8e3fbf 85%)}
+.p-lema{margin-top:10px;font:17px var(--t);color:#fff;text-shadow:0 2px 0 #2a1200,0 0 12px rgba(0,0,0,.8)}
+.p-pj{position:absolute;left:-2%;bottom:36%;height:36%;filter:drop-shadow(0 10px 10px rgba(0,0,0,.5));animation:pFlota 3.2s ease-in-out infinite;transform-origin:50% 100%}
+.p-du{position:absolute;right:-3%;bottom:35%;height:30%;filter:drop-shadow(0 10px 10px rgba(0,0,0,.5));animation:pFlota 2.6s ease-in-out -1.1s infinite;transform-origin:50% 100%}
+@keyframes pFlota{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-1.5%) scale(1.015,.985)}}
+.p-menu{position:absolute;left:0;right:0;bottom:0;padding:0 22px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;animation:pSube .6s .15s ease-out both}
+@keyframes pSube{from{transform:translateY(40px);opacity:0}}
+.p-res{text-align:center;font:14px var(--t);color:#ffe9b0;text-shadow:0 1px 3px #000;min-height:18px}
+.p-jugar{min-height:64px!important;font-size:26px!important;margin-top:0!important;box-shadow:0 5px 0 #8a4b00,0 0 26px rgba(255,190,60,.55)!important;animation:pLate 1.6s ease-in-out infinite}
+.p-jugar:disabled{animation:none;filter:grayscale(.6);opacity:.8}
+@keyframes pLate{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.p-fila{display:flex;gap:10px}.p-fila .b{flex:1;min-height:48px;background:rgba(40,18,48,.86);border:1.5px solid var(--borde);text-decoration:none}
+.p-pie{text-align:center;font-size:12px;color:var(--txt2);opacity:.85}
+.como{text-align:left;margin:8px 0 0;padding:0;list-style:none}.como li{display:flex;gap:10px;align-items:center;margin-bottom:9px}.como img{width:40px;height:40px;object-fit:contain;flex:none}
+@media (prefers-reduced-motion:reduce){.p-fondo,.p-pj,.p-du,.p-jugar{animation:none}}
+
 .ings{display:flex;flex-wrap:wrap;gap:6px;margin:0 2px 10px}.ing{display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.3);border-radius:999px;padding:2px 10px 2px 3px;font:14px var(--t)}.ing img{width:24px;height:24px;object-fit:contain}.ing.falta{color:#ffab91}.rec{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.bts{display:flex;flex-direction:column;gap:6px;flex:none}.bts .b{min-width:84px}.bts.fila .b{min-width:0;font-size:13px;padding:6px 8px}.card.pocion.bloq{opacity:.6}.cant{color:var(--oro)}.activa{color:#ffd54a}.ico.grande{font-size:26px}.dor{color:var(--oro);font-weight:800}
 .card.rank{display:block}.rks{margin-top:8px;display:flex;flex-direction:column;gap:4px}.rk{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;background:rgba(0,0,0,.25);font-size:13px}.rk b{font:16px var(--t);color:var(--oro);text-align:center}.rk i{font-style:normal;color:var(--txt2)}.rk.yo{outline:2px solid var(--oro);background:rgba(246,181,46,.12)}
 .elige.pj .b{flex-direction:column;min-height:150px;padding:8px}.elige.pj .b img{height:104px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
@@ -102,11 +132,12 @@ a.b{text-decoration:none}
   <div id="escena-c">
     <canvas id="escena" aria-label="Tu puesto de chicha: toca a los duendes para espantarlos y las ollas listas para servir"></canvas>
     <div id="hud">
-      <div class="chip"><span class="mon"></span><span id="h-monedas">0</span></div>
+      <div class="chip"><span class="mon"></span><span id="h-monedas">0</span><small id="h-rate"></small></div>
       <div class="chip"><i>🌽</i><span id="h-maiz">0</span></div>
       <div class="chip"><i>🥤</i><span id="h-vasos">0</span></div>
       <div class="chip" id="h-pase-c"><i>⭐</i><span id="h-pase">0</span><div class="pb"><div id="h-pase-b"></div></div></div>
       <button id="b-sonido" aria-label="Sonido">🔊</button>
+      <button id="b-menu" aria-label="Menú principal">☰</button>
     </div>
     <div id="avisos" role="status" aria-live="polite"></div>
   </div>
@@ -120,10 +151,23 @@ a.b{text-decoration:none}
     <button class="tab" data-t="mercado"><span>🛒</span>Mercado</button>
   </nav>
 </div>
+<div id="portada" class="on">
+  <div class="p-fondo"></div><div class="p-luz"></div>
+  <div class="p-cab"><div class="p-logo"><span>CHICHA</span><b>WARS</b></div><div class="p-lema">Cocina, vende y defiende tu chicha morada</div></div>
+  <img class="p-pj" id="p-pj" src="/assets/chicha-wars/chichera_maestra.webp" alt="">
+  <img class="p-du" src="/assets/chicha-wars/duende_jefe.webp" alt="">
+  <div class="p-menu">
+    <div class="p-res" id="p-res"></div>
+    <button class="b oro grande p-jugar" id="p-jugar" disabled>Cargando…</button>
+    <div class="p-fila"><button class="b" id="p-como">Cómo jugar</button><button class="b" id="p-rank">Ranking</button></div>
+    <div class="p-fila"><button class="b" id="p-son">Sonido: sí</button><a class="b" href="/inicio/">Más juegos</a></div>
+    <div class="p-pie">Un juego de Duende Quest · <span id="p-ver"></span></div>
+  </div>
+</div>
 <div id="modal"><div id="modal-c"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=386" defer></script>
-<script type="module" src="/chicha-wars/js/juego.js?v=386"></script>
+<script src="/js/config.js?v=387" defer></script>
+<script type="module" src="/chicha-wars/js/juego.js?v=387"></script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(function(){});</script>
 </body>
 </html>
