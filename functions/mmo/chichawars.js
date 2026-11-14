@@ -30,7 +30,7 @@ export const CW = {
   precio: { maiz: [0.5, 5], vasos: [1, 40] },   // monedas por unidad (sin lavar monedas entre cuentas)
   cant: { maiz: [5, 2000], vasos: [5, 1000] },
   temporada: 't1',
-  maxEst: 12000,          // bytes de la partida guardada
+  maxEst: 16000,          // bytes de la partida guardada
 };
 
 const hoyPeru = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);

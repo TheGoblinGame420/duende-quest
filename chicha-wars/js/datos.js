@@ -189,3 +189,66 @@ export const HERRAMIENTAS = {
 export const costoHerr = (id, r) => Math.round(COSTO_R[r] * HERRAMIENTAS[id].f);
 export const STOCK_BASE = 40;   // vasos en reserva sin mejorar la jarra
 export const VERSION_CW = 2;
+
+// ── CRAFTEO (Taller): ingredientes que sueltan los duendes y vende el Agricultor ──
+export const INGREDIENTES = {
+  pina: { nombre: 'Piña', img: 'ing_pina' },
+  manzana: { nombre: 'Manzana', img: 'ing_manzana' },
+  canela: { nombre: 'Canela', img: 'ing_canela' },
+  limon: { nombre: 'Limón', img: 'ing_limon' },
+  azucar: { nombre: 'Azúcar', img: 'ing_azucar' },
+};
+export const DROP = { prob: 0.15, jefe: 5, dorado: 3 };
+// Pociones: se preparan con ingredientes, se guardan y se usan cuando conviene (si usas otra igual, se suma el tiempo).
+export const POCIONES = {
+  fuego:   { nombre: 'Fuego Feroz', img: 'ico_fogata', d: 'Las ollas cocinan el doble de rápido', seg: 90, receta: { canela: 2, azucar: 1 }, fama: 2 },
+  reloj:   { nombre: 'Reloj de Celeridad', img: 'ico_reloj', d: 'Llega el doble de clientes', seg: 90, receta: { pina: 2, limon: 1 }, fama: 2 },
+  receta:  { nombre: 'Recetario Secreto', img: 'ico_pergamino', d: 'Cada vaso vale un 50 % más', seg: 90, receta: { manzana: 2, canela: 1, azucar: 1 }, fama: 3 },
+  calidad: { nombre: 'Esencia de Calidad', img: 'ico_magia', d: '+25 % de tandas críticas', seg: 90, receta: { limon: 2, manzana: 1 }, fama: 4 },
+  trampa:  { nombre: 'Trampa de Azúcar', img: 'ico_ingredientes', d: 'Los duendes caminan a la mitad de velocidad', seg: 60, receta: { azucar: 2, pina: 1 }, fama: 5 },
+};
+export const TOPE_POCION = 600;   // como mucho 10 min acumulados por pocion
+export const precioIng = (precioVaso, n) => Math.max(20, Math.round(precioVaso * 7)) * n * (n >= 10 ? 0.8 : 1);
+export const PAQ_ING = [3, 10];
+
+// ── FAMA DEL PUESTO (permanente: sube vendiendo, cocinando, espantando y mejorando) ──
+export const famaReq = n => Math.round(40 * Math.pow(n, 1.5));   // puntos para pasar del nivel n al n+1
+export const FAMA_PTS = { vende: 1, tanda: 1, espanta: 2, mejora: 6, oleada: 5, pocion: 4 };
+export const premioFama = n => ({ monedas: 60 * n, ing: 2 + Math.floor(n / 5) });
+
+// ── HERENCIA DE LA ABUELA (prestigio) ──
+// Reinicias el puesto y la abuela te deja Recetas Secretas: cada una da +10 % de precio y +5 % de coccion para siempre.
+// Curva de raiz cuadrada: cada receta extra cuesta mas que la anterior (la primera herencia sale en unos 15-20 min de juego).
+export const HERENCIA = { div: 3500, min: 2, precio: 0.10, coccion: 0.05 };
+export const recetasPorGanar = g => Math.floor(Math.sqrt(Math.max(0, g) / HERENCIA.div));
+export const ganadoPara = k => k * k * HERENCIA.div;
+
+// ── DESAFIOS DE TEMPORADA (XP de pase, una sola vez) ──
+export const DESAFIOS = [
+  { id: 'd_vasos1', stat: 'vasos', n: 500, txt: 'Vende 500 vasos', xp: 150 },
+  { id: 'd_duendes1', stat: 'duendes', n: 150, txt: 'Espanta 150 duendes', xp: 150 },
+  { id: 'd_tandas1', stat: 'tandas', n: 120, txt: 'Cocina 120 tandas', xp: 150 },
+  { id: 'd_pociones1', stat: 'pociones', n: 10, txt: 'Usa 10 pociones del Taller', xp: 200 },
+  { id: 'd_ola15', stat: 'oleadaMax', n: 15, txt: 'Llega a la oleada 15', xp: 200 },
+  { id: 'd_fama8', stat: 'fama', n: 8, txt: 'Llega a Fama 8', xp: 200 },
+  { id: 'd_herencia1', stat: 'herencias', n: 1, txt: 'Recibe la Herencia de la Abuela', xp: 250 },
+  { id: 'd_dorados', stat: 'dorados', n: 5, txt: 'Atrapa 5 duendes dorados', xp: 200 },
+  { id: 'd_jefes', stat: 'jefes', n: 3, txt: 'Vence 3 veces al Rey de los Ladrones', xp: 250 },
+  { id: 'd_epicas', stat: 'herrEpica', n: 3, txt: 'Ten 3 herramientas épicas o mejores', xp: 300 },
+  { id: 'd_vasos2', stat: 'vasos', n: 5000, txt: 'Vende 5000 vasos', xp: 300 },
+  { id: 'd_ola30', stat: 'oleadaMax', n: 30, txt: 'Llega a la oleada 30', xp: 350 },
+];
+
+// ── LOGROS (para siempre; dan monedas e ingredientes). Se muestra el siguiente de cada tipo. ──
+const esc = (id, stat, txt, pasos) => pasos.map(([n, mon, ing], i) => ({ id: id + i, stat, n, txt: txt(n), mon, ing, g: id }));
+export const LOGROS = [
+  ...esc('lv', 'vasos', n => `Vende ${n.toLocaleString('es-PE')} vasos`, [[100, 150, 2], [1000, 800, 4], [10000, 6000, 8], [50000, 30000, 12]]),
+  ...esc('ld', 'duendes', n => `Espanta ${n.toLocaleString('es-PE')} duendes`, [[50, 150, 2], [500, 1200, 5], [3000, 9000, 10]]),
+  ...esc('lo', 'oleadaMax', n => `Llega a la oleada ${n}`, [[10, 300, 3], [25, 2500, 6], [50, 20000, 12]]),
+  ...esc('lj', 'jefes', n => n === 1 ? 'Vence al Rey de los Ladrones' : `Vence ${n} veces al Rey`, [[1, 400, 5], [10, 5000, 10]]),
+  ...esc('lg', 'dorados', n => n === 1 ? 'Atrapa un duende dorado' : `Atrapa ${n} duendes dorados`, [[1, 200, 3], [10, 3000, 8]]),
+  ...esc('lp', 'pociones', n => n === 1 ? 'Usa tu primera poción' : `Usa ${n} pociones`, [[1, 100, 3], [25, 2000, 8]]),
+  ...esc('lf', 'fama', n => `Llega a Fama ${n}`, [[5, 500, 4], [15, 5000, 8], [30, 40000, 15]]),
+  ...esc('lh', 'herencias', n => n === 1 ? 'Recibe tu primera herencia' : `Recibe ${n} herencias`, [[1, 0, 10], [5, 0, 20]]),
+  ...esc('ll', 'herrLeg', n => 'Consigue una herramienta legendaria', [[1, 10000, 15]]),
+];
