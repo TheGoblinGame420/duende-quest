@@ -6,9 +6,9 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=382';
-import * as A from './arte.js?v=382';
-import { pedir } from './red.js?v=382';
+import * as D from './datos.js?v=383';
+import * as A from './arte.js?v=383';
+import { pedir } from './red.js?v=383';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -25,6 +25,7 @@ function nuevo() {
     ollas: [{ fin: 0, lista: false }, { fin: 0, lista: false }, { fin: 0, lista: false }, { fin: 0, lista: false }],
     oleada: 1, pase: { xp: 0, premium: false, g: [], p: [] }, mis: null, racha: { dia: '', n: 0, cobrado: '' },
     stats: { vasos: 0, duendes: 0, tandas: 0, mejoras: 0, oleadas: 0 },
+    eq: { cucharon: 0, tabla: 0, exprimidor: 0, colador: 0, vaso: 0, jarra: 0 }, rafaga: 0,
     personaje: 'chichera', skin: { chichera: 'clasica', chichero: 'clasico' }, skins: ['clasica', 'clasico'],
     t: Date.now(), sonido: true, elegido: false,
   };
@@ -33,6 +34,8 @@ let E;
 try { E = JSON.parse(localStorage.getItem('cw_estado') || 'null'); } catch (e) { E = null; }
 if (!E || E.v !== 1) E = nuevo();
 E = Object.assign(nuevo(), E);
+E.eq = Object.assign({ cucharon: 0, tabla: 0, exprimidor: 0, colador: 0, vaso: 0, jarra: 0 }, E.eq);
+E.eq.cucharon = Math.max(E.eq.cucharon, Math.min(4, E.nv.cucharon || 0));   // el cucharon de pelea de la v1 pasa a ser la herramienta
 function guardar() { E.t = Date.now(); try { localStorage.setItem('cw_estado', JSON.stringify(E)); } catch (e) {} }
 setInterval(guardar, 5000);
 addEventListener('pagehide', guardar);
@@ -99,11 +102,18 @@ function son(tipo) {
 const vibrar = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
 // ── VALORES DERIVADOS ──
+const HR = id => D.HERRAMIENTAS[id].niv[E.eq[id]];
 const nOllas = () => D.HORNILLAS[E.nv.hornillas].n;
-const segTanda = () => D.FUEGOS[E.nv.fuego].seg;
-const vasosOlla = i => D.OLLAS[E.nv.ollas[i]].vasos;
-const precio = () => D.RECETAS[E.nv.receta].precio;
-const dano = () => D.CUCHARONES[E.nv.cucharon].dano;
+// Hervor Cosmico (cucharon legendario): x3 de velocidad 10 s de cada minuto.
+const hervor = () => !!HR('cucharon').hervor && (Date.now() / 1000) % 60 < 10;
+const segTanda = () => D.FUEGOS[E.nv.fuego].seg / (1 + HR('cucharon').coccion) / (1 + HR('tabla').corte * 0.25) / (hervor() ? 3 : 1);
+const vasosOlla = i => Math.round(D.OLLAS[E.nv.ollas[i]].vasos * (1 + HR('cucharon').prod));
+const maizOlla = i => D.OLLAS[E.nv.ollas[i]].vasos * D.MAIZ.porVaso * (1 - HR('tabla').ahorro);
+const precio = () => D.RECETAS[E.nv.receta].precio * (1 + HR('vaso').venta) * (1 + HR('colador').calidad) * (HR('colador').nectar ? 2 : 1) * (1 + (HR('jarra').temp || 0));
+const capStock = () => Math.round(D.STOCK_BASE * (1 + HR('jarra').cap));
+const segCliente = () => D.TOLDOS[E.nv.toldo].seg / (1 + HR('colador').rep);
+const dano = () => HR('cucharon').dano;
+const fmtP = n => n >= 100 ? fmt(n) : (Math.round(n * 10) / 10).toLocaleString('es-PE');
 const ayud = () => D.AYUDANTES[E.nv.ayudante];
 const xOlla = i => 150 + i * 98;
 const Y_OLLA = 505;
@@ -140,21 +150,21 @@ setInterval(() => { revisarDia(); }, 60000);
 
 // ── PROGRESO SIN CONEXION ──
 function offline() {
-  const dt = Math.min(D.OFFLINE_MAX_H * 3600000, Date.now() - (E.t || Date.now()));
+  const jr = HR('jarra'), dt = Math.min(jr.offH * 3600000, Date.now() - (E.t || Date.now()));
   if (dt < 60000) return null;
   let vasos = 0, tandas = 0, gastoMaiz = 0;
   for (let i = 0; i < nOllas(); i++) {
-    const posibles = Math.floor(dt / 1000 / segTanda()), porTanda = vasosOlla(i), maizT = porTanda * D.MAIZ.porVaso;
+    const posibles = Math.floor(dt / 1000 / segTanda()), porTanda = vasosOlla(i), maizT = maizOlla(i);
     const n = Math.min(posibles, Math.floor((E.maiz - gastoMaiz) / maizT));
     if (n > 0) { tandas += n; vasos += n * porTanda; gastoMaiz += n * maizT; }
   }
-  const clientes = Math.floor(dt / 1000 / (D.TOLDOS[E.nv.toldo].seg * 2));
+  const clientes = Math.floor(dt / 1000 / segCliente() * jr.efic);
   const vendidos = Math.min(E.stock + vasos, clientes * 2);
-  const ganado = vendidos * precio();
-  E.maiz -= gastoMaiz; E.stock += vasos - vendidos; E.monedas += ganado;
+  const ganado = Math.round(vendidos * precio());
+  E.maiz -= gastoMaiz; E.stock = Math.min(capStock(), E.stock + vasos - vendidos); E.monedas += ganado;
   E.stats.vasos += vendidos; E.stats.tandas += tandas;
   for (const o of E.ollas) { o.fin = 0; o.lista = false; }
-  return { min: Math.round(dt / 60000), tandas, vendidos, ganado, gastoMaiz, sinMaiz: E.maiz < vasosOlla(0) * D.MAIZ.porVaso };
+  return { min: Math.round(dt / 60000), tandas, vendidos, ganado, gastoMaiz, horas: jr.offH, tope: dt >= jr.offH * 3600000 - 60000, sinMaiz: E.maiz < maizOlla(0) };
 }
 const vuelta = offline();
 
@@ -171,7 +181,8 @@ function texto(px, py, txt, color = '#ffe082', tam = 26) { textos.push({ x: px, 
 
 function spawnDuende(k) {
   const n = E.oleada;
-  duendes.push({ k, x: W + 40, y: azar(470, 600), vida: D.vidaDuende(k, n), max: D.vidaDuende(k, n), vel: D.DUENDES[k].vel * azar(0.9, 1.1), lleva: 0, huye: false, golpe: 0, robaT: 0 });
+  const VAR = { ladron: ['pirata', 'vampiro', 'esqueleto'], rapido: ['lobo'], gordo: ['momia'], gancho: ['bruja'], jefe: ['jefe'] }[k] || ['pirata'];
+  duendes.push({ k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(480, 600), vida: D.vidaDuende(k, n), max: D.vidaDuende(k, n), vel: D.DUENDES[k].vel * azar(0.9, 1.1), lleva: 0, huye: false, golpe: 0, robaT: 0 });
 }
 function golpear(d, n) {
   d.vida -= n; d.golpe = 0.35;
@@ -197,18 +208,33 @@ lienzo.addEventListener('pointerdown', ev => {
   son('tap');
   // 1. un duende (el mas cercano al dedo)
   let mejor = null, md = 70;
-  for (const d of duendes) { if (d.muerto) continue; const dd = Math.hypot(d.x - px, d.y - 55 * (D.DUENDES[d.k].jefe ? 1.6 : 1) - py); if (dd < md) { md = dd; mejor = d; } }
+  for (const d of duendes) { if (d.muerto) continue; const dd = Math.hypot(d.x - px, d.y - A.altoDuende(d.k, 0.8) * 0.5 - py); if (dd < md + (D.DUENDES[d.k].jefe ? 30 : 0)) { md = dd; mejor = d; } }
   if (mejor) { golpear(mejor, dano()); pose('espanta', 0.35); son('golpe'); vibrar(15); return; }
   // 2. una olla lista
   for (let i = 0; i < nOllas(); i++) {
     const o = E.ollas[i];
-    if (o.lista && Math.abs(px - xOlla(i)) < 55 && py > Y_OLLA - 120 && py < Y_OLLA + 20) { recoger(i); return; }
+    if (Math.abs(px - xOlla(i)) < 55 && py > Y_OLLA - 130 && py < Y_OLLA + 40) {
+      if (o.lista) { recoger(i); return; }
+      if (o.fin) { o.fin = Math.max(Date.now(), o.fin - segTanda() * 1000 * 0.12); pose('remueve', 0.4); particulas(xOlla(i), Y_OLLA - 70, 5, '#d65caa', { vel: 110 }); texto(xOlla(i), Y_OLLA - 100, '¡A remover!', '#f8bbd0', 16); return; }
+    }
   }
   // 3. salpicon al aire: el toque nunca se siente muerto
   pose('espanta', 0.3); particulas(px, py, 6, '#d65caa', { vel: 120 });
 });
+let llenoT = 0;
 function recoger(i) {
-  const o = E.ollas[i], n = vasosOlla(i);
+  const o = E.ollas[i];
+  if (E.stock >= capStock()) { if (Date.now() - llenoT > 4000) { llenoT = Date.now(); aviso('Tus jarras están llenas: vende o mejora la Jarra para guardar más.', 'err'); } return; }
+  let n = vasosOlla(i);
+  // Exprimidor: tanda critica (la Rafaga Citrica del legendario da 5 seguidas cada 20 tandas).
+  const ex = HR('exprimidor');
+  E.tandaN = (E.tandaN || 0) + 1;
+  if (ex.rafaga && E.tandaN % 20 === 0) { E.rafaga = 5; aviso('🍋 ¡Ráfaga Cítrica! 5 tandas críticas seguidas', 'ok'); }
+  let crit = false;
+  if (E.rafaga > 0) { E.rafaga--; crit = true; } else if (Math.random() < ex.crit) crit = true;
+  if (crit) { n = Math.round(n * ex.mult); texto(xOlla(i), Y_OLLA - 150, '¡CRÍTICO! ×' + String(ex.mult).replace('.', ','), '#ffd54a', 26); vibrar(30); }
+  if (HR('cucharon').duplica && Math.random() < HR('cucharon').duplica) { n *= 2; texto(xOlla(i), Y_OLLA - 175, '¡Tanda doble!', '#c5e1a5', 20); }
+  n = Math.min(n, capStock() - E.stock);
   o.lista = false; o.fin = 0;
   E.stock += n; E.stats.tandas++; sumar('tanda'); xp(D.XP.tanda);
   texto(xOlla(i), Y_OLLA - 120, '+' + n + ' vasos', '#f8bbd0', 24);
@@ -232,7 +258,7 @@ function logica(dt) {
     const o = E.ollas[i];
     if (o.lista) { if (ayud().recoge && (o.listaT = (o.listaT || 0) + dt) > 1) { o.listaT = 0; recoger(i); } continue; }
     if (!o.fin) {
-      const gasto = vasosOlla(i) * D.MAIZ.porVaso;
+      const gasto = maizOlla(i);
       if (E.maiz >= gasto) { E.maiz -= gasto; o.fin = ahoraMs + segTanda() * 1000; }
     } else if (ahoraMs >= o.fin) { o.lista = true; o.fin = 0; son('lista'); }
     else cocinando = true;
@@ -240,20 +266,25 @@ function logica(dt) {
   if (T > poseHasta) poseAct = cocinando ? 'remueve' : 'quieta';
   // clientes
   proxCliente -= dt;
-  if (proxCliente <= 0 && clientes.length < 4) { proxCliente = D.TOLDOS[E.nv.toldo].seg * azar(0.8, 1.2); clientes.push({ i: Math.floor(Math.random() * A.N_CLIENTES), x: -40, meta: W / 2 - 40 + clientes.length * 26, est: 'llega', t: 0, feliz: false }); }
+  if (proxCliente <= 0 && clientes.length < 4) { proxCliente = segCliente() * azar(0.8, 1.2); clientes.push({ i: Math.floor(Math.random() * A.N_CLIENTES), x: -40, meta: W / 2 - 40 + clientes.length * 26, est: 'llega', t: 0, feliz: false }); }
   for (const c of clientes) {
     c.t += dt;
     if (c.est === 'llega') { c.x += 120 * dt; if (c.x >= c.meta) { c.x = c.meta; c.est = 'espera'; c.t = 0; } }
     else if (c.est === 'espera') {
       if (E.stock > 0 && c.t > 0.5) {
-        const n = Math.min(E.stock, 1 + Math.floor(Math.random() * 3)), pago = n * precio();
+        const n = Math.min(E.stock, 1 + Math.floor(Math.random() * 3));
+        let pago = Math.max(1, Math.round(n * precio()));
+        const vs = HR('vaso');
+        if (Math.random() < vs.propina[0]) { const extra = Math.max(1, Math.round(pago * vs.propina[1])); pago += extra; texto(c.x, PISO - 222, '¡Propina +' + fmt(extra) + '!', '#c5e1a5', 18); }
         E.stock -= n; E.monedas += pago; E.stats.vasos += n; sumar('vende', n); xp(D.XP.vaso * n);
-        texto(c.x, PISO - 190, '+' + pago, '#ffd54a', 26); particulas(c.x, PISO - 170, 6, '#ffd54a', { vel: 150, moneda: true }); son('moneda');
+        texto(c.x, PISO - 190, '+' + fmt(pago), '#ffd54a', 26); particulas(c.x, PISO - 170, 6, '#ffd54a', { vel: 150, moneda: true }); son('moneda');
         c.est = 'va'; c.feliz = true;
       } else if (c.t > 8) { c.est = 'va'; texto(c.x, PISO - 190, '¡No hay chicha!', '#ffab91', 18); }
     } else c.x += 140 * dt;
   }
   clientes = clientes.filter(c => c.x < W + 60);
+  // Jarra legendaria: al llenarse, se vende sola.
+  if (HR('jarra').autoventa && E.stock >= capStock()) { const g = Math.round(E.stock * precio()); E.monedas += g; E.stats.vasos += E.stock; sumar('vende', E.stock); E.stock = 0; texto(W / 2 + 20, PISO - 120, 'Autoventa +' + fmt(g), '#ffd54a', 22); son('moneda'); }
   // oleadas
   proxOleada -= dt;
   if (proxOleada <= 0) {
@@ -299,29 +330,32 @@ function dibujar() {
   A.fondo(x, W, H, PISO, T, noche, E.nv.toldo);
   for (const c of clientes) A.cliente(x, c.x, PISO - 20, 0.85, c.i, T, c.est !== 'espera', c.feliz);
   A.mostrador(x, W, PISO);
-  A.estante(x, W / 2 + 20, PISO - 62, E.stock, 60);
+  A.estante(x, W / 2 + 20, PISO - 62, E.stock, capStock(), E.eq.jarra);
+  A.VASO_SPR.k = 'vaso_' + (E.eq.vaso + 1);
   // cartel de la chicheria
   x.save(); x.font = '22px "Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#fff3c4'; x.strokeStyle = '#3e2716'; x.lineWidth = 5;
   x.strokeText('CHICHA MORADA', W / 2, PISO - 268); x.fillText('CHICHA MORADA', W / 2, PISO - 268); x.restore();
   // ollas y fuegos
   for (let i = 0; i < nOllas(); i++) {
     const o = E.ollas[i], cocina = !!o.fin;
-    A.fuego(x, xOlla(i), Y_OLLA + 30, 0.8, E.nv.fuego, T, cocina || o.lista);
+    if (!A.tieneSpr('olla_' + (E.nv.ollas[i] + 1))) A.fuego(x, xOlla(i), Y_OLLA + 30, 0.8, E.nv.fuego, T, cocina || o.lista);
     A.olla(x, xOlla(i), Y_OLLA + 6, 0.8, E.nv.ollas[i], cocina || o.lista ? 1 : 0, o.lista, T);
     if (cocina) {
       const k = 1 - (o.fin - Date.now()) / (segTanda() * 1000);
-      x.save(); x.fillStyle = 'rgba(0,0,0,.45)'; x.beginPath(); x.roundRect(xOlla(i) - 36, Y_OLLA - 82, 72, 10, 5); x.fill();
-      x.fillStyle = '#d65caa'; x.beginPath(); x.roundRect(xOlla(i) - 35, Y_OLLA - 81, 70 * Math.max(0, Math.min(1, k)), 8, 4); x.fill(); x.restore();
+      x.save(); x.fillStyle = 'rgba(0,0,0,.45)'; x.beginPath(); x.roundRect(xOlla(i) - 36, Y_OLLA - 124, 72, 10, 5); x.fill();
+      x.fillStyle = hervor() ? '#7dd3fc' : '#d65caa'; x.beginPath(); x.roundRect(xOlla(i) - 35, Y_OLLA - 123, 70 * Math.max(0, Math.min(1, k)), 8, 4); x.fill(); x.restore();
       if (Math.random() < 0.25) parts.push({ x: xOlla(i) + azar(-20, 20), y: Y_OLLA - 50, vx: azar(-8, 8), vy: -40, g: -10, vida: 1.2, t: 0, r: azar(6, 12), color: 'rgba(255,255,255,.35)', vapor: true });
-    } else if (!o.lista && E.maiz < vasosOlla(i) * D.MAIZ.porVaso) {
-      x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ffab91'; x.strokeStyle = '#000'; x.lineWidth = 4; x.strokeText('Sin maíz', xOlla(i), Y_OLLA - 78); x.fillText('Sin maíz', xOlla(i), Y_OLLA - 78); x.restore();
+    } else if (!o.lista && E.maiz < maizOlla(i)) {
+      x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ffab91'; x.strokeStyle = '#000'; x.lineWidth = 4; x.strokeText('Sin maíz', xOlla(i), Y_OLLA - 120); x.fillText('Sin maíz', xOlla(i), Y_OLLA - 120); x.restore();
     }
   }
   // personajes ordenados por profundidad
   const orden = [...duendes.filter(d => !d.muerto).map(d => ({ y: d.y, f: () => {
-    A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye });
-    if (d.max > 1) { x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(d.x - 24, d.y - (D.DUENDES[d.k].jefe ? 190 : 125), 48, 6); x.fillStyle = '#ef5350'; x.fillRect(d.x - 24, d.y - (D.DUENDES[d.k].jefe ? 190 : 125), 48 * Math.max(0, d.vida / d.max), 6); }
-  } })), { y: 590, f: () => (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, D.SKINS[E.skin[E.personaje]].paleta) }];
+    A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye, var: d.var });
+    const hb = A.altoDuende(d.k, 0.8) + 8;
+    if (d.max > 1) { x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(d.x - 24, d.y - hb, 48, 6); x.fillStyle = '#ef5350'; x.fillRect(d.x - 24, d.y - hb, 48 * Math.max(0, d.vida / d.max), 6); }
+  } })), { y: 590, f: () => (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...D.SKINS[E.skin[E.personaje]].paleta, filtro: D.SKINS[E.skin[E.personaje]].filtro }) }];
+  if (E.nv.ayudante > 0 && A.tieneSpr('ayudante')) orden.push({ y: 455, f: () => A.personaAnimada(x, 'ayudante', W - 46, 455, 112, ayudT > 1.7 ? 'espanta' : 'quieta', T + 1.3) });
   orden.sort((a, b) => a.y - b.y).forEach(o => o.f());
   for (const p of parts) {
     x.globalAlpha = Math.max(0, 1 - p.t / p.vida);
@@ -345,9 +379,10 @@ function dibujar() {
 let hudPrev = '';
 function pintarHud() {
   const nv = nivelPase(), k = (E.pase.xp % D.PASE.xpNivel) / D.PASE.xpNivel;
-  const s = fmt(E.monedas) + '|' + fmt(E.maiz) + '|' + E.stock + '|' + nv + '|' + Math.round(k * 50);
+  const s = fmt(E.monedas) + '|' + fmt(E.maiz) + '|' + E.stock + '|' + nv + '|' + Math.round(k * 50) + '|' + tab;
   if (s === hudPrev) return; hudPrev = s;
   $('h-monedas').textContent = fmt(E.monedas); $('h-maiz').textContent = E.maiz >= 10000 ? Math.floor(E.maiz / 1000) + 'k' : fmt(E.maiz); $('h-vasos').textContent = E.stock;
+  const mj = mejorAsequible(); document.querySelector('.tab[data-t="mejoras"]').classList.toggle('punto', !!mj && tab !== 'mejoras');
   $('h-pase').textContent = nv >= D.PASE.niveles ? 'MAX' : nv; $('h-pase-b').style.width = (nv >= D.PASE.niveles ? 100 : k * 100) + '%';
   if (tab === 'mejoras' || tab === 'cocina' || tab === 'mercado') pintarPanelSuave();
 }
@@ -368,29 +403,61 @@ function pintarPanel() { panelPrev = htmlPanel(); $('panel').innerHTML = panelPr
 const btn = (txt, act, datos, off, cls = '') => `<button class="b ${cls}" data-act="${act}"${Object.entries(datos || {}).map(([k, v]) => ` data-${k}="${v}"`).join('')}${off ? ' disabled' : ''}>${txt}</button>`;
 const costoBtn = (c, act, datos) => btn(`<span class="mon"></span>${fmt(c)}`, act, datos, E.monedas < c, 'oro');
 
+const IMG = '/assets/chicha-wars/';
+const imgCard = (src, color) => `<div class="ico art"${color ? ` style="box-shadow:0 0 0 2px ${color} inset,0 0 14px ${color}55"` : ''}><img src="${IMG}${src}.webp" alt="" loading="lazy" onerror="this.remove()"></div>`;
+const ING_REC = ['ing_maiz', 'ing_canela', 'ing_pina', 'ing_manzana', 'ing_limon', 'ing_azucar'];
+// Todas las mejoras posibles ahora: [costo, titulo, act, datos]. La mas barata que alcanza se ofrece en Cocina.
+function mejorasPosibles() {
+  const l = [];
+  for (let i = 0; i < nOllas(); i++) { const s = D.OLLAS[E.nv.ollas[i] + 1]; if (s) l.push([s.costo, `Olla ${i + 1}: ${s.nombre}`, 'mejora', { k: 'olla', i }, 'olla_' + (E.nv.ollas[i] + 2)]); }
+  for (const [k, lista, nom, img] of [['hornillas', D.HORNILLAS, 'Una hornilla más', 'ico_reloj'], ['fuego', D.FUEGOS, null, 'ico_fogata'], ['receta', D.RECETAS, null, null], ['toldo', D.TOLDOS, null, 'ico_monedas'], ['ayudante', D.AYUDANTES, null, 'ayudante']]) {
+    const s = lista[E.nv[k] + 1]; if (s) l.push([s.costo, nom || s.nombre, 'mejora', { k }, img || ING_REC[Math.min(5, E.nv.receta + 1)]]);
+  }
+  for (const id in D.HERRAMIENTAS) { const r = E.eq[id]; if (r < 4) l.push([D.costoHerr(id, r + 1), `${D.HERRAMIENTAS[id].nombre} ${D.RAREZAS[r + 1].nombre.toLowerCase()}`, 'herr', { id }, id + '_' + (r + 2)]); }
+  return l.sort((a, b) => a[0] - b[0]);
+}
+function mejorAsequible() { return mejorasPosibles().find(m => m[0] <= E.monedas) || null; }
+let subMej = 'herr';
 function filaMejora(titulo, actual, sig, costo, act, datos, ico) {
-  return `<div class="card"><div class="ico">${ico}</div><div class="tx"><b>${titulo}</b><small>${actual}</small>${sig ? `<small class="sig">→ ${sig}</small>` : '<small class="max">Nivel máximo</small>'}</div>${sig ? costoBtn(costo, act, datos) : ''}</div>`;
+  return `<div class="card">${ico.startsWith('<') ? ico : `<div class="ico">${ico}</div>`}<div class="tx"><b>${titulo}</b><small>${actual}</small>${sig ? `<small class="sig">→ ${sig}</small>` : '<small class="max">Nivel máximo</small>'}</div>${sig ? costoBtn(costo, act, datos) : ''}</div>`;
 }
 function htmlPanel() {
   if (tab === 'cocina') {
-    let h = `<div class="resumen"><div><b>${E.stock}</b><small>vasos listos</small></div><div><b>${fmt(E.maiz)} kg</b><small>maíz morado</small></div><div><b>S/ ${precio()}</b><small>por vaso</small></div></div>`;
-    if (E.maiz < vasosOlla(0) * D.MAIZ.porVaso * 2) h += `<div class="card alerta"><div class="tx"><b>Te queda poco maíz morado</b><small>Sin maíz las ollas no cocinan. Cómpralo en el Mercado.</small></div>${btn('Comprar', 'ir', { t: 'mercado' })}</div>`;
+    let h = `<div class="resumen"><div><b>${E.stock}/${capStock()}</b><small>vasos en jarras</small></div><div><b>${fmt(E.maiz)} kg</b><small>maíz morado</small></div><div><b>${fmtP(precio())}</b><small>monedas por vaso</small></div></div>`;
+    const mj = mejorAsequible(), sig = mejorasPosibles()[0];
+    if (mj) h += `<div class="card mejora-ya">${imgCard(mj[4])}<div class="tx"><b>⬆ ¡Ya puedes mejorar!</b><small>${mj[1]}</small></div>${btn(`<span class="mon"></span>${fmt(mj[0])}`, mj[2], mj[3], false, 'oro')}</div>`;
+    else if (sig) h += `<div class="card">${imgCard(sig[4])}<div class="tx"><b>Próxima mejora: ${sig[1]}</b><div class="barra"><i style="width:${Math.min(100, E.monedas / sig[0] * 100)}%"></i></div><small>${fmt(E.monedas)} / ${fmt(sig[0])} monedas</small></div>${btn('Ver todo', 'ir', { t: 'mejoras' })}</div>`;
+    if (E.maiz < maizOlla(0) * 2) h += `<div class="card alerta"><div class="tx"><b>Te queda poco maíz morado</b><small>Sin maíz las ollas no cocinan. Cómpralo en el Mercado.</small></div>${btn('Comprar', 'ir', { t: 'mercado' })}</div>`;
     const rh = E.racha, cobr = rh.cobrado === rh.dia, dia = ((rh.n - 1) % 7);
     h += `<div class="card"><div class="ico">📅</div><div class="tx"><b>Racha: día ${rh.n}</b><small>${D.RACHA_MAIZ.includes(dia) ? (D.RACHA[dia]) + ' kg de maíz' : D.RACHA[dia] + ' monedas'} · vuelve mañana para el día ${rh.n + 1}</small></div>${btn(cobr ? '✓ Cobrado' : 'Cobrar', 'racha', {}, cobr, cobr ? '' : 'oro')}</div>`;
-    h += `<div class="card"><div class="ico">🔥</div><div class="tx"><b>${D.FUEGOS[E.nv.fuego].nombre} · ${segTanda()} s por tanda</b><small>${nOllas()} ${nOllas() > 1 ? 'ollas' : 'olla'} cocinando · ${D.RECETAS[E.nv.receta].nombre}</small></div></div>`;
-    h += `<div class="consejo">Toca a los duendes para espantarlos antes de que lleguen a tus jarras. Si te roban, tócalos mientras huyen: recuperas los vasos.</div>`;
+    h += `<div class="card">${imgCard('ico_fogata')}<div class="tx"><b>${D.FUEGOS[E.nv.fuego].nombre} · ${fmtP(segTanda())} s por tanda${hervor() ? ' · ¡Hervor Cósmico!' : ''}</b><small>${nOllas()} ${nOllas() > 1 ? 'ollas' : 'olla'} cocinando · ${D.RECETAS[E.nv.receta].nombre}</small></div></div>`;
+    h += `<div class="consejo">Toca una olla que hierve para removerla y que esté antes. Toca a los duendes para espantarlos; si te roban, tócalos mientras huyen y recuperas los vasos.</div>`;
     return h;
   }
   if (tab === 'mejoras') {
-    let h = '';
-    for (let i = 0; i < nOllas(); i++) { const n = E.nv.ollas[i], s = D.OLLAS[n + 1]; h += filaMejora(`Olla ${i + 1}: ${D.OLLAS[n].nombre}`, `${D.OLLAS[n].vasos} vasos por tanda`, s && `${s.nombre}: ${s.vasos} vasos`, s && s.costo, 'mejora', { k: 'olla', i }, '🍲'); }
+    let h = `<div class="elige">${btn('Herramientas', 'subMej', { k: 'herr' }, false, subMej === 'herr' ? 'on' : '')}${btn('Puesto y ollas', 'subMej', { k: 'puesto' }, false, subMej === 'puesto' ? 'on' : '')}</div>`;
+    if (subMej === 'herr') {
+      const EF = {
+        cucharon: n => `+${Math.round(n.coccion * 100)} % de velocidad de cocción · ${n.dano} de daño a los duendes`,
+        tabla: n => `+${Math.round(n.corte * 100)} % de velocidad de corte`,
+        exprimidor: n => `${Math.round(n.crit * 100)} % de tanda crítica`,
+        colador: n => `+${Math.round(n.calidad * 100)} % de calidad (precio)`,
+        vaso: n => `+${Math.round(n.venta * 100)} % de monedas por venta`,
+        jarra: n => `+${Math.round(n.cap * 100)} % de reserva (${Math.round(D.STOCK_BASE * (1 + n.cap))} vasos)`,
+      };
+      for (const [id, hh] of Object.entries(D.HERRAMIENTAS)) {
+        const r = E.eq[id], n = hh.niv[r], rz = D.RAREZAS[r], s = hh.niv[r + 1];
+        h += `<div class="card herr">${imgCard(id + '_' + (r + 1), rz.color)}<div class="tx"><b>${hh.nombre} <span style="color:${rz.color}">${rz.nombre}</span></b><small>${n.d}</small><small class="sig">${EF[id](n)}${n.txt ? ' · ' + n.txt : ''}</small>${s ? `<small>→ <span style="color:${D.RAREZAS[r + 1].color}">${D.RAREZAS[r + 1].nombre}</span>: ${EF[id](s)}</small>` : '<small class="max">Rareza máxima</small>'}</div>${s ? costoBtn(D.costoHerr(id, r + 1), 'herr', { id }) : ''}</div>`;
+      }
+      return h;
+    }
+    for (let i = 0; i < nOllas(); i++) { const n = E.nv.ollas[i], s = D.OLLAS[n + 1]; h += filaMejora(`Olla ${i + 1}: ${D.OLLAS[n].nombre}`, `${D.OLLAS[n].vasos} vasos por tanda`, s && `${s.nombre}: ${s.vasos} vasos`, s && s.costo, 'mejora', { k: 'olla', i }, imgCard('olla_' + (n + 1))); }
     const m = (k, lista, ico, act, sig) => { const n = E.nv[k], s = lista[n + 1]; return filaMejora(lista[n].nombre || '', act(lista[n], n), s && sig(s, n + 1), s && s.costo, 'mejora', { k }, ico); };
-    h += m('hornillas', D.HORNILLAS, '🔥', (c) => `${c.n} ${c.n > 1 ? 'hornillas' : 'hornilla'}`, s => `${s.n} hornillas (una olla más)`).replace('<b></b>', '<b>Hornillas</b>');
-    h += m('fuego', D.FUEGOS, '🔥', c => `${c.seg} s por tanda`, s => `${s.nombre}: ${s.seg} s`);
-    h += m('receta', D.RECETAS, '🥤', c => `S/ ${c.precio} por vaso · ${c.ing}`, s => `${s.nombre}: S/ ${s.precio}`);
-    h += m('cucharon', D.CUCHARONES, '⚔', c => `${c.dano} de daño por toque`, s => `${s.nombre}: ${s.dano} de daño`);
-    h += m('toldo', D.TOLDOS, '⌂', c => `un cliente cada ${c.seg} s`, s => `${s.nombre}: cada ${s.seg} s`);
-    h += m('ayudante', D.AYUDANTES, '👥', c => c.golpe ? `recoge ollas y espanta (${c.golpe} de daño)` : c.recoge ? 'recoge las ollas listas' : 'nadie te ayuda', s => s.nombre);
+    h += m('hornillas', D.HORNILLAS, imgCard('ico_reloj'), (c) => `${c.n} ${c.n > 1 ? 'hornillas' : 'hornilla'} (ollas a la vez)`, s => `${s.n} hornillas (una olla más)`).replace('<b></b>', '<b>Hornillas</b>');
+    h += m('fuego', D.FUEGOS, imgCard('ico_fogata'), c => `${c.seg} s por tanda (sin herramientas)`, s => `${s.nombre}: ${s.seg} s`);
+    h += m('receta', D.RECETAS, imgCard(ING_REC[E.nv.receta]), c => `${c.precio} monedas por vaso (base) · ${c.ing}`, s => `${s.nombre}: ${s.precio} de base`);
+    h += m('toldo', D.TOLDOS, imgCard('ico_monedas'), c => `un cliente cada ${c.seg} s`, s => `${s.nombre}: cada ${s.seg} s`);
+    h += m('ayudante', D.AYUDANTES, imgCard('ayudante'), c => c.golpe ? `recoge ollas y espanta (${c.golpe} de daño)` : c.recoge ? 'recoge las ollas listas' : 'nadie te ayuda', s => s.nombre);
     return h;
   }
   if (tab === 'misiones') {
@@ -424,8 +491,8 @@ function htmlPanel() {
     return h;
   }
   if (tab === 'mercado') {
-    let h = '<div class="sub">Maíz morado para tus ollas</div>';
-    for (const [kg, c] of D.MAIZ.paquetes) h += `<div class="card"><div class="ico">🌽</div><div class="tx"><b>${kg} kg de maíz morado</b><small>Alcanza para ${Math.floor(kg / D.MAIZ.porVaso)} vasos</small></div>${costoBtn(c, 'maiz', { kg, c })}</div>`;
+    let h = `<div class="card agricultor">${imgCard('agricultor')}<div class="tx"><b>El Agricultor</b><small>«Maíz morado fresquito para tu chicha, casera.»</small></div></div><div class="sub">Maíz morado para tus ollas</div>`;
+    for (const [kg, c] of D.MAIZ.paquetes) h += `<div class="card">${imgCard('ing_maiz')}<div class="tx"><b>${kg} kg de maíz morado</b><small>Alcanza para ${Math.floor(kg / D.MAIZ.porVaso)} vasos</small></div>${costoBtn(c, 'maiz', { kg, c })}</div>`;
     h += htmlCuenta();
     h += `<a class="card enlace" href="${D.WHATSAPP_CHICHA}" target="_blank" rel="noopener"><div class="ico">🥤</div><div class="tx"><b>¿Quieres chicha morada de verdad?</b><small>Pídela por WhatsApp al +51 916 778 731 (número oficial)</small></div></a>`;
     return h;
@@ -478,6 +545,13 @@ $('panel').addEventListener('click', ev => {
   else if (a === 'personaje') { E.personaje = d.k; son('tap'); }
   else if (a === 'skin') { E.skin[E.personaje] = d.id; son('mejora'); pose('celebra', 1); }
   else if (a === 'ir') { document.querySelector(`.tab[data-t="${d.t}"]`).click(); return; }
+  else if (a === 'subMej') { subMej = d.k; pintarPanel(); return; }
+  else if (a === 'herr') {
+    const r = E.eq[d.id]; if (r >= 4) return;
+    const c = D.costoHerr(d.id, r + 1); if (E.monedas < c) return;
+    E.monedas -= c; E.eq[d.id]++; E.stats.mejoras++; sumar('mejora'); son('nivel'); pose('celebra', 1.4);
+    aviso('✨ ' + D.HERRAMIENTAS[d.id].nombre + ' ' + D.RAREZAS[E.eq[d.id]].nombre.toLowerCase() + ': ' + D.HERRAMIENTAS[d.id].niv[E.eq[d.id]].d, 'ok');
+  }
   else if (a === 'tipoM') { NUBE.tipoM = d.k; NUBE.mercado = []; pintarPanel(); cargarMercado(); return; }
   else if (['cambiar', 'vender', 'comprar', 'retirar', 'darPase'].includes(a)) { accionNube(a, d); return; }
   guardar(); pintarPanel(); pintarHud();
@@ -529,7 +603,7 @@ function inicio() {
     abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande">${btn('Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); } });
     $('modal-c').querySelectorAll('.elige .b').forEach(b => b.onclick = () => { E.personaje = b.dataset.k; $('modal-c').querySelectorAll('.elige .b').forEach(o => o.classList.toggle('on', o === b)); });
   } else if (vuelta) {
-    abrirModal(`<h2>Mientras no estabas</h2><p>Tu puesto siguió abierto ${vuelta.min >= 60 ? Math.floor(vuelta.min / 60) + ' h ' + (vuelta.min % 60) + ' min' : vuelta.min + ' min'}${vuelta.min >= D.OFFLINE_MAX_H * 60 ? ' (máximo 8 h)' : ''}.</p>
+    abrirModal(`<h2>Mientras no estabas</h2><p>Tu puesto siguió abierto ${vuelta.min >= 60 ? Math.floor(vuelta.min / 60) + ' h ' + (vuelta.min % 60) + ' min' : vuelta.min + ' min'}${vuelta.tope ? ` (tu Jarra guarda hasta ${vuelta.horas} h: mejórala para más)` : ''}.</p>
       <div class="resumen"><div><b>${vuelta.tandas}</b><small>tandas</small></div><div><b>${vuelta.vendidos}</b><small>vasos vendidos</small></div><div><b>+${fmt(vuelta.ganado)}</b><small>monedas</small></div></div>
       ${vuelta.sinMaiz ? '<p class="alerta-t">Se te acabó el maíz morado: compra más en el Mercado.</p>' : ''}`, { txt: 'Cobrar', f: () => { son('moneda'); pose('celebra', 1.2); } });
   }

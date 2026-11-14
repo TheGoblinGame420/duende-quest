@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=382) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=383) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{--bg:#1d0f22;--panel:#2a1830;--panel2:#341d3b;--borde:rgba(246,181,46,.28);--txt:#fbf3ff;--txt2:#cdb8d6;--oro:#f6b52e;--mor:#8e3fbf;--ros:#e05a9c;--ok:#7bd88f;--err:#ff6b6b;
   --t:"DQ Iconos","Lilita One",system-ui,sans-serif;--s:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -82,6 +82,9 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 #modal-c .resumen{margin-top:12px}
 .logo{font:44px/1 var(--t);letter-spacing:.03em;background:linear-gradient(180deg,#ffe082,#f6a01e 55%,#c0264b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1.5px #3a1d00;margin:4px 0 6px}
 .alerta-t{color:#ffab91!important}
+.card .ico.art{flex:0 0 56px;height:56px;background:radial-gradient(circle at 50% 40%,#4a2a55,#1d0f22);padding:3px}.card .ico.art img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+.card.mejora-ya{border-color:rgba(246,181,46,.7);background:linear-gradient(135deg,rgba(246,181,46,.18),rgba(52,29,59,1));animation:brillo 1.6s ease-in-out infinite}@keyframes brillo{50%{box-shadow:0 0 18px rgba(246,181,46,.45)}}
+.card.herr .ico.art{flex-basis:64px;height:64px}.card.agricultor .ico.art{flex-basis:64px;height:76px}
 .card.vender{display:block}.form{display:flex;gap:8px;align-items:flex-end;margin-top:8px}.form label{flex:1;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--txt2)}
 .form input{width:100%;min-height:44px;padding:6px 10px;border-radius:10px;border:1.5px solid var(--borde);background:#1a0e1f;color:#fff;font:16px var(--s);user-select:text;-webkit-user-select:text}
 a.b{text-decoration:none}
@@ -112,8 +115,8 @@ a.b{text-decoration:none}
 </div>
 <div id="modal"><div id="modal-c"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=382" defer></script>
-<script type="module" src="/chicha-wars/js/juego.js?v=382"></script>
+<script src="/js/config.js?v=383" defer></script>
+<script type="module" src="/chicha-wars/js/juego.js?v=383"></script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(function(){});</script>
 </body>
 </html>

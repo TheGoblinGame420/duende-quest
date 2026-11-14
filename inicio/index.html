@@ -23,8 +23,8 @@
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="$DUENDE">
-<script src="/js/origen.js?v=382"></script>
-<script src="/js/pwa.js?v=382" defer></script>
+<script src="/js/origen.js?v=383"></script>
+<script src="/js/pwa.js?v=383" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
@@ -50,6 +50,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .hola h1 span{color:var(--oro);}
 .hola p{color:var(--txt2);margin-top:8px;font-size:15px;}
 .cartas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;perspective:1100px;}
+.carta.chichawars{grid-column:1/-1;}
+.chichawars .vista{background:linear-gradient(180deg,#7ec8f2 0%,#ffe1b0 58%,#c9a27a 58%,#a07650 100%);}
+.chichawars .vista img{position:absolute;bottom:6%;height:78%;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));}
+.chichawars .cw-chichera{left:8%;}.chichawars .cw-olla{left:40%;height:52%!important;}.chichawars .cw-duende{right:8%;height:62%!important;}
+.chichawars h2{color:#f0abfc;}.chichawars .jugar{background:linear-gradient(90deg,#7b2cbf,#e05a9c);box-shadow:0 8px 24px rgba(224,90,156,.3);}
 .carta{position:relative;display:block;text-decoration:none;color:var(--txt);border-radius:22px;padding:14px;background:linear-gradient(160deg,rgba(30,20,60,.92),rgba(14,9,30,.95));border:1px solid rgba(167,139,250,.35);box-shadow:0 18px 50px rgba(0,0,0,.45);transform-style:preserve-3d;transition:transform .15s ease-out,box-shadow .25s,border-color .25s;will-change:transform;overflow:hidden;}
 .carta::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 35%);pointer-events:none;opacity:0;transition:opacity .25s;}
 .carta:hover::before{opacity:1;}
@@ -101,7 +106,7 @@ footer a{color:var(--cian);text-decoration:none;}
   </header>
   <section class="hola">
     <h1 id="saludo">¿A qué mundo vas <span>hoy</span>?</h1>
-    <p>Tu mismo duende en los dos juegos. Gratis y sin descargas.</p>
+    <p>Tu mismo duende en ORIGINS y CLASSIC, y tu cuenta también en Chicha Wars. Gratis y sin descargas.</p>
   </section>
   <section class="cartas">
     <a class="carta origins" data-ir="/mundo/">
@@ -122,6 +127,17 @@ footer a{color:var(--cian);text-decoration:none;}
       <h2>Duende Quest Classic</h2>
       <p>El MMO de siempre: mazmorras, la Torre, la banda del Titán y 10 zonas hasta el nivel 60.</p>
       <div class="jugar">⚔️ JUGAR CLASSIC</div>
+    </a>
+    <a class="carta chichawars" data-ir="/chicha-wars/">
+      <div class="vista">
+        <img class="cw-chichera" src="/assets/chicha-wars/chichera_maestra.webp" alt="" loading="lazy">
+        <img class="cw-olla" src="/assets/chicha-wars/olla_5.webp" alt="" loading="lazy">
+        <img class="cw-duende" src="/assets/chicha-wars/duende_pirata.webp" alt="" loading="lazy">
+        <span class="etq">NUEVO · CELULAR</span>
+      </div>
+      <h2>Chicha Wars</h2>
+      <p>Prepara chicha morada, mejora tus ollas y herramientas, y espanta a los duendes ladrones.</p>
+      <div class="jugar">🥤 JUGAR CHICHA WARS</div>
     </a>
   </section>
   <section class="vivo" aria-live="polite">
@@ -146,7 +162,7 @@ footer a{color:var(--cian);text-decoration:none;}
     a.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', a.dataset.ir); } catch (e) {} });
     if (ult === a.dataset.ir) {
       a.classList.add('ultimo');
-      a.querySelector('.jugar').textContent = '▶ CONTINUAR ' + (ult === '/mundo/' ? 'ORIGINS' : 'CLASSIC');
+      a.querySelector('.jugar').textContent = '▶ CONTINUAR ' + (ult === '/mundo/' ? 'ORIGINS' : ult === '/chicha-wars/' ? 'CHICHA WARS' : 'CLASSIC');
       a.parentNode.insertBefore(a, a.parentNode.firstChild);
     }
   });

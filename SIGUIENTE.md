@@ -3740,3 +3740,8 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Cuenta en el servidor por HTTP (`POST /mmo/cw` → `functions/mmo/chichawars.js`, worker.js y `run_worker_first`): misma identidad de Duende Quest (tg/web/inv + uidPrincipal), sin entrar al mundo. Guarda la partida (`cw:<uid>`), abonos con ack, cambio 10 monedas = 1 oro (tope 1000/día, solo cuentas, necesita personaje en DQ), mercado `cwm` de maíz y vasos con depósito y 5 % de comisión, pase premium por código `CW-XXXXXX` que el dueño activa desde el panel del dueño del propio juego. 18 pruebas en el arnés.
 
 - Precio del pase premium de Chicha Wars: S/ 10 por temporada (decisión del dueño, 14-nov-2026), pago único por Yape o equivalente en SOL o Stars.
+
+## Chicha Wars v3 (14-nov-2026)
+- Arte del dueño: `assets/chicha-wars/originales/lamina_*.jpg` (no se publica) → `python tools/cw_recortar.py` recorta cada pieza (fondo gris por relleno desde los bordes, franjas LVL fuera) y luego WebP + `sprites.json`. Duendes enemigos = sus skins ilustradas de Descargas (pirata, lobo, bruja, momia, vampiro, esqueleto y la mascota como Rey de los Ladrones).
+- Herramientas con 5 rarezas (tablas del dueño): cucharón (cocción, producción, daño, Hervor Cósmico), tabla (corte, ahorro de maíz), exprimidor (críticos, Ráfaga Cítrica), colador (calidad, reputación, Néctar), vaso (venta, propinas), jarra (reserva, horas y eficiencia offline, autoventa). `E.eq`.
+- Ritmo: tandas de 10 s (antes 30), tocar la olla la remueve (-12 %), mejora recomendada en Cocina y punto en Mejoras cuando algo alcanza. Tarjeta en /inicio/.

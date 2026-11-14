@@ -20,6 +20,7 @@ export async function cargarSprites(base) {
   return SPR.size;
 }
 // Dibuja el sprite k con los pies en (x, y) y alto h; false si no existe.
+export const tieneSpr = k => SPR.has(k);
 export function spr(x, k, px, py, h, voltear) {
   const s = SPR.get(k); if (!s) return false;
   const w = h * s.im.width / s.im.height;
@@ -93,6 +94,7 @@ function brazo(x, sx, sy, a, l, manga, piel, s) {
 // ── CHICHERA ──
 // pose: quieta | remueve | espanta | celebra | susto
 export function chichera(x, px, py, s, pose, t, P) {
+  if (SPR.has('chichera_maestra')) { personaAnimada(x, 'chichera_maestra', px, py, 250 * s, pose, t, P && P.filtro); return; }
   if (spr(x, 'chichera_' + pose, px, py, 230 * s) || spr(x, 'chichera_quieta', px, py, 230 * s)) return;
   const piel = '#c98b5e', resp = Math.sin(t * 2.2) * 1.6 * s, rebote = pose === 'celebra' ? -Math.abs(Math.sin(t * 9)) * 8 * s : 0;
   sombra(x, px, py, 58 * s);
@@ -140,6 +142,20 @@ export function chichera(x, px, py, s, pose, t, P) {
   x.restore();
 }
 
+// Persona del dueño animada: respira, remueve, se lanza a espantar, salta al celebrar y tiembla del susto.
+export function personaAnimada(x, k, px, py, h, pose, t, filtro) {
+  sombra(x, px, py, h * 0.24);
+  x.save(); x.translate(px, py);
+  if (filtro) x.filter = filtro;
+  if (pose === 'remueve') x.rotate(Math.sin(t * 5) * 0.035);
+  else if (pose === 'espanta') { x.translate(16, -4); x.rotate(0.13); }
+  else if (pose === 'celebra') x.translate(0, -Math.abs(Math.sin(t * 9)) * 16);
+  else if (pose === 'susto') x.translate(Math.sin(t * 45) * 3.5, 0);
+  x.scale(1, 1 + Math.sin(t * 2.2) * 0.012);
+  spr(x, k, 0, 0, h);
+  x.restore();
+}
+
 // ── CHICHERO ──
 export function chichero(x, px, py, s, pose, t, P) {
   if (spr(x, 'chichero_' + pose, px, py, 230 * s) || spr(x, 'chichero_quieto', px, py, 230 * s)) return;
@@ -177,8 +193,20 @@ export function chichero(x, px, py, s, pose, t, P) {
 
 // ── DUENDE LADRON (como la mascota: cabeza cuadrada verde, orejas largas y ojos azules) ──
 const ROPA_D = { ladron: '#6b4423', rapido: '#2e7d32', gordo: '#5d4037', gancho: '#455a64', jefe: '#6a1b9a' };
+export const altoDuende = (k, s) => (SPR.size ? (k === 'jefe' ? 200 : k === 'gordo' ? 140 : 125) : (k === 'jefe' ? 170 : 110)) * s;
 export function duende(x, px, py, s, k, t, estado) {
   // estado: { corre, lleva, golpe (0..1), huye }
+  if (estado.var && SPR.has('duende_' + estado.var)) {
+    const h = (k === 'jefe' ? 200 : k === 'gordo' ? 140 : k === 'rapido' ? 118 : 125) * s, paso = estado.corre ? t * (k === 'rapido' ? 16 : 11) : 0;
+    sombra(x, px, py, h * 0.22);
+    x.save(); x.translate(px, py - (estado.corre ? Math.abs(Math.sin(paso)) * 7 * s : 0));
+    x.rotate(estado.corre ? Math.sin(paso) * 0.06 : 0);
+    if (estado.golpe > 0) { x.translate(Math.sin(estado.golpe * 60) * 4, 0); x.scale(1.06, 0.94); if (estado.golpe > 0.18) x.filter = 'brightness(1.9) saturate(.6)'; }
+    spr(x, 'duende_' + estado.var, 0, 0, h, !!estado.huye);
+    x.restore();
+    if (estado.lleva && estado.huye) vaso(x, px + 20 * s, py - h * 0.62, 0.9 * s);
+    return;
+  }
   const nombreSpr = 'duende_' + k + (estado.golpe > 0 ? '_golpeado' : estado.lleva ? '_roba' : '_corre');
   if (spr(x, nombreSpr, px, py, (k === 'jefe' ? 190 : k === 'gordo' ? 130 : 110) * s, !estado.huye)) return;
   const esc = s * (k === 'jefe' ? 1.6 : k === 'gordo' ? 1.15 : 1);
@@ -227,6 +255,12 @@ export function duende(x, px, py, s, k, t, estado) {
 // ── OLLA y FUEGO ──
 const OLLA_COL = [['#b8613a', '#8d4426'], ['#a85633', '#7a3a1f'], ['#c87533', '#8a4a1a'], ['#f2c33a', '#b8860b'], ['#7b3fbf', '#4a148c']];
 export function olla(x, cx, py, s, nivel, llenado, lista, t) {
+  if (SPR.has('olla_' + (nivel + 1))) {
+    const h = 128 * s, pulso = llenado ? 1 + Math.sin(t * 7) * 0.018 : 1;
+    x.save(); x.translate(cx, py); x.scale(2 - pulso, pulso); spr(x, 'olla_' + (nivel + 1), 0, 0, h); x.restore();
+    if (lista) brilloLista(x, cx, py - h - 6 * s, s, t);
+    return;
+  }
   if (spr(x, 'olla_' + (nivel + 1), cx, py, 120 * s)) { if (lista) brilloLista(x, cx, py - 120 * s, s, t); return; }
   const [c1, c2] = OLLA_COL[nivel] || OLLA_COL[0];
   const w = 54 * s, h = 62 * s, top = py - h;
@@ -253,8 +287,9 @@ export function olla(x, cx, py, s, nivel, llenado, lista, t) {
 function brilloLista(x, cx, cy, s, t) {
   const b = Math.sin(t * 6) * 4 * s;
   x.save(); x.globalAlpha = 0.85; const g = x.createRadialGradient(cx, cy + b, 2, cx, cy + b, 34 * s); g.addColorStop(0, 'rgba(255,230,120,.95)'); g.addColorStop(1, 'rgba(255,230,120,0)'); x.fillStyle = g; x.beginPath(); x.arc(cx, cy + b, 34 * s, 0, PI * 2); x.fill(); x.restore();
-  vaso(x, cx, cy + 12 * s + b, s * 1.25);
+  if (!spr(x, VASO_SPR.k, cx, cy + 22 * s + b, 46 * s)) vaso(x, cx, cy + 12 * s + b, s * 1.25);
 }
+export const VASO_SPR = { k: 'vaso_1' };   // el juego pone el vaso de la rareza actual
 export function fuego(x, cx, py, s, nivel, t, encendido) {
   if (spr(x, 'fuego_' + (nivel + 1), cx, py, 70 * s)) return;
   if (nivel <= 0) {   // fogon de piedra con leña
@@ -283,7 +318,16 @@ const CLI = [
   { piel: '#c68a5e', ropa: '#00838f', pelo: '#1b1b1b', sombrero: '#fbc02d', alto: 1.02 },
 ];
 export const N_CLIENTES = CLI.length;
+const CLI_SPR = ['casera', 'aventurero', 'alquimista', 'agricultor'];
 export function cliente(x, px, py, s, i, t, camina, feliz) {
+  const ks = CLI_SPR[i % CLI_SPR.length];
+  if (SPR.has(ks)) {
+    const h = 175 * s, b = camina ? Math.abs(Math.sin(t * 9)) * 4 : 0;
+    sombra(x, px, py, h * 0.2);
+    x.save(); x.translate(px, py - b); if (camina) x.rotate(Math.sin(t * 9) * 0.03); spr(x, ks, 0, 0, h); x.restore();
+    if (feliz) { x.save(); x.font = '22px system-ui'; x.textAlign = 'center'; x.fillText('♥', px + 26, py - h - 6 + Math.sin(t * 6) * 3); x.restore(); }
+    return;
+  }
   if (spr(x, 'cliente_' + (i + 1), px, py, 170 * s * CLI[i].alto, true)) return;
   const c = CLI[i], k = s * c.alto, paso = camina ? Math.sin(t * 10) : 0;
   sombra(x, px, py, 30 * k);
@@ -347,7 +391,15 @@ export function mostrador(x, W, piso) {
   x.restore();
 }
 // Estante de jarras: las jarras se llenan segun los vasos guardados.
-export function estante(x, cx, py, vasos, cap) {
+export function estante(x, cx, py, vasos, cap, jarraR) {
+  const kj = 'jarra_' + (Math.min(5, jarraR || 0) + 1);
+  if (SPR.has(kj)) {
+    const llenas = Math.min(3, Math.ceil(vasos / Math.max(1, cap) * 3));
+    for (let i = 0; i < 3; i++) { x.save(); x.globalAlpha = i < llenas ? 1 : 0.35; spr(x, kj, cx - 46 + i * 46, py, 52); x.restore(); }
+    x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = vasos >= cap ? '#ff8a80' : '#fff3c4';
+    const tx = vasos + ' / ' + cap; x.strokeText(tx, cx, py + 16); x.fillText(tx, cx, py + 16); x.restore();
+    return;
+  }
   rr(x, cx - 60, py - 8, 120, 8, 3); trazo(x, '#6d4426', 2.5);
   const llenas = Math.min(5, Math.ceil(vasos / Math.max(1, cap) * 5));
   for (let i = 0; i < 5; i++) {
