@@ -5,6 +5,7 @@
 // spr() las usa en lugar de estos dibujos sin cambiar el juego.
 // Origen de cada figura: los pies (x, y). s = escala.
 // ═══════════════════════════════════════════════════════
+import * as R from './rig.js?v=384';
 const TINTA = '#2a1712';
 const PI = Math.PI;
 
@@ -21,6 +22,7 @@ export async function cargarSprites(base) {
 }
 // Dibuja el sprite k con los pies en (x, y) y alto h; false si no existe.
 export const tieneSpr = k => SPR.has(k);
+export const img = k => { const s = SPR.get(k); return s ? s.im : null; };
 export function spr(x, k, px, py, h, voltear) {
   const s = SPR.get(k); if (!s) return false;
   const w = h * s.im.width / s.im.height;
@@ -319,13 +321,14 @@ const CLI = [
 ];
 export const N_CLIENTES = CLI.length;
 const CLI_SPR = ['casera', 'aventurero', 'alquimista', 'agricultor'];
+export const clienteSpr = i => { const k = CLI_SPR[i % CLI_SPR.length]; return SPR.has(k) ? k : null; };
 export function cliente(x, px, py, s, i, t, camina, feliz) {
   const ks = CLI_SPR[i % CLI_SPR.length];
   if (SPR.has(ks)) {
     const h = 175 * s, b = camina ? Math.abs(Math.sin(t * 9)) * 4 : 0;
     sombra(x, px, py, h * 0.2);
     x.save(); x.translate(px, py - b); if (camina) x.rotate(Math.sin(t * 9) * 0.03); spr(x, ks, 0, 0, h); x.restore();
-    if (feliz) { x.save(); x.font = '22px system-ui'; x.textAlign = 'center'; x.fillText('♥', px + 26, py - h - 6 + Math.sin(t * 6) * 3); x.restore(); }
+    if (feliz) { x.save(); x.font = '22px "DQ Iconos", system-ui'; x.textAlign = 'center'; x.fillText('♥', px + 26, py - h - 6 + Math.sin(t * 6) * 3); x.restore(); }
     return;
   }
   if (spr(x, 'cliente_' + (i + 1), px, py, 170 * s * CLI[i].alto, true)) return;
@@ -349,8 +352,10 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
   const cielo = x.createLinearGradient(0, 0, 0, piso);
   if (noche) { cielo.addColorStop(0, '#0e1236'); cielo.addColorStop(1, '#3b2a6b'); } else { cielo.addColorStop(0, '#7ec8f2'); cielo.addColorStop(1, '#ffe1b0'); }
   x.fillStyle = cielo; x.fillRect(0, 0, W, piso);
-  // sol o luna
+  // sol o luna, con resplandor y rayos (rig.js), y nubes que pasan
+  R.sol(x, W * 0.8, piso * 0.22, t, noche);
   x.beginPath(); x.arc(W * 0.8, piso * 0.22, 26, 0, PI * 2); x.fillStyle = noche ? '#f5f1d6' : '#fff1a8'; x.fill();
+  R.nubes(x, W, piso, t, noche);
   // cordillera en capas
   const capas = noche ? ['#2b2d5c', '#3a3570', '#4b3f7a'] : ['#9bb7d4', '#7f9fbf', '#6b8f6a'];
   capas.forEach((c, i) => {
@@ -396,7 +401,7 @@ export function estante(x, cx, py, vasos, cap, jarraR) {
   if (SPR.has(kj)) {
     const llenas = Math.min(3, Math.ceil(vasos / Math.max(1, cap) * 3));
     for (let i = 0; i < 3; i++) { x.save(); x.globalAlpha = i < llenas ? 1 : 0.35; spr(x, kj, cx - 46 + i * 46, py, 52); x.restore(); }
-    x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = vasos >= cap ? '#ff8a80' : '#fff3c4';
+    x.save(); x.font = '15px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = vasos >= cap ? '#ff8a80' : '#fff3c4';
     const tx = vasos + ' / ' + cap; x.strokeText(tx, cx, py + 16); x.fillText(tx, cx, py + 16); x.restore();
     return;
   }

@@ -6,9 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=383';
-import * as A from './arte.js?v=383';
-import { pedir } from './red.js?v=383';
+import * as D from './datos.js?v=384';
+import * as A from './arte.js?v=384';
+import { pedir } from './red.js?v=384';
+import * as R from './rig.js?v=384';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -111,11 +112,14 @@ const vasosOlla = i => Math.round(D.OLLAS[E.nv.ollas[i]].vasos * (1 + HR('cuchar
 const maizOlla = i => D.OLLAS[E.nv.ollas[i]].vasos * D.MAIZ.porVaso * (1 - HR('tabla').ahorro);
 const precio = () => D.RECETAS[E.nv.receta].precio * (1 + HR('vaso').venta) * (1 + HR('colador').calidad) * (HR('colador').nectar ? 2 : 1) * (1 + (HR('jarra').temp || 0));
 const capStock = () => Math.round(D.STOCK_BASE * (1 + HR('jarra').cap));
-const segCliente = () => D.TOLDOS[E.nv.toldo].seg / (1 + HR('colador').rep);
+const horaPunta = () => (Date.now() / 1000) % D.HORA_PUNTA.cada < D.HORA_PUNTA.dura;
+const segCliente = () => D.TOLDOS[E.nv.toldo].seg / (1 + HR('colador').rep) / (horaPunta() ? D.HORA_PUNTA.mult : 1);
+const PUESTOS = [118, 238, 352];
+const SPR_PJ = { chichera: 'chichera_maestra', chichero: 'agricultor' };   // donde se paran los clientes (las jarras van a la derecha del mostrador)
 const dano = () => HR('cucharon').dano;
 const fmtP = n => n >= 100 ? fmt(n) : (Math.round(n * 10) / 10).toLocaleString('es-PE');
 const ayud = () => D.AYUDANTES[E.nv.ayudante];
-const xOlla = i => 150 + i * 98;
+const xOlla = i => 182 + i * 92;
 const Y_OLLA = 505;
 const nivelPase = () => Math.min(D.PASE.niveles, Math.floor(E.pase.xp / D.PASE.xpNivel));
 
@@ -172,24 +176,54 @@ const vuelta = offline();
 let duendes = [], clientes = [], parts = [], textos = [];
 let proxCliente = 2, proxOleada = 12, colaSpawn = [], tSpawn = 0, ayudT = 0;
 let poseAct = 'quieta', poseHasta = 0, T = 0;
-function pose(p, seg) { poseAct = p; poseHasta = T + seg; }
+const rigCh = R.rigNuevo(), rigAy = R.rigNuevo();
+let chVy = 0;
+function pose(p, seg) {
+  if (p === 'espanta') { rigCh.bend.golpe(3.4); rigCh.head.golpe(4); rigCh.sy.golpe(-2.2); }   // se lanza hacia los duendes
+  if (p === 'celebra' && rigCh.dy >= 0) { chVy = -430; rigCh.sy.golpe(3.5); }                  // salta de alegria
+  if (p === 'susto') { rigCh.sy.golpe(-3); rigCh.bend.golpe(-3); }                              // se echa atras
+  if (p === 'remueve' && poseAct !== 'remueve') rigCh.bend.golpe(1.2);
+  poseAct = p; poseHasta = T + seg;
+}
+// Jugo del juego: pausa de golpe, temblor de camara, combo y duendes que salen volando.
+let paro = 0, temblor = 0, combo = 0, comboT = -9, comboVer = 0, voladores = [], piedras = [];
+function temblar(n) { temblor = Math.max(temblor, n); }
+function animarCh(dt) {
+  const r = rigCh;
+  r.breathe = Math.sin(T * 2.2) * 0.022;
+  r.bend.obj = poseAct === 'remueve' ? Math.sin(T * 5) * 0.04 : poseAct === 'susto' ? -0.05 : 0;
+  r.head.obj = poseAct === 'remueve' ? Math.sin(T * 5 - 0.7) * 0.06 : poseAct === 'susto' ? Math.sin(T * 38) * 0.06 : Math.sin(T * 1.3) * 0.03;
+  r.sy.obj = poseAct === 'susto' ? 0.94 : 1;
+  if (r.dy < 0 || chVy < 0) { chVy += 1500 * dt; r.dy += chVy * dt; if (r.dy >= 0) { r.dy = 0; chVy = 0; r.sy.golpe(-3.2); } }
+  R.rigPaso(r, dt);
+}
 
 function particulas(px, py, n, color, opc = {}) {
-  for (let i = 0; i < n; i++) parts.push({ x: px, y: py, vx: azar(-1, 1) * (opc.vel || 160), vy: azar(-1.2, -0.2) * (opc.vel || 160), g: opc.g ?? 420, vida: opc.vida || 0.7, t: 0, r: azar(2, opc.r || 5), color, moneda: opc.moneda });
+  for (let i = 0; i < n; i++) parts.push({ x: px, y: py, vx: azar(-1, 1) * (opc.vel || 160), vy: azar(-1.2, -0.2) * (opc.vel || 160), g: opc.g ?? 420, vida: opc.moneda ? 1.1 : opc.vida || 0.7, t: 0, r: azar(2, opc.r || 5), color, moneda: opc.moneda });
 }
+// Posicion del contador de monedas en la escena (las monedas vuelan hasta el).
+function hudMonedas() { const a = lienzo.getBoundingClientRect(), b = $('h-monedas').getBoundingClientRect(); return [(b.left - a.left + 6) / a.width * W, (b.top - a.top + b.height / 2) / a.height * H]; }
+let hudM = [60, 26], pulsoT = 0;
+setInterval(() => { try { hudM = hudMonedas(); } catch (e) {} }, 1000);
 function texto(px, py, txt, color = '#ffe082', tam = 26) { textos.push({ x: px, y: py, txt, color, tam, t: 0 }); }
 
 function spawnDuende(k) {
   const n = E.oleada;
-  const VAR = { ladron: ['pirata', 'vampiro', 'esqueleto'], rapido: ['lobo'], gordo: ['momia'], gancho: ['bruja'], jefe: ['jefe'] }[k] || ['pirata'];
-  duendes.push({ k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(480, 600), vida: D.vidaDuende(k, n), max: D.vidaDuende(k, n), vel: D.DUENDES[k].vel * azar(0.9, 1.1), lleva: 0, huye: false, golpe: 0, robaT: 0 });
+  const VAR = { ladron: ['pirata', 'vampiro', 'esqueleto'], rapido: ['lobo'], gordo: ['momia'], gancho: ['bruja'], jefe: ['jefe'], dorado: ['lobo', 'pirata'] }[k] || ['pirata'];
+  if (k === 'dorado') { duendes.push({ rig: R.rigNuevo(), k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(520, 610), vida: 1, max: 1, vel: D.DUENDES.dorado.vel, lleva: 0, huye: false, golpe: 0, robaT: 0 }); return; }
+  duendes.push({ rig: R.rigNuevo(), k, var: VAR[Math.floor(Math.random() * VAR.length)], x: W + 40, y: azar(480, 600), vida: D.vidaDuende(k, n), max: D.vidaDuende(k, n), vel: D.DUENDES[k].vel * azar(0.9, 1.1), lleva: 0, huye: false, golpe: 0, robaT: 0 });
 }
 function golpear(d, n) {
   d.vida -= n; d.golpe = 0.35;
+  d.rig.flash = 1; d.rig.sy.golpe(-4); d.rig.bend.golpe(5); d.rig.head.golpe(6); d.x += D.DUENDES[d.k].jefe ? 4 : 12;
+  paro = Math.max(paro, D.DUENDES[d.k].jefe ? 0.07 : 0.045); temblar(D.DUENDES[d.k].jefe ? 5 : 2.5);
+  parts.push({ x: d.x, y: d.y - A.altoDuende(d.k, 0.8) * 0.5, anillo: true, t: 0, vida: 0.3, r: 10, color: '#fff' });
+  combo = T - comboT < 0.9 ? combo + 1 : 1; comboT = T; if (combo >= 3) comboVer = 1;
   particulas(d.x, d.y - 60, 6, '#d65caa', { vel: 200 });
   texto(d.x, d.y - 110, '-' + n, '#ff8a80', 24);
   if (d.vida <= 0) {
-    const pr = D.premioDuende(d.k, E.oleada);
+    const pr = D.DUENDES[d.k].dorado ? D.premioDorado(E.oleada) : D.premioDuende(d.k, E.oleada);
+    if (D.DUENDES[d.k].dorado) { aviso('✨ ¡Atrapaste al duende dorado! +' + pr + ' monedas', 'ok'); son('nivel'); particulas(d.x, d.y - 60, 24, '#ffd54a', { vel: 320, moneda: true }); }
     E.monedas += pr; E.stats.duendes++; sumar('espanta'); xp(D.XP.duende);
     if (d.lleva) { E.stock += d.lleva; texto(d.x, d.y - 140, '+' + d.lleva + ' vasos recuperados', '#c5e1a5', 20); }
     if (D.DUENDES[d.k].jefe) { xp(D.XP.jefe); pose('celebra', 2); aviso('👑 ¡Venciste al Rey de los Ladrones! +' + pr + ' monedas', 'ok'); vibrar(80); }
@@ -197,6 +231,8 @@ function golpear(d, n) {
     particulas(d.x, d.y - 50, 10, '#e0e0e0', { vel: 120, g: -60, vida: 0.9, r: 10 });
     texto(d.x, d.y - 90, '+' + pr, '#ffd54a', 28);
     d.muerto = true;
+    voladores.push({ k: d.k, var: d.var, x: d.x, y: d.y, vx: 160 + Math.random() * 120, vy: -380 - Math.random() * 120, rot: 0, vr: 7 + Math.random() * 5, rig: d.rig, t: 0 });
+    temblar(D.DUENDES[d.k].jefe ? 9 : 4);
   }
 }
 
@@ -209,13 +245,13 @@ lienzo.addEventListener('pointerdown', ev => {
   // 1. un duende (el mas cercano al dedo)
   let mejor = null, md = 70;
   for (const d of duendes) { if (d.muerto) continue; const dd = Math.hypot(d.x - px, d.y - A.altoDuende(d.k, 0.8) * 0.5 - py); if (dd < md + (D.DUENDES[d.k].jefe ? 30 : 0)) { md = dd; mejor = d; } }
-  if (mejor) { golpear(mejor, dano()); pose('espanta', 0.35); son('golpe'); vibrar(15); return; }
+  if (mejor) { if ((E.tuto || 0) < 2) E.tuto = 2; golpear(mejor, dano()); pose('espanta', 0.35); son('golpe'); vibrar(15); return; }
   // 2. una olla lista
   for (let i = 0; i < nOllas(); i++) {
     const o = E.ollas[i];
     if (Math.abs(px - xOlla(i)) < 55 && py > Y_OLLA - 130 && py < Y_OLLA + 40) {
       if (o.lista) { recoger(i); return; }
-      if (o.fin) { o.fin = Math.max(Date.now(), o.fin - segTanda() * 1000 * 0.12); pose('remueve', 0.4); particulas(xOlla(i), Y_OLLA - 70, 5, '#d65caa', { vel: 110 }); texto(xOlla(i), Y_OLLA - 100, '¡A remover!', '#f8bbd0', 16); return; }
+      if (o.fin) { if (!E.tuto) E.tuto = 1; o.fin = Math.max(Date.now(), o.fin - segTanda() * 1000 * 0.12); pose('remueve', 0.4); particulas(xOlla(i), Y_OLLA - 70, 5, '#d65caa', { vel: 110 }); texto(xOlla(i), Y_OLLA - 100, '¡A remover!', '#f8bbd0', 16); return; }
     }
   }
   // 3. salpicon al aire: el toque nunca se siente muerto
@@ -245,8 +281,10 @@ function recoger(i) {
 // ── BUCLE ──
 let ultimo = performance.now();
 function cuadro(ahora) {
-  const dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora; T += dt;
-  if (E.elegido) logica(dt);
+  let dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
+  if (paro > 0) { paro -= dt; dt = dt * 0.08; }   // pausa de golpe: el mundo casi se congela un instante
+  T += dt;
+  if (E.elegido) logica(dt); else { animarCh(dt); }
   dibujar();
   requestAnimationFrame(cuadro);
 }
@@ -266,25 +304,31 @@ function logica(dt) {
   if (T > poseHasta) poseAct = cocinando ? 'remueve' : 'quieta';
   // clientes
   proxCliente -= dt;
-  if (proxCliente <= 0 && clientes.length < 4) { proxCliente = segCliente() * azar(0.8, 1.2); clientes.push({ i: Math.floor(Math.random() * A.N_CLIENTES), x: -40, meta: W / 2 - 40 + clientes.length * 26, est: 'llega', t: 0, feliz: false }); }
+  const libre = PUESTOS.findIndex(px => !clientes.some(c => c.puesto === px && c.est !== 'va'));
+  if (proxCliente <= 0 && libre >= 0) { proxCliente = segCliente() * azar(0.8, 1.2); clientes.push({ i: Math.floor(Math.random() * 4), x: -40, meta: PUESTOS[libre], puesto: PUESTOS[libre], est: 'llega', t: 0, feliz: false }); }
+  // Aviso de hora punta (una vez por ventana)
+  if (horaPunta() && !E._punta) { E._punta = true; aviso('🔔 ¡Hora punta! El doble de clientes durante 30 s', 'ok'); } else if (!horaPunta()) E._punta = false;
   for (const c of clientes) {
     c.t += dt;
     if (c.est === 'llega') { c.x += 120 * dt; if (c.x >= c.meta) { c.x = c.meta; c.est = 'espera'; c.t = 0; } }
     else if (c.est === 'espera') {
       if (E.stock > 0 && c.t > 0.5) {
-        const n = Math.min(E.stock, 1 + Math.floor(Math.random() * 3));
+        const n = Math.min(E.stock, 1 + Math.floor(Math.random() * 3) + Math.floor(E.stock / capStock() * 3));
         let pago = Math.max(1, Math.round(n * precio()));
         const vs = HR('vaso');
         if (Math.random() < vs.propina[0]) { const extra = Math.max(1, Math.round(pago * vs.propina[1])); pago += extra; texto(c.x, PISO - 222, '¡Propina +' + fmt(extra) + '!', '#c5e1a5', 18); }
         E.stock -= n; E.monedas += pago; E.stats.vasos += n; sumar('vende', n); xp(D.XP.vaso * n);
         texto(c.x, PISO - 190, '+' + fmt(pago), '#ffd54a', 26); particulas(c.x, PISO - 170, 6, '#ffd54a', { vel: 150, moneda: true }); son('moneda');
-        c.est = 'va'; c.feliz = true;
+        c.est = 'va'; c.feliz = true; c.vy = -300; c.rig && c.rig.sy.golpe(3);
       } else if (c.t > 8) { c.est = 'va'; texto(c.x, PISO - 190, '¡No hay chicha!', '#ffab91', 18); }
     } else c.x += 140 * dt;
   }
   clientes = clientes.filter(c => c.x < W + 60);
   // Jarra legendaria: al llenarse, se vende sola.
   if (HR('jarra').autoventa && E.stock >= capStock()) { const g = Math.round(E.stock * precio()); E.monedas += g; E.stats.vasos += E.stock; sumar('vende', E.stock); E.stock = 0; texto(W / 2 + 20, PISO - 120, 'Autoventa +' + fmt(g), '#ffd54a', 22); son('moneda'); }
+  // Duende dorado: cada 1,5-3 min cruza corriendo
+  E._dorT = (E._dorT ?? 70) - dt;
+  if (E._dorT <= 0) { E._dorT = azar(90, 180); spawnDuende('dorado'); aviso('✨ ¡Un duende dorado! Atrápalo antes de que escape', 'ok'); }
   // oleadas
   proxOleada -= dt;
   if (proxOleada <= 0) {
@@ -299,6 +343,13 @@ function logica(dt) {
     if (d.muerto) continue;
     d.golpe = Math.max(0, d.golpe - dt);
     const def = D.DUENDES[d.k];
+    { const mov = d.huye || (d.x > metaX + (def.alcance || 0) && d.golpe <= 0), vel = d.huye ? 1.15 : 1;
+      d.rig.legPh += mov ? d.vel * vel * dt * 0.11 : 0; d.rig.legAmp += ((mov ? (d.k === 'rapido' ? 0.13 : 0.09) : 0) - d.rig.legAmp) * Math.min(1, dt * 8);
+      d.rig.lean.obj = mov ? -0.07 : 0;   /* se inclina hacia donde corre (al huir la imagen va volteada) */ d.rig.breathe = Math.sin(T * 3 + d.y) * 0.02;
+      d.rig.dy = mov ? -Math.abs(Math.sin(d.rig.legPh)) * 7 : 0;
+      if (D.DUENDES[d.k].jefe && mov && Math.abs(Math.sin(d.rig.legPh)) < 0.08) temblar(2);
+      R.rigPaso(d.rig, dt); }
+    if (def.dorado) { d.x -= d.vel * dt; if (d.x < -70) d.muerto = true; if (Math.random() < 0.3) parts.push({ x: d.x + azar(-10, 10), y: d.y - azar(20, 90), vx: 0, vy: -20, g: 0, vida: 0.6, t: 0, r: azar(1.5, 3.5), color: '#ffe082' }); continue; }
     if (d.huye) { d.x += d.vel * 1.15 * dt; continue; }
     const alcance = def.alcance || 0;
     if (d.x > metaX + alcance) { if (d.golpe <= 0) d.x -= d.vel * dt; }
@@ -316,61 +367,107 @@ function logica(dt) {
   }
   duendes = duendes.filter(d => !d.muerto && d.x < W + 80);
   // ayudante con honda
-  if (ayud().golpe) { ayudT -= dt; if (ayudT <= 0) { ayudT = 2; const d = duendes.filter(dd => !dd.muerto).sort((a, b) => a.x - b.x)[0]; if (d) { particulas(d.x, d.y - 60, 4, '#9e9e9e', { vel: 90 }); golpear(d, ayud().golpe); } } }
+  if (ayud().golpe) { ayudT -= dt; if (ayudT <= 0) { ayudT = 2; const d = duendes.filter(dd => !dd.muerto).sort((a, b) => a.x - b.x)[0]; if (d) { piedras.push({ x0: W - 52, y0: 395, d, t: 0 }); rigAy.bend.golpe(-4); rigAy.sy.golpe(-2); } } }
+  for (const pd of piedras) { pd.t += dt * 2.6; if (pd.t >= 1 && !pd.hecho) { pd.hecho = true; if (!pd.d.muerto) { particulas(pd.d.x, pd.d.y - 60, 5, '#9e9e9e', { vel: 110 }); golpear(pd.d, ayud().golpe); } } }
+  piedras = piedras.filter(pd => pd.t < 1.05);
+  rigAy.breathe = Math.sin(T * 2.6 + 1) * 0.025; rigAy.head.obj = Math.sin(T * 1.7) * 0.04; R.rigPaso(rigAy, dt);
+  // duendes vencidos: salen volando girando y caen fuera de la pantalla
+  for (const v of voladores) { v.t += dt; v.vy += 1100 * dt; v.x += v.vx * dt; v.y += v.vy * dt; v.rot += v.vr * dt; v.rig.alpha = Math.max(0, 1 - v.t / 1.4); R.rigPaso(v.rig, dt); }
+  voladores = voladores.filter(v => v.t < 1.4 && v.y < H + 200);
+  // clientes con paso y saltito al comprar
+  for (const c of clientes) { c.rig = c.rig || R.rigNuevo(); const mv = c.est !== 'espera'; c.rig.legPh += mv ? dt * 10 : 0; c.rig.legAmp += ((mv ? 0.07 : 0) - c.rig.legAmp) * Math.min(1, dt * 8); c.rig.breathe = Math.sin(T * 2 + c.i) * 0.02;
+    if (c.vy) { c.vy += 1200 * dt; c.rig.dy += c.vy * dt; if (c.rig.dy >= 0) { c.rig.dy = 0; c.vy = 0; c.rig.sy.golpe(-2.5); } } else c.rig.dy = mv ? -Math.abs(Math.sin(c.rig.legPh)) * 4 : 0;
+    R.rigPaso(c.rig, dt); }
+  animarCh(dt);
+  if (T - comboT > 0.9 && combo) { if (combo >= 5) { const b = combo * 2; E.monedas += b; texto(W / 2, 150, 'Combo ×' + combo + ': +' + b, '#ffd54a', 22); } combo = 0; }
+  comboVer = Math.max(0, comboVer - dt * 1.5);
   // particulas y textos
-  for (const p of parts) { p.t += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  for (const p of parts) {
+    p.t += dt;
+    if (p.moneda && p.t > 0.3) { const k = Math.min(1, (p.t - 0.3) / 0.55), e = k * k; p.x += (hudM[0] - p.x) * e; p.y += (hudM[1] - p.y) * e; if (k >= 1 && !p.llego) { p.llego = true; p.t = p.vida; pulsoT = 0.25; } }
+    else { p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  }
   parts = parts.filter(p => p.t < p.vida);
+  if (pulsoT > 0) { pulsoT -= dt; $('h-monedas').parentNode.classList.toggle('pulso', pulsoT > 0); }
   for (const tx of textos) tx.t += dt;
   textos = textos.filter(tx => tx.t < 1.1);
   pintarHud();
 }
 function dibujar() {
   x.setTransform(lienzo.width / W, 0, 0, lienzo.height / H, 0, 0);
+  if (temblor > 0.05) { x.translate((Math.random() - 0.5) * temblor * 2, (Math.random() - 0.5) * temblor * 2); temblor *= 0.86; } else temblor = 0;
   const noche = new Date().getHours() >= 19 || new Date().getHours() < 6;
   A.fondo(x, W, H, PISO, T, noche, E.nv.toldo);
-  for (const c of clientes) A.cliente(x, c.x, PISO - 20, 0.85, c.i, T, c.est !== 'espera', c.feliz);
+  for (const c of clientes) { const ks = A.clienteSpr(c.i), im = ks && A.img(ks); if (im && c.rig) { R.dibujarRig(x, im, c.x, PISO - 20, 150, c.rig, false); if (c.feliz) { x.save(); x.font = '22px "DQ Iconos", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ff5c8a'; x.fillText('♥', c.x + 26, PISO - 182 + Math.sin(T * 6) * 3 + c.rig.dy); x.restore(); } } else A.cliente(x, c.x, PISO - 20, 0.85, c.i, T, c.est !== 'espera', c.feliz); }
+  for (const c of clientes) if (c.est === 'espera') { const bx = c.x + 30, by = PISO - 200 + (c.rig ? c.rig.dy : 0); x.save(); x.fillStyle = 'rgba(255,255,255,.95)'; x.strokeStyle = '#2a1712'; x.lineWidth = 2.5; x.beginPath(); x.roundRect(bx - 18, by - 22, 36, 30, 10); x.fill(); x.stroke(); x.beginPath(); x.moveTo(bx - 6, by + 8); x.lineTo(bx - 12, by + 16); x.lineTo(bx + 2, by + 8); x.fill(); x.restore(); A.dibujarVaso(x, bx, by + 4, 0.7); if (E.stock <= 0) { x.save(); x.strokeStyle = '#e53935'; x.lineWidth = 3; x.beginPath(); x.moveTo(bx - 12, by - 16); x.lineTo(bx + 12, by + 4); x.stroke(); x.restore(); } }
   A.mostrador(x, W, PISO);
-  A.estante(x, W / 2 + 20, PISO - 62, E.stock, capStock(), E.eq.jarra);
+  A.estante(x, W - 82, PISO - 62, E.stock, capStock(), E.eq.jarra);
   A.VASO_SPR.k = 'vaso_' + (E.eq.vaso + 1);
   // cartel de la chicheria
-  x.save(); x.font = '22px "Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#fff3c4'; x.strokeStyle = '#3e2716'; x.lineWidth = 5;
+  x.save(); x.font = '22px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#fff3c4'; x.strokeStyle = '#3e2716'; x.lineWidth = 5;
   x.strokeText('CHICHA MORADA', W / 2, PISO - 268); x.fillText('CHICHA MORADA', W / 2, PISO - 268); x.restore();
   // ollas y fuegos
   for (let i = 0; i < nOllas(); i++) {
     const o = E.ollas[i], cocina = !!o.fin;
     if (!A.tieneSpr('olla_' + (E.nv.ollas[i] + 1))) A.fuego(x, xOlla(i), Y_OLLA + 30, 0.8, E.nv.fuego, T, cocina || o.lista);
+    if (cocina || o.lista) R.luzFuego(x, xOlla(i), Y_OLLA + 4, T, i, E.nv.ollas[i] >= 5 ? '120,160,255' : E.nv.ollas[i] >= 4 ? '200,120,255' : '255,150,60');
     A.olla(x, xOlla(i), Y_OLLA + 6, 0.8, E.nv.ollas[i], cocina || o.lista ? 1 : 0, o.lista, T);
     if (cocina) {
       const k = 1 - (o.fin - Date.now()) / (segTanda() * 1000);
       x.save(); x.fillStyle = 'rgba(0,0,0,.45)'; x.beginPath(); x.roundRect(xOlla(i) - 36, Y_OLLA - 124, 72, 10, 5); x.fill();
       x.fillStyle = hervor() ? '#7dd3fc' : '#d65caa'; x.beginPath(); x.roundRect(xOlla(i) - 35, Y_OLLA - 123, 70 * Math.max(0, Math.min(1, k)), 8, 4); x.fill(); x.restore();
-      if (Math.random() < 0.25) parts.push({ x: xOlla(i) + azar(-20, 20), y: Y_OLLA - 50, vx: azar(-8, 8), vy: -40, g: -10, vida: 1.2, t: 0, r: azar(6, 12), color: 'rgba(255,255,255,.35)', vapor: true });
+      if (Math.random() < 0.3) parts.push({ x: xOlla(i) + azar(-18, 18), y: Y_OLLA - 78, vx: azar(-10, 10), vy: -38, g: -8, vida: 1.6, t: 0, r: azar(12, 20), vapor: true });
     } else if (!o.lista && E.maiz < maizOlla(i)) {
-      x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ffab91'; x.strokeStyle = '#000'; x.lineWidth = 4; x.strokeText('Sin maíz', xOlla(i), Y_OLLA - 120); x.fillText('Sin maíz', xOlla(i), Y_OLLA - 120); x.restore();
+      x.save(); x.font = '15px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#ffab91'; x.strokeStyle = '#000'; x.lineWidth = 4; x.strokeText('Sin maíz', xOlla(i), Y_OLLA - 120); x.fillText('Sin maíz', xOlla(i), Y_OLLA - 120); x.restore();
     }
   }
   // personajes ordenados por profundidad
   const orden = [...duendes.filter(d => !d.muerto).map(d => ({ y: d.y, f: () => {
-    A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye, var: d.var });
+    const im = A.img('duende_' + d.var);
+    if (im) { R.dibujarRig(x, im, d.x, d.y, A.altoDuende(d.k, 0.8), d.rig, !!d.huye, D.DUENDES[d.k].dorado ? 'sepia(1) saturate(3.2) hue-rotate(-8deg) brightness(1.15)' : ''); if (d.lleva && d.huye) A.dibujarVaso(x, d.x + 18, d.y - A.altoDuende(d.k, 0.8) * 0.6 + d.rig.dy, 0.8); }
+    else A.duende(x, d.x, d.y, 0.8, d.k, T, { corre: !d.robaT || d.huye, lleva: d.lleva, golpe: d.golpe, huye: d.huye, var: d.var });
     const hb = A.altoDuende(d.k, 0.8) + 8;
     if (d.max > 1) { x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(d.x - 24, d.y - hb, 48, 6); x.fillStyle = '#ef5350'; x.fillRect(d.x - 24, d.y - hb, 48 * Math.max(0, d.vida / d.max), 6); }
-  } })), { y: 590, f: () => (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...D.SKINS[E.skin[E.personaje]].paleta, filtro: D.SKINS[E.skin[E.personaje]].filtro }) }];
-  if (E.nv.ayudante > 0 && A.tieneSpr('ayudante')) orden.push({ y: 455, f: () => A.personaAnimada(x, 'ayudante', W - 46, 455, 112, ayudT > 1.7 ? 'espanta' : 'quieta', T + 1.3) });
+  } })), { y: 590, f: () => { const sk = D.SKINS[E.skin[E.personaje]], im = A.img(SPR_PJ[E.personaje]); if (im) R.dibujarRig(x, im, 70, 590, 205, rigCh, false, sk.filtro); else (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, 590, 0.82, poseAct, T, { ...sk.paleta, filtro: sk.filtro }); } }];
+  if (E.nv.ayudante > 0 && A.img('ayudante')) orden.push({ y: 455, f: () => R.dibujarRig(x, A.img('ayudante'), W - 46, 455, 112, rigAy, true) });
+  for (const v of voladores) orden.push({ y: 999, f: () => { const im = A.img('duende_' + v.var); if (!im) return; x.save(); x.translate(v.x, v.y - 50); x.rotate(v.rot); x.translate(-v.x, -(v.y - 50)); R.dibujarRig(x, im, v.x, v.y, A.altoDuende(v.k, 0.8), v.rig, true); x.restore(); } });
   orden.sort((a, b) => a.y - b.y).forEach(o => o.f());
+  // piedras del ayudante en arco
+  for (const pd of piedras) { const k = Math.min(1, pd.t), tx = pd.d.x, ty = pd.d.y - 60, px = pd.x0 + (tx - pd.x0) * k, py = pd.y0 + (ty - pd.y0) * k - Math.sin(k * Math.PI) * 70; x.beginPath(); x.arc(px, py, 5, 0, Math.PI * 2); x.fillStyle = '#8d8d8d'; x.fill(); x.lineWidth = 2; x.strokeStyle = '#2a1712'; x.stroke(); }
+  const vap = R.bocanada();
   for (const p of parts) {
     x.globalAlpha = Math.max(0, 1 - p.t / p.vida);
+    if (p.anillo) { const k = p.t / p.vida; x.globalAlpha = 1 - k; x.beginPath(); x.arc(p.x, p.y, 10 + k * 46, 0, Math.PI * 2); x.lineWidth = 5 * (1 - k) + 1; x.strokeStyle = '#fff7d1'; x.stroke(); continue; }
+    if (p.vapor) { const s = p.r * (1 + p.t * 1.4); x.globalAlpha = 0.85 * (1 - p.t / p.vida); x.drawImage(vap, p.x - s, p.y - s, s * 2, s * 2); continue; }
     if (p.moneda) { x.beginPath(); x.ellipse(p.x, p.y, p.r * 1.2, p.r * 1.2 * Math.abs(Math.cos(p.t * 12)), 0, 0, Math.PI * 2); x.fillStyle = p.color; x.fill(); x.strokeStyle = '#a66d00'; x.lineWidth = 1.5; x.stroke(); }
     else { x.beginPath(); x.arc(p.x, p.y, p.r * (p.vapor ? 1 + p.t : 1), 0, Math.PI * 2); x.fillStyle = p.color; x.fill(); }
   }
   x.globalAlpha = 1;
   for (const tx of textos) {
     const k = tx.t / 1.1;
-    x.save(); x.globalAlpha = 1 - k * k; x.font = `${tx.tam * (k < 0.15 ? 0.6 + k * 2.7 : 1)}px "Lilita One", system-ui`; x.textAlign = 'center'; x.lineWidth = 5; x.strokeStyle = '#2a1712'; x.fillStyle = tx.color;
+    x.save(); x.globalAlpha = 1 - k * k; x.font = `${tx.tam * (k < 0.15 ? 0.6 + k * 2.7 : 1)}px "DQ Iconos","Lilita One", system-ui`; x.textAlign = 'center'; x.lineWidth = 5; x.strokeStyle = '#2a1712'; x.fillStyle = tx.color;
     x.strokeText(tx.txt, tx.x, tx.y - k * 50); x.fillText(tx.txt, tx.x, tx.y - k * 50); x.restore();
   }
+  R.motas(x, W, H, T);
+  // Guia: E.tuto 0 = aun no removio una olla, 1 = aun no golpeo a un duende, 2 = listo.
+  if (E.elegido && (E.tuto || 0) < 2) {
+    let gx = null, gy = 0, txt = '';
+    if (!E.tuto && E.ollas[0].fin) { gx = xOlla(0); gy = Y_OLLA - 50; txt = '¡Toca para remover!'; }
+    else if (E.tuto === 1) { const d = duendes.find(dd => !dd.muerto && !D.DUENDES[dd.k].dorado); if (d) { gx = d.x; gy = d.y - A.altoDuende(d.k, 0.8) * 0.5; txt = '¡Tócalo!'; } }
+    if (gx != null) {
+      const k = (T * 1.4) % 1;
+      x.save(); x.strokeStyle = '#ffd54a'; x.lineWidth = 4; x.globalAlpha = 1 - k; x.beginPath(); x.arc(gx, gy, 26 + k * 34, 0, Math.PI * 2); x.stroke();
+      x.globalAlpha = 1; x.font = '20px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 6; x.strokeStyle = '#2a1712'; x.fillStyle = '#fff3c4';
+      x.strokeText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.fillText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.restore();
+    }
+  }
+  // COMBO grande al centro
+  if (comboVer > 0 && combo >= 3) { const s = 1 + Math.max(0, comboVer - 0.8) * 2.5; x.save(); x.globalAlpha = Math.min(1, comboVer * 2); x.translate(W / 2, 205); x.scale(s, s); x.rotate(-0.06); x.font = '38px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 8; x.strokeStyle = '#3a1d00'; const g = x.createLinearGradient(0, -30, 0, 10); g.addColorStop(0, '#fff3b0'); g.addColorStop(1, '#f6a01e'); x.fillStyle = g; x.strokeText('COMBO ×' + combo, 0, 0); x.fillText('COMBO ×' + combo, 0, 0); x.restore(); }
+  R.vineta(x, W, H);
   if (!E.elegido) return;
   // proxima oleada
-  x.save(); x.font = '17px "Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = colaSpawn.length ? '#ff8a80' : '#fff';
+  x.save(); x.font = '17px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = colaSpawn.length ? '#ff8a80' : '#fff';
+  if (horaPunta()) { x.save(); x.font = '16px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'left'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = '#ffd54a'; x.strokeText('🔔 Hora punta', 12, PISO + 24); x.fillText('🔔 Hora punta', 12, PISO + 24); x.restore(); }
   const tOl = colaSpawn.length ? '¡Oleada ' + E.oleada + '!' : 'Oleada ' + E.oleada + ' en ' + Math.ceil(proxOleada) + ' s';
   x.strokeText(tOl, W - 12, PISO + 24); x.fillText(tOl, W - 12, PISO + 24); x.restore();
 }
@@ -399,7 +496,7 @@ function marcarTab(id) { const b = document.querySelector(`.tab[data-t="${id}"]`
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); });
 let panelPrev = '';
 function pintarPanelSuave() { const h = htmlPanel(); if (h !== panelPrev) { panelPrev = h; $('panel').innerHTML = h; } }
-function pintarPanel() { panelPrev = htmlPanel(); $('panel').innerHTML = panelPrev; $('panel').scrollTop = 0; }
+function pintarPanel() { panelPrev = htmlPanel(); const pn = $('panel'); pn.innerHTML = panelPrev; pn.scrollTop = 0; pn.classList.remove('entra'); void pn.offsetWidth; pn.classList.add('entra'); clearTimeout(pintarPanel.t); pintarPanel.t = setTimeout(() => pn.classList.remove('entra'), 450); }
 const btn = (txt, act, datos, off, cls = '') => `<button class="b ${cls}" data-act="${act}"${Object.entries(datos || {}).map(([k, v]) => ` data-${k}="${v}"`).join('')}${off ? ' disabled' : ''}>${txt}</button>`;
 const costoBtn = (c, act, datos) => btn(`<span class="mon"></span>${fmt(c)}`, act, datos, E.monedas < c, 'oro');
 
@@ -424,6 +521,7 @@ function filaMejora(titulo, actual, sig, costo, act, datos, ico) {
 function htmlPanel() {
   if (tab === 'cocina') {
     let h = `<div class="resumen"><div><b>${E.stock}/${capStock()}</b><small>vasos en jarras</small></div><div><b>${fmt(E.maiz)} kg</b><small>maíz morado</small></div><div><b>${fmtP(precio())}</b><small>monedas por vaso</small></div></div>`;
+    if (E.stock >= capStock() * 0.6) h += `<div class="card">${imgCard('jarra_' + (E.eq.jarra + 1))}<div class="tx"><b>Vender al por mayor</b><small>${E.stock} vasos al ${Math.round(D.MAYORISTA * 100)} % del precio, ya mismo. Libera tus jarras.</small></div>${btn(`<span class="mon"></span>${fmt(Math.round(E.stock * precio() * D.MAYORISTA))}`, 'mayor', {}, false, 'oro')}</div>`;
     const mj = mejorAsequible(), sig = mejorasPosibles()[0];
     if (mj) h += `<div class="card mejora-ya">${imgCard(mj[4])}<div class="tx"><b>⬆ ¡Ya puedes mejorar!</b><small>${mj[1]}</small></div>${btn(`<span class="mon"></span>${fmt(mj[0])}`, mj[2], mj[3], false, 'oro')}</div>`;
     else if (sig) h += `<div class="card">${imgCard(sig[4])}<div class="tx"><b>Próxima mejora: ${sig[1]}</b><div class="barra"><i style="width:${Math.min(100, E.monedas / sig[0] * 100)}%"></i></div><small>${fmt(E.monedas)} / ${fmt(sig[0])} monedas</small></div>${btn('Ver todo', 'ir', { t: 'mejoras' })}</div>`;
@@ -521,7 +619,9 @@ function htmlCuenta() {
   return h;
 }
 // Dibujo de las miniaturas de skins (despues de pintar el panel).
-new MutationObserver(() => { document.querySelectorAll('canvas.mini').forEach(c => { if (c.dataset.ok) return; c.dataset.ok = 1; const g = c.getContext('2d'), s = D.SKINS[c.dataset.skin]; g.scale(0.4, 0.4); (s.para === 'chichero' ? A.chichero : A.chichera)(g, 112, 268, 1, 'quieta', 1, s.paleta); }); }).observe($('panel'), { childList: true });
+new MutationObserver(() => { document.querySelectorAll('canvas.mini').forEach(c => { if (c.dataset.ok) return; c.dataset.ok = 1; const g = c.getContext('2d'), s = D.SKINS[c.dataset.skin], im = A.img(SPR_PJ[s.para]);
+  if (im) { const h = 104, w = h * im.width / im.height; if (s.filtro) g.filter = s.filtro; g.drawImage(im, (90 - w) / 2, 110 - h - 3, w, h); return; }
+  g.scale(0.4, 0.4); (s.para === 'chichero' ? A.chichero : A.chichera)(g, 112, 268, 1, 'quieta', 1, s.paleta); }); }).observe($('panel'), { childList: true });
 
 $('panel').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-act],a[data-act]'); if (!b || b.disabled) return;
@@ -546,6 +646,7 @@ $('panel').addEventListener('click', ev => {
   else if (a === 'skin') { E.skin[E.personaje] = d.id; son('mejora'); pose('celebra', 1); }
   else if (a === 'ir') { document.querySelector(`.tab[data-t="${d.t}"]`).click(); return; }
   else if (a === 'subMej') { subMej = d.k; pintarPanel(); return; }
+  else if (a === 'mayor') { if (E.stock <= 0) return; const g = Math.round(E.stock * precio() * D.MAYORISTA); E.monedas += g; E.stats.vasos += E.stock; sumar('vende', E.stock); E.stock = 0; son('moneda'); aviso('🛒 Vendiste al por mayor: +' + fmt(g) + ' monedas', 'ok'); particulas(W - 82, PISO - 90, 16, '#ffd54a', { vel: 220, moneda: true }); }
   else if (a === 'herr') {
     const r = E.eq[d.id]; if (r >= 4) return;
     const c = D.costoHerr(d.id, r + 1); if (E.monedas < c) return;
@@ -600,7 +701,7 @@ $('b-sonido').textContent = E.sonido ? '🔊' : '🔇';
 
 function inicio() {
   if (!E.elegido) {
-    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande">${btn('Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); } });
+    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); } });
     $('modal-c').querySelectorAll('.elige .b').forEach(b => b.onclick = () => { E.personaje = b.dataset.k; $('modal-c').querySelectorAll('.elige .b').forEach(o => o.classList.toggle('on', o === b)); });
   } else if (vuelta) {
     abrirModal(`<h2>Mientras no estabas</h2><p>Tu puesto siguió abierto ${vuelta.min >= 60 ? Math.floor(vuelta.min / 60) + ' h ' + (vuelta.min % 60) + ' min' : vuelta.min + ' min'}${vuelta.tope ? ` (tu Jarra guarda hasta ${vuelta.horas} h: mejórala para más)` : ''}.</p>

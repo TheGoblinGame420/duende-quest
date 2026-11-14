@@ -16,10 +16,10 @@ export const OLLAS = [
 ];
 // Fuego: segundos por tanda (vale para todas las ollas).
 export const FUEGOS = [
-  { nombre: 'Fogón de leña', seg: 10, costo: 0 },
-  { nombre: 'Fuego avivado', seg: 7.5, costo: 250 },
-  { nombre: 'Fuego feroz', seg: 5.5, costo: 1400 },
-  { nombre: 'Horno mágico', seg: 4, costo: 7000 },
+  { nombre: 'Fogón de leña', seg: 20, costo: 0 },
+  { nombre: 'Fuego avivado', seg: 15, costo: 250 },
+  { nombre: 'Fuego feroz', seg: 11, costo: 1400 },
+  { nombre: 'Horno mágico', seg: 8, costo: 7000 },
 ];
 // Hornillas: cuantas ollas cocinan a la vez.
 export const HORNILLAS = [
@@ -72,13 +72,18 @@ export const DUENDES = {
   gordo:  { nombre: 'Duende panzón', vida: 4, vel: 45, roba: 4, premio: 5, desde: 5 },
   gancho: { nombre: 'Duende del gancho', vida: 2, vel: 60, roba: 3, premio: 4, desde: 8, alcance: 140 },
   jefe:   { nombre: 'Rey de los Ladrones', vida: 20, vel: 32, roba: 10, premio: 40, desde: 10, jefe: true },
+  // Duende dorado: cruza corriendo sin robar; atraparlo de un toque da un premio grande. Nunca sale en las oleadas.
+  dorado: { nombre: 'Duende dorado', vida: 1, vel: 230, roba: 0, premio: 0, desde: 9999, dorado: true },
 };
 export const OLEADA_SEG = 40;
+export const MAYORISTA = 0.6;        // vender todo al por mayor paga el 60 % del precio
+export const HORA_PUNTA = { cada: 180, dura: 30, mult: 2 };   // segundos: cada 3 min, 30 s con el doble de clientes
+export const premioDorado = n => 30 + n * 12;
 // Duendes de la oleada n: crecen poco a poco; el jefe cada 10.
 export function oleada(n) {
   const l = [], cuantos = Math.min(18, 2 + Math.floor(n * 0.7));
   for (let i = 0; i < cuantos; i++) {
-    const tipos = Object.keys(DUENDES).filter(k => !DUENDES[k].jefe && DUENDES[k].desde <= n);
+    const tipos = Object.keys(DUENDES).filter(k => !DUENDES[k].jefe && !DUENDES[k].dorado && DUENDES[k].desde <= n);
     l.push(tipos[(i * 7 + n) % tipos.length]);
   }
   if (n % 10 === 0) l.push('jefe');
