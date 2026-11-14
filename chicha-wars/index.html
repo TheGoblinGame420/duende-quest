@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Chicha Wars · Prepara chicha y espanta duendes</title>
+<meta name="description" content="Prepara la mejor chicha morada del pueblo y no dejes que los duendes te la roben. Juego gratis en el navegador, del mundo de Duende Quest.">
+<meta name="theme-color" content="#1d0f22">
+<meta property="og:title" content="Chicha Wars">
+<meta property="og:description" content="Prepara chicha morada, mejora tus ollas y espanta a los duendes ladrones. Gratis en tu celular.">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/chicha.jpg">
+<link rel="manifest" href="/inicio/manifest.json">
+<link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=380) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+:root{--bg:#1d0f22;--panel:#2a1830;--panel2:#341d3b;--borde:rgba(246,181,46,.28);--txt:#fbf3ff;--txt2:#cdb8d6;--oro:#f6b52e;--mor:#8e3fbf;--ros:#e05a9c;--ok:#7bd88f;--err:#ff6b6b;
+  --t:"DQ Iconos","Lilita One",system-ui,sans-serif;--s:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 70%);color:var(--txt);font:15px/1.35 var(--s);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#app{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.6)}
+#escena-c{position:relative;flex:0 0 auto}
+#escena{display:block;width:100%;aspect-ratio:540/640;max-height:62vh;max-height:62dvh;object-fit:contain;touch-action:none;cursor:pointer}
+#hud{position:absolute;left:0;right:0;top:0;padding:calc(8px + env(safe-area-inset-top)) 8px 0;display:flex;gap:6px;align-items:center;pointer-events:none}
+.chip{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:999px;background:rgba(20,8,26,.78);border:1.5px solid var(--borde);font:16px var(--t);letter-spacing:.02em;text-shadow:0 1px 2px #000;pointer-events:auto}
+.chip i{font-style:normal;font-size:15px}
+.mon{display:inline-block;width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#f6b52e 55%,#a66d00);box-shadow:0 0 0 1.5px #6b4500 inset;vertical-align:-2px}
+#h-pase-c{margin-left:auto;min-width:74px}
+#h-pase-c .pb{position:relative;width:44px;height:7px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden}
+#h-pase-b{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--ros),var(--oro));border-radius:4px}
+#b-sonido{pointer-events:auto;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--borde);background:rgba(20,8,26,.78);color:#fff;font:16px var(--t)}
+#avisos{position:absolute;left:8px;right:8px;top:calc(52px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none}
+.aviso{max-width:100%;padding:7px 12px;border-radius:12px;background:rgba(20,8,26,.88);border:1.5px solid var(--borde);font:600 13.5px var(--s);text-align:center;animation:entra .2s ease-out}
+.aviso.ok{border-color:rgba(123,216,143,.6)}.aviso.err{border-color:rgba(255,107,107,.7)}
+.aviso.fuera{opacity:0;transition:opacity .4s}
+@keyframes entra{from{transform:translateY(-8px);opacity:0}}
+#panel{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:10px 10px 14px;background:linear-gradient(180deg,#2a1830,#1d0f22)}
+#tabs{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);background:#140a18;border-top:1.5px solid var(--borde);padding-bottom:env(safe-area-inset-bottom)}
+.tab{position:relative;min-height:56px;border:0;background:none;color:var(--txt2);font:12px var(--t);letter-spacing:.02em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.tab span{font-size:20px;line-height:1}
+.tab.on{color:var(--oro);background:linear-gradient(180deg,rgba(246,181,46,.14),transparent)}
+.tab.punto::after{content:'';position:absolute;top:8px;right:22%;width:9px;height:9px;border-radius:50%;background:var(--ros);box-shadow:0 0 8px var(--ros)}
+.card{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;border-radius:14px;background:var(--panel2);border:1.5px solid rgba(255,255,255,.07);color:inherit;text-decoration:none}
+.card .ico{flex:0 0 40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(0,0,0,.25);color:var(--oro)}
+.card .tx{flex:1;min-width:0}
+.card b{display:block;font:16px var(--t);letter-spacing:.01em}
+.card small{display:block;color:var(--txt2);font-size:12.5px;margin-top:2px}
+.card small.sig{color:var(--ok)}.card small.max{color:var(--oro)}
+.card.alerta{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.08)}
+.card.proximo{opacity:.85;border-style:dashed}
+.card canvas.mini{flex:0 0 72px;width:72px;height:88px;border-radius:10px;background:radial-gradient(circle at 50% 40%,#4a2a55,#24132b)}
+.b{min-height:44px;min-width:76px;padding:6px 12px;border-radius:12px;border:0;background:#4a2a55;color:#fff;font:15px var(--t);letter-spacing:.02em;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.35);display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.b:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.b.oro{background:linear-gradient(180deg,#ffd166,#f6a01e);color:#3a1d00}
+.b.on{background:linear-gradient(180deg,#b55ae0,#7b2cbf);outline:2px solid var(--oro)}
+.b.premium{background:linear-gradient(90deg,#7b2cbf,#e05a9c);margin-top:8px}
+.b.grande{width:100%;min-height:52px;font-size:19px;margin-top:12px}
+.b:disabled{opacity:.45;cursor:default}
+.resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.resumen div{padding:8px;border-radius:12px;background:rgba(0,0,0,.25);text-align:center}
+.resumen b{display:block;font:20px var(--t);color:var(--oro)}.resumen small{color:var(--txt2);font-size:12px}
+.consejo{font-size:12.5px;color:var(--txt2);padding:4px 4px 0}
+.sub{font:14px var(--t);color:var(--txt2);margin:0 2px 8px;letter-spacing:.02em}
+.barra{height:8px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}
+.barra i{display:block;height:100%;background:linear-gradient(90deg,var(--ros),var(--oro));border-radius:5px}
+.pase-cab{padding:12px;border-radius:14px;background:linear-gradient(135deg,#4a1d5c,#2a1830);border:1.5px solid var(--borde);margin-bottom:10px;text-align:center}
+.pase-cab b{font:18px var(--t);display:block}.pase-cab small{color:var(--txt2)}.premium-on{color:var(--oro)!important;margin-top:6px;display:block}
+.pase-fila{display:grid;grid-template-columns:36px 1fr 1fr;gap:6px;margin-bottom:6px;align-items:stretch;opacity:.7}
+.pase-fila.alc{opacity:1}
+.pn{display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(0,0,0,.3);font:17px var(--t);color:var(--oro)}
+.pp{display:flex;flex-direction:column;gap:5px;padding:7px;border-radius:12px;background:var(--panel2);font-size:12.5px;font-weight:600}
+.pp.prem{background:linear-gradient(135deg,rgba(123,44,191,.35),rgba(224,90,156,.2));border:1px solid rgba(246,181,46,.25)}
+.pp .b{min-height:36px;min-width:0;font-size:13px}
+.elige{display:flex;gap:8px;margin-bottom:10px}.elige .b{flex:1}
+.elige.grande .b{min-height:54px;font-size:19px}
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,4,14,.72);z-index:20;padding:16px}
+#modal.on{display:flex}
+#modal-c{width:min(420px,100%);padding:20px;border-radius:20px;background:linear-gradient(180deg,#3a1d46,#22122a);border:2px solid var(--borde);box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center}
+#modal-c h2{font:24px var(--t);color:var(--oro);margin-bottom:8px;letter-spacing:.02em}
+#modal-c p{color:var(--txt2);margin:8px 0}
+#modal-c .resumen{margin-top:12px}
+.logo{font:44px/1 var(--t);letter-spacing:.03em;background:linear-gradient(180deg,#ffe082,#f6a01e 55%,#c0264b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1.5px #3a1d00;margin:4px 0 6px}
+.alerta-t{color:#ffab91!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="escena-c">
+    <canvas id="escena" aria-label="Tu puesto de chicha: toca a los duendes para espantarlos y las ollas listas para servir"></canvas>
+    <div id="hud">
+      <div class="chip"><span class="mon"></span><span id="h-monedas">0</span></div>
+      <div class="chip"><i>🌽</i><span id="h-maiz">0</span></div>
+      <div class="chip"><i>🥤</i><span id="h-vasos">0</span></div>
+      <div class="chip" id="h-pase-c"><i>⭐</i><span id="h-pase">0</span><div class="pb"><div id="h-pase-b"></div></div></div>
+      <button id="b-sonido" aria-label="Sonido">🔊</button>
+    </div>
+    <div id="avisos" role="status" aria-live="polite"></div>
+  </div>
+  <div id="panel"></div>
+  <nav id="tabs">
+    <button class="tab on" data-t="cocina"><span>🍲</span>Cocina</button>
+    <button class="tab" data-t="mejoras"><span>⚒</span>Mejoras</button>
+    <button class="tab" data-t="misiones"><span>🎯</span>Misiones</button>
+    <button class="tab" data-t="pase"><span>⭐</span>Pase</button>
+    <button class="tab" data-t="skins"><span>👑</span>Skins</button>
+    <button class="tab" data-t="mercado"><span>🛒</span>Mercado</button>
+  </nav>
+</div>
+<div id="modal"><div id="modal-c"></div></div>
+<script type="module" src="/chicha-wars/js/juego.js?v=380"></script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(function(){});</script>
+</body>
+</html>

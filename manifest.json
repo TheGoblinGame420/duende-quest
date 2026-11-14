@@ -68,6 +68,19 @@
       ]
     },
     {
+      "name": "Chicha Wars",
+      "short_name": "Chicha Wars",
+      "description": "Prepara chicha y espanta duendes",
+      "url": "/chicha-wars/",
+      "icons": [
+        {
+          "src": "/assets/ui/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Arcade",
       "short_name": "Arcade",
       "description": "Oleadas y jefes en pixel-art",

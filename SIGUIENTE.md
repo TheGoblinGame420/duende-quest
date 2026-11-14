@@ -3730,3 +3730,8 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 
 ## v379 (13-nov-2026)
 - El dueño probó y «no funciona talar»: solo servían 21 árboles marcados. Ahora `arbolCercano()` (cliente) busca cualquier árbol de la rejilla de flora (`t` = tipo) y manda `{ t: 'talar', x, z }`; servidor `talar3d`/`terminarTala3d` valida zona (no pueblo/cueva/Abismo), distancia `TALA.dist`, celda de 4 m con 5 min y `TALA.porDia` = 120 (data.js). Mensaje de vuelta `talado3`. Pruebas en el arnés.
+
+## Chicha Wars v1 (14-nov-2026)
+- Juego aparte en `/chicha-wars/` (index.html + js/datos.js, arte.js, juego.js). Cocinar (ollas, fuego, hornillas, maíz), vender a clientes, espantar duendes por oleadas, mejoras, misiones diarias, racha, pase de temporada (premium pendiente de servidor), skins de chichera/chichero, progreso sin conexión (8 h). Guardado local `cw_estado`.
+- Arte vectorial provisional; `assets/chicha-wars/sprites.json` + PNG del dueño lo reemplazan (lista en CHICHA-WARS-ARTE.md).
+- Pendiente: cuenta compartida con Duende Quest y cambio de moneda con tope, pase premium manual, mercado entre jugadores, Mini App de Telegram.
