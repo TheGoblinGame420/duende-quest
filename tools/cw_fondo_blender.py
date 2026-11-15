@@ -1,5 +1,6 @@
 # Fondo de Chicha Wars modelado en Blender: plaza de pueblo andino con casas, iglesia y cordillera.
-#   blender -b -P tools/cw_fondo_blender.py -- salida.png dia|noche [muestras]
+#   blender -b -P tools/cw_fondo_blender.py -- salida.png dia|noche [muestras] [alto_px]
+# Con alto_px > 1280 (p. ej. 2000) las 1280 filas de arriba son el mismo encuadre de siempre y debajo sigue el empedrado.
 # Camara pensada para la escena del juego (540x640, el piso empieza en y=360): el horizonte cae en y≈336.
 import bpy, bmesh, math, random, sys
 from mathutils import Vector, noise
@@ -7,6 +8,8 @@ from mathutils import Vector, noise
 argv = sys.argv[sys.argv.index('--') + 1:]
 SALIDA, MODO = argv[0], argv[1]
 MUESTRAS = int(argv[2]) if len(argv) > 2 else 96
+ALTO = int(argv[3]) if len(argv) > 3 else 1280
+import os; PCT = int(os.environ.get('CW_PCT', '100'))   # solo para pruebas rapidas de encuadre
 NOCHE = MODO == 'noche'
 random.seed(11)
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -209,7 +212,11 @@ else:
 cam = bpy.data.cameras.new('cam'); co = bpy.data.objects.new('cam', cam); sc.collection.objects.link(co); sc.camera = co
 co.location = (0, -13.5, 2.5); co.rotation_euler = (math.radians(86.8), 0, 0); cam.lens = 30; cam.clip_end = 600
 sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = MUESTRAS; sc.cycles.use_denoising = True
-sc.render.resolution_x = 1080; sc.render.resolution_y = 1280; sc.render.resolution_percentage = 100
+sc.render.resolution_x = 1080; sc.render.resolution_y = ALTO; sc.render.resolution_percentage = PCT
+if ALTO != 1280:
+    # A 1080x1280 el ajuste automatico del sensor es vertical (36 mm sobre el alto). Para otro alto se fija el mismo campo
+    # horizontal (36*1080/1280 mm sobre el ancho) y se baja el centro optico: asi las 1280 filas de arriba no cambian.
+    cam.sensor_fit = 'HORIZONTAL'; cam.sensor_width = 36.0 * 1080 / 1280; cam.shift_y = -(ALTO - 1280) / 2 / 1080
 sc.view_settings.view_transform = 'Standard'
 try: sc.view_settings.look = 'Medium High Contrast'
 except Exception: pass

@@ -81,7 +81,7 @@ export const HORA_PUNTA = { cada: 180, dura: 30, mult: 2 };   // segundos: cada 
 export const premioDorado = n => 30 + n * 12;
 // Duendes de la oleada n: crecen poco a poco; el jefe cada 10.
 export function oleada(n) {
-  const l = [], cuantos = Math.min(18, 2 + Math.floor(n * 0.7));
+  const l = [], cuantos = Math.min(22, 3 + Math.floor(n * 0.8));
   for (let i = 0; i < cuantos; i++) {
     const tipos = Object.keys(DUENDES).filter(k => !DUENDES[k].jefe && !DUENDES[k].dorado && DUENDES[k].desde <= n);
     l.push(tipos[(i * 7 + n) % tipos.length]);
@@ -89,7 +89,10 @@ export function oleada(n) {
   if (n % 10 === 0) l.push('jefe');
   return l;
 }
-export const vidaDuende = (k, n) => DUENDES[k].vida + Math.floor(n / (DUENDES[k].jefe ? 1 : 6)) * (DUENDES[k].jefe ? 3 : 1);
+// v392: mas duros (antes +1 de vida cada 6 oleadas; el Rey, +3 por oleada).
+export const vidaDuende = (k, n) => DUENDES[k].jefe ? DUENDES[k].vida + 5 + n * 4 : DUENDES[k].vida + Math.floor(n / 4);
+export const roboDuende = (k, n) => DUENDES[k].roba + Math.floor(n / 4);
+export const roboMonedas = n => 6 + n * 3;   // si no hay vasos ni ollas listas, el duende se lleva monedas
 export const premioDuende = (k, n) => DUENDES[k].premio + Math.floor(n / 2);
 
 // Sin conexion: las ollas siguen y los clientes compran a la mitad de ritmo, hasta 8 h; los duendes no roban.
@@ -198,6 +201,7 @@ export const INGREDIENTES = {
   canela: { nombre: 'Canela', img: 'ing_canela' },
   limon: { nombre: 'Limón', img: 'ing_limon' },
   azucar: { nombre: 'Azúcar', img: 'ing_azucar' },
+  clavo: { nombre: 'Clavo de olor', img: 'ing_clavo' },
 };
 export const DROP = { prob: 0.15, jefe: 5, dorado: 3 };
 // Pociones: se preparan con ingredientes, se guardan y se usan cuando conviene (si usas otra igual, se suma el tiempo).
@@ -278,11 +282,12 @@ export const CULTIVOS = {
   maiz:    { nombre: 'Maíz morado', img: 'ing_maiz', seg: 45, da: 12, semilla: 4, fama: 1, kg: true },
   canela:  { nombre: 'Canela', img: 'ing_canela', seg: 90, da: 2, semilla: 12, fama: 1 },
   azucar:  { nombre: 'Caña de azúcar', img: 'ing_azucar', seg: 120, da: 2, semilla: 12, fama: 1 },
-  limon:   { nombre: 'Limón', img: 'ing_limon', seg: 180, da: 2, semilla: 18, fama: 2 },
-  pina:    { nombre: 'Piña', img: 'ing_pina', seg: 300, da: 3, semilla: 25, fama: 3 },
-  manzana: { nombre: 'Manzana', img: 'ing_manzana', seg: 480, da: 3, semilla: 30, fama: 4 },
+  limon:   { nombre: 'Limón', img: 'ing_limon', seg: 180, da: 2, semilla: 18, fama: 1 },
+  clavo:   { nombre: 'Clavo de olor', img: 'ing_clavo', seg: 240, da: 2, semilla: 20, fama: 2 },
+  pina:    { nombre: 'Piña', img: 'ing_pina', seg: 300, da: 3, semilla: 25, fama: 2 },
+  manzana: { nombre: 'Manzana', img: 'ing_manzana', seg: 480, da: 3, semilla: 30, fama: 3 },
 };
-export const PARCELAS = { inicio: 3, max: 8, costo: [150, 500, 1500, 5000, 15000] };   // costo de la 4.ª a la 8.ª
+export const PARCELAS = { inicio: 3, max: 9, costo: [150, 500, 1500, 5000, 15000, 40000] };   // costo de la 4.ª a la 9.ª
 export const RIEGO = 0.3;            // regar (una vez por siembra) quita el 30 % del tiempo que falta
 export const COSECHA_DOBLE = 0.1;
 export const maizCosecha = fama => Math.round(CULTIVOS.maiz.da * (1 + (fama - 1) * 0.08));
@@ -290,10 +295,25 @@ export const maizCosecha = fama => Math.round(CULTIVOS.maiz.da * (1 + (fama - 1)
 // ── CHICHA ESPECIAL: la preparas tu con lo que cosechas. Tus proximos vasos se venden mas caros. ──
 export const CHICHAS = {
   clasica: { nombre: 'Chicha de la casa', img: 'vaso_2', maiz: 10, receta: { canela: 1, azucar: 1 }, vasos: 40, mult: 1.3, fama: 1 },
-  pina:    { nombre: 'Chicha con piña', img: 'vaso_3', maiz: 15, receta: { pina: 2, canela: 1, azucar: 1 }, vasos: 60, mult: 1.45, fama: 3 },
+  pina:    { nombre: 'Chicha con piña', img: 'vaso_3', maiz: 15, receta: { pina: 2, canela: 1, clavo: 1 }, vasos: 60, mult: 1.45, fama: 3 },
   frutada: { nombre: 'Chicha frutada', img: 'vaso_4', maiz: 20, receta: { pina: 1, manzana: 2, limon: 1, azucar: 1 }, vasos: 80, mult: 1.6, fama: 5 },
-  abuela:  { nombre: 'Chicha de la abuela', img: 'vaso_5', maiz: 30, receta: { pina: 2, manzana: 2, limon: 2, canela: 2, azucar: 2 }, vasos: 120, mult: 1.8, fama: 8 },
+  abuela:  { nombre: 'Chicha de la abuela', img: 'vaso_5', maiz: 30, receta: { pina: 2, manzana: 2, limon: 2, canela: 2, clavo: 2, azucar: 2 }, vasos: 120, mult: 1.8, fama: 8 },
 };
 export const PASOS_CHICHA = ['Hierve el maíz morado con la fruta', 'Cuela la chicha', 'Endulza y sirve'];
 export const CALIDAD = [{ nombre: 'Buena', extra: 0 }, { nombre: 'Rica', extra: 0.25 }, { nombre: 'Perfecta', extra: 0.5 }];
 export const TOPE_ESPECIAL = 400;    // vasos especiales guardados como mucho
+
+// ── TALLER DE UTENSILIOS (v392): los utensilios de batalla se fabrican con tu cosecha y SE GASTAN con el uso. ──
+// usos: disparos (armas) u oleadas (pasivos) con ★1; cada estrella da +25 %. Gastado = no hace nada hasta repararlo.
+export const UTENSILIOS = {
+  cucharon: { usos: 50, mon: 120, receta: { canela: 1, azucar: 1 } },
+  limon:    { usos: 28, mon: 160, receta: { limon: 3 } },
+  hervor:   { usos: 18, mon: 240, receta: { azucar: 2, clavo: 1 } },
+  canela:   { usos: 14, mon: 240, receta: { canela: 3, clavo: 1 } },
+  tabla:    { usos: 10, mon: 200, receta: { manzana: 2 } },
+  oro:      { usos: 6, mon: 300, receta: { pina: 2, limon: 1 } },
+  fuego:    { usos: 6, mon: 300, receta: { canela: 2, clavo: 2 } },
+  fiesta:   { usos: 6, mon: 300, receta: { pina: 1, manzana: 1, azucar: 1 } },
+};
+export const usosMax = (id, e) => Math.round(UTENSILIOS[id].usos * (1 + 0.25 * (Math.max(1, e) - 1)));
+export const costoUt = (id, oleada, reparar) => Math.round(UTENSILIOS[id].mon * (1 + oleada / 8) * (reparar ? 0.5 : 1));

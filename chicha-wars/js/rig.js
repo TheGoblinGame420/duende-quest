@@ -107,7 +107,7 @@ export function motas(x, W, H, t) {
 // Vineta suave de juego (centra la mirada).
 let _vin = null;
 export function vineta(x, W, H) {
-  if (!_vin) {
+  if (!_vin || _vin.height !== H) {
     _vin = document.createElement('canvas'); _vin.width = W; _vin.height = H;
     const g = _vin.getContext('2d'), gr = g.createRadialGradient(W / 2, H * 0.55, H * 0.35, W / 2, H * 0.55, H * 0.85);
     gr.addColorStop(0, 'rgba(20,6,26,0)'); gr.addColorStop(1, 'rgba(20,6,26,.45)');

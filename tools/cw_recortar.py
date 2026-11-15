@@ -92,6 +92,38 @@ def recortar(nombre, salidas):
     print(nombre, '->', len(hechos))
     return hechos
 
+# v392: el clavo de olor pasa a ser ingrediente propio. En la lamina esta dibujado al pie de la canela:
+# se separa en ing_clavo.webp y la canela queda sin clavos (ing_canela.webp).
+#   python tools/cw_recortar.py clavo
+def separar_clavo():
+    im = Image.open(os.path.join(ORIG, 'lamina_ingredientes.jpg')).convert('RGB')
+    a = np.asarray(im).astype(np.float32); h, w, _ = a.shape
+    fondo, bg = mascara_fondo(a)
+    fg = ndimage.binary_opening(~fondo, iterations=1)
+    etiq, n = ndimage.label(fg, structure=np.ones((3, 3)))
+    tam = ndimage.sum(np.ones(fg.shape), etiq, range(1, n + 1)); objs = ndimage.find_objects(etiq)
+    # celda de abajo a la izquierda (canela + clavos)
+    celda = [i for i in range(n) if objs[i][0].start > h * 0.5 and objs[i][1].stop < w * 0.34 and tam[i] >= 12]
+    canela = max(celda, key=lambda i: tam[i]); cy0, cy1 = objs[canela][0].start, objs[canela][0].stop; cx0, cx1 = objs[canela][1].start, objs[canela][1].stop
+    clavo, resto = [], []
+    for i in celda:
+        if i == canela: continue
+        sy, sx = objs[i]; my, mx = (sy.start + sy.stop) / 2, (sx.start + sx.stop) / 2
+        # los clavos estan a la derecha y abajo de las rajas; lo demas (brillos sueltos) va con la canela
+        (clavo if mx > cx0 + (cx1 - cx0) * 0.55 and my > cy0 + (cy1 - cy0) * 0.45 and tam[i] > 60 else resto).append(i)
+    def guardar(ids, nom):
+        m = np.isin(etiq, [x + 1 for x in ids]); ys, xs = np.where(m)
+        y0, y1, x0, x1 = max(0, ys.min() - 6), min(h, ys.max() + 7), max(0, xs.min() - 6), min(w, xs.max() + 7)
+        alfa = Image.fromarray((m[y0:y1, x0:x1] * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
+        pieza = im.crop((x0, y0, x1, y1)).convert('RGBA'); pieza.putalpha(alfa)
+        k2 = min(1.0, 320 / max(pieza.size))
+        if k2 < 1: pieza = pieza.resize((round(pieza.width * k2), round(pieza.height * k2)), Image.LANCZOS)
+        pieza.save(os.path.join(RAIZ, nom + '.webp'), 'WEBP', quality=88, method=6)
+        print(nom, pieza.size, len(ids), 'piezas')
+    guardar(clavo, 'ing_clavo'); guardar([canela] + resto, 'ing_canela')
+
+if __name__ == '__main__' and sys.argv[1:] == ['clavo']:
+    separar_clavo(); sys.exit(0)
 if __name__ == '__main__':
     todo = {}
     for nom, sal in LAMINAS.items(): todo.update(recortar(nom, sal))

@@ -350,7 +350,12 @@ export function cliente(x, px, py, s, i, t, camina, feliz) {
 export function fondo(x, W, H, piso, t, noche, toldo) {
   const im3d = img(noche ? 'fondo_mercado_noche' : 'fondo_mercado_dia');
   if (im3d) {   // plaza modelada en Blender (tools/cw_fondo_blender.py); las nubes pasan por delante del cielo
-    x.drawImage(im3d, 0, 0, W, H);
+    const hi = W * im3d.height / im3d.width;   // la plaza se dibuja a su proporcion; la escena puede ser mas alta que 640
+    if (hi >= H - 1) x.drawImage(im3d, 0, 0, im3d.width, im3d.height * H / hi, 0, 0, W, H);
+    else if (H - hi < hi * 0.3) {   // falta poco: el empedrado sigue en espejo (sin estirarlo ni que se note la costura)
+      const ex = H - hi, filas = ex * im3d.width / W; x.drawImage(im3d, 0, 0, W, hi);
+      x.save(); x.translate(0, hi * 2); x.scale(1, -1); x.drawImage(im3d, 0, im3d.height - filas, im3d.width, filas, 0, hi - ex, W, ex); x.restore();
+    } else { x.drawImage(im3d, 0, 0, W, hi); x.drawImage(im3d, 0, im3d.height * 0.72, im3d.width, im3d.height * 0.28, 0, hi - 1, W, H - hi + 1); }
     x.save(); x.beginPath(); x.rect(0, 0, W, piso * 0.42); x.clip(); R.nubes(x, W, piso, t, noche); x.restore();
   } else {
   const cielo = x.createLinearGradient(0, 0, 0, piso);
