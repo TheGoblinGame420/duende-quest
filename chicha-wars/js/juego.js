@@ -82,6 +82,9 @@ async function subir() {
   guardar();
   const ack = NUBE.ack.slice();
   const r = await pedir('guardar', { est: E, ack });
+  // Sin señal a media partida: se avisa una vez (el juego sigue y guarda en el aparato) y otra al volver.
+  if (r && r.red) { if (NUBE.ok && !NUBE.sinRed) { NUBE.sinRed = true; aviso('Sin conexión: tu partida se sigue guardando en este aparato.', ''); } }
+  else if (NUBE.sinRed && r && r.ok) { NUBE.sinRed = false; aviso('✓ Conexión de vuelta: partida guardada.', 'ok'); }
   if (aplicar(r)) NUBE.ack = NUBE.ack.filter(id => !ack.includes(id));
   guardar();
 }
@@ -626,15 +629,18 @@ function dibujar() {
   }
   R.motas(x, W, H, T);
   // Guia: E.tuto 0 = aun no removio una olla, 1 = aun no golpeo a un duende, 2 = listo.
-  if (E.elegido && (E.tuto || 0) < 2) {
+  // Primero lo urgente: un duende que viene a robar; luego una olla lista (en las 3 primeras tandas: el nuevo no sabe que se sirve tocando); luego remover.
+  if (E.elegido && ((E.tuto || 0) < 2 || E.stats.tandas < 3)) {
     let gx = null, gy = 0, txt = '';
-    if (!E.tuto && E.ollas[0].fin) { gx = xOlla(0); gy = Y_OLLA - 50; txt = '¡Toca para remover!'; }
-    else if (E.tuto === 1) { const d = duendes.find(dd => !dd.muerto && !D.DUENDES[dd.k].dorado); if (d) { gx = d.x; gy = d.y - A.altoDuende(d.k, 0.8) * 0.5; txt = '¡Tócalo!'; } }
+    const dg = (E.tuto || 0) < 2 && duendes.find(dd => !dd.muerto && !D.DUENDES[dd.k].dorado), ol = E.stats.tandas < 3 ? E.ollas.findIndex((o, i) => i < nOllas() && o.lista) : -1;
+    if (dg) { gx = dg.x; gy = dg.y - A.altoDuende(dg.k, 0.8) * 0.5; txt = '¡Tócalo!'; }
+    else if (ol >= 0) { gx = xOlla(ol); gy = Y_OLLA - 50; txt = '¡Toca para servir!'; }
+    else if (!E.tuto && E.ollas[0].fin) { gx = xOlla(0); gy = Y_OLLA - 50; txt = '¡Toca para remover!'; }
     if (gx != null) {
       const k = (T * 1.4) % 1;
       x.save(); x.strokeStyle = '#ffd54a'; x.lineWidth = 4; x.globalAlpha = 1 - k; x.beginPath(); x.arc(gx, gy, 26 + k * 34, 0, Math.PI * 2); x.stroke();
-      x.globalAlpha = 1; x.font = '20px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 6; x.strokeStyle = '#2a1712'; x.fillStyle = '#fff3c4';
-      x.strokeText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.fillText(txt, gx, gy - 58 + Math.sin(T * 5) * 4); x.restore();
+      x.globalAlpha = 1; x.font = '24px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 6; x.strokeStyle = '#2a1712'; x.fillStyle = '#fff3c4';
+      const tx = Math.max(110, Math.min(W - 110, gx)), ty = gy - 58 + Math.sin(T * 5) * 4; x.strokeText(txt, tx, ty); x.fillText(txt, tx, ty); x.restore();
     }
   }
   for (const ry of rayos) { const al = 1 - ry.t / 0.4; x.save(); x.globalAlpha = al; const gr = x.createLinearGradient(0, ry.y - 22, 0, ry.y + 22); gr.addColorStop(0, 'rgba(214,92,170,0)'); gr.addColorStop(0.35, '#d65caa'); gr.addColorStop(0.5, '#fff'); gr.addColorStop(0.65, '#d65caa'); gr.addColorStop(1, 'rgba(214,92,170,0)'); x.fillStyle = gr; x.fillRect(130, ry.y - 22, W, 44); x.restore(); }
@@ -651,13 +657,13 @@ function dibujar() {
   if (!E.elegido) return;
   { // barra de sazon (o la vida del Rey) y utensilios de batalla
     const jefe = duendes.find(d => !d.muerto && D.DUENDES[d.k].jefe), bx = 14, by = 70, bw = W - 28;
-    x.save(); x.fillStyle = 'rgba(15,6,20,.78)'; x.beginPath(); x.roundRect(bx, by, bw, 14, 7); x.fill();
+    x.save(); x.fillStyle = 'rgba(15,6,20,.78)'; x.beginPath(); x.roundRect(bx, by, bw, 16, 8); x.fill();
     const k = jefe ? Math.max(0, jefe.vida / jefe.max) : E.saz.xp / D.sazReq(E.saz.n), gr = x.createLinearGradient(bx, 0, bx + bw, 0);
     if (jefe) { gr.addColorStop(0, '#ffb300'); gr.addColorStop(1, '#e53935'); } else { gr.addColorStop(0, '#9be36f'); gr.addColorStop(1, '#2e9d57'); }
-    if (k > 0.01) { x.fillStyle = gr; x.beginPath(); x.roundRect(bx + 1.5, by + 1.5, (bw - 3) * Math.min(1, k), 11, 5.5); x.fill(); }
-    x.strokeStyle = '#ffe9b0'; x.lineWidth = 1.5; x.beginPath(); x.roundRect(bx, by, bw, 14, 7); x.stroke();
-    x.font = '12px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = '#1a0a1e'; x.fillStyle = '#fff';
-    const tb = jefe ? '👑 Rey de los Ladrones' : 'Sazón ' + E.saz.n; x.strokeText(tb, W / 2, by + 11); x.fillText(tb, W / 2, by + 11);
+    if (k > 0.01) { x.fillStyle = gr; x.beginPath(); x.roundRect(bx + 1.5, by + 1.5, (bw - 3) * Math.min(1, k), 13, 6.5); x.fill(); }
+    x.strokeStyle = '#ffe9b0'; x.lineWidth = 1.5; x.beginPath(); x.roundRect(bx, by, bw, 16, 8); x.stroke();
+    x.font = '14px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = '#1a0a1e'; x.fillStyle = '#fff';
+    const tb = jefe ? '👑 Rey de los Ladrones' : 'Sazón ' + E.saz.n; x.strokeText(tb, W / 2, by + 13); x.fillText(tb, W / 2, by + 13);
     let ix = 14; for (const [id, e] of Object.entries(E.saz.hab)) { const im = A.img(D.HABILIDADES[id].img), du = (E.saz.dur[id] || 0) / D.usosMax(id, e);
       x.globalAlpha = du > 0 ? 1 : 0.45;
       x.fillStyle = 'rgba(15,6,20,.72)'; x.beginPath(); x.roundRect(ix, 89, 28, 28, 7); x.fill(); x.strokeStyle = e >= D.MAX_EST ? '#ffd54a' : 'rgba(255,233,176,.5)'; x.lineWidth = 1.5; x.stroke();
@@ -670,7 +676,7 @@ function dibujar() {
       x.strokeText('¡ASALTO DEL REY!', 0, 0); x.fillText('¡ASALTO DEL REY!', 0, 0); x.font = '54px "DQ Iconos", system-ui'; x.fillStyle = '#ffd54a'; x.strokeText('⚠', 0, -52); x.fillText('⚠', 0, -52); x.restore(); }
   }
   // proxima oleada
-  x.save(); x.font = '17px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = colaSpawn.length ? '#ff8a80' : '#fff';
+  x.save(); x.font = '19px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'right'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = colaSpawn.length ? '#ff8a80' : '#fff';
   if (horaPunta()) { x.save(); x.font = '16px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'left'; x.lineWidth = 4; x.strokeStyle = '#000'; x.fillStyle = '#ffd54a'; x.strokeText('🔔 Hora punta', 12, PISO + 24); x.fillText('🔔 Hora punta', 12, PISO + 24); x.restore(); }
   { let cx = W - 92; for (const [id, po] of Object.entries(D.POCIONES)) { const q = (E.act[id] || 0) - Date.now(); if (q <= 0) continue; const im = A.img(po.img);
       x.save(); x.fillStyle = 'rgba(20,10,8,.72)'; x.strokeStyle = '#ffd54a'; x.lineWidth = 1.5; x.beginPath(); x.roundRect(cx, PISO + 36, 80, 30, 15); x.fill(); x.stroke();
@@ -687,7 +693,7 @@ function pintarHud() {
   const nv = nivelPase(), k = (E.pase.xp % D.PASE.xpNivel) / D.PASE.xpNivel;
   const s = fmt(E.monedas) + '|' + fmt(E.maiz) + '|' + E.stock + '|' + nv + '|' + Math.round(k * 50) + '|' + tab + '|' + Math.floor(Date.now() / 1000) + '|' + E.fama.p;
   if (s === hudPrev) return; hudPrev = s;
-  $('h-monedas').textContent = fmt(E.monedas); $('h-maiz').textContent = E.maiz >= 10000 ? Math.floor(E.maiz / 1000) + 'k' : fmt(E.maiz); $('h-vasos').textContent = E.stock;
+  $('h-monedas').textContent = E.monedas >= 1e6 ? coma(E.monedas / 1e6) + ' M' : E.monedas >= 1e5 ? Math.floor(E.monedas / 1000) + 'k' : E.monedas >= 1e4 ? coma(Math.floor(E.monedas / 100) / 10) + 'k' : fmt(E.monedas); $('h-maiz').textContent = E.maiz >= 10000 ? Math.floor(E.maiz / 1000) + 'k' : fmt(E.maiz); $('h-vasos').textContent = E.stock;
   const mj = mejorAsequible(); document.querySelector('.tab[data-t="mejoras"]').classList.toggle('punto', !!mj && !(abierta && tab === 'mejoras'));
   $('h-pase').textContent = nv >= D.PASE.niveles ? 'MAX' : nv; $('h-pase-b').style.width = (nv >= D.PASE.niveles ? 100 : k * 100) + '%';
   if (abierta && (tab === 'mejoras' || tab === 'cocina' || tab === 'mercado' || tab === 'misiones' || tab === 'pase')) pintarPanelSuave();
@@ -696,7 +702,8 @@ let avisoT = 0;
 function aviso(t, tipo) {
   const el = document.createElement('div'); el.className = 'aviso ' + (tipo || ''); el.textContent = t;
   const caja = $('avisos'); caja.appendChild(el); while (caja.children.length > 2) caja.firstChild.remove();
-  setTimeout(() => el.classList.add('fuera'), 2600); setTimeout(() => el.remove(), 3000);
+  const ms = Math.max(2600, Math.min(5000, 1600 + t.length * 38));   // los avisos largos duran lo que tardas en leerlos
+  setTimeout(() => el.classList.add('fuera'), ms); setTimeout(() => el.remove(), ms + 400);
 }
 
 // ── PANELES ──
@@ -1030,6 +1037,7 @@ async function accionNube(a, d) {
     if (a === 'comprar' || a === 'retirar') datos.id = d.id;
     if (a === 'darPase') datos = { cod: ($('d-cod') || {}).value || '' };
     const r = await pedir(a, datos);
+    if (r && r.red) aviso('Sin conexión: inténtalo cuando vuelva la señal.', 'err');
     if (aplicar(r)) {
       son('mejora');
       aviso(a === 'cambiar' ? `✓ +${r.hecho.oro} oro en tu duende de Duende Quest` : a === 'vender' ? '✓ Publicado en el mercado' : a === 'comprar' ? '✓ Compra hecha' : a === 'retirar' ? '✓ Venta retirada' : '✓ ' + ((r.hecho && r.hecho.ok) || 'Hecho'), 'ok');
@@ -1212,7 +1220,7 @@ setTimeout(portadaLista, 7000);   // por si alguna imagen tarda: nunca se queda 
 
 function inicio() {
   if (!E.elegido) {
-    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); setTimeout(() => aviso('🌱 Toca «Granja» para sembrar tus ingredientes.', 'ok'), 5000); pintarChacra(true); } });
+    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tu olla ya está en el fuego: tócala para servir cuando esté lista y espanta a los duendes.', ''); setTimeout(() => aviso('🌱 Toca «Granja» para sembrar tus ingredientes.', 'ok'), 5000); pintarChacra(true); } });
     $('modal-c').querySelectorAll('.elige .b').forEach(b => b.onclick = () => { E.personaje = b.dataset.k; $('modal-c').querySelectorAll('.elige .b').forEach(o => o.classList.toggle('on', o === b)); });
   } else if (vuelta) {
     abrirModal(`<h2>Mientras no estabas</h2><p>Tu puesto siguió abierto ${vuelta.min >= 60 ? Math.floor(vuelta.min / 60) + ' h ' + (vuelta.min % 60) + ' min' : vuelta.min + ' min'}${vuelta.tope ? ` (tu Jarra guarda hasta ${vuelta.horas} h: mejórala para más)` : ''}.</p>

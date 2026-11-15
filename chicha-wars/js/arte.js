@@ -422,7 +422,7 @@ export function estante(x, cx, py, vasos, cap, jarraR) {
   if (SPR.has(kj)) {
     const llenas = Math.min(3, Math.ceil(vasos / Math.max(1, cap) * 3));
     for (let i = 0; i < 3; i++) { x.save(); x.globalAlpha = i < llenas ? 1 : 0.35; spr(x, kj, cx - 46 + i * 46, py, 52); x.restore(); }
-    x.save(); x.font = '15px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = vasos >= cap ? '#ff8a80' : '#fff3c4';
+    x.save(); x.font = '18px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1712'; x.fillStyle = vasos >= cap ? '#ff8a80' : '#fff3c4';
     const tx = vasos + ' / ' + cap; x.strokeText(tx, cx, py + 16); x.fillText(tx, cx, py + 16); x.restore();
     return;
   }

@@ -156,7 +156,7 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 .elige.grande .b{min-height:54px;font-size:19px}
 #modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,4,14,.72);z-index:20;padding:16px}
 #modal.on{display:flex}
-#modal-c{width:min(420px,100%);padding:20px;border-radius:20px;background:linear-gradient(180deg,#3a1d46,#22122a);border:2px solid var(--borde);box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center}
+#modal-c{width:min(420px,100%);max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:20px;border-radius:20px;background:linear-gradient(180deg,#3a1d46,#22122a);border:2px solid var(--borde);box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center}
 #modal-c h2{font:24px var(--t);color:var(--oro);margin-bottom:8px;letter-spacing:.02em}
 #modal-c p{color:var(--txt2);margin:8px 0}
 #modal-c .resumen{margin-top:12px}
@@ -186,6 +186,10 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 #b-menu{pointer-events:auto;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--borde);background:rgba(20,8,26,.78);color:#fff;font:16px var(--t);margin-left:2px}
 #h-rate{position:absolute;left:10px;top:100%;margin-top:2px;font:11px var(--t);color:#c5e1a5;text-shadow:0 1px 2px #000,0 0 4px #000;white-space:nowrap}
 #hud .chip{position:relative}
+#b-sonido,#b-menu{position:relative;flex-shrink:0}#b-sonido::after,#b-menu::after{content:"";position:absolute;inset:-5px}
+@media (max-width:420px){#hud{gap:4px;padding-left:6px;padding-right:6px}#hud .chip{gap:4px;padding:4px 7px 4px 5px;font-size:15px}#h-pase-c{min-width:auto}#h-pase-c .pb{display:none}}
+@media (max-width:404px){#hud .chip.vasos{display:none}}
+@media (max-height:460px){#avisos{top:calc(46px + env(safe-area-inset-top))}.aviso{padding:4px 10px;font-size:12px;max-width:340px}}
 #portada{position:fixed;inset:0;z-index:15;display:none;max-width:480px;margin:0 auto;overflow:hidden;background:#140a18}
 #portada.on{display:block}
 #portada.sale{animation:pSale .45s ease-in forwards}
@@ -238,7 +242,7 @@ a.b{text-decoration:none}
     <div id="hud">
       <div class="chip"><span class="mon"></span><span id="h-monedas">0</span><small id="h-rate"></small></div>
       <div class="chip"><i>🌽</i><span id="h-maiz">0</span></div>
-      <div class="chip"><i>🥤</i><span id="h-vasos">0</span></div>
+      <div class="chip vasos"><i>🥤</i><span id="h-vasos">0</span></div>
       <div class="chip" id="h-pase-c"><i>⭐</i><span id="h-pase">0</span><div class="pb"><div id="h-pase-b"></div></div></div>
       <button id="b-sonido" aria-label="Sonido">🔊</button>
       <button id="b-menu" aria-label="Menú principal">☰</button>
