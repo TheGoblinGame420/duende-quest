@@ -15,7 +15,8 @@ const W = 540, PISO = 360;
 let H = 640, Y_OLLA = 505, Y_CH = 590;   // la escena llena el alto libre de la pantalla: ajustar() recalcula H y baja ollas y chichera
 const $ = id => document.getElementById(id);
 const lienzo = $('escena'), x = lienzo.getContext('2d');
-const fmt = n => Math.floor(n).toLocaleString('es-PE');
+const NUM = new Intl.NumberFormat('es-PE');   // un solo formateador: toLocaleString creaba uno en cada llamada (2-3 por cuadro en el HUD)
+const fmt = n => NUM.format(Math.floor(n));
 const hoyPeru = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
 const azar = (a, b) => a + Math.random() * (b - a);
 
@@ -143,7 +144,7 @@ const segCliente = () => D.TOLDOS[E.nv.toldo].seg / (1 + HR('colador').rep) / (h
 const PUESTOS = [118, 238, 352];
 const SPR_PJ = { chichera: 'chichera_maestra', chichero: 'agricultor' };   // donde se paran los clientes (las jarras van a la derecha del mostrador)
 const dano = () => HR('cucharon').dano;
-const fmtP = n => n >= 100 ? fmt(n) : (Math.round(n * 10) / 10).toLocaleString('es-PE');
+const fmtP = n => n >= 100 ? fmt(n) : NUM.format(Math.round(n * 10) / 10);
 const coma = n => String(Math.round(n * 10) / 10).replace('.', ',');
 // Chicha especial: de los n vasos que se venden, los que quedan de la tanda especial pagan el extra.
 function extraEspecial(n) { const s = E.esp; if (!(s.n > 0)) return 0; const k = Math.min(n, s.n); s.n -= k; return k * precio() * (s.mult - 1); }
@@ -248,7 +249,8 @@ const TIT = {
   chichera_maestra: { cuello: 0.30, falda: true, brazos: [{ pu: 0.30, pv: 0.40, cu: 0.10, cv: 0.30, r: 0.17, amp: 0.035 }, { pu: 0.70, pv: 0.42, cu: 0.88, cv: 0.36, r: 0.13, amp: 0.03, fase: 1.5 }] },
   _: { cuello: 0.27 },
 };
-const titere = (k, im, modo) => R.hojaMalla(im, modo, modo === 'idle' ? 16 : 12, R.campo(TIT[k] || TIT._, modo));
+const TITS = new Map();   // hoja ya hecha por imagen y modo: sin crear el campo (una funcion nueva) en cada cuadro
+const titere = (k, im, modo) => { let m = TITS.get(im); if (!m) TITS.set(im, m = {}); return m[modo] || (m[modo] = R.hojaMalla(im, modo, modo === 'idle' ? 16 : 12, R.campo(TIT[k] || TIT._, modo))); };
 let chVy = 0;
 function pose(p, seg) {
   if (p === 'espanta') { rigCh.bend.golpe(3.4); rigCh.head.golpe(4); rigCh.sy.golpe(-2.2); }   // se lanza hacia los duendes
@@ -425,13 +427,35 @@ function recoger(i) {
 
 // ── BUCLE ──
 let ultimo = performance.now(), enPortada = true;
+let animExtra = null;   // animacion de una ventana (barra de la chicha especial): va en este mismo requestAnimationFrame
+let granjaT = 0;        // segundos con la granja abierta: tapa la escena entera y no hace falta pintarla
+// Calidad automatica: si el celular no llega a ~40 cuadros por segundo jugando, el lienzo baja de resolucion
+// (2 → 1,5 → 1,25 pixeles por punto). El dibujo es el mismo, solo un poco menos nitido; en celulares que ya van bien no cambia.
+const DPR_PASOS = [2, 1.5, 1.25], dts = new Float32Array(90); let dtsN = 0, dprPaso = 0, dprT = 0;
+function vigilarRitmo(ms) {
+  if (ms > 250 || document.hidden) return;   // pestaña dormida o pausa larga: no cuenta
+  dts[dtsN++ % dts.length] = ms; dprT += ms;
+  if (dtsN < dts.length || dprT < 6000 || dprPaso >= DPR_PASOS.length - 1) return;
+  const o = Array.from(dts).sort((a, b) => a - b), med = o[o.length >> 1];
+  dprT = 0; if (med <= 25) return;
+  const antes = dprAct(); while (dprPaso < DPR_PASOS.length - 1 && dprAct() >= antes) dprPaso++;
+  if (dprAct() < antes) { ajustar(); dtsN = 0; }
+}
+const dprAct = () => Math.min(DPR_PASOS[dprPaso], devicePixelRatio || 1);
 function cuadro(ahora) {
   requestAnimationFrame(cuadro);   // primero: si un cuadro falla, el juego no se congela
-  let dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
+  const ms = ahora - ultimo;
+  let dt = Math.min(0.05, ms / 1000); ultimo = ahora;
+  if (animExtra) animExtra(ahora);
   if (paro > 0) { paro -= dt; dt = dt * 0.08; }   // pausa de golpe: el mundo casi se congela un instante
   T += dt;
   if (E.elegido && !enPortada && !pausa) logica(dt); else { animarCh(dt); }
+  granjaT = enGranja ? granjaT + dt : 0;
+  // Con la portada o la granja encima la escena no se ve: no se pinta (la logica sigue). Al salir de la portada
+  // se pinta durante su fundido.
+  if ((enPortada && !portada.classList.contains('sale')) || granjaT > 0.4) return;
   dibujar();
+  if (E.elegido && !enPortada && !pausa && !abierta) vigilarRitmo(ms);
 }
 let monPrev = E.monedas;
 const ritmo = [];   // [seg, ganado] del ultimo minuto → monedas por minuto en el HUD
@@ -605,8 +629,8 @@ function dibujar() {
   } })), { y: Y_CH, f: () => { const sk = D.SKINS[E.skin[E.personaje]], im = A.img(SPR_PJ[E.personaje]);
     if (conHoja()) { const M = HOJA_CH, hi = A.img('chichera_hoja'), [cw, ch] = M.celda, s = 205 / M.altoPersona, ci = M.ciclo || [4, 5, 6, 7];
       const f = T < poseHasta && poseAct === 'celebra' ? 11 : poseAct === 'espanta' ? 2 : poseAct === 'susto' ? 0 : poseAct === 'remueve' ? ci[Math.floor(T * 6) % ci.length] : E.esp.n > 0 ? 10 : 3;
-      x.save(); x.translate(150 - M.olla[0] * s, Y_CH + rigCh.dy); x.scale(1, 1 + rigCh.breathe * 0.5); if (sk.filtro) x.filter = sk.filtro;
-      x.drawImage(hi, (f % M.cols) * cw, Math.floor(f / M.cols) * ch, cw, ch, 0, -M.pie[1] * s, cw * s, ch * s); x.restore();
+      x.save(); x.translate(150 - M.olla[0] * s, Y_CH + rigCh.dy); x.scale(1, 1 + rigCh.breathe * 0.5);
+      x.drawImage(R.filtrada(hi, sk.filtro), (f % M.cols) * cw, Math.floor(f / M.cols) * ch, cw, ch, 0, -M.pie[1] * s, cw * s, ch * s); x.restore();
       if (puedeChicha) { const yy = Y_CH - 150 + Math.sin(T * 4) * 3; x.save(); x.font = '14px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1200'; x.fillStyle = '#ffd54a'; x.strokeText('★ Preparar chicha', 150, yy); x.fillText('★ Preparar chicha', 150, yy); x.restore(); }
     } else if (im) { const acc = poseAct === 'remueve'; R.dibujarCuadro(x, titere(SPR_PJ[E.personaje], im, acc ? 'accion' : 'idle'), acc ? T * 9 : T * 5.5, 70, Y_CH, 205, rigCh, false, sk.filtro); } else (E.personaje === 'chichero' ? A.chichero : A.chichera)(x, 70, Y_CH, 0.82, poseAct, T, { ...sk.paleta, filtro: sk.filtro }); } }];
   if (E.nv.ayudante > 0 && A.img('ayudante')) orden.push({ y: 455, f: () => R.dibujarCuadro(x, titere('ayudante', A.img('ayudante'), 'idle'), T * 5.5 + 4, W - 46, 455, 112, rigAy, true) });
@@ -1165,7 +1189,7 @@ function prepararChicha(id) {
   $('modal').classList.add('on');
   const poseCh = f => { const el = $('pr-ch'), M = HOJA_CH; if (!el || !M) return; el.style.aspectRatio = M.celda[0] + '/' + M.celda[1]; el.style.backgroundImage = `url(${IMG}chichera_hoja.webp)`; el.style.backgroundSize = M.cols * 100 + '% ' + M.filas * 100 + '%'; el.style.backgroundPosition = (f % M.cols) / (M.cols - 1) * 100 + '% ' + Math.floor(f / M.cols) / (M.filas - 1) * 100 + '%'; };
   const nuevoPaso = () => { poseCh([1, 5, 8][paso] ?? 5); ancho = 0.30 - paso * 0.06; centro = 0.2 + Math.random() * 0.6; vel = 0.75 + paso * 0.3; t0 = performance.now(); $('pr-paso').textContent = `Paso ${paso + 1} de ${D.PASOS_CHICHA.length} · ${D.PASOS_CHICHA[paso]}`; const z = $('pr-zona'); z.style.left = (centro - ancho / 2) * 100 + '%'; z.style.width = ancho * 100 + '%'; };
-  const anim = ahora => { if (!vivo) return; const u = ((ahora - t0) / 1000 * vel) % 2; pos = u < 1 ? u : 2 - u; const el = $('pr-punto'); if (el) el.style.left = pos * 100 + '%'; requestAnimationFrame(anim); };
+  const anim = ahora => { if (!vivo) { if (animExtra === anim) animExtra = null; return; } const u = ((ahora - t0) / 1000 * vel) % 2; pos = u < 1 ? u : 2 - u; const el = $('pr-punto'); if (el) el.style.left = pos * 100 + '%'; };   // la llama cuadro() (un solo requestAnimationFrame)
   const fin = () => {
     vivo = false; const suma = pts.reduce((a, b) => a + b, 0), q = suma >= 5 ? 2 : suma >= 3 ? 1 : 0, cal = D.CALIDAD[q];
     if (E.maiz < c.maiz || !Object.entries(c.receta).every(([k, n]) => E.ing[k] >= n)) { $('modal').classList.remove('on'); pausa = false; ultimo = performance.now(); return; }
@@ -1183,7 +1207,7 @@ function prepararChicha(id) {
     const el = $('pr-s' + paso); el.className = 's' + s; el.textContent = s === 2 ? '¡Perfecto!' : s === 1 ? 'Bien' : 'Falló'; son(s ? 'lista' : 'robo'); vibrar(s ? 20 : 60);
     paso++; if (paso >= D.PASOS_CHICHA.length) { vivo = false; setTimeout(fin, 550); } else nuevoPaso();
   };
-  nuevoPaso(); requestAnimationFrame(anim);
+  nuevoPaso(); animExtra = anim;
 }
 
 // ── PORTADA (pantalla de inicio): el puesto no corre hasta que tocas JUGAR ──
@@ -1235,7 +1259,7 @@ function inicio() {
 function ajustar() {
   // El lienzo llena el hueco libre; si el hueco es mas bajo que 540x640 (celular acostado) o mas alto que 540x1120,
   // se encoge a lo ancho o a lo alto y queda centrado: la escena nunca se deforma.
-  const c = lienzo.parentElement.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+  const c = lienzo.parentElement.getBoundingClientRect(), dpr = dprAct();
   if (c.width > 0 && c.height > 0) {
     const h0 = Math.round(W * c.height / c.width); H = Math.max(640, Math.min(1120, h0)); const ex = H - 640; Y_OLLA = 505 + Math.round(ex * 0.3); Y_CH = 590 + Math.round(ex * 0.3);
     const cw = h0 < H ? c.height * W / H : c.width, ch = h0 > H ? c.width * H / W : c.height;
@@ -1245,7 +1269,14 @@ function ajustar() {
   lienzo.width = Math.round(r.width * dpr); lienzo.height = Math.round(r.height * dpr);
 }
 addEventListener('resize', ajustar); ajustar();
-A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista();
+// Hojas de los duendes (y su copia del destello) hechas de a una en ratos libres, no en medio de la primera oleada.
+function precalentar() {
+  const cola = ['pirata', 'vampiro', 'esqueleto', 'lobo', 'momia', 'bruja', 'jefe'];
+  const uno = () => { const k = cola.shift(); if (!k) return; const im = A.img('duende_' + k); if (im) try { R.precalentar(im); } catch (e) {}
+    if (cola.length) (window.requestIdleCallback || (f => setTimeout(f, 60)))(uno, { timeout: 1500 }); };
+  setTimeout(uno, 1200);
+}
+A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista(); precalentar();
   setTimeout(() => { const im = A.img(SPR_PJ[E.personaje]); if (im) { titere(SPR_PJ[E.personaje], im, 'idle'); titere(SPR_PJ[E.personaje], im, 'accion'); } }, 400); });
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
 pintarPanel(); pintarHud(); pintarChacra(true);

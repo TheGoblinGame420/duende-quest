@@ -347,15 +347,23 @@ export function cliente(x, px, py, s, i, t, camina, feliz) {
 }
 
 // ── FONDO: puesto de mercado andino ──
+let _plaza = null, _plazaK = '';
+function plaza(x, im3d, W, H) {
+  const hi = W * im3d.height / im3d.width;   // la plaza se dibuja a su proporcion; la escena puede ser mas alta que 640
+  if (hi >= H - 1) x.drawImage(im3d, 0, 0, im3d.width, im3d.height * H / hi, 0, 0, W, H);
+  else if (H - hi < hi * 0.3) {   // falta poco: el empedrado sigue en espejo (sin estirarlo ni que se note la costura)
+    const ex = H - hi, filas = ex * im3d.width / W; x.drawImage(im3d, 0, 0, W, hi);
+    x.save(); x.translate(0, hi * 2); x.scale(1, -1); x.drawImage(im3d, 0, im3d.height - filas, im3d.width, filas, 0, hi - ex, W, ex); x.restore();
+  } else { x.drawImage(im3d, 0, 0, W, hi); x.drawImage(im3d, 0, im3d.height * 0.72, im3d.width, im3d.height * 0.28, 0, hi - 1, W, H - hi + 1); }
+}
 export function fondo(x, W, H, piso, t, noche, toldo) {
   const im3d = img(noche ? 'fondo_mercado_noche' : 'fondo_mercado_dia');
   if (im3d) {   // plaza modelada en Blender (tools/cw_fondo_blender.py); las nubes pasan por delante del cielo
-    const hi = W * im3d.height / im3d.width;   // la plaza se dibuja a su proporcion; la escena puede ser mas alta que 640
-    if (hi >= H - 1) x.drawImage(im3d, 0, 0, im3d.width, im3d.height * H / hi, 0, 0, W, H);
-    else if (H - hi < hi * 0.3) {   // falta poco: el empedrado sigue en espejo (sin estirarlo ni que se note la costura)
-      const ex = H - hi, filas = ex * im3d.width / W; x.drawImage(im3d, 0, 0, W, hi);
-      x.save(); x.translate(0, hi * 2); x.scale(1, -1); x.drawImage(im3d, 0, im3d.height - filas, im3d.width, filas, 0, hi - ex, W, ex); x.restore();
-    } else { x.drawImage(im3d, 0, 0, W, hi); x.drawImage(im3d, 0, im3d.height * 0.72, im3d.width, im3d.height * 0.28, 0, hi - 1, W, H - hi + 1); }
+    // Rendimiento: la plaza (1080x2000) se reduce UNA vez a un lienzo del tamano real de la pantalla y cada cuadro
+    // se copia 1:1 (antes se reescalaba la imagen grande, hasta 3 veces, en cada cuadro).
+    const tr = x.getTransform(), cw = Math.round(W * tr.a), ch = Math.round(H * tr.d), kk = im3d.src + '|' + H + '|' + cw + 'x' + ch;
+    if (_plazaK !== kk && cw > 0 && ch > 0) { _plaza = _plaza || document.createElement('canvas'); _plaza.width = cw; _plaza.height = ch; const g = _plaza.getContext('2d'); g.setTransform(cw / W, 0, 0, ch / H, 0, 0); plaza(g, im3d, W, H); _plazaK = kk; }
+    if (_plazaK === kk) x.drawImage(_plaza, 0, 0, W, H); else plaza(x, im3d, W, H);
     x.save(); x.beginPath(); x.rect(0, 0, W, piso * 0.42); x.clip(); R.nubes(x, W, piso, t, noche); x.restore();
   } else {
   const cielo = x.createLinearGradient(0, 0, 0, piso);
@@ -384,8 +392,9 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
   _noche = noche;
   const ip = img('puesto_toldo_' + Math.min(2, toldo));
   if (ip) {
-    x.save(); if (noche) x.filter = 'brightness(.6) saturate(.9)'; x.drawImage(ip, 0, piso - 290, W, 315); x.restore();
-    if (noche) for (const px of [60, W - 60]) { const g = x.createRadialGradient(px, piso - 175, 2, px, piso - 175, 90); g.addColorStop(0, 'rgba(255,200,90,.45)'); g.addColorStop(1, 'rgba(255,200,90,0)'); x.fillStyle = g; x.fillRect(px - 90, piso - 265, 180, 180); }
+    // de noche: copia oscurecida hecha una vez (rig.filtrada) y faroles con halo pre-dibujado (antes: filtro y degradados en cada cuadro)
+    x.drawImage(noche ? R.filtrada(ip, 'brightness(.6) saturate(.9)') : ip, 0, piso - 290, W, 315);
+    if (noche) for (const px of [60, W - 60]) x.drawImage(R.halo('255,200,90', 0.45), px - 90, piso - 265, 180, 180);
     return;
   }
   // puesto: postes y toldo de rayas
@@ -409,7 +418,7 @@ export function fondo(x, W, H, piso, t, noche, toldo) {
 let _noche = false;
 export function mostrador(x, W, piso) {
   const im3 = img('puesto_mostrador');
-  if (im3) { x.save(); if (_noche) x.filter = 'brightness(.66) saturate(.9)'; x.drawImage(im3, 0, piso - 290, W, 315); x.restore(); return; }
+  if (im3) { x.drawImage(_noche ? R.filtrada(im3, 'brightness(.66) saturate(.9)') : im3, 0, piso - 290, W, 315); return; }
   rr(x, 14, piso - 62, W - 28, 30, 6); trazo(x, grad(x, piso - 62, piso - 32, '#8d5a34'), 3);
   rr(x, 24, piso - 34, W - 48, 34, 4); trazo(x, grad(x, piso - 34, piso, '#6d4426'), 3);
   x.save(); x.globalAlpha = 0.25; x.strokeStyle = '#3e2716'; x.lineWidth = 2;

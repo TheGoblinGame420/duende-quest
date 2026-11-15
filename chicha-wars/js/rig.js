@@ -24,6 +24,41 @@ export function rigNuevo() {
 }
 export function rigPaso(r, dt) { r.bend.paso(dt); r.head.paso(dt); r.sy.paso(dt); r.lean.paso(dt); r.flash = Math.max(0, r.flash - dt * 4); }
 
+// ── COPIAS FILTRADAS (rendimiento) ──
+// Dibujar con ctx.filter obliga al navegador a una pasada aparte POR CADA drawImage (el duende por franjas eran 28
+// pasadas por cuadro). Se hace una copia filtrada una sola vez y se dibuja como una imagen normal.
+// El destello del golpe (brightness(1+1,6f) saturate(1-0,5f)) se arma sumando ('lighter') la misma figura y su copia
+// en gris: c·(1+a1) + gris·a2 es exactamente esa matriz de color (ver destello()).
+// Sin soporte de ctx.filter (Safari viejo) el filtro ya no se veia: se devuelve la imagen tal cual.
+export const FILTRO_OK = (() => { try { return 'filter' in document.createElement('canvas').getContext('2d'); } catch (e) { return false; } })();
+const GRIS = 'grayscale(1)';
+// pinta(src) dibuja la figura con la transformacion actual; al = opacidad de la figura.
+function destello(x, f, al, src, pinta) {
+  const a1 = 1.1 * f - 0.8 * f * f, a2 = 0.5 * f + 0.8 * f * f;   // (1+1,6f)(1-0,5f) = 1+a1 ; (1+1,6f)·0,5f = a2
+  x.globalCompositeOperation = 'lighter';
+  if (a1 > 0.01) { x.globalAlpha = al * a1; pinta(src); }
+  const g = filtrada(src, GRIS);
+  for (let a = a2; a > 0.01; a -= 1) { x.globalAlpha = al * Math.min(1, a); pinta(g); }
+  x.globalCompositeOperation = 'source-over';
+}
+const FILTRADAS = new Map();
+export function filtrada(src, filtro) {
+  if (!filtro || !FILTRO_OK) return src;
+  let m = FILTRADAS.get(src); if (!m) FILTRADAS.set(src, m = new Map());
+  let c = m.get(filtro); if (c) return c;
+  c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const g = c.getContext('2d'); g.filter = filtro; g.drawImage(src, 0, 0);
+  m.set(filtro, c); return c;
+}
+// Hoja (de hoja() o hojaMalla()) con su lienzo filtrado; mismas medidas.
+const HOJAS_F = new Map();
+function hojaFiltrada(hj, filtro) {
+  if (!filtro || !FILTRO_OK) return hj;
+  let m = HOJAS_F.get(hj); if (!m) HOJAS_F.set(hj, m = new Map());
+  let h2 = m.get(filtro); if (!h2) m.set(filtro, h2 = { ...hj, c: filtrada(hj.c, filtro) });
+  return h2;
+}
+
 const N = 28;
 // img: HTMLImageElement; (px, py) pies; h alto en px; r: rig; flip: mirar a la izquierda.
 export function dibujarRig(x, img, px, py, h, r, flip, filtro) {
@@ -39,8 +74,13 @@ export function dibujarRig(x, img, px, py, h, r, flip, filtro) {
   if (r.rot) x.rotate(r.rot);
   if (flip) x.scale(-1, 1);
   if (r.alpha < 1) x.globalAlpha = r.alpha;
-  if (filtro || r.flash > 0.05) x.filter = (filtro || '') + (r.flash > 0.05 ? ` brightness(${1 + r.flash * 1.6}) saturate(${1 - r.flash * 0.5})` : '');
-  const sh = ih / N, dh = h * sy / N;
+  const base = filtrada(img, filtro);
+  franjas(x, base, iw, ih, h, sy, sx, bend, head, r);
+  if (r.flash > 0.05 && FILTRO_OK) destello(x, r.flash, r.alpha, base, im => franjas(x, im, iw, ih, h, sy, sx, bend, head, r));
+  x.restore();
+}
+function franjas(x, img, iw, ih, h, sy, sx, bend, head, r) {
+  const w = h * iw / ih, sh = ih / N, dh = h * sy / N;
   for (let i = 0; i < N; i++) {
     const t = 1 - (i + 0.5) / N;                     // 0 = pies, 1 = coronilla
     let dx = bend * t * t * h;                       // columna curvada (mas arriba, mas se mueve)
@@ -50,7 +90,6 @@ export function dibujarRig(x, img, px, py, h, r, flip, filtro) {
     const ww = w * sx * resp;
     x.drawImage(img, 0, i * sh, iw, sh + 0.5, dx - ww / 2, -h * sy + i * dh, ww, dh + 0.8);
   }
-  x.restore();
 }
 
 // ── EFECTOS DE AMBIENTE ──
@@ -65,14 +104,21 @@ export function bocanada() {
   return (_vapor = c);
 }
 // Nubes de algodon que pasan despacio.
+// Cada nube se pre-dibuja una vez (con la misma opacidad por circulo que antes, asi los cruces se ven igual) y se copia.
+const BOLAS = [[0, 0, 22], [22, -8, 26], [46, 0, 20], [24, 8, 22], [-18, 6, 16]], NUBES = new Map();
+function nube(noche, s) {
+  const kk = (noche ? 'n' : 'd') + s; let c = NUBES.get(kk); if (c) return c;
+  const E = 2, cw = Math.ceil((46 + 20 + 18 + 16) * s * E) + 4, ch = Math.ceil((8 + 22 + 8 + 26) * s * E) + 4;
+  c = document.createElement('canvas'); c.width = cw; c.height = ch; const g = c.getContext('2d');
+  g.globalAlpha = noche ? 0.25 : 0.85; g.fillStyle = noche ? '#8c87b8' : '#ffffff';
+  for (const [ox, oy, rr] of BOLAS) { g.beginPath(); g.arc(2 + (ox + 34) * s * E, 2 + (oy + 34) * s * E, rr * s * E, 0, Math.PI * 2); g.fill(); }
+  c.ox = 2 / E + 34 * s; c.oy = 2 / E + 34 * s; c.E = E; NUBES.set(kk, c); return c;
+}
 export function nubes(x, W, piso, t, noche) {
-  x.save(); x.globalAlpha = noche ? 0.25 : 0.85;
   for (let i = 0; i < 4; i++) {
     const vel = 6 + i * 3, cx = ((t * vel + i * 190) % (W + 260)) - 130, cy = 40 + i * 26 + Math.sin(i * 2) * 8, s = 0.7 + (i % 2) * 0.35;
-    x.fillStyle = noche ? '#8c87b8' : '#ffffff';
-    for (const [ox, oy, rr] of [[0, 0, 22], [22, -8, 26], [46, 0, 20], [24, 8, 22], [-18, 6, 16]]) { x.beginPath(); x.arc(cx + ox * s, cy + oy * s, rr * s, 0, Math.PI * 2); x.fill(); }
+    const c = nube(noche, s); x.drawImage(c, cx - c.ox, cy - c.oy, c.width / c.E, c.height / c.E);
   }
-  x.restore();
 }
 // Resplandor del sol con rayos que giran lento.
 export function sol(x, cx, cy, t, noche) {
@@ -87,12 +133,19 @@ export function sol(x, cx, cy, t, noche) {
   x.restore();
 }
 // Luz calida del fuego sobre el suelo (aditiva, parpadea).
+// Degradado radial pre-dibujado (centro c0 → borde transparente): se pinta escalado, sin crear degradados por cuadro.
+const HALOS = new Map();
+export function halo(color, a0) {
+  const kk = color + '|' + a0; let c = HALOS.get(kk); if (c) return c;
+  c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 64 * 4 / 90, 64, 64, 64);
+  gr.addColorStop(0, `rgba(${color},${a0})`); gr.addColorStop(1, `rgba(${color},0)`); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  HALOS.set(kk, c); return c;
+}
 export function luzFuego(x, cx, cy, t, i, color = '255,150,60') {
-  const k = 0.75 + 0.25 * Math.sin(t * 9 + i * 1.7) * Math.sin(t * 5.3 + i);
-  x.save(); x.globalCompositeOperation = 'lighter';
-  const g = x.createRadialGradient(cx, cy, 4, cx, cy, 90 * k);
-  g.addColorStop(0, `rgba(${color},${0.35 * k})`); g.addColorStop(1, `rgba(${color},0)`);
-  x.fillStyle = g; x.fillRect(cx - 100, cy - 100, 200, 200); x.restore();
+  const k = 0.75 + 0.25 * Math.sin(t * 9 + i * 1.7) * Math.sin(t * 5.3 + i), r = 90 * k;
+  x.save(); x.globalCompositeOperation = 'lighter'; x.globalAlpha = k;
+  x.drawImage(halo(color, 0.35), cx - r, cy - r, r * 2, r * 2); x.restore();
 }
 // Motas de polvo en la luz.
 export function motas(x, W, H, t) {
@@ -143,14 +196,17 @@ export function hoja(img, hpx = 240) {
   }
   hj = { c, fw, fh, hpx }; HOJAS.set(img, hj); return hj;
 }
+// Deja hecha la hoja de caminata y su copia gris del destello (para que el primer golpe no dé un tironcito).
+export function precalentar(img) { const hj = hoja(img); filtrada(hj.c, GRIS); filtrada(img, GRIS); }
 export function dibujarHoja(x, img, px, py, h, r, flip, filtro, fase) {
   const hj = hoja(img), f = ((Math.floor(fase / (Math.PI * 2) * FR) % FR) + FR) % FR, k = h / hj.hpx;
   const sy = Math.max(0.6, Math.min(1.45, r.sy.v)), sx = 1 / Math.sqrt(sy);
   x.save(); x.globalAlpha = 0.24 * r.alpha; x.fillStyle = '#000'; x.beginPath(); x.ellipse(px, py, hj.fw * k * 0.3, hj.fw * k * 0.075, 0, 0, Math.PI * 2); x.fill(); x.restore();
   x.save(); x.translate(px + r.bend.v * h * 0.4, py); if (flip) x.scale(-1, 1); x.scale(sx, sy);
   if (r.alpha < 1) x.globalAlpha = r.alpha;
-  if (filtro || r.flash > 0.05) x.filter = (filtro || '') + (r.flash > 0.05 ? ` brightness(${1 + r.flash * 1.6}) saturate(${1 - r.flash * 0.5})` : '');
-  x.drawImage(hj.c, f * hj.fw, 0, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
+  const hb = hojaFiltrada(hj, filtro);
+  x.drawImage(hb.c, f * hj.fw, 0, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
+  if (r.flash > 0.05 && FILTRO_OK) destello(x, r.flash, r.alpha, hb.c, c => x.drawImage(c, f * hj.fw, 0, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k));
   x.restore();
 }
 
@@ -217,8 +273,9 @@ export function dibujarCuadro(x, hj, f, px, py, h, r, flip, filtro) {
   x.save(); x.translate(px + r.dx, py + r.dy); if (r.rot) x.rotate(r.rot); if (flip) x.scale(-1, 1);
   x.transform(1, 0, -(r.bend.v + r.lean.v) * 0.9, 1, 0, 0); x.scale(sx, sy);
   if (r.alpha < 1) x.globalAlpha = r.alpha;
-  if (filtro || r.flash > 0.05) x.filter = (filtro || '') + (r.flash > 0.05 ? ` brightness(${1 + r.flash * 1.6}) saturate(${1 - r.flash * 0.5})` : '');
-  x.drawImage(hj.c, (fi % cols) * hj.fw, Math.floor(fi / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
-  if (mez > 0.02) { x.globalAlpha *= mez; x.drawImage(hj.c, (fj % cols) * hj.fw, Math.floor(fj / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k); }   // fundido al cuadro siguiente: se ve fluido
+  const c = hojaFiltrada(hj, filtro).c;
+  x.drawImage(c, (fi % cols) * hj.fw, Math.floor(fi / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k);
+  if (mez > 0.02) { x.globalAlpha *= mez; x.drawImage(c, (fj % cols) * hj.fw, Math.floor(fj / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k); }   // fundido al cuadro siguiente: se ve fluido
+  if (r.flash > 0.05 && FILTRO_OK) destello(x, r.flash, r.alpha, c, cc => x.drawImage(cc, (fi % cols) * hj.fw, Math.floor(fi / cols) * hj.fh, hj.fw, hj.fh, -hj.fw * k / 2, -hj.fh * k, hj.fw * k, hj.fh * k));
   x.restore();
 }
