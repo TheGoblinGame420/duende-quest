@@ -21,7 +21,7 @@ import {
 import { iniciarRegalo } from './regalo.js?v=391';
 import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=391';
 import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=391';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque } from './fondo2d.js?v=391';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=391';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4621,6 +4621,7 @@ function dibujarNPCs(mp) {
 function sombra(x, pies, ancho) {
   const k = 1 - Math.min(1, (SUELO - pies) / 140);
   if (k <= .05) return;
+  if (FONDO2D) { fondoSombra(g, x, sueloEn(MAPAS[mapaId], x + camX, pies, true) + 2, ancho, k); return; }
   g.save(); g.fillStyle = '#000'; g.globalAlpha = .35 * k;
   g.beginPath(); g.ellipse(x, sueloEn(MAPAS[mapaId], x + camX, pies, true) + 2, ancho * k, 5 * k, 0, 0, Math.PI * 2); g.fill(); g.restore();
 }
@@ -5116,6 +5117,7 @@ function dibujar() {
   dibujarMarcasEspeciales();
   for (const q of otros.values()) { if (fueraDeFoto(q)) continue; interpolar(q, 230); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
   if (yo) dibujarDuende(P, true);
+  if (FONDO2D) fondoFrente(VF);
   dibujarProyectiles();
   dibujarEfectos();
   dibujarClima();
