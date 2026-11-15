@@ -7477,7 +7477,7 @@ function pintarAmigos3() {
     nomI.value = nomV; if (nomF) nomI.focus();
     const invNom = () => { const v = nomI.value.trim(); if (!v) return aviso('Escribe el nombre de tu amigo.'); mandar({ t: 'invitar', n: v.slice(0, 24) }); nomI.value = ''; nomI.blur(); };
     nomB.onclick = invNom;
-    nomI.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') invNom(); };
+    nomI.onkeydown = e => { if (e.key !== 'Escape') e.stopPropagation(); if (e.key === 'Enter') invNom(); };
   }
   c.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.ai }); b.disabled = true; });
   c.querySelectorAll('[data-aa]').forEach(b => b.onclick = () => { mandar({ t: 'contactoAdd', p: +b.dataset.aa }); b.disabled = true; });
