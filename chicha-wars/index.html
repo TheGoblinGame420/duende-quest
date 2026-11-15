@@ -34,6 +34,7 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 #b-sonido{pointer-events:auto;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--borde);background:rgba(20,8,26,.78);color:#fff;font:16px var(--t)}
 #avisos{position:absolute;left:8px;right:8px;top:calc(52px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none}
 .aviso{max-width:100%;padding:7px 12px;border-radius:12px;background:rgba(20,8,26,.88);border:1.5px solid var(--borde);font:600 13.5px var(--s);text-align:center;animation:entra .2s ease-out}
+#lado{display:none}
 .aviso.ok{border-color:rgba(123,216,143,.6)}.aviso.err{border-color:rgba(255,107,107,.7)}
 .aviso.fuera{opacity:0;transition:opacity .4s}
 @keyframes entra{from{transform:translateY(-8px);opacity:0}}
@@ -201,6 +202,26 @@ html,body{height:100%;background:radial-gradient(ellipse at top,#3a1a46,#140a18 
 #g-semillas{grid-column:2;grid-row:2;flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:4px 6px;min-height:0}
 #g-acc{grid-column:2;grid-row:3;flex-direction:column;gap:4px;padding:4px 6px 6px}
 .sem{width:auto;display:grid;grid-template-columns:34px 1fr;column-gap:4px;row-gap:0;align-items:center;padding:3px 6px 3px 2px;text-align:left}.sem img{grid-row:1/3;width:34px;height:34px}.sem b{min-height:0;text-align:left;font-size:12.5px;justify-self:start}.sem small{justify-self:start}.sem.on{transform:none}}
+/* celular acostado: la escena ocupa todo el alto a la izquierda (antes quedaba de 250x300 entre el HUD y la barra);
+   a su derecha van el HUD, los avisos y las ventanas (Mejoras, Tienda...), y la barra pasa a ser una columna en el borde.
+   --cw = ancho del lienzo, lo pone ajustar() en juego.js. Asi la escena se sigue viendo y tocando con una ventana abierta. */
+@media (orientation:landscape) and (max-height:500px){
+#app{max-width:none;flex-direction:row}
+#escena{margin:0}
+#tabs{flex:0 0 72px;grid-template-columns:1fr;grid-template-rows:repeat(6,1fr);border-top:0;border-left:3px solid #c98a2b;box-shadow:-4px 0 14px rgba(0,0,0,.45);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0}
+.tab{min-height:44px;gap:0}.tab img{width:28px;height:28px}.tab.on img{transform:translateX(-2px) scale(1.12)}.tab.punto::after{top:4px;right:12px}
+#hud{left:var(--cw,0px);gap:4px;padding-left:6px;padding-right:6px;flex-wrap:wrap}#hud .chip{gap:4px;padding:4px 7px 4px 5px;font-size:15px}#h-pase-c{min-width:auto}#h-pase-c .pb{display:none}
+#avisos{left:calc(var(--cw,0px) + 8px)}
+#lado{position:absolute;left:var(--cw,0px);right:0;top:50px;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 28px;text-align:center;color:var(--txt2);font-size:14px;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(142,63,191,.16),transparent 70%)}
+#lado b{font:20px var(--t);color:var(--oro);letter-spacing:.02em}#lado span{max-width:300px}#lado i{font-style:normal;font-size:26px;color:var(--oro);opacity:.8;align-self:flex-end}
+#hoja{left:var(--cw,0px);right:calc(72px + env(safe-area-inset-right));max-width:none;margin:0;padding:calc(50px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom))}
+body #portada{max-width:none}
+/* portada acostada: el logo y los personajes a la izquierda, el menu a la derecha (antes el boton JUGAR tapaba el logo) */
+#portada .p-cab{right:50%;top:calc(6% + env(safe-area-inset-top))}#portada .p-logo{font-size:46px}#portada .p-logo b{font-size:60px}#portada .p-lema{font-size:14px;margin-top:6px}
+#portada .p-pj{bottom:0;height:46%;left:3%}#portada .p-du{bottom:0;height:40%;right:auto;left:33%}
+#portada .p-menu{left:50%;top:0;padding:calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) 8px;justify-content:center;gap:8px}
+#portada .p-jugar{min-height:56px!important}
+}
 #portada{position:fixed;inset:0;z-index:15;display:none;max-width:480px;margin:0 auto;overflow:hidden;background:#140a18}
 #portada.on{display:block}
 #portada.sale{animation:pSale .45s ease-in forwards}
@@ -259,6 +280,7 @@ a.b{text-decoration:none}
       <button id="b-menu" aria-label="Menú principal">☰</button>
     </div>
     <div id="avisos" role="status" aria-live="polite"></div>
+    <div id="lado" aria-hidden="true"><b>Tu puesto sigue a la vista</b><span>Granja, Cocina, Taller, Mejoras, Tienda y Misiones se abren aquí: puedes comprar y seguir espantando duendes a la vez.</span><i>→</i></div>
   </div>
   <div id="granja" aria-label="Tu granja: siembra, riega y cosecha">
     <div id="g-top">

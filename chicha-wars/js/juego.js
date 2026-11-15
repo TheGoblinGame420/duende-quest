@@ -1264,6 +1264,7 @@ function ajustar() {
     const h0 = Math.round(W * c.height / c.width); H = Math.max(640, Math.min(1120, h0)); const ex = H - 640; Y_OLLA = 505 + Math.round(ex * 0.3); Y_CH = 590 + Math.round(ex * 0.3);
     const cw = h0 < H ? c.height * W / H : c.width, ch = h0 > H ? c.width * H / W : c.height;
     lienzo.style.width = cw + 'px'; lienzo.style.height = ch + 'px'; lienzo.style.marginTop = Math.max(0, (c.height - ch) / 2) + 'px';
+    document.documentElement.style.setProperty('--cw', Math.round(cw) + 'px');   // celular acostado: HUD y ventanas van a la derecha de la escena (index.html)
   }
   const r = lienzo.getBoundingClientRect();
   lienzo.width = Math.round(r.width * dpr); lienzo.height = Math.round(r.height * dpr);
