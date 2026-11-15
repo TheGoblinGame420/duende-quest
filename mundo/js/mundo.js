@@ -739,13 +739,14 @@ function colorSuelo(x, z, h, out) {
   out.multiplyScalar(v);
   return out;
 }
-function crearTerreno() {
+async function crearTerreno() {
   const g = new THREE.PlaneGeometry(LADO, LADO, SEG, SEG);
   g.rotateX(-Math.PI / 2);
   const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
   /* El minimapa (pintarMapaBase) usa estos mismos puntos y colores: una rejilla de SEG x SEG con el color sin apagar. */
   const crudo = new Float32Array(SEG * SEG * 3);
   for (let i = 0; i < pos.count; i++) {
+    if ((i & 16383) === 16383) await ceder();   /* el celular no se queda congelado mientras se levanta el suelo */
     const x = pos.getX(i), z = pos.getZ(i), h = alturaEn(x, z);
     pos.setY(i, h);
     colorSuelo(x, z, h, c);
@@ -771,6 +772,7 @@ function crearTerreno() {
       return (a + (b - a) * sx) * (1 - sz) + (c2 + (d - c2) * sx) * sz;
     };
     for (let iz = 0; iz < N; iz++) for (let ix = 0; ix < N; ix++) {
+      if (ix === 0 && (iz & 63) === 63) await ceder();
       const i = iz * N + ix, x = pos.getX(i), z = pos.getZ(i), h = pos.getY(i);
       const hl = pos.getY(iz * N + Math.max(0, ix - 1)), hr = pos.getY(iz * N + Math.min(SEG, ix + 1)), hu = pos.getY(Math.max(0, iz - 1) * N + ix), hd = pos.getY(Math.min(SEG, iz + 1) * N + ix);
       const curva = ((hl + hr + hu + hd) / 4 - h) / paso;   // > 0: hondonada; < 0: loma
@@ -1098,7 +1100,9 @@ async function crearFlora() {
   const camposR = new Map();
   for (const c of campos) { const k = Math.floor(c.x / 16) + ',' + Math.floor(c.z / 16); let l = camposR.get(k); if (!l) camposR.set(k, l = []); l.push(c); }
   const cercaCampo = (x, z) => { const gx = Math.floor(x / 16), gz = Math.floor(z / 16); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = camposR.get((gx + i) + ',' + (gz + j)); if (l) for (const c of l) if (Math.hypot(c.x - x, c.z - z) < 7) return true; } return false; };
+  let filaF = 0;
   for (let x = -FL; x <= FL; x += paso) for (let z = -FL; z <= FL; z += paso) {
+    if (z === -FL && ++filaF % 40 === 0) await ceder();
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
     /* Primero lo barato: si el sorteo no toca ninguna planta de la zona, no hace falta mirar altura, pendiente ni caminos
        (la mayoria de los puntos). Mismo sorteo y mismas condiciones que abajo: sale el mismo bosque, en menos tiempo. */
@@ -10238,7 +10242,7 @@ async function inicio() {
   if (!USAR_MODELOS) await Promise.all([cargarAnim(), cargarImg(A + 'skins/duende_anim.png')]);
   progreso(0.3, 'Levantando montañas…');
   await new Promise(r => setTimeout(r, 20));
-  agua = crearTerreno();
+  agua = await crearTerreno();
   progreso(0.45, 'Trayendo árboles y casas…');
   if (kitP) {
     try { KIT = await Promise.race([kitP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }

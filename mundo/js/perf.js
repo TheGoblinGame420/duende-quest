@@ -13,6 +13,7 @@
 //                         texturas, tareas largas y MB de heap si el navegador lo da
 //   dqPerf.reiniciar()    empieza una medicion nueva
 //   dqPerf.panel(bool)    panel discreto de FPS (lo enciende el menu de ajustes)
+//   dqPerf.arranque()     la carga: ms hasta el primer cuadro de juego y tareas largas hasta entonces
 // ═══════════════════════════════════════════════════════
 const N = 3600;   // cuadros que caben (1 min a 60 fps); despues pisa los mas viejos
 const total = new Float32Array(N), logica = new Float32Array(N), dibujo = new Float32Array(N), entre = new Float32Array(N);
@@ -23,11 +24,15 @@ let largas = 0, largasMs = 0, largaPeor = 0;
 let caja = null, panelT = 0, panelN = 0, panelMs = 0, panelPeor = 0;
 const ahora = () => performance.now();
 
+// buffered: tambien las tareas largas de antes de que este modulo se evaluara (la carga de los modulos).
 try {
-  new PerformanceObserver(l => { for (const e of l.getEntries()) { largas++; largasMs += e.duration; if (e.duration > largaPeor) largaPeor = e.duration; } }).observe({ entryTypes: ['longtask'] });
+  const f = l => { for (const e of l.getEntries()) { largas++; largasMs += e.duration; if (e.duration > largaPeor) largaPeor = e.duration; } };
+  try { new PerformanceObserver(f).observe({ type: 'longtask', buffered: true }); } catch (e) { new PerformanceObserver(f).observe({ entryTypes: ['longtask'] }); }
 } catch (e) {}
+let arr = null;   // foto de la carga (dqPerf.arranque): se toma en ini(), justo antes del primer cuadro de juego
 
 function ini(render, raiz) {
+  arr = { listoMs: Math.round(ahora()), tareasLargas: largas, tareasLargasMs: Math.round(largasMs), tareaLargaPeor: Math.round(largaPeor) };
   escena = raiz || null;
   // Con post-proceso cada pasada pondria el contador a cero: se reinicia a mano una vez por cuadro.
   try { info = render.info; info.autoReset = false; } catch (e) { info = null; }
@@ -112,4 +117,4 @@ function censo(detalle) {
 }
 
 export const PERF = { ini, a, b, c, muestra, reiniciar, panel, censo };
-try { window.dqPerf = { muestra, reiniciar, panel, censo, escena: () => escena }; } catch (e) {}
+try { window.dqPerf = { muestra, reiniciar, panel, censo, escena: () => escena, arranque: () => arr && { ...arr } }; } catch (e) {}
