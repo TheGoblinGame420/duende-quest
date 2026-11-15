@@ -10513,7 +10513,8 @@ async function inicio() {
   await ceder();
   cueva = construirCueva(escena, PAQ, lodObjeto());
   if (cueva.mallas) mallasPropias.push(...cueva.mallas);
-  abismo = construirAbismo(escena, KIT);
+  abismo = construirAbismo(escena, KIT, PAQ, { nivel: GFX.efectivo, sombras: Q.sombras });   /* v393: islas, puentes, Nucleo, estandartes y portales modelados (assets/3d/dq_abismo) */
+  if (abismo.mallas) mallasPropias.push(...abismo.mallas);
   await ceder();
   cargarLugares();   /* v376: no espera: los lugares del borde aparecen cuando llega su paquete */
   try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
