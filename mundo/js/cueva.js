@@ -42,7 +42,8 @@ function texturaHalo() {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-export function construirCueva(escena) {
+// PAQ (opcional): paquete de modelos propios (mundo/js/modelado.js); lod: su nivel de detalle (0-2).
+export function construirCueva(escena, PAQ, lod) {
   const g = new THREE.Group();
   g.position.set(CUEVA_X0, 0, 0);
   // Celdas caminables y bordes.
@@ -120,15 +121,27 @@ export function construirCueva(escena) {
   arco.position.set(so.x, 2.4, so.z - 1.2);
   g.add(velo, arco);
   // Cofre del tesoro (se abre al caer el jefe).
-  const cofre = new THREE.Group();
-  const caja = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.9), new THREE.MeshLambertMaterial({ color: 0x7a4a22 }));
-  caja.position.y = 0.4;
-  const tapa = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.3, 0.95), oro); tapa.position.set(0, 0.95, 0);
-  cofre.add(caja, tapa); cofre.position.set(CUEVA.cofre.x, 0, CUEVA.cofre.z); cofre.visible = false;
+  const cofre = new THREE.Group(), mallas = [];
+  let tapa;
+  if (PAQ && PAQ.modelos && PAQ.modelos.cofre_dorado_base && PAQ.modelos.cofre_dorado_tapa) {
+    /* El cofre dorado del paquete «objetos» (el de los cofres legendarios), algo mas grande: delante del cojin del
+       trono, sobre la tarima y mirando a la sala. La tapa gira en su bisagra como la de crearCofres3 (mundo.js). */
+    const caja = new THREE.Mesh(PAQ.geo('cofre_dorado_base', lod || 0), PAQ.material);
+    tapa = new THREE.Group(); tapa.position.set(0, 0.6, -0.375);
+    const t = new THREE.Mesh(PAQ.geo('cofre_dorado_tapa', lod || 0), PAQ.material); tapa.add(t);
+    cofre.add(caja, tapa); mallas.push(caja, t);
+    cofre.position.set(j.x + 5.3, 0.6, CUEVA.cofre.z); cofre.rotation.y = -Math.PI / 2; cofre.scale.setScalar(1.3);
+  } else {
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.9), new THREE.MeshLambertMaterial({ color: 0x7a4a22 }));
+    caja.position.y = 0.4;
+    tapa = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.3, 0.95), oro); tapa.position.set(0, 0.95, 0);
+    cofre.add(caja, tapa); cofre.position.set(CUEVA.cofre.x, 0, CUEVA.cofre.z);
+  }
+  cofre.visible = false;
   g.add(cofre);
   escena.add(g);
   return {
-    grupo: g, velo, cofre, tapa,
+    grupo: g, velo, cofre, tapa, mallas,
     animar(t) {
       for (let i = 0; i < llamas.length; i++) {
         const o = llamas[i];
