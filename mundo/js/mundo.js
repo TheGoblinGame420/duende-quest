@@ -956,6 +956,28 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
   }
   return 1;
 }
+/* Casas del pueblo (los edificios de 11-19 m ocupan la misma caja de choque): fraccion del rayo duende→camara donde
+   entra en la primera caja girada, con medio metro de alero. 1 = no cruza ninguna. Solo cerca del pueblo. */
+function choqueCasas(tx, tz, cx, cz) {
+  if (Math.abs(tx) > 90 || Math.abs(tz) > 90) return 1;
+  let k = 1;
+  for (const c of CASAS) {
+    const ax = tx - c.x, az = tz - c.z;
+    if (Math.abs(ax) > 40 || Math.abs(az) > 40) continue;
+    const co = Math.cos(c.r), si = Math.sin(c.r), hx = c.w / 2 + 0.5, hz = c.d / 2 + 0.5;
+    const lax = ax * co - az * si, laz = ax * si + az * co, bx = cx - c.x, bz = cz - c.z;
+    const dlx = bx * co - bz * si - lax, dlz = bx * si + bz * co - laz;
+    if (Math.abs(lax) < hx && Math.abs(laz) < hz) continue;   // el duende ya esta dentro del alero: no recorta
+    let t0 = 0, t1 = 1, ok = true;
+    for (const [p, d, h] of [[lax, dlx, hx], [laz, dlz, hz]]) {
+      if (Math.abs(d) < 1e-6) { if (Math.abs(p) >= h) ok = false; continue; }
+      let ta = (-h - p) / d, tb = (h - p) / d; if (ta > tb) { const s = ta; ta = tb; tb = s; }
+      if (ta > t0) t0 = ta; if (tb < t1) t1 = tb;
+    }
+    if (ok && t0 <= t1 && t0 < k) k = t0;
+  }
+  return k;
+}
 /* Flora con modelos propios (mundo/js/modelado.js): mismas posiciones, tamaños y colisiones; solo cambia la malla.
    Tres niveles de detalle: el bajo por celda (lejos), el medio por celda (las que tocan el circulo LOD1_R del duende)
    y el alto arbol a arbol: los que estan a menos de LOD0_R pasan a UNA malla instanciada por modelo (lodCerca) y se
@@ -1217,6 +1239,54 @@ function objetosPropios(nombre, lista) {
   escena.add(m); mallasPropias.push(m);
   return m;
 }
+/* Agua viva de la fuente propia: una lamina fina sobre el agua horneada del pilon (anillo) y de la taza (disco), con
+   ondas que salen de los cuatro caños y del cantaro. Un solo dibujo; el reloj es el del viento (KIT_FX.uT) y el brillo
+   el del agua del mar (AGUA_U.uLuz: de noche se apaga igual). Medidas de tools/blender/modelos/objetos.py (fuente). */
+function aguaFuente(x, z) {
+  if (lodObjeto() === 2) return null;   /* calidad minima: el agua horneada queda quieta */
+  const partes = [new THREE.RingGeometry(0.64, 1.78, 40, 1).rotateX(-Math.PI / 2).translate(0, 0.655, 0), new THREE.CircleGeometry(0.97, 28).rotateX(-Math.PI / 2).translate(0, 2.318, 0)];
+  const pos = [], idx = [];
+  for (const g of partes) { const o = pos.length / 3, p = g.attributes.position.array, ix = g.index.array; for (let i = 0; i < p.length; i++) pos.push(p[i]); for (let i = 0; i < ix.length; i++) idx.push(ix[i] + o); g.dispose(); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeBoundingSphere();
+  const mat = new THREE.ShaderMaterial({
+    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { uT: KIT_FX.uT, uLuz: AGUA_U.uLuz }),
+    transparent: true, depthWrite: false, fog: true,
+    vertexShader: `// dq:fuente
+      varying vec3 vL;
+      #include <common>
+      #include <fog_pars_vertex>
+      void main() {
+        vL = position;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `// dq:fuente
+      uniform float uT; uniform float uLuz;
+      varying vec3 vL;
+      #include <common>
+      #include <fog_pars_fragment>
+      void main() {
+        vec2 q = vL.xz; float t = uT, r = length(q), w;
+        if (vL.y > 1.5) {
+          w = sin(r * 17.0 - t * 4.2) * (1.0 - smoothstep(0.2, 0.97, r)) * 0.8 + sin(q.x * 6.0 + t * 1.3) * sin(q.y * 5.2 - t * 1.1) * 0.35;
+        } else {
+          float o = 0.0;
+          for (int i = 0; i < 4; i++) { float a = 0.7854 + float(i) * 1.5708; float d = length(q - vec2(cos(a), sin(a)) * 1.58); o += sin(d * 15.0 - t * 5.5) * exp(-d * 1.7); }
+          w = o * 0.9 + sin(q.x * 4.0 - t * 0.9) * sin(q.y * 3.6 + t * 1.2) * 0.3;
+        }
+        float luz = smoothstep(0.35, 0.95, w);
+        vec3 col = mix(vec3(0.10, 0.30, 0.32), vec3(0.62, 0.86, 0.84), 0.35 + 0.35 * w) + luz * 0.35;
+        gl_FragColor = vec4(col * uLuz, clamp(0.3 + 0.22 * w + luz * 0.35, 0.12, 0.85));
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }`,
+  });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, alturaEn(x, z), z); m.matrixAutoUpdate = false; m.updateMatrix(); m.updateMatrixWorld(true); m.matrixWorldAutoUpdate = false;
+  escena.add(m);
+  return m;
+}
 function crearBanderines() {
   // 0-4 no: esa cuerda atravesaba el campanario (-17, 31).
   const pares = [[2, 5], [1, 4], [5, 0]], paso = (CAL === 'baja' || POBRE) ? 2.2 : 1.1;
@@ -1232,6 +1302,30 @@ function crearBanderines() {
   for (const t of tramos) n += Math.max(2, Math.floor(t.L / paso)) * 2;
   if (!n) return;
   const im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.35, 0.45, 0.02), new THREE.MeshLambertMaterial({ color: 0xffffff }), n);
+  /* Banderines de tela: pico de 0,35 × 0,45 m colgado de su borde de arriba (y = 0) que se mece con el viento de la flora
+     (KIT_FX: quieto en minima y baja). La fase sale de su sitio, asi cada uno va a su aire. */
+  const geoTela = new THREE.BufferGeometry();
+  geoTela.setAttribute('position', new THREE.Float32BufferAttribute([-0.175, 0, 0, 0.175, 0, 0, 0.175, -0.3, 0, 0, -0.45, 0, -0.175, -0.3, 0], 3));
+  geoTela.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+  geoTela.setIndex([0, 4, 1, 1, 4, 2, 2, 4, 3]);
+  const matTela = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  matTela.onBeforeCompile = sh => {
+    sh.uniforms.uT = KIT_FX.uT; sh.uniforms.uViento = KIT_FX.uViento;
+    sh.vertexShader = 'uniform float uT;\nuniform float uViento;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      {
+        float cae = -position.y;
+        #ifdef USE_INSTANCING
+          float fase = instanceMatrix[3].x * 0.9 + instanceMatrix[3].z * 0.6;
+        #else
+          float fase = 0.0;
+        #endif
+        float s = 0.55 + 0.45 * uViento;
+        transformed.z += sin(uT * 2.7 + fase + cae * 5.0) * cae * 0.55 * s;
+        transformed.x += sin(uT * 1.9 + fase * 1.3) * cae * 0.12 * s;
+      }`);
+  };
+  matTela.customProgramCacheKey = () => 'banderin';
+  const telas = new THREE.InstancedMesh(geoTela, matTela, n);
   const o = new THREE.Object3D(), col = new THREE.Color(), cuerda = new THREE.Color('#5a3c25');
   const punto = (t, f) => {
     const x = t.x0 + (t.x1 - t.x0) * f, z = t.z0 + (t.z1 - t.z0) * f;
@@ -1249,14 +1343,62 @@ function crearBanderines() {
       o.position.set((ax + bx) / 2, (ay + by) / 2, (az + bz) / 2);
       o.rotation.set(0, t.ry, Math.atan2(by - ay, seg)); o.scale.set(Math.hypot(seg, by - ay) / 0.35, 0.05 / 0.45, 1.5);
       o.updateMatrix(); im.setMatrixAt(i, o.matrix); im.setColorAt(i++, cuerda);
-      // Banderin colgando bajo la cuerda.
-      o.position.set(mx, my - 0.26, mz); o.rotation.set(0, t.ry, 0); o.scale.set(1, 1, 1);
-      o.updateMatrix(); im.setMatrixAt(i, o.matrix); im.setColorAt(i++, col.set(AGUAYO[k++ % AGUAYO.length]));
+      // Banderin colgando bajo la cuerda (su borde de arriba, en la cuerda).
+      o.position.set(mx, my - 0.03, mz); o.rotation.set(0, t.ry, 0); o.scale.set(1, 1, 1);
+      o.updateMatrix(); telas.setMatrixAt(k, o.matrix); telas.setColorAt(k, col.set(AGUAYO[k++ % AGUAYO.length]));
     }
   }
   im.count = i; im.frustumCulled = false;
   im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
-  escena.add(im);
+  telas.count = k; telas.frustumCulled = false;
+  telas.instanceMatrix.needsUpdate = true; if (telas.instanceColor) telas.instanceColor.needsUpdate = true;
+  escena.add(im, telas);
+}
+/* Los cinco modelos del paquete «objetos» que no tenian sitio (v375): pozo, valla, mesa, cartel y antorcha de pared.
+   Sitios elegidos fuera de caminos (a 5 m o mas del eje), de casas, PNJ, faroles y del corro del mercado:
+   · patio del pozo al oeste del camino del Castillo, separado del camino por una valla con un hueco de entrada;
+   · mesa con dos bancos al este de la plaza (entre el horno de la Abuela y la tienda);
+   · un cartel con su antorcha (alumbra de noche) a la salida de los tres caminos de la primera hora: Bosque Nocturno,
+     Amanecer y Selva, al lado del camino y antes del arco. Sin paquete no se pone nada (no hay version de cajas). */
+function crearEnseresPueblo() {
+  if (!PAQ) return;
+  const M = PAQ.modelos, solidoLinea = (x, z, ry, ds, r) => { for (const d of ds) ponerSolido(x + Math.cos(ry) * d, z - Math.sin(ry) * d, r); };
+  // Patio del pozo.
+  if (M.pozo && objetosPropios('pozo', [{ x: -10, z: -21.4, ry: Math.PI / 2 }])) ponerSolido(-10, -21.4, 1.35);
+  if (M.valla) {
+    const tramos = [-16.6, -19, -23.8, -26.2].map((z, i) => ({ x: -5 + (i % 2 ? 0.06 : -0.04), z, ry: Math.PI / 2 + (i - 1.5) * 0.03 }));
+    if (objetosPropios('valla', tramos)) for (const t of tramos) solidoLinea(t.x, t.z, t.ry, [-0.9, 0, 0.9], 0.28);
+  }
+  // Mesa al aire libre con sus dos bancos, a lo largo del borde de la plaza.
+  if (M.mesa) {
+    /* Su +Z mira hacia fuera de la plaza: el largo (su X) queda a lo largo del borde y los bancos, uno a cada lado. */
+    const x = 18.5, z = -4, ry = Math.atan2(x, z), sz = Math.sin(ry), cz = Math.cos(ry);
+    if (objetosPropios('mesa', [{ x, z, ry }])) {
+      solidoLinea(x, z, ry, [-0.8, 0, 0.8], 0.95);
+      if (M.banco) objetosPropios('banco', [-1, 1].map(s => ({ x: x + sz * s * 0.92, z: z + cz * s * 0.92, ry })));
+    }
+  }
+  // Carteles con antorcha a la salida de los caminos de la primera hora (lado del camino que no da a otro camino).
+  if (M.cartel) {
+    const carteles = [], antorchas = [];
+    for (const [id, s] of [['noche', 1], ['amanecer', 1], ['selva', 1]]) {
+      const zc = ZONAS3D[id]; if (!zc) continue;
+      const a = Math.atan2(zc.z, zc.x), ux = Math.cos(a), uz = Math.sin(a), x = ux * 29 - uz * s * 4.5, z = uz * 29 + ux * s * 4.5;
+      /* El brazo del cartel (su +X) apunta al camino; la tabla queda de cara a quien entra y sale. */
+      const vx = uz * s, vz = -ux * s, ry = Math.atan2(-vz, vx);
+      carteles.push({ x, z, ry });
+      /* Antorcha clavada en el poste, mirando hacia fuera del pueblo (su +Z = la direccion del camino). */
+      antorchas.push({ x: x + ux * 0.08, z: z + uz * 0.08, y: alturaEn(x, z) + 1.55, ry: Math.atan2(ux, uz) });
+    }
+    if (objetosPropios('cartel', carteles)) {
+      for (const c of carteles) ponerSolido(c.x, c.z, 0.3);
+      if (M.antorcha_pared && objetosPropios('antorcha_pared', antorchas)) for (const t of antorchas) {
+        /* El halo de los faroles (se enciende solo de noche) sobre la llama: 0,4 m arriba y 0,32 m hacia fuera del anclaje. */
+        const h = new THREE.Sprite(luzHaloMat); h.scale.setScalar(1.6);
+        h.position.set(t.x + Math.sin(t.ry) * 0.32, t.y + 0.42, t.z + Math.cos(t.ry) * 0.32); escena.add(h);
+      }
+    }
+  }
 }
 // Dintel trapezoidal inca alrededor del portal: jambas inclinadas por fuera de
 // los pilares (no tapan el paso ni cambian el choque) y una piedra arriba.
@@ -1328,7 +1470,7 @@ function crearPuebloKit() {
     fa.f.position.y = fa.y + 2.95; fa.f.scale.setScalar(0.55); if (fa.halo) fa.halo.position.y = fa.f.position.y;
   }
   // Fuente de la plaza (donde estaba el pozo).
-  if (objetosPropios('fuente', [{ x: 0, z: 0 }])) ponerSolido(0, 0, 2.5); else pon([{ n: 'p_fountain-round-detail' }], 0, 0, 0, 2.4, 2.5);
+  if (objetosPropios('fuente', [{ x: 0, z: 0 }])) { ponerSolido(0, 0, 2.5); try { aguaFuente(0, 0); } catch (e) { console.warn(e); } } else pon([{ n: 'p_fountain-round-detail' }], 0, 0, 0, 2.4, 2.5);
   /* Puestos, bancos y barriles propios: se juntan aqui y salen en una malla instanciada por modelo (el color es el del toldo). */
   const hayPuesto = !!(PAQ && PAQ.modelos.puesto), puestosP = [], bancosP = [], taburetesP = [], barrilesP = [], cajonesP = [], TOLDOS = ['#8a3b2e', '#4f6b46', '#9a7b3c'];
   // Chichería de Mama Asiri: puesto, dos ollas de barro y la banderita morada en su palo.
@@ -1364,12 +1506,18 @@ function crearPuebloKit() {
     } else pon([{ n: puestos[k] }, { n: 'p_stall-bench', x: 0.75 }, { n: 'p_stall-stool', x: -0.75, z: 0.2 }], x, z, ry, 2.4, 1.3);
     k++;
   }
-  objetosPropios('puesto', puestosP); objetosPropios('banco', bancosP); objetosPropios('taburete', taburetesP); objetosPropios('barril', barrilesP); objetosPropios('cajon', cajonesP);
+  objetosPropios('puesto', puestosP);
+  /* Que no se atraviesen: barriles, cajones y taburetes son un circulo; el banco (2,2 m), tres a lo largo. Solo colision del cliente. */
+  if (objetosPropios('banco', bancosP)) for (const t of bancosP) for (const d of [-0.75, 0, 0.75]) ponerSolido(t.x + Math.cos(t.ry) * d, t.z - Math.sin(t.ry) * d, 0.3);
+  if (objetosPropios('taburete', taburetesP)) for (const t of taburetesP) ponerSolido(t.x, t.z, 0.26);
+  if (objetosPropios('barril', barrilesP)) for (const t of barrilesP) ponerSolido(t.x, t.z, 0.38);
+  if (objetosPropios('cajon', cajonesP)) for (const t of cajonesP) ponerSolido(t.x, t.z, 0.4);
   // Carros junto a dos casas.
   for (const [ci, n] of [[0, 'p_cart'], [3, 'p_cart-high']]) {
     const c = CASAS[ci], x = c.x + Math.cos(c.r) * (c.w / 2 + 2.2), z = c.z - Math.sin(c.r) * (c.w / 2 + 2.2);
     if (objetosPropios(n === 'p_cart' ? 'carro' : 'carro_alto', [{ x, z, ry: c.r + 0.4 }])) ponerSolido(x, z, 1.2); else pon([{ n }], x, z, c.r + 0.4, 2.6, 1.2);
   }
+  try { crearEnseresPueblo(); } catch (e) { console.warn('[3D] sin enseres del pueblo:', e); }
   // Campanario: torre de tres plantas con teja colonial (sin aspas de molino).
   const mx = -17, mz = 31, my = alturaEn(mx, mz) - 0.25;
   const g = new THREE.Group(); g.position.set(mx, my, mz); g.rotation.y = 0.6;
@@ -2124,6 +2272,7 @@ let camZoomMeta = null, camZoomVisto = 0;   // zoom de la rueda con inercia: met
 let camCombate = false, camCombGira = false;   // hay objetivo vivo cerca / la camara de combate esta girando
 // Camara de combate: ultimo arrastre manual (no pelear con el jugador), zoom extra de contexto y su recalculo.
 let camArrastreT = -1e9, camExtra = 0, camExtraMeta = 0, camExtraT = 0, camSube = 0;
+let camCasaP = 0;   /* inclinacion extra para que la camara no entre en una casa del pueblo (choqueCasas) */
 let zonaActual = '';
 let portal = null, agua = null, cueva = null, cuevaInfo = null, abismo = null, caidaEnviada = false;
 let cuevaT0 = 0, cuevaFinM = null;   // cronometro de la cueva: cuando entraste y el resultado del servidor (cuevaFin)
@@ -3104,8 +3253,29 @@ function modeloPuerta() {
   if (Q.sombras) mesh.castShadow = true;
   obj.add(mesh);
   const x0 = mesh.position.x;
+  /* Luz de runas: de noche (y en el Abismo, que siempre es oscuro) la reja se recorta contra un resplandor violeta y
+     deja un charco de luz en el suelo, por las dos caras. Dos planos aditivos, sin luces de three. */
+  if (!modeloPuerta.tex) {
+    const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 1, 32, 32, 31);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64); modeloPuerta.tex = new THREE.CanvasTexture(c);
+  }
+  const matRes = new THREE.MeshBasicMaterial({ map: modeloPuerta.tex, color: 0xa66bff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const matSuelo = matRes.clone(); matSuelo.color.set(0x8f5cff);
+  const matBruma = matRes.clone();
+  const resplandor = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 7).rotateY(Math.PI / 2), matRes); resplandor.position.y = 3;
+  const charco = new THREE.Mesh(new THREE.PlaneGeometry(8, 11).rotateX(-Math.PI / 2), matSuelo); charco.position.y = 0.3; charco.renderOrder = 2;
+  /* Bruma de luz por delante de cada cara: aclara la piedra de las dos torres y el arco (la «piedra mas clara»). */
+  const gBruma = new THREE.PlaneGeometry(13, 10).rotateY(Math.PI / 2), brumas = [-1.7, 1.7].map(x => { const b = new THREE.Mesh(gBruma, matBruma); b.position.set(x, 4.2, 0); return b; });
+  obj.add(resplandor, charco, ...brumas);
+  let sinSombra = false;
   // Al caer se hunde (y suelta polvo con el estallido de md3).
-  return { obj, alto: 6, r: { tAtk: 0.35 }, animar(e, tt) { mesh.position.y = (KIT ? 0 : 3) - (e === 'muere' ? Math.min(7, tt * tt * 6) : 0); }, golpe() { mesh.position.x = x0 + 0.18; setTimeout(() => { mesh.position.x = x0; }, 90); }, dispose() {} };
+  return { obj, alto: 6, r: { tAtk: 0.35 }, animar(e, tt) {
+    mesh.position.y = (KIT ? 0 : 3) - (e === 'muere' ? Math.min(7, tt * tt * 6) : 0);
+    if (!sinSombra) { sinSombra = true; resplandor.castShadow = charco.castShadow = brumas[0].castShadow = brumas[1].castShadow = false; }   /* Figura3D da sombra a todo lo que lleva */
+    const k = (enAbismo(P.x) ? 0.75 : 0.25) + 0.25 * clamp(nocheK, 0, 1), pul = 0.85 + 0.15 * Math.sin(performance.now() / 650), fin = e === 'muere' ? Math.max(0, 1 - tt * 1.5) : 1;
+    matRes.opacity = 0.75 * k * pul * fin; matSuelo.opacity = 0.6 * k * pul * fin; matBruma.opacity = 0.3 * k * fin;
+  }, golpe() { mesh.position.x = x0 + 0.18; setTimeout(() => { mesh.position.x = x0; }, 90); }, dispose() { matRes.dispose(); matSuelo.dispose(); matBruma.dispose(); resplandor.geometry.dispose(); charco.geometry.dispose(); gBruma.dispose(); } };
 }
 function quitarMon(id) { solidosExtra = solidosExtra.filter(x => x.id !== id); const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); if (o.noctMats) { for (const m of o.noctMats) m.dispose(); o.noctMats = null; } o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
 function foto(m) {
@@ -9967,13 +10137,28 @@ function cuadroBucle(t) {
   const camX = tx + Math.sin(camYaw) * Math.cos(camPitch) * dCam, camZ = tz + Math.cos(camYaw) * Math.cos(camPitch) * dCam;
   const kChoque = enCv ? choqueCueva(tx, tz, camX, camZ) : choqueTerreno(tx, ty, tz, camX, ty + Math.sin(camPitch) * dCam, camZ);
   const camMin = enCv ? 3.2 : 2.6;
-  const meta = Math.max(Math.min(camMin, dCam), kChoque * dCam);
+  let meta = Math.max(Math.min(camMin, dCam), kChoque * dCam);
+  /* Casas del pueblo: la camara no entra en el edificio. Primero sube y mira mas desde arriba (hasta 0,85 rad) y, si con la
+     espalda pegada a la pared aun no cabe, se acerca (hasta 1,3 m), en vez de quedarse dentro viendo las paredes por dentro. */
+  let pCasa = 0;
+  if (!enCv) {
+    const kCasa = choqueCasas(tx, tz, camX, camZ);
+    if (kCasa < 1) {
+      const p0 = camPitch + camSube, hLibre = Math.max(0.3, kCasa * dCam * Math.cos(camPitch) - 0.25);
+      if (meta * Math.cos(p0) > hLibre) {
+        const pQuiere = Math.acos(clamp(hLibre / meta, 0, 1));
+        if (pQuiere <= 0.85) pCasa = pQuiere - p0;
+        else { pCasa = Math.max(0, 0.85 - p0); meta = Math.max(Math.min(1.3, meta), hLibre / Math.cos(Math.max(0.85, p0))); }
+      }
+    }
+  }
+  camCasaP += (Math.max(0, pCasa) - camCasaP) * (1 - Math.exp(-dt * (pCasa > camCasaP ? 10 : 4)));
   if (meta < camReal - 0.01) { camReal += (meta - camReal) * (1 - Math.exp(-dt * 10)); camHold = 0.35; }
   else if (camHold > 0) camHold -= dt;
   else camReal += (meta - camReal) * (1 - Math.exp(-dt * 3));
   // Si la pared o una loma obliga a acercar, la camara sube; en peleas grandes se ve desde mas arriba.
   camSube += ((1 - kChoque) * (enCv ? 0.45 : 0.25) - camSube) * (1 - Math.exp(-dt * 6));   // suave: sin saltos al asomar una loma
-  const pitch = camPitch + camSube + Math.max(0, camExtra) * 0.02;
+  const pitch = camPitch + camSube + camCasaP + Math.max(0, camExtra) * 0.02;
   let cx = tx + Math.sin(camYaw) * Math.cos(pitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(pitch) * camReal;
   let cy = ty + Math.sin(pitch) * camReal;
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, aguaEn(cx) + 0.5);
@@ -10182,7 +10367,8 @@ async function inicio() {
   for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
   try { crearPuestosVecinos(); } catch (e) { console.warn(e); }
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
-  cueva = construirCueva(escena);
+  cueva = construirCueva(escena, PAQ, lodObjeto());
+  if (cueva.mallas) mallasPropias.push(...cueva.mallas);
   abismo = construirAbismo(escena, KIT);
   cargarLugares();   /* v376: no espera: los lugares del borde aparecen cuando llega su paquete */
   try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
