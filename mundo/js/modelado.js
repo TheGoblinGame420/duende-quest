@@ -33,15 +33,19 @@ async function leerBin(url) {
   return r.arrayBuffer();
 }
 
-let promesa = null;
-// fx: { uT, uViento, uMusgo, uBrillo } (uniformes vivos que ya mueve mundo.js). Devuelve null si no hay paquetes.
-export function cargarModelado(base, fx) {
-  if (!promesa) promesa = (async () => {
-    const r = await fetch(base + 'dq_indice.json' + V);
-    if (!r.ok) throw new Error('dq_indice.json ' + r.status);
-    const ind = await r.json(), fams = Object.keys(ind.paquetes || {});
-    // Un paquete que falla no tumba a los demas: esa familia se queda con lo de antes.
-    const paqs = (await Promise.all(fams.map(async f => {
+// Baja el indice y los paquetes (sin construir nada). Un paquete que falla no tumba a los demas: esa familia se queda con lo de antes.
+function bajar(base) {
+  return (async () => {
+    /* mundo/index.html ya pidio el indice (y precargo los paquetes) al abrir la pagina; si no, se pide aqui. */
+    let ind = null;
+    try { if (base === BASE_DEF && typeof window !== 'undefined' && window.__dqIndice) ind = await window.__dqIndice; } catch (e) { ind = null; }
+    if (!ind || !ind.paquetes) {
+      const r = await fetch(base + 'dq_indice.json' + V);
+      if (!r.ok) throw new Error('dq_indice.json ' + r.status);
+      ind = await r.json();
+    }
+    const fams = Object.keys(ind.paquetes || {});
+    return (await Promise.all(fams.map(async f => {
       try {
         const h = '?h=' + ind.paquetes[f].h;
         const [j, buf] = await Promise.all([fetch(base + 'dq_' + f + '.json' + h).then(x => { if (!x.ok) throw new Error(f + '.json ' + x.status); return x.json(); }), leerBin(base + 'dq_' + f + '.bin' + h)]);
@@ -49,6 +53,20 @@ export function cargarModelado(base, fx) {
         return { j, buf };
       } catch (e) { console.warn('[3D] sin el paquete de modelos «' + f + '»:', e); return null; }
     }))).filter(Boolean);
+  })();
+}
+// La descarga empieza en cuanto el navegador evalua este modulo (al llegar el JS), y no cuando mundo.js empieza a
+// armar el mundo: con datos moviles los paquetes bajan mientras se ejecuta el codigo del juego y se levanta el
+// terreno, en vez de despues. ?sinModelado (pruebas) no baja nada.
+const BASE_DEF = '/assets/3d/';
+let pre = null;
+try { if (typeof location !== 'undefined' && typeof fetch === 'function' && !/[?&]sinModelado(=|&|$)/.test(location.search) && /\/mundo\//.test(location.pathname)) { pre = bajar(BASE_DEF); pre.catch(() => {}); } } catch (e) { pre = null; }
+
+let promesa = null;
+// fx: { uT, uViento, uMusgo, uBrillo } (uniformes vivos que ya mueve mundo.js). Devuelve null si no hay paquetes.
+export function cargarModelado(base, fx) {
+  if (!promesa) promesa = (async () => {
+    const paqs = await (base === BASE_DEF && pre ? pre : bajar(base));
     return paqs.length ? crear(paqs, { ...(fx || {}), base }) : null;
   })();
   return promesa;

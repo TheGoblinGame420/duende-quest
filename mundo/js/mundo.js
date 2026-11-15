@@ -681,6 +681,14 @@ try { if (screen.orientation && screen.orientation.addEventListener) screen.orie
 try { if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(ajustar, 120)); } catch (e) {}
 ajustar();
 
+/* Cede el hilo un momento durante la carga: parte las tareas largas (el celular no se congela ni avisa de «la pagina no
+   responde», la barra sigue viva y llegan los mensajes de red). Con MessageChannel y no setTimeout: en segundo plano un
+   setTimeout espera 1 s y la carga se alargaria. */
+const ceder = (() => {
+  try { if (globalThis.scheduler && typeof scheduler.yield === 'function') return () => scheduler.yield(); } catch (e) {}
+  try { const mc = new MessageChannel(), cola = []; mc.port1.onmessage = () => { const f = cola.shift(); if (f) f(); }; return () => new Promise(r => { cola.push(r); mc.port2.postMessage(0); }); } catch (e) {}
+  return () => new Promise(r => setTimeout(r, 0));
+})();
 const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transition = ''; $('carga-i').style.transform = `scaleX(${k})`; if (k >= 0.7) $('carga-i').classList.add('latido'); if (txt) $('carga-s').textContent = Math.round(k * 100) + '% · ' + txt; };
 
 // ── TERRENO ──
@@ -691,7 +699,20 @@ function distSeg(px, pz, ax, az, bx, bz) {
 }
 // Caminos de tierra desde el pueblo a cada zona (guian al jugador).
 const CAMINOS = Object.values(ZONAS3D).map(c => [0, 0, c.x * 0.72, c.z * 0.72]);
-function enCamino(x, z) { let m = Infinity; for (const [a, b, c, d] of CAMINOS) m = Math.min(m, distSeg(x, z, a, b, c, d)); return m; }
+/* Distancia al camino mas cercano. La piden el suelo, el minimapa y la flora al cargar (cientos de miles de veces):
+   tramos en un arreglo plano y distancia al cuadrado, con la raiz solo al final. Da el mismo numero que distSeg. */
+const CAM_F = new Float64Array(CAMINOS.length * 5);
+CAMINOS.forEach(([a, b, c, d], i) => { CAM_F[i * 5] = a; CAM_F[i * 5 + 1] = b; CAM_F[i * 5 + 2] = c - a; CAM_F[i * 5 + 3] = d - b; CAM_F[i * 5 + 4] = (c - a) * (c - a) + (d - b) * (d - b); });
+function enCamino(x, z) {
+  let m = Infinity, ex = 0, ez = 0;
+  for (let k = 0; k < CAM_F.length; k += 5) {
+    const ax = CAM_F[k], az = CAM_F[k + 1], dx = CAM_F[k + 2], dz = CAM_F[k + 3];
+    let t = ((x - ax) * dx + (z - az) * dz) / CAM_F[k + 4]; t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const qx = x - (ax + dx * t), qz = z - (az + dz * t), d2 = qx * qx + qz * qz;
+    if (d2 < m) { m = d2; ex = qx; ez = qz; }
+  }
+  return Math.hypot(ex, ez);
+}
 function colorSuelo(x, z, h, out) {
   out.setRGB(0, 0, 0);
   for (const [id, k] of mezclaEn(x, z)) { const t = SUELO_C[id]; out.r += t.r * k; out.g += t.g * k; out.b += t.b * k; }
@@ -713,16 +734,20 @@ function crearTerreno() {
   const g = new THREE.PlaneGeometry(LADO, LADO, SEG, SEG);
   g.rotateX(-Math.PI / 2);
   const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  /* El minimapa (pintarMapaBase) usa estos mismos puntos y colores: una rejilla de SEG x SEG con el color sin apagar. */
+  const crudo = new Float32Array(SEG * SEG * 3);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i), h = alturaEn(x, z);
     pos.setY(i, h);
     colorSuelo(x, z, h, c);
+    { const ix = i % (SEG + 1), iz = (i - ix) / (SEG + 1); if (ix < SEG && iz < SEG) { const o = (iz * SEG + ix) * 3; if (h < MUNDO.agua) { crudo[o] = -1; } else { crudo[o] = c.r; crudo[o + 1] = c.g; crudo[o + 2] = c.b; } } }
     /* Ambientacion medieval mistica: el suelo pierde saturacion y brillo (el minimapa conserva sus colores), y bajo el agua el fondo es limo oscuro que se ve desde la orilla. */
     const gris = (c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722) * 0.86;
     c.r = (c.r * 0.86 - gris) * 0.72 + gris; c.g = (c.g * 0.86 - gris) * 0.72 + gris; c.b = (c.b * 0.86 - gris) * 0.72 + gris;
     if (h < MUNDO.agua) c.lerp(C_LIMO, clamp((MUNDO.agua - h) / 5, 0, 0.82));
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
+  mapaCrudo = crudo;
   /* dqM por vertice para el detalle del suelo (terreno.js): roca por pendiente, distancia al camino (tope 12 m) y orilla mojada. */
   const fino = FINO(), dqM = fino ? new Float32Array(pos.count * 3) : null;
   // Acabado del suelo (de calidad media para arriba; se decide al cargar, como la vegetacion): manchas grandes
@@ -1050,15 +1075,22 @@ function lodCerca() {
   suciasPropias.clear();
   for (const cp of cercaPropia.values()) { cp.im.count = cp.n; cp.im.visible = cp.n > 0; if (cp.n) { cp.im.instanceMatrix.needsUpdate = true; cp.im.instanceColor.needsUpdate = true; } }
 }
-function crearFlora() {
+async function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
   const paso = CAL === 'baja' ? 11 : MOVIL ? 9 : 7;   // en baja, ~33% menos arboles y rocas
   const LUGS = lugares3d(), FL = MUNDO.borde + 20, TALA = nodos3d(MAPAS, MONSTRUOS).filter(n => n.tipo === 'madera');   /* v378: los arboles talables se ven solos, sin otro arbol encima */
+  /* Los ~200 campamentos en casillas de 16 m: para saber si hay uno a menos de 7 m basta mirar las 9 casillas de alrededor. */
+  const camposR = new Map();
+  for (const c of campos) { const k = Math.floor(c.x / 16) + ',' + Math.floor(c.z / 16); let l = camposR.get(k); if (!l) camposR.set(k, l = []); l.push(c); }
+  const cercaCampo = (x, z) => { const gx = Math.floor(x / 16), gz = Math.floor(z / 16); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = camposR.get((gx + i) + ',' + (gz + j)); if (l) for (const c of l) if (Math.hypot(c.x - x, c.z - z) < 7) return true; } return false; };
   for (let x = -FL; x <= FL; x += paso) for (let z = -FL; z <= FL; z += paso) {
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
-    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26) || TALA.some(n => Math.abs(n.x - jx) < 6 && Math.abs(n.z - jz) < 6)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
+    /* Primero lo barato: si el sorteo no toca ninguna planta de la zona, no hace falta mirar altura, pendiente ni caminos
+       (la mayoria de los puntos). Mismo sorteo y mismas condiciones que abajo: sale el mismo bosque, en menos tiempo. */
     const zona = zonaEn(jx, jz);
+    { const fz = FLORA[zona]; let r0 = hashR(x, z, 3), hay = false; if (fz) for (const f of fz) { if (r0 < f[1]) { hay = true; break; } r0 -= f[1]; } if (!hay) continue; }
+    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26) || TALA.some(n => Math.abs(n.x - jx) < 6 && Math.abs(n.z - jz) < 6)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
     const h = alturaEn(jx, jz);
     if (h < 0.5 || pendienteEn(jx, jz) > 0.95) continue;
     if (enCamino(jx, jz) < 5) continue;
@@ -1067,7 +1099,7 @@ function crearFlora() {
     let r = hashR(x, z, 3);
     for (const [tipo, dens, color] of FLORA[zona] || []) {
       if (r < dens) {
-        if (campos.some(c => Math.hypot(c.x - jx, c.z - jz) < 7) || VECINOS.some(v => Math.hypot(v.x - jx, v.z - jz) < 5)) break;
+        if (cercaCampo(jx, jz) || VECINOS.some(v => Math.hypot(v.x - jx, v.z - jz) < 5)) break;
         const s = 0.75 + hashR(x, z, 4) * 0.6;
         (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color, zona });
         if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s, t: tipo }); }
@@ -1077,6 +1109,7 @@ function crearFlora() {
       r -= dens;
     }
   }
+  await ceder();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: false });
   const piezas = {
     pino: [[new THREE.CylinderGeometry(0.25, 0.35, 2, 5), '#5a3c25', 1], [new THREE.ConeGeometry(2, 6, 7), null, 4.6]],
@@ -1097,6 +1130,7 @@ function crearFlora() {
   // (el verde puro de todas las copas iguales aplanaba el bosque). Se decide al cargar.
   const floraFina = FINO();
   for (const tipo in tipos) {
+    await ceder();   /* una tarea por especie, no una sola de varios segundos */
     const todos = PAQ ? floraPropia(tipo, tipos[tipo], celdas, floraFina) : tipos[tipo];
     const porCelda = new Map();
     for (const t of todos) { const ck = Math.floor(t.x / TROZO) + '|' + Math.floor(t.z / TROZO); let l = porCelda.get(ck); if (!l) porCelda.set(ck, l = []); l.push(t); }
@@ -1160,6 +1194,7 @@ function crearFlora() {
   trozosFlora.push(...celdas.values());
   /* Sotobosque (terreno.js): troncos caidos, tocones con raices, helechos, piedras con musgo y setas que brillan junto a caminos y campamentos. Solo dibujo (sin colision), una malla por celda, de media para arriba. */
   if (floraFina) {
+    await ceder();
     try {
       const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX, lim: MUNDO.borde, lugares: lugares3d() });
       for (const ml of soto.mallas) { escena.add(ml); sotoMallas.push(ml); }
@@ -5575,7 +5610,21 @@ const GAMA_MAPA = THREE.ColorManagement && THREE.ColorManagement.enabled ? 1 / 2
 // Destino 📍 personal del mapa (solo en este navegador). Se ve en el minimapa con flecha y metros.
 let destino3 = null;
 try { const d = JSON.parse(localStorage.getItem('dq_destino3') || 'null'); if (d && Number.isFinite(d.x) && Number.isFinite(d.z)) destino3 = { x: d.x, z: d.z }; } catch (e) {}
+/* Con el suelo ya hecho (crearTerreno deja sus colores en mapaCrudo) el mapa base es copiar: un pixel por punto del
+   suelo (SEG x SEG, algo mas fino que los 220 de antes) sin volver a calcular altura ni color. Sin ellos, como antes. */
+let mapaCrudo = null;
 function pintarMapaBase() {
+  if (mapaCrudo) {
+    const N = SEG, D = mapaCrudo, c = document.createElement('canvas'); c.width = c.height = N;
+    const x = c.getContext('2d'), img = x.createImageData(N, N), agua = new THREE.Color('#2f74b5');
+    for (let k = 0, o = 0; k < N * N; k++, o += 3) {
+      const r = D[o] < 0 ? agua.r : D[o], g = D[o] < 0 ? agua.g : D[o + 1], b = D[o] < 0 ? agua.b : D[o + 2];
+      img.data[k * 4] = Math.pow(r, GAMA_MAPA) * 255; img.data[k * 4 + 1] = Math.pow(g, GAMA_MAPA) * 255; img.data[k * 4 + 2] = Math.pow(b, GAMA_MAPA) * 255; img.data[k * 4 + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    mapaBase = c; mapaCrudo = null;
+    return;
+  }
   const N = 220, c = document.createElement('canvas'); c.width = c.height = N;
   const x = c.getContext('2d'), img = x.createImageData(N, N), col = new THREE.Color();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -10167,7 +10216,8 @@ async function inicio() {
   }
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
-  crearFlora();
+  await crearFlora();
+  await ceder();
   // Hitos de los encargos: un obelisco con un cristal que brilla en cada zona.
   for (const zE of ZONAS_ENC) {
     const hi = hitoDe(zE, ZONAS3D, alturaEn), y = alturaEn(hi.x, hi.z);
@@ -10182,8 +10232,10 @@ async function inicio() {
   for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
   try { crearPuestosVecinos(); } catch (e) { console.warn(e); }
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
+  await ceder();
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
+  await ceder();
   cargarLugares();   /* v376: no espera: los lugares del borde aparecen cuando llega su paquete */
   try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
   crearCofres3();
@@ -10191,6 +10243,7 @@ async function inicio() {
   abismo.dueno(asedio && asedio.dueno);
   crearCorrientes();
   crearCorrientesMundo();
+  await ceder();
   progreso(0.7, 'Preparando los gráficos…');
   // El socket y el 'hola' salen ya, en paralelo con shaders, mapa y NPC (antes, al final).
   // El rescate (#r=) pregunta antes de entrar: ese caso conecta abajo, como siempre.
@@ -10201,6 +10254,7 @@ async function inicio() {
   pintarMapaBase();
   setTimeout(() => { try { if (GFX.efectivo !== 'minima') pintarMapaHD(true); } catch (e) {} }, 12000);   /* el mapa nitido se prepara solo, a trozos de 3 ms: al abrirlo ya esta, y el minimapa gana detalle. En Minima se pinta al abrir el mapa. */
   if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
+  await ceder();
   try {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
     if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
@@ -10208,12 +10262,14 @@ async function inicio() {
     render.compile(escena, camara);
     cal.forEach(m => escena.remove(m));
   } catch (e) { console.warn(e); }
+  await ceder();
   // Los NPC en paralelo (sin modelos 3D, sus hojas se bajaban una tras otra).
   const figsNpc = await Promise.all(NPCS3D.map(n => figuraModelo(() => crearNpc(n.hoja, n.tipo === 'chichera' ? { color: '#7c3aed', acc: 'paja', accC: '#d9b35c' } : undefined)) || figuraHoja(n.hoja, 62)));
   NPCS3D.forEach((n, i) => npcs.push({ ...n, y: alturaEn(n.x, n.z), fig: figsNpc[i], lbl: etiqueta('') }));
   // La plaza entra ya; los narradores de zona, al acercarte (vecinosCerca).
   const figsVec = await Promise.all(VECINOS.map(n => n.zona === 'pueblo' ? (figuraModelo(() => crearNpc(n.hoja, n.look)) || figuraHoja(n.hoja, 62)) : null));
   VECINOS.forEach((n, i) => npcs.push({ ...n, y: alturaEn(n.x, n.z), fig: figsVec[i], perezoso: n.zona !== 'pueblo', lbl: etiqueta('') }));
+  await ceder();
   try { crearAventureros(); } catch (e) { console.warn(e); }
   try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   try { crearDecoTemporada(); } catch (e) { console.warn(e); }

@@ -149,6 +149,11 @@
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
 <script>(function(){try{var l=document.createElement('link');l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href=typeof DecompressionStream==='function'?'/assets/3d/kenney.bin.gz':'/assets/3d/kenney.bin';document.head.appendChild(l);}catch(e){}})();</script>
+<!-- Modelos propios (mundo/js/modelado.js): el indice y sus paquetes tambien se piden ya, mientras bajan los modulos (antes salian al
+     terminar de ejecutarse mundo.js y de levantarse el terreno, y la red quedaba parada esos segundos). modelado.js usa este indice
+     (window.__dqIndice) y sus fetch() encuentran los paquetes en la precarga. El ?v= es el de los modulos. ?sinModelado no baja nada. -->
+<script>(function(){try{if(/[?&]sinModelado(=|&|$)/.test(location.search))return;var m=document.querySelector('link[rel=modulepreload][href*="/mundo/js/mundo.js"]'),v=m?m.getAttribute('href').replace(/^[^?]*/,''):'',gz=typeof DecompressionStream==='function',p=function(h){var l=document.createElement('link');l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href=h;document.head.appendChild(l);};
+window.__dqIndice=fetch('/assets/3d/dq_indice.json'+v).then(function(r){return r.ok?r.json():null;}).then(function(ind){if(ind&&ind.paquetes)for(var f in ind.paquetes){var h='?h='+ind.paquetes[f].h;p('/assets/3d/dq_'+f+'.json'+h);p('/assets/3d/dq_'+f+(gz?'.bin.gz':'.bin')+h);}return ind;}).catch(function(){return null;});}catch(e){}})();</script>
 <style>
 /* Iconos propios del juego (tools/iconos/): la fuente "DQ Iconos" dibuja los simbolos y emojis del texto como glifos serios de un solo color. Va primera en --sans y --px; unicode-range la limita a simbolos, asi las letras siguen en la fuente de siempre. */
 @font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=391) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
