@@ -198,8 +198,140 @@ function casaSprite(g, x, y, s, r, noche) {
   }
   return true;
 }
+// Decorado renderizado desde los modelos de Blender del juego (tools/blender/sprites2d_deco.mjs):
+// árboles, rocas, ruinas y objetos del pueblo en 4 atlas webp pequeños, que se piden solo
+// cuando el mapa los usa. Las hojas vienen en gris con su máscara y se tiñen aquí con el
+// follaje de cada zona (una vez por árbol y color). Las posiciones no cambian: cada pieza
+// sigue en su x de siempre; si el atlas no está (o falla) se dibuja la pieza procedural.
+// Calidad: localStorage dq_deco2d = '0' lo apaga ('1' lo fuerza); sin la clave se apaga solo
+// con la calidad Mínima del menú 3D (dq3_calidad) o en equipos de 2 GB o menos.
+let _decoOn = null;
+function decoOn() {
+  if (_decoOn !== null) return _decoOn;
+  let on = true;
+  try {
+    const v = localStorage.getItem('dq_deco2d');
+    if (v === '0') on = false;
+    else if (v !== '1' && (localStorage.getItem('dq3_calidad') === 'minima' || (navigator.deviceMemory && navigator.deviceMemory <= 2))) on = false;
+  } catch (e) {}
+  return _decoOn = on;
+}
+const _atlas = {};   // nombre -> { img, j } · 'pide' · 'no'
+function atlasDeco(nom) {
+  const a = _atlas[nom];
+  if (a === 'pide' || a === 'no') return null;
+  if (a) return a;
+  if (!decoOn()) return null;
+  _atlas[nom] = 'pide';
+  const img = new Image();
+  const meta = fetch(new URL('../../assets/2d/' + nom + '.json', import.meta.url)).then(r => r.ok ? r.json() : null).catch(() => null);
+  img.onload = () => meta.then(j => {
+    if (!j || !j.s) { _atlas[nom] = 'no'; return; }
+    _atlas[nom] = { img, j };
+    if (M) { M.trozos.clear(); M.luces.clear(); }   // re-hornea con el decorado nuevo
+  });
+  img.onerror = () => { _atlas[nom] = 'no'; };
+  img.src = new URL('../../assets/2d/' + nom + '.webp', import.meta.url).href;
+  return null;
+}
+// Qué sprites usa cada pieza (atlas y variantes). Las rocas y los pinos cambian según la zona.
+function rocasDe(e) {
+  if (e.nevado) return ['nevada_penasco', 'nevada_aguja'];
+  if (e.techo || e.lejos === 'cueva' || e.arc === '#e8a0ff') return ['basalto_columnas', 'basalto_penasco'];
+  if (e.su === 'arena') return ['arenisca_losa', 'arenisca_aguja'];
+  if (e.su === 'roca') return ['pizarra_lajas', 'pizarra_penasco'];
+  return ['roca_penasco', 'roca_cantos', 'roca_aguja', 'roca_monton'];
+}
+const DECO = {
+  roble: ['arboles2d', () => ['roble_a', 'roble_b', 'abedul_a'], 1.05],
+  selva: ['arboles2d', () => ['selva_a', 'selva_b'], 1.05],
+  pino: ['arboles2d', e => e.nevado ? ['nevado_a', 'nevado_b'] : ['abeto_a', 'abeto_b'], .95],
+  seco: ['arboles2d', () => ['muerto_a', 'muerto_b'], .95],
+  roca: ['rocas2d', rocasDe, 1],
+  menhir: ['ruinas2d', () => ['menhir_a', 'menhir_b', 'menhir_c', 'menhir_runas', 'obelisco_viejo'], 1],
+  ruina: ['ruinas2d', () => ['murete_a', 'murete_b', 'murete_c', 'columna_rota'], 1.4],
+  columna: ['ruinas2d', () => ['columna_rota'], .9],
+  barril: ['objetos2d', () => ['barril', 'cajon'], 1],
+  valla: ['objetos2d', () => ['valla'], 1],
+  fuente: ['objetos2d', () => ['fuente'], 1],
+  puesto: ['objetos2d', () => ['puesto'], 1],
+  farol: ['objetos2d', () => ['farol'], 1],
+  carro: ['objetos2d', () => ['carro'], 1],
+  pozo: ['objetos2d', () => ['pozo'], 1],
+};
+function pedirDeco(e) { if (decoOn()) for (const t of new Set([...e.g, 'barril'])) if (DECO[t]) atlasDeco(DECO[t][0]); }
+// Sprite con las hojas teñidas del follaje de la zona (lienzo propio, en caché).
+const _tenidos = new Map();
+function tenido(A, s, col) {
+  const k = s.x + '|' + col;
+  let c = _tenidos.get(k);
+  if (c) return c;
+  if (_tenidos.size > 40) _tenidos.clear();
+  c = lienzo(s.w, s.h);
+  const g = c.getContext('2d'), m = lienzo(s.w, s.h), q = m.getContext('2d');
+  g.drawImage(A.img, s.x, 0, s.w, s.h, 0, 0, s.w, s.h);
+  q.drawImage(A.img, s.x, A.j.filas.hoja, s.w, s.h, 0, 0, s.w, s.h);
+  q.globalCompositeOperation = 'source-in'; q.fillStyle = col; q.fillRect(0, 0, s.w, s.h);
+  g.globalCompositeOperation = 'multiply'; g.drawImage(m, 0, 0);
+  g.globalCompositeOperation = 'destination-in'; g.drawImage(A.img, s.x, 0, s.w, s.h, 0, 0, s.w, s.h);
+  g.globalCompositeOperation = 'source-over';
+  _tenidos.set(k, c);
+  return c;
+}
+function deco(g, t, x, y, s, r, e, noche) {
+  const d = DECO[t], A = d && atlasDeco(d[0]);
+  if (!A) return false;
+  const lista = d[1](e), sp = A.j.s[lista[(r() * lista.length) | 0]];
+  if (!sp) return false;
+  const k = d[2] * (1 + (s - 1) * .5), w = sp.w * k, h = sp.h * k, dx = x - sp.pie * k, dy = y - sp.suelo * k + 1;
+  sombraBase(g, x, y, Math.min(w * .42, 60));
+  // Tinte de las hojas: el follaje de la zona, aclarado (la hoja gris lo multiplica); en los pinos nevados, a medio
+  // camino del blanco (la nieve y las agujas comparten máscara).
+  if (sp.hoja && A.j.filas.hoja != null) {
+    const v = luzc(mez(e.ho[1], e.ho[0], .25), .1).map(c => Math.min(255, c * 1.75));
+    // El toldo del puesto también usa la máscara: va de tela teñida, no de hojas.
+    g.drawImage(tenido(A, sp, t === 'puesto' ? '#d0714a' : css(e.nevado && t === 'pino' ? mez(v, '#f0f4f8', .4) : v)), dx, dy, w, h);
+  }
+  // El farol no trae luz horneada: su linterna (arriba) se enciende de noche como las ventanas.
+  if (noche && t === 'farol' && _luces) _luces.push(x + _lucesX0, dy + h * .1);
+  else g.drawImage(A.img, sp.x, 0, sp.w, sp.h, dx, dy, w, h);
+  if (noche && sp.luz && A.j.filas.luz != null) {
+    g.drawImage(A.img, sp.x, A.j.filas.luz, sp.w, sp.h, dx, dy, w, h);
+    if (_luces) for (let i = 0; i < sp.luces.length && i < 4; i++) _luces.push(dx + sp.luces[i][0] * k + _lucesX0, dy + sp.luces[i][1] * k);
+  }
+  if (t === 'menhir') runas(g, x + (sp.pie < sp.w / 2 ? 1 : -1), dy + h * .22, h * .5, r, e);
+  return true;
+}
+// Runas con resplandor del color arcano de la zona (las mismas del menhir procedural).
+function runas(g, x, y0, alto, r, e) {
+  g.save(); g.shadowColor = e.arc; g.shadowBlur = 6; g.strokeStyle = e.arc; g.lineWidth = 1.5; g.globalAlpha = .85;
+  for (let i = 0; i < 3; i++) {
+    const ry = y0 + alto * i / 3, rx = x, t = (r() * 4) | 0;
+    g.beginPath();
+    if (t === 0) { g.moveTo(rx - 3, ry + 4); g.lineTo(rx, ry - 4); g.lineTo(rx + 3, ry + 4); }
+    else if (t === 1) { g.moveTo(rx, ry - 5); g.lineTo(rx, ry + 5); g.moveTo(rx, ry - 2); g.lineTo(rx + 3, ry - 5); g.moveTo(rx, ry + 1); g.lineTo(rx + 3, ry - 2); }
+    else if (t === 2) { g.moveTo(rx - 3, ry); g.lineTo(rx, ry - 4); g.lineTo(rx + 3, ry); g.lineTo(rx, ry + 4); g.closePath(); }
+    else { g.moveTo(rx - 3, ry - 4); g.lineTo(rx + 3, ry + 4); g.moveTo(rx + 3, ry - 4); g.lineTo(rx - 3, ry + 4); }
+    g.stroke();
+  }
+  g.restore();
+}
+// Objetos del pueblo (solo con el decorado de Blender): puesto tras el mercader, fuente,
+// faroles, carro y pozo. Lista fija aparte: no mueve nada de lo que ya había.
+function extrasPueblo(mp) {
+  const L = [], npc = id => (mp.npcs || []).find(n => n.id === id), libre = x => !(mp.portales || []).some(p => Math.abs(p.x - x) < 60);
+  const pon = (t, x, a) => { if (x > 0 && x < mp.ancho && libre(x)) L.push({ t, x: Math.round(x), s: 1, sem: semilla(t + x), a }); };
+  const mer = npc('mercader'), art = npc('artesana');
+  // (el 'a' de cada una es su medio ancho aproximado: decide en qué trozos se hornea)
+  if (mer) pon('puesto', mer.x + 6, 70);
+  if (art) pon('farol', art.x + 22, 24);
+  pon('fuente', 1290, 70); pon('pozo', 2160, 50); pon('carro', 2640, 70);
+  for (const x of [560, 1135, 2400, 2880]) pon('farol', x, 24);
+  return L;
+}
 const PIEZAS = {
   roble(g, x, y, s, r, e) {
+    if (deco(g, 'roble', x, y, s, r, e)) return;
     const h = (110 + r() * 60) * s, c = '#2c221c';
     sombraBase(g, x, y, 26 * s);
     tronco(g, x, y, h * .62, 7 * s, r, c);
@@ -207,6 +339,7 @@ const PIEZAS = {
     copa(g, x, y - h * .82, 44 * s, r, e.ho, 11);
   },
   selva(g, x, y, s, r, e) {
+    if (deco(g, 'selva', x, y, s, r, e)) return;
     const h = (140 + r() * 50) * s, c = '#2a2a1e';
     sombraBase(g, x, y, 30 * s);
     tronco(g, x, y, h * .7, 9 * s, r, c);
@@ -217,6 +350,7 @@ const PIEZAS = {
     g.fillStyle = css(e.mu, .7); g.fillRect(x - 6 * s, y - h * .3, 5 * s, 10); g.fillRect(x + 1, y - h * .16, 4 * s, 7);
   },
   pino(g, x, y, s, r, e) {
+    if (deco(g, 'pino', x, y, s, r, e)) return;
     const h = (120 + r() * 60) * s;
     sombraBase(g, x, y, 20 * s);
     g.fillStyle = volumen(g, x - 4, x + 4, '#2a211c', .2); g.fillRect(x - 3 * s, y - h * .3, 6 * s, h * .3);
@@ -227,7 +361,8 @@ const PIEZAS = {
       if (e.nevado) { g.fillStyle = 'rgba(232,238,246,.85)'; g.beginPath(); g.moveTo(x, yy - al); g.lineTo(x - w * .55, yy - al * .35); g.lineTo(x - w * .2, yy - al * .42); g.lineTo(x + w * .1, yy - al * .3); g.lineTo(x + w * .4, yy - al * .45); g.closePath(); g.fill(); }
     }
   },
-  seco(g, x, y, s, r) {
+  seco(g, x, y, s, r, e) {
+    if (deco(g, 'seco', x, y, s, r, e)) return;
     const h = (80 + r() * 50) * s, c = '#3a2e28';
     sombraBase(g, x, y, 14 * s);
     tronco(g, x, y, h * .7, 5 * s, r, c);
@@ -237,6 +372,7 @@ const PIEZAS = {
     g.lineCap = 'butt';
   },
   roca(g, x, y, s, r, e) {
+    if (deco(g, 'roca', x, y, s, r, e)) return;
     const w = (26 + r() * 30) * s, h = (16 + r() * 26) * s, c = mez(e.t, '#77787c', .55);
     sombraBase(g, x, y, w * .9);
     const P = [[-w, 0], [-w * .8, -h * .55], [-w * .3 + r() * 6, -h], [w * .35, -h * (.8 + r() * .2)], [w * .85, -h * .45], [w, 0]];
@@ -247,6 +383,7 @@ const PIEZAS = {
     g.fillStyle = css(e.nevado ? '#e6ebf2' : e.mu, .85); g.beginPath(); g.moveTo(x + P[1][0], y + P[1][1]); g.lineTo(x + P[2][0], y + P[2][1]); g.lineTo(x + P[3][0], y + P[3][1]); g.lineTo(x + P[3][0] - 4, y + P[3][1] + 4); g.lineTo(x + P[2][0], y + P[2][1] + 5); g.lineTo(x + P[1][0] + 3, y + P[1][1] + 4); g.closePath(); g.fill();
   },
   menhir(g, x, y, s, r, e) {
+    if (deco(g, 'menhir', x, y, s, r, e)) return;
     const h = (62 + r() * 48) * s, w = (11 + r() * 6) * s, inc = (r() - .5) * 10, c = mez(e.t, '#6c6e76', .6);
     sombraBase(g, x, y, w * 1.6);
     g.fillStyle = volumen(g, x - w, x + w, c, .2);
@@ -267,7 +404,7 @@ const PIEZAS = {
     g.fillStyle = css(e.mu, .8); g.beginPath(); g.ellipse(x, y - 1, w * 1.2, 4, 0, Math.PI, TAU); g.fill();
   },
   // Muro en ruinas: sillares con juntas y perfil roto.
-  ruina(g, x, y, s, r, e) { sillares(g, x, y, (70 + r() * 50) * s, (46 + r() * 34) * s, r, e, true); },
+  ruina(g, x, y, s, r, e) { if (deco(g, 'ruina', x, y, s, r, e)) return; sillares(g, x, y, (70 + r() * 50) * s, (46 + r() * 34) * s, r, e, true); },
   muro(g, x, y, s, r, e) {
     const w = (110 + r() * 50) * s, h = (96 + r() * 30) * s;
     sillares(g, x, y, w, h, r, e, false);
@@ -277,6 +414,7 @@ const PIEZAS = {
     g.fillStyle = '#0a0a10'; g.fillRect(x - 2, y - h * .62, 4, 16);
   },
   columna(g, x, y, s, r, e) {
+    if (deco(g, 'columna', x, y, s, r, e)) return;
     const h = (56 + r() * 60) * s, w = 9 * s, c = mez(e.t, '#8a8880', .6);
     sombraBase(g, x, y, w * 2);
     g.fillStyle = css(luzc(c, -.2)); g.fillRect(x - w * 1.5, y - 6, w * 3, 6);
@@ -369,12 +507,14 @@ const PIEZAS = {
     };
     vent(x + w * .12, y - 27, 12, 12); vent(x - w * .22, y - h1 - h2 + 11, 11, 13); vent(x + w * .2, y - h1 - h2 + 11, 11, 13);
   },
-  valla(g, x, y, s, r) {
+  valla(g, x, y, s, r, e, noche) {
+    if (deco(g, 'valla', x, y, s, r, e, noche)) return;
     const c = '#3a2c20';
     for (let i = -2; i <= 2; i++) { g.fillStyle = css(luzc(c, hz(x | 0, i) * .2 - .1)); g.fillRect(x + i * 14 - 2, y - 20 - hz(i, x | 0) * 4, 4, 22); }
     g.fillStyle = css(luzc(c, .08)); g.fillRect(x - 32, y - 16, 64, 3); g.fillRect(x - 32, y - 8, 64, 3);
   },
-  barril(g, x, y, s, r) {
+  barril(g, x, y, s, r, e, noche) {
+    if (deco(g, 'barril', x, y, s, r, e, noche)) return;
     const c = '#4a3626';
     sombraBase(g, x, y, 14);
     for (let i = 0; i < 2; i++) { const bx = x + i * 19 - 8, h = 22 - i * 4; g.fillStyle = volumen(g, bx - 8, bx + 8, c, .25); g.beginPath(); g.moveTo(bx - 7, y); g.quadraticCurveTo(bx - 10, y - h / 2, bx - 7, y - h); g.lineTo(bx + 7, y - h); g.quadraticCurveTo(bx + 10, y - h / 2, bx + 7, y); g.closePath(); g.fill(); g.fillStyle = '#1c1a1c'; g.fillRect(bx - 8, y - h * .78, 16, 2); g.fillRect(bx - 8, y - h * .28, 16, 2); }
@@ -415,6 +555,8 @@ function sillares(g, x, y, w, h, r, e, rota) {
   g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + w * .2, y - h, w * .3, h);
   if (rota && r() > .4) { g.fillStyle = '#07070c'; g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x - 9, y - 18); g.quadraticCurveTo(x, y - 30, x + 9, y - 18); g.lineTo(x + 9, y); g.closePath(); g.fill(); }
 }
+// Objetos del pueblo: solo existen con el decorado de Blender (sin él, no se dibujan).
+for (const t of ['fuente', 'puesto', 'farol', 'carro', 'pozo']) PIEZAS[t] = (g, x, y, s, r, e, noche) => { deco(g, t, x, y, s, r, e, noche); };
 const ANCHO_PIEZA = { casa: 90, muro: 100, ruina: 80, roble: 70, selva: 80, pino: 50, seco: 60, roca: 70, menhir: 40, columna: 30, pilar: 40, estandarte: 40, estalagmita: 40, cristal: 40, alga: 40, valla: 40, barril: 30, antorcha: 12 };
 
 // ── Decorado de un mapa: lista fija (misma en todos los clientes) ──
@@ -431,6 +573,7 @@ function decorDe(mp, id, e) {
   }
   const P = [];
   for (let x = -260; x < mp.ancho + 260; x += 12 + r() * 30) P.push({ t: e.p[(r() * e.p.length) | 0], x: Math.round(x), s: 1, sem: (r() * 1e9) | 0, a: 16 });
+  if (id === 'pueblo' && decoOn()) L.push(...extrasPueblo(mp));   // al final: delante y sin tocar el azar de lo demás
   return { g: L, p: P, ant };
 }
 
@@ -678,6 +821,7 @@ function mapa(v) {
   let T = v.SUELO - 215;
   for (const p of v.mp.plataformas || []) T = Math.min(T, p[1] - 12);
   T = Math.max(0, Math.floor(T));
+  pedirDeco(e);
   M = { id: v.id, e, deco: decorDe(v.mp, v.id, e), T, trozos: new Map(), lejos: capaLejos(e, v.id), cerca: capaCerca(e, v.id), niebla: capaNiebla(e), cielo: null, cieloK: '', velo: null, veloK: '', uso: 0, luces: new Map() };
   return M;
 }
