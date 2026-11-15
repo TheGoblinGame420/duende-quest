@@ -339,32 +339,36 @@ export function construirLugares(o) {
   // Un lugar propio: sus piezas fundidas en una malla por nivel de detalle, dentro de un THREE.LOD (el motor elige el
   // nivel con la camara). En calidad baja y minima, solo los niveles medio y bajo.
   const baja = !!o.ligero;
+  // Se arma por partes para no trabar un cuadro: primero el nivel bajo (lo que se ve de lejos), y en las llamadas
+  // siguientes el medio y el alto (THREE.LOD usa el que tenga mas cerca de los que ya hay).
+  const NIVELES = baja ? [[2, 70], [1, 0]] : [[2, 130], [1, 60], [0, 0]];
   function armar(h) {
-    const lod = new THREE.LOD();
-    lod.position.set(h.L.x, h.y0, h.L.z); lod.rotation.y = h.ry;
-    for (const [nv, d] of baja ? [[1, 0], [2, 70]] : [[0, 0], [1, 60], [2, 130]]) {
-      const m = new THREE.Mesh(fundirPropio(o.PAQ, h.piezas, nv), o.PAQ.material);
-      if (o.sombras) { m.castShadow = nv < 2; m.receiveShadow = true; }
-      m.matrixAutoUpdate = false; m.updateMatrix();
-      lod.addLevel(m, d, 0.08);
+    if (!h.m) {
+      const lod = new THREE.LOD();
+      lod.position.set(h.L.x, h.y0, h.L.z); lod.rotation.y = h.ry;
+      lod.matrixAutoUpdate = false; lod.updateMatrix();
+      o.escena.add(lod); lod.updateMatrixWorld(true);
+      h.m = lod; h.falta = NIVELES.slice();
     }
-    lod.matrixAutoUpdate = false; lod.updateMatrix();
-    o.escena.add(lod); lod.updateMatrixWorld(true);
-    h.m = lod; h.piezas = null;
+    const [nv, d] = h.falta.shift();
+    const m = new THREE.Mesh(fundirPropio(o.PAQ, h.piezas, nv), o.PAQ.material);
+    if (o.sombras) { m.castShadow = nv < 2; m.receiveShadow = true; }
+    m.matrixAutoUpdate = false; m.updateMatrix();
+    h.m.addLevel(m, d, 0.08); m.updateMatrixWorld(true);
+    if (!h.falta.length) h.piezas = h.falta = null;
   }
   return {
     lista: hechos,
-    // Lejos (mas alla de la niebla) no se dibuja. Los propios se arman al entrar en ese radio (uno por llamada).
+    // Lejos (mas alla de la niebla) no se dibuja. Los propios se arman al entrar en ese radio: un nivel de un lugar por llamada.
     visibilidad(px, pz, lejos) {
       let hecho = false;
       for (const h of hechos) {
         const cerca = Math.hypot(h.L.x - px, h.L.z - pz) < lejos + 80;
-        if (!h.m) {
-          if (!cerca || hecho) continue;
-          try { armar(h); } catch (e) { console.warn('[3D] lugar', h.L.id, e); h.m = new THREE.Group(); }
+        if (h.piezas && cerca && !hecho) {
+          try { armar(h); } catch (e) { console.warn('[3D] lugar', h.L.id, e); h.piezas = h.falta = null; if (!h.m) h.m = new THREE.Group(); }
           hecho = true;
         }
-        h.m.visible = cerca;
+        if (h.m) h.m.visible = cerca;
       }
     },
   };
