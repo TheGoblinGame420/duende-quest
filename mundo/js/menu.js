@@ -179,7 +179,7 @@ body.cine #dq-fps{display:none}
 #v-menu .mn-sub{margin:0 0 12px;font-size:12.5px;color:var(--txt2,#b8b0d8)}
 #v-menu p{font:500 13.5px/1.5 var(--sans,system-ui,sans-serif);color:var(--txt2,#b8b0d8);margin:0 0 8px}
 #v-menu .mn-nota{font-size:12px;color:var(--txt3,#8f88ad);margin:6px 0 0}
-#v-menu .mn-niveles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:10px 0 8px}
+#v-menu .mn-niveles{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(5,minmax(0,1fr));gap:6px;margin:10px 0 8px}
 #v-menu .mn-seg{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 #v-menu .mn-b{min-height:34px;padding:6px 11px;border-radius:7px;border:1px solid var(--mn-linea);background:rgba(255,255,255,.045);color:var(--txt,#f2efff);font:600 13px/1.15 var(--sans,system-ui,sans-serif);cursor:pointer;white-space:nowrap}
 @media (hover:hover){#v-menu .mn-b:hover{background:rgba(255,255,255,.1)}}
