@@ -64,37 +64,72 @@ export function construirCueva(escena, PAQ, lod) {
   });
   g.add(piso);
   // Muros: bloques de roca de altura irregular.
-  const roca = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.85, 0), transparentar(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })), muros.length * 2);
-  let k = 0;
+  /* v393: con el paquete «abismo», tres rocas partidas de Blender (color claro horneado que multiplica el de cada copia,
+     con su luz de antorcha); sin el, el dodecaedro de antes. Mismas posiciones, giros y escalas. */
+  const hay = n => !!(PAQ && PAQ.modelos && PAQ.modelos[n]), conPaq = hay('cueva_roca_a') && hay('cueva_roca_b') && hay('cueva_roca_c');
+  const nRoc = conPaq ? 3 : 1, matRoca = transparentar(new THREE.MeshLambertMaterial(conPaq ? { color: 0xffffff, vertexColors: true } : { color: 0xffffff, flatShading: true }));
+  const rocas = [], cuenta = [0, 0, 0], cual = (x, z, j) => conPaq ? Math.floor(rnd(x * 3 + j, z * 7 - j) * 3) % 3 : 0;
+  for (const [x, z] of muros) for (let j = 0; j < 2; j++) cuenta[cual(x, z, j)]++;
+  for (let r = 0; r < nRoc; r++) {
+    const im = new THREE.InstancedMesh(conPaq ? PAQ.geo('cueva_roca_' + 'abc'[r], lod || 0) : new THREE.DodecahedronGeometry(0.85, 0), matRoca, Math.max(1, cuenta[r]));
+    if (conPaq) im.userData.dqLod = { obj: true };   /* ajustarModelado() le cambia el nivel si cambia la calidad */
+    im.count = 0; rocas.push(im);
+  }
   for (const [x, z] of muros) {
     for (let j = 0; j < 2; j++) {
-      const h = 1.6 + rnd(x + j, z) * 2.6;
+      const h = 1.6 + rnd(x + j, z) * 2.6, roca = rocas[cual(x, z, j)], k = roca.count++;
       v.set(x + 0.5 + (rnd(x, z + j) - 0.5) * 0.4, j ? h * 0.9 + 1 : h * 0.45, z + 0.5 + (rnd(z, x + j) - 0.5) * 0.4);
       q.setFromEuler(new THREE.Euler(rnd(x, j) * 3, rnd(z, j) * 3, 0)); s.set(1.05, h * 0.55, 1.05);
       m4.compose(v, q, s); roca.setMatrixAt(k, m4);
-      roca.setColorAt(k++, hornear(col.setHSL(0.72, 0.08, 0.16 + rnd(x * j, z) * 0.08), luzHorneada(v.x, v.y, v.z, false)));
+      roca.setColorAt(k, hornear(col.setHSL(0.72, 0.08, 0.16 + rnd(x * j, z) * 0.08), luzHorneada(v.x, v.y, v.z, false)));
     }
   }
-  g.add(roca);
+  g.add(...rocas);
   // Techo de roca oscura (la camara nunca sube por encima).
   const techo = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 8, z1 - z0 + 8).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x120c18, side: THREE.DoubleSide }));
   techo.position.set((x0 + x1) / 2, 8, (z0 + z1) / 2);
   g.add(techo);
   // Estalagmitas y cristales que brillan, sueltos por las salas.
-  const conoG = new THREE.ConeGeometry(0.45, 1, 6).translate(0, 0.5, 0);
-  const estal = new THREE.InstancedMesh(conoG, new THREE.MeshLambertMaterial({ color: 0x4a4252, flatShading: true }), 40);
-  const crist = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.4, 0).scale(0.6, 1.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x67e8f9 }), 24);
+  /* v393: estalagmitas, racimos de cristal y estalactitas del techo modelados (paquete «abismo»); sin ellos, conos y octaedros. */
+  const pEst = hay('estalagmita'), pCri = hay('cristal_cueva'), pTec = hay('estalactita');
+  const conoG = pEst ? PAQ.geo('estalagmita', lod || 0) : new THREE.ConeGeometry(0.45, 1, 6).translate(0, 0.5, 0);
+  const estal = new THREE.InstancedMesh(conoG, pEst ? transparentar(new THREE.MeshLambertMaterial({ color: 0x5a5264, vertexColors: true })) : new THREE.MeshLambertMaterial({ color: 0x4a4252, flatShading: true }), 40);
+  const crist = new THREE.InstancedMesh(pCri ? PAQ.geo('cristal_cueva', lod || 0) : new THREE.OctahedronGeometry(0.4, 0).scale(0.6, 1.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x67e8f9, vertexColors: pCri }), 24);
+  if (pCri) crist.material.color.set(0xffffff);
+  if (pEst) estal.userData.dqLod = { obj: true };
+  if (pCri) crist.userData.dqLod = { obj: true };
   let ne = 0, nc = 0;
   for (let i = 0; i < 400 && (ne < 40 || nc < 24); i++) {
     const [x, z] = suelo[Math.floor(rnd(i, 3) * suelo.length)];
     // Lejos del centro de paso: solo junto a los muros.
     if (dentro(x + 2, z) && dentro(x - 2, z) && dentro(x, z + 2) && dentro(x, z - 2)) continue;
     if (Math.hypot(x - CUEVA.entrada.x, z - CUEVA.entrada.z) < 4) continue;
-    if (ne < 40) { v.set(x + 0.5, 0, z + 0.5); q.identity(); s.set(1, 1.2 + rnd(i, 5) * 2.4, 1); m4.compose(v, q, s); estal.setMatrixAt(ne++, m4); }
-    else if (nc < 24) { v.set(x + 0.5, 0.6, z + 0.5); q.setFromEuler(new THREE.Euler(0.2, rnd(i, 7) * 3, 0.15)); s.set(1, 1, 1); m4.compose(v, q, s); crist.setMatrixAt(nc++, m4); }
+    if (ne < 40) {
+      v.set(x + 0.5, 0, z + 0.5); q.identity(); if (pEst) q.setFromEuler(new THREE.Euler(0, rnd(i, 9) * 6.28, 0));
+      s.set(1, 1.2 + rnd(i, 5) * 2.4, 1); m4.compose(v, q, s); estal.setMatrixAt(ne, m4);
+      if (pEst) estal.setColorAt(ne, hornear(col.setRGB(1, 1, 1), luzHorneada(v.x, 1, v.z, false)));
+      ne++;
+    }
+    else if (nc < 24) { v.set(x + 0.5, pCri ? 0 : 0.6, z + 0.5); q.setFromEuler(new THREE.Euler(pCri ? 0.08 : 0.2, rnd(i, 7) * 3, pCri ? 0.06 : 0.15)); s.set(1, 1, 1); m4.compose(v, q, s); crist.setMatrixAt(nc++, m4); }
   }
   estal.count = ne; crist.count = nc;
   g.add(estal, crist);
+  // Estalactitas colgando del techo (a 8 m), junto a los muros: no bajan de 4,6 m (la camara pasa por debajo).
+  if (pTec) {
+    const tec = new THREE.InstancedMesh(PAQ.geo('estalactita', lod || 0), transparentar(new THREE.MeshLambertMaterial({ color: 0x5a5264, vertexColors: true })), 56);
+    tec.userData.dqLod = { obj: true };
+    let nt = 0;
+    for (let i = 0; i < 900 && nt < 56; i++) {
+      const [x, z] = suelo[Math.floor(rnd(i, 13) * suelo.length)];
+      if (dentro(x + 1, z) && dentro(x - 1, z) && dentro(x, z + 1) && dentro(x, z - 1)) continue;
+      const largo = 1.2 + rnd(i, 17) * 2.2, an = 0.8 + rnd(i, 19) * 0.7;
+      v.set(x + 0.5, 8, z + 0.5); q.setFromEuler(new THREE.Euler(0, rnd(i, 23) * 6.28, 0)); s.set(an, largo, an);
+      m4.compose(v, q, s); tec.setMatrixAt(nt, m4);
+      tec.setColorAt(nt++, hornear(col.setRGB(1, 1, 1), luzHorneada(v.x, 6, v.z, false)));
+    }
+    tec.count = nt;
+    g.add(tec);
+  }
   // Antorchas: palo + llama + halo (sprite aditivo; su luz ya va horneada arriba).
   const llamas = [];
   const palo = new THREE.MeshLambertMaterial({ color: 0x3b2a1a }), fuego = new THREE.MeshBasicMaterial({ color: 0xffa53a });
@@ -111,7 +146,7 @@ export function construirCueva(escena, PAQ, lod) {
   const base = new THREE.Mesh(new THREE.BoxGeometry(5, 0.6, 4), oro); base.position.set(j.x + 7, 0.3, j.z);
   const resp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.5, 3.2), oro); resp.position.set(j.x + 9.2, 2.6, j.z);
   const coj = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 2.4), rojo); coj.position.set(j.x + 7.6, 0.8, j.z);
-  const alfombra = new THREE.Mesh(new THREE.PlaneGeometry(26, 3).rotateX(-Math.PI / 2), rojo); alfombra.position.set(j.x - 6, 0.02, j.z);
+  const alfombra = new THREE.Mesh(new THREE.PlaneGeometry(26, 3).rotateX(-Math.PI / 2), rojo); alfombra.position.set(j.x - 6, 0.075, j.z);   /* v393: por encima de las losas (llegan a 0,06): antes parpadeaba a cuadros */
   g.add(base, resp, coj, alfombra);
   // Portal de salida (violeta, como el del pueblo).
   const so = CUEVA.salida;
@@ -140,6 +175,7 @@ export function construirCueva(escena, PAQ, lod) {
   cofre.visible = false;
   g.add(cofre);
   escena.add(g);
+  try { window.__dqCueva = { rocas: conPaq, estalagmitas: pEst, cristales: pCri, estalactitas: pTec }; } catch (e) {}
   return {
     grupo: g, velo, cofre, tapa, mallas,
     animar(t) {
