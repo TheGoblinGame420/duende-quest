@@ -161,7 +161,8 @@
     // Orden: los dos juegos, el token (utilidad, cómo comprar, datos), el juego en detalle, comunidad, tienda y preguntas
     var orden = ['juegos', 'utilidad', 'como-comprar', 'bloque-token', 'lo-nuevo', 'bloque-juego', 'empieza', 'bloque-comunidad', 'bloque-tienda', 'bloque-duende', 'faq']
       .map(function (id) { return d.getElementById(id); }).filter(Boolean);
-    for (var k = 1; k < orden.length; k++) orden[k - 1].insertAdjacentElement('afterend', orden[k]);
+    // Solo se mueve lo que no está ya en su sitio: mover un bloque grande (aunque quede igual) cuesta CPU al arrancar
+    for (var k = 1; k < orden.length; k++) if (orden[k - 1].nextElementSibling !== orden[k]) orden[k - 1].insertAdjacentElement('afterend', orden[k]);
 
     // ---------- Celular: lo secundario queda plegado (12-nov-2026) ----------
     // En pantallas de hasta 700 px los pasos y las novedades muestran solo el título (se abren con un toque)

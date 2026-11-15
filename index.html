@@ -2037,10 +2037,14 @@ section[id]{scroll-margin-top:72px;}
   if (!botones.length || !visor) return;
   var img = document.getElementById('cap-visor-img');
   var txt = document.getElementById('cap-visor-txt');
-  var webp = false;
-  try { webp = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) {}
+  // ¿El navegador abre WebP? Se mira al abrir la primera captura, no al cargar la portada (el lienzo cuesta CPU al arrancar)
+  var webp = null;
+  function conWebp() {
+    if (webp === null) { webp = false; try { webp = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) {} }
+    return webp;
+  }
   var actual = 0;
-  function ruta(b) { return b.getAttribute('data-full') + (webp ? '.webp' : (b.getAttribute('data-ext') || '.png')); }
+  function ruta(b) { return b.getAttribute('data-full') + (conWebp() ? '.webp' : (b.getAttribute('data-ext') || '.png')); }
   function mostrar(i) {
     actual = (i + botones.length) % botones.length;
     var b = botones[actual];
