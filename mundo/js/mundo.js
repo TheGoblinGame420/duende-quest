@@ -355,19 +355,27 @@ let composer = null;
 // Sin post-proceso, una viñeta CSS (#vineta en index.html) da el mismo marco por casi nada.
 document.body.classList.add('sin-post');
 const GRADO = {
-  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 }, uZona: { value: new THREE.Vector3(1, 1, 1) } },
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 }, uZona: { value: new THREE.Vector3(1, 1, 1) }, uHora: { value: new THREE.Vector3() } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   // Correccion de color (trabaja en lineal, antes de OutputPass): saturacion, contraste con pivote en el tono
   // medio de la escena (uCon), sombras un pelo frias y luces un pelo calidas (uTono), hombro suave para que lo muy
   // brillante no se queme en blanco plano, y viñeta.
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; uniform vec3 uZona; varying vec2 vUv;
+  // r2: uHora = (ocaso, noche, -). Al ocaso, sombras violaceas y luces ambar; de noche, sombras azules y algo
+  // desaturadas mientras faroles y antorchas siguen calidos (fuego contra sombra fria).
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; uniform vec3 uZona; uniform vec3 uHora; varying vec2 vUv;
     void main() { vec4 c = texture2D(tDiffuse, vUv); c.rgb = max(c.rgb, 0.0); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-      c.rgb = mix(vec3(l), c.rgb, uSat) * uZona;
+      float alto = smoothstep(0.03, 0.45, l);
+      c.rgb = mix(vec3(l), c.rgb, uSat * (1.0 - 0.16 * uHora.y * (1.0 - alto))) * uZona;
       c.rgb = pow(c.rgb / 0.4, vec3(uCon)) * 0.4;
       c.rgb *= mix(vec3(1.0), mix(vec3(0.95, 0.985, 1.06), vec3(1.045, 1.01, 0.95), smoothstep(0.02, 0.55, l)), uTono);
+      vec3 hS = mix(vec3(1.0), vec3(0.95, 0.92, 1.06), uHora.x) * mix(vec3(1.0), vec3(0.92, 0.97, 1.1), uHora.y);
+      vec3 hL = mix(vec3(1.0), vec3(1.07, 1.0, 0.88), uHora.x) * mix(vec3(1.0), vec3(1.06, 0.99, 0.9), uHora.y);
+      c.rgb *= mix(hS, hL, alto);
       vec3 h = max(c.rgb - 0.78, 0.0); c.rgb = min(c.rgb, 0.78) + h / (1.0 + h * 4.5);
       vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
 };
+// Ocaso y noche para el tono por hora del pase de color (lo pone ambiente(); se copia al crear el pase).
+const HORA_GRADO = new THREE.Vector3();
 // Se enciende y apaga en vivo (menu de graficos); los modulos se descargan la primera vez.
 let postCargando = false;
 function ponerPost(si) {
@@ -381,7 +389,7 @@ function ponerPost(si) {
     const c = new E.EffectComposer(render, rt);
     c.addPass(new R.RenderPass(escena, camara));
     c.addPass(new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92));
-    const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms;
+    const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms; gradoU.uHora.value.copy(HORA_GRADO);
     c.addPass(gp);
     c.addPass(new O.OutputPass());
     c.setPixelRatio(render.getPixelRatio()); c.setSize(w, h);
@@ -595,6 +603,7 @@ function ambiente(z) {
   nieblaTinteObj.copy(cieloObj);
   if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
+  HORA_GRADO.set(ocasoK, fijo ? 0 : nocheK, 0); if (gradoU) gradoU.uHora.value.copy(HORA_GRADO);
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.78) * 4.5, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
