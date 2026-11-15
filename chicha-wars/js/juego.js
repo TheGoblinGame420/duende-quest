@@ -120,11 +120,14 @@ const nOllas = () => D.HORNILLAS[E.nv.hornillas].n;
 const hervor = () => !!HR('cucharon').hervor && (Date.now() / 1000) % 60 < 10;
 const activo = id => (E.act[id] || 0) > Date.now();
 const estr = id => E.saz.hab[id] || 0;   // estrellas de un utensilio de batalla (aunque este gastado)
-const hab = id => (E.saz.dur[id] > 0 ? estr(id) : 0);   // estrellas que cuentan: un utensilio gastado no hace nada
+// Estrellas que cuentan: un utensilio gastado pelea a medias (la mitad de sus estrellas) hasta que lo repares.
+// (Medido con jugador simulado: si no hiciera nada, un jugador que toca poco entra en espiral: sin utensilios no
+// espanta duendes, sin Sazon no recibe utensilios nuevos y sin monedas no puede reparar.)
+const hab = id => (E.saz.dur[id] > 0 ? estr(id) : estr(id) * 0.5);
 const habTotal = () => Object.keys(E.saz.hab).reduce((a, id) => a + hab(id), 0);
 function gastar(id) {
   if (!(E.saz.dur[id] > 0)) return;
-  if (--E.saz.dur[id] <= 0) { E.saz.dur[id] = 0; aviso('🔧 Se gastó tu ' + D.HABILIDADES[id].nombre + ': repáralo en el Taller', 'err'); marcarTab('taller'); son('robo'); }
+  if (--E.saz.dur[id] <= 0) { E.saz.dur[id] = 0; aviso('🔧 Se gastó tu ' + D.HABILIDADES[id].nombre + ': pelea a medias hasta que lo repares en el Taller', 'err'); marcarTab('taller'); son('robo'); }
 }   // pocion del Taller en efecto
 const segTanda = () => D.FUEGOS[E.nv.fuego].seg / (1 + HR('cucharon').coccion) / (1 + HR('tabla').corte * 0.25) / (hervor() ? 3 : 1) / (activo('fuego') ? 2 : 1) / (1 + E.rs * D.HERENCIA.coccion) / (1 + hab('fuego') * 0.08);
 const vasosOlla = i => Math.round(D.OLLAS[E.nv.ollas[i]].vasos * (1 + HR('cucharon').prod));
@@ -419,12 +422,12 @@ function recoger(i) {
 // ── BUCLE ──
 let ultimo = performance.now(), enPortada = true;
 function cuadro(ahora) {
+  requestAnimationFrame(cuadro);   // primero: si un cuadro falla, el juego no se congela
   let dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
   if (paro > 0) { paro -= dt; dt = dt * 0.08; }   // pausa de golpe: el mundo casi se congela un instante
   T += dt;
   if (E.elegido && !enPortada && !pausa) logica(dt); else { animarCh(dt); }
   dibujar();
-  requestAnimationFrame(cuadro);
 }
 let monPrev = E.monedas;
 const ritmo = [];   // [seg, ganado] del ultimo minuto → monedas por minuto en el HUD
@@ -513,7 +516,7 @@ function logica(dt) {
         else { const o = E.ollas.find((oo, i) => i < nOllas() && oo.lista); if (o) { n = def.roba; o.lista = false; o.fin = 0; } }
         d.lleva = n; d.huye = true;
         if (n > 0) { texto(d.x, d.y - 120, '-' + n + ' vasos', '#ff5252', 22); pose('susto', 0.8); son('robo'); vibrar(40); }
-        else { const m = Math.min(Math.floor(E.monedas), D.roboMonedas(E.oleada));   // sin chicha que robar, se lleva monedas
+        else { const m = D.roboMonedas(E.oleada, E.monedas);   // sin chicha que robar, se lleva monedas
           if (m > 0) { E.monedas -= m; d.llevaMon = m; texto(d.x, d.y - 120, '-' + fmt(m) + ' monedas', '#ff5252', 22); pose('susto', 0.8); son('robo'); vibrar(40); } else texto(d.x, d.y - 120, '¡Nada!', '#bdbdbd', 18); }
       }
     }
@@ -791,13 +794,13 @@ function filaMejora(titulo, actual, sig, costo, act, datos, ico) {
 }
 let subTal = 'ut';
 function htmlUtensilios() {
-  let h = `<div class="ings">${Object.keys(D.INGREDIENTES).map(k => chipIng(k, E.ing[k])).join('')}</div><div class="consejo" style="margin-bottom:8px">Fabrica utensilios de batalla con tu cosecha. Pelean solos, pero <b>se gastan con el uso</b>: cuando la barra llega a cero dejan de servir hasta que los repares. Puedes tener ${D.MAX_HAB} a la vez.</div>`;
+  let h = `<div class="ings">${Object.keys(D.INGREDIENTES).map(k => chipIng(k, E.ing[k])).join('')}</div><div class="consejo" style="margin-bottom:8px">Fabrica utensilios de batalla con tu cosecha. Pelean solos, pero <b>se gastan con el uso</b>: cuando la barra llega a cero pelean a medias hasta que los repares. Puedes tener ${D.MAX_HAB} a la vez.</div>`;
   const tengo = Object.keys(E.saz.hab).length;
   for (const [id, u] of Object.entries(D.UTENSILIOS)) {
     const hb = D.HABILIDADES[id], e = estr(id), max = D.usosMax(id, e || 1), dur = E.saz.dur[id] || 0, c = D.costoUt(id, E.oleada, e > 0), lleno = e > 0 && dur >= max, uni = hb.pasiva ? 'oleadas' : 'usos';
     const ok = Object.entries(u.receta).every(([k, n]) => E.ing[k] >= n), puede = ok && E.monedas >= c && !lleno && (e > 0 || tengo < D.MAX_HAB);
     h += `<div class="card herr${e && !dur ? ' gastado' : ''}">${imgCard(hb.img, e ? (dur ? '#7bd88f' : '#ff6b6b') : '')}<div class="tx"><b>${hb.nombre}${e ? ` <span class="cant">${'★'.repeat(e)}</span>` : ''}</b><small>${hb.d(e || 1)}</small>
-      ${e ? `<div class="ut-dur"><div class="barra${dur / max < 0.3 ? ' baja' : ''}"><i style="width:${dur / max * 100}%"></i></div><span>${dur ? dur + '/' + max + ' ' + uni : '¡Gastado!'}</span></div>` : `<small class="sig">Dura ${max} ${uni}</small>`}
+      ${e ? `<div class="ut-dur"><div class="barra${dur / max < 0.3 ? ' baja' : ''}"><i style="width:${dur / max * 100}%"></i></div><span>${dur ? dur + '/' + max + ' ' + uni : 'Gastado: pelea a medias'}</span></div>` : `<small class="sig">Dura ${max} ${uni}</small>`}
       <div class="rec">${Object.entries(u.receta).map(([k, n]) => chipIng(k, E.ing[k] + '/' + n, E.ing[k] < n)).join('')}</div></div>
       ${lleno ? btn('✓ Como nuevo', 'nada', {}, true) : btn(`${e ? 'Reparar' : 'Fabricar'}<br><span class="mon"></span>${fmt(c)}`, 'fabricar', { id }, !puede, puede ? 'oro' : '')}</div>`;
   }

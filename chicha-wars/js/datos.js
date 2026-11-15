@@ -89,10 +89,12 @@ export function oleada(n) {
   if (n % 10 === 0) l.push('jefe');
   return l;
 }
-// v392: mas duros (antes +1 de vida cada 6 oleadas; el Rey, +3 por oleada).
-export const vidaDuende = (k, n) => DUENDES[k].jefe ? DUENDES[k].vida + 5 + n * 4 : DUENDES[k].vida + Math.floor(n / 4);
+// v392: mas duros (antes +1 de vida cada 6 oleadas; el Rey, +3 por oleada). Cada 5 y no cada 4: medido con jugador
+// simulado que toca poco, con +1 cada 4 oleadas se quedaba atascado (sin Sazon ni monedas) y no salia.
+export const vidaDuende = (k, n) => DUENDES[k].jefe ? DUENDES[k].vida + 5 + n * 4 : DUENDES[k].vida + Math.floor(n / 5);
 export const roboDuende = (k, n) => DUENDES[k].roba + Math.floor(n / 4);
-export const roboMonedas = n => 6 + n * 3;   // si no hay vasos ni ollas listas, el duende se lleva monedas
+// Si no hay vasos ni ollas listas, el duende se lleva monedas: como mucho el 3 % de lo que tienes (nunca te deja en cero).
+export const roboMonedas = (n, tienes) => Math.min(6 + n * 3, Math.floor(tienes * 0.03));
 export const premioDuende = (k, n) => DUENDES[k].premio + Math.floor(n / 2);
 
 // Sin conexion: las ollas siguen y los clientes compran a la mitad de ritmo, hasta 8 h; los duendes no roban.
@@ -304,16 +306,16 @@ export const CALIDAD = [{ nombre: 'Buena', extra: 0 }, { nombre: 'Rica', extra: 
 export const TOPE_ESPECIAL = 400;    // vasos especiales guardados como mucho
 
 // ── TALLER DE UTENSILIOS (v392): los utensilios de batalla se fabrican con tu cosecha y SE GASTAN con el uso. ──
-// usos: disparos (armas) u oleadas (pasivos) con ★1; cada estrella da +25 %. Gastado = no hace nada hasta repararlo.
+// usos: disparos (armas) u oleadas (pasivos) con ★1; cada estrella da +25 %. Gastado = pelea a medias (la mitad de sus estrellas) hasta repararlo.
 export const UTENSILIOS = {
-  cucharon: { usos: 50, mon: 120, receta: { canela: 1, azucar: 1 } },
-  limon:    { usos: 28, mon: 160, receta: { limon: 3 } },
-  hervor:   { usos: 18, mon: 240, receta: { azucar: 2, clavo: 1 } },
-  canela:   { usos: 14, mon: 240, receta: { canela: 3, clavo: 1 } },
-  tabla:    { usos: 10, mon: 200, receta: { manzana: 2 } },
-  oro:      { usos: 6, mon: 300, receta: { pina: 2, limon: 1 } },
-  fuego:    { usos: 6, mon: 300, receta: { canela: 2, clavo: 2 } },
-  fiesta:   { usos: 6, mon: 300, receta: { pina: 1, manzana: 1, azucar: 1 } },
+  cucharon: { usos: 150, mon: 120, receta: { canela: 1, azucar: 1 } },
+  limon:    { usos: 84, mon: 160, receta: { limon: 3 } },
+  hervor:   { usos: 54, mon: 240, receta: { azucar: 2, clavo: 1 } },
+  canela:   { usos: 42, mon: 240, receta: { canela: 3, clavo: 1 } },
+  tabla:    { usos: 30, mon: 200, receta: { manzana: 2 } },
+  oro:      { usos: 18, mon: 300, receta: { pina: 2, limon: 1 } },
+  fuego:    { usos: 18, mon: 300, receta: { canela: 2, clavo: 2 } },
+  fiesta:   { usos: 18, mon: 300, receta: { pina: 1, manzana: 1, azucar: 1 } },
 };
 export const usosMax = (id, e) => Math.round(UTENSILIOS[id].usos * (1 + 0.25 * (Math.max(1, e) - 1)));
 export const costoUt = (id, oleada, reparar) => Math.round(UTENSILIOS[id].mon * (1 + oleada / 8) * (reparar ? 0.5 : 1));

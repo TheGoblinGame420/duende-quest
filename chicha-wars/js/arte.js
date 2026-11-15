@@ -194,7 +194,7 @@ export function chichero(x, px, py, s, pose, t, P) {
 }
 
 // ── DUENDE LADRON (como la mascota: cabeza cuadrada verde, orejas largas y ojos azules) ──
-const ROPA_D = { ladron: '#6b4423', rapido: '#2e7d32', gordo: '#5d4037', gancho: '#455a64', jefe: '#6a1b9a' };
+const ROPA_D = { ladron: '#6b4423', rapido: '#2e7d32', gordo: '#5d4037', gancho: '#455a64', jefe: '#6a1b9a', dorado: '#c9a227' };   // dorado: sin el, el dibujo de respaldo (sprite aun sin cargar) se caia
 export const altoDuende = (k, s) => (SPR.size ? (k === 'jefe' ? 200 : k === 'gordo' ? 140 : 125) : (k === 'jefe' ? 170 : 110)) * s;
 export function duende(x, px, py, s, k, t, estado) {
   // estado: { corre, lleva, golpe (0..1), huye }
