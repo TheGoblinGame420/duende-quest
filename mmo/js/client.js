@@ -5134,7 +5134,8 @@ function dibujar() {
     ponCss($('jefe-bar'), 'display', 'block');
     ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + jefeVivo.nv);
     rellenar($('jefe-bar').querySelector('i'), jefeVivo.hp / jefeVivo.mx);
-  } else ponCss($('jefe-bar'), 'display', 'none');
+    if (performance.now() > jefeBarT) { jefeBarT = performance.now() + 500; colocarJefeBar(); }
+  } else { ponCss($('jefe-bar'), 'display', 'none'); ponCss($('jefe-bar'), 'top', ''); }
   // Boton contextual
   const c = cercano();
   const bi = $('interactuar');
@@ -5607,6 +5608,17 @@ function colocarAvisoMovil() {
   az.style.top = Math.round(Math.min(y ? y + 6 : 8, vh * 0.42) - hud.getBoundingClientRect().top) + 'px';   // top se cuenta desde #hud, que puede no empezar en y=0
 }
 setInterval(() => { const cz = $('avisos'); if (cz && cz.children.length) colocarAvisoMovil(); }, 800);
+// Telefono: si el seguimiento de la derecha (misiones, eventos) crece hasta la barra del jefe, la barra baja
+// bajo el (antes el nombre del jefe se montaba sobre «Invasion del desierto»). Se mide cada 500 ms, no por cuadro.
+var jefeBarT = 0;   // var: el bucle de dibujo puede leerla antes de llegar aqui
+function colocarJefeBar() {
+  const jb = $('jefe-bar'), hud = $('hud'), sg = $('seguimiento');
+  if (!jb || !sg || !hud || !hud.classList.contains('estrecho')) return;
+  const b = jb.getBoundingClientRect(), s = sg.getBoundingClientRect();
+  if (b.height < 2 || s.height < 2 || s.left >= b.right || s.right <= b.left) return;
+  const sube = s.bottom + 6 - b.top;
+  if (sube > 0) ponCss(jb, 'top', Math.round(Math.min(parseFloat(getComputedStyle(jb).top) + sube, innerHeight * 0.45)) + 'px');
+}
 function aviso(txt, tipo, ms) {
   const hudA = $('hud');
   if (hudA && hudA.classList.contains('estrecho') && !document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on, .heredar-fondo')) {
