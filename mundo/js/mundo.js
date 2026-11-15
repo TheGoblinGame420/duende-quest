@@ -819,7 +819,9 @@ async function crearTerreno() {
 const AGUA_U = { uT: { value: 0 }, uCielo: { value: C(CIELO.pueblo) }, uSol: { value: new THREE.Vector3(0.5, 0.8, 0.3) }, uSolC: { value: C('#fff2dd') },
   uLuz: { value: 1 }, uProf: { value: null }, uEsc: { value: new THREE.Vector2(1, 0) },
   /* del cielo (cielo.js): cenit, direccion de la luz visible (sol o luna), nubes y su deriva: el agua las refleja */
-  uTop: cielo.u.uTop, uLuzD: cielo.u.uLuzD, uNubL: cielo.u.uNubL, dqRuido: cielo.u.dqRuido, dqDes: cielo.u.dqDes, dqNub: cielo.u.dqNub };
+  uTop: cielo.u.uTop, uLuzD: cielo.u.uLuzD, uNubL: cielo.u.uNubL, dqRuido: cielo.u.dqRuido, dqDes: cielo.u.dqDes, dqNub: cielo.u.dqNub,
+  /* r2: color y fuerza del ocaso del cielo, para que el agua refleje la franja naranja del lado del sol */
+  uOca: cielo.u.uOca, uOcaK: cielo.u.uOcaK };
 function materialAgua(pos) {
   const N = SEG + 1, datos = new Uint8Array(N * N * 4);
   for (let i = 0; i < pos.count; i++) {
@@ -830,7 +832,7 @@ function materialAgua(pos) {
   tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
   AGUA_U.uProf.value = tex;
   AGUA_U.uEsc.value.set(SEG / (LADO * N), (0.5 * SEG + 0.5) / N);
-  const baja = CAL === 'baja';
+  const baja = CAL === 'baja', alta = CAL === 'alta';
   return new THREE.ShaderMaterial({
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), AGUA_U),
     transparent: true, fog: true,
@@ -847,6 +849,7 @@ function materialAgua(pos) {
     fragmentShader: `// dq:agua
       uniform float uT; uniform vec3 uCielo; uniform vec3 uSol; uniform vec3 uSolC; uniform float uLuz; uniform sampler2D uProf; uniform vec2 uEsc;
       uniform vec3 uTop; uniform vec3 uLuzD; uniform vec3 uNubL; uniform sampler2D dqRuido; uniform vec4 dqDes; uniform float dqNub;
+      uniform vec3 uOca; uniform float uOcaK;
       varying vec3 vW;
       #include <common>
       #include <fog_pars_fragment>
@@ -869,7 +872,10 @@ function materialAgua(pos) {
         vec3 rf = reflect(-v, n); float ry = max(rf.y, 0.0);
         vec3 cieloR = mix(uCielo, uTop, pow(ry, 0.6) * 0.7);
         ${baja ? '' : `float nb = texture2D(dqRuido, rf.xz / (ry + 0.2) * 0.13 + dqDes.xy).r; float th = mix(0.8, 0.22, dqNub);
-        cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);`}
+        cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);
+        /* Ocaso reflejado: la franja calida del horizonte (la misma cuenta que la cupula de cielo.js) del lado del sol. */
+        float ladoS = 0.5 + 0.5 * dot(normalize(rf.xz + vec2(0.0001)), normalize(uSol.xz + vec2(0.0001)));
+        cieloR = mix(cieloR, uOca, clamp(exp(-ry * 5.0) * (0.25 + 0.75 * ladoS * ladoS) * uOcaK, 0.0, 0.8));`}
         col = mix(col, cieloR, 0.1 + 0.58 * fres) * uLuz;
         // Brillo del astro que se ve (sol, o luna de noche): destello fino y una estela ancha y suave.
         float nh = max(dot(n, normalize(uLuzD + v)), 0.0);
@@ -879,8 +885,18 @@ function materialAgua(pos) {
         float espuma = orilla * (0.35 + 0.65 * ola);
         ${baja ? '' : 'if (orilla > 0.01) espuma *= 0.55 + 0.9 * texture2D(dqRuido, q * 0.05 + vec2(t * 0.012, t * -0.007)).g;'}
         col = mix(col, vec3(0.8, 0.86, 0.86) * uLuz, espuma * 0.5);
+        float cau = 0.0;
+        ${alta ? `/* Solo en alta y ultra: causticas (la red de luz que el oleaje dibuja en el fondo poco hondo), desplazadas por la
+           normal de la ola como una refraccion falsa. Dos lecturas del ruido que se cruzan; se apagan en lo hondo y al mirar rasante. */
+        float lejC = 1.0 - smoothstep(25.0, 55.0, distance(cameraPosition, vW));   /* lejos la red se vuelve ruido: se apaga */
+        if (hondo < 0.6 && lejC > 0.0) {
+          float ca = texture2D(dqRuido, q * 0.045 + n.xz * 0.4 + vec2(t * 0.011, t * 0.007)).g;
+          float cb = texture2D(dqRuido, q * 0.052 - n.xz * 0.4 + vec2(t * -0.009, t * 0.012)).g;
+          cau = pow(1.0 - abs(ca - cb), 10.0) * (1.0 - smoothstep(0.05, 0.6, hondo)) * (1.0 - fres) * (1.0 - espuma) * lejC;
+          col += uSolC * uLuz * cau * 0.42;
+        }` : ''}
         /* Orilla clara: en lo poco hondo se ve el fondo (limo y piedra del terreno) y se va cerrando hacia lo profundo. */
-        gl_FragColor = vec4(col, clamp(mix(0.3, 0.9, smoothstep(0.0, 0.75, hondo)) + fres * 0.14 + espuma * 0.3, 0.0, 0.95));
+        gl_FragColor = vec4(col, clamp(mix(0.3, 0.9, smoothstep(0.0, 0.75, hondo)) + fres * 0.14 + espuma * 0.3 + cau * 0.12, 0.0, 0.95));
         #include <colorspace_fragment>
         #include <fog_fragment>
       }`,
