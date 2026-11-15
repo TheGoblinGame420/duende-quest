@@ -35,7 +35,7 @@ import { crearParticulas } from './particulas.js?v=391';
 import { crearCielo } from './cielo.js?v=391';
 import { PERF } from './perf.js?v=391';
 import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=391';
-import { construirLugares } from './lugares.js?v=391';
+import { construirLugares, faltanPropios } from './lugares.js?v=391';
 import { cargarModelado } from './modelado.js?v=391';
 import { crearRuinas } from './ruinas.js?v=391';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
 import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=391';
@@ -6161,8 +6161,13 @@ let LUGARES = null, lugaresVistos = {};
 try { lugaresVistos = JSON.parse(localStorage.getItem('dq3_lugares') || '{}') || {}; } catch (e) {}
 function cargarLugares() {
   if (PRUEBA.has('sinLugares')) return;
-  cargarPaquete('/assets/3d/', 'lugares').then(K2 => {
-    LUGARES = construirLugares({ escena, KIT: K2, lugares: LUGARES3D, alturaEn, agua: MUNDO.agua, ponerSolido, sombras: Q.sombras, ligero: GFX.efectivo === 'minima' || GFX.efectivo === 'baja' });
+  /* v392: con los modelos propios de Blender (familia campamentos, ya en PAQ) no se baja el kit; si falta alguno, o con ?sinCampamentos, el kit de siempre. */
+  const propio = !PRUEBA.has('sinCampamentos') && !faltanPropios(PAQ).length;
+  (propio ? Promise.resolve(null) : cargarPaquete('/assets/3d/', 'lugares')).then(K2 => {
+    LUGARES = construirLugares({ escena, KIT: K2, PAQ: propio ? PAQ : null, lugares: LUGARES3D, alturaEn, agua: MUNDO.agua, ponerSolido, sombras: Q.sombras, ligero: GFX.efectivo === 'minima' || GFX.efectivo === 'baja',
+      /* vivacs de los 31 campamentos exteriores (solo con los modelos propios): lejos de nodos, cofres y de lo que ya es solido */
+      campos: campamentos(MAPAS, MONSTRUOS).filter(c => c.exterior), pendienteEn, evitar: [...nodos3d(MAPAS, MONSTRUOS), ...cofres3d(MAPAS, MONSTRUOS)],
+      ocupado: (x, z, r) => { const gx = Math.floor(x / REJ), gz = Math.floor(z / REJ); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const s of solidos.get((gx + i) + ',' + (gz + j)) || []) if (Math.hypot(s.x - x, s.z - z) < s.r + r) return true; return false; } });
     LUGARES.visibilidad(P.x, P.z, escena.fog.far);
   }).catch(e => console.warn('[3D] sin lugares de la franja exterior:', e));
 }
