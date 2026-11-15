@@ -66,6 +66,7 @@ export function crearBestias(PAQ, K) {
     return me;
   }
   // c: { k, color (tinte del monstruo o null), jefe, e, ligero }
+  // def: el color de siempre de cada bicho, algo más apagado (paleta «medieval místico»); los jefes traen su tinte.
   const ctxDe = (c, def, e0) => ({ lig: !!c.ligero, m: material(c.color || def, (e0 || 0) + (c.e || 0)) });
   const { nuevoRig, G, piv } = K;
 
@@ -73,7 +74,7 @@ export function crearBestias(PAQ, K) {
 
   // ── ARAÑA DE CENIZA (misma armadura que arana() de modelos.js) ──
   if (tiene('arana_cuerpo')) R.arana = c => {
-    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#c0a830');
+    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#a08a3a');
     r.paso = 13; r.ampPatas = 0.6; r.caer = 'panza'; r.hundir = 0.5;
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0, 0]));
     P(cu, 'arana_cuerpo', x);
@@ -105,7 +106,7 @@ export function crearBestias(PAQ, K) {
 
   // ── LAGARTO (lagarto) ──
   if (tiene('lagarto_cuerpo')) R.lagarto = c => {
-    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#b01890');
+    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#8c2f74');
     r.paso = 11; r.caer = 'lado'; r.hundir = 0.5; r.colaAmp = 0.35;
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0.32, 0]));
     P(cu, 'lagarto_cuerpo', x);
@@ -122,7 +123,7 @@ export function crearBestias(PAQ, K) {
 
   // ── SERPIENTE (serpiente): segmentos que ondulan (r.segs), cuello con capucha, cabeza y mandíbula ──
   if (tiene('serp_seg')) R.serpiente = c => {
-    const r = nuevoRig('serpiente'), Rz = r.raiz, x = ctxDe(c, '#0a7860');
+    const r = nuevoRig('serpiente'), Rz = r.raiz, x = ctxDe(c, '#2f6a4e');
     r.caer = 'lado'; r.hundir = 0.3;
     const n = 7;
     for (let i = 0; i < n; i++) {
@@ -144,7 +145,7 @@ export function crearBestias(PAQ, K) {
 
   // ── ZARIGÜEYA (zarigueya): ahora con mandíbula que se abre al bufar ──
   if (tiene('zari_cuerpo')) R.zarigueya = c => {
-    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#34508a');
+    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#4a5670');
     r.paso = 12; r.caer = 'lado'; r.hundir = 0.5; r.colaAmp = 0.4;
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0.38, 0]));
     P(cu, 'zari_cuerpo', x);
@@ -182,7 +183,7 @@ export function crearBestias(PAQ, K) {
 
   // ── CONEJO SALVAJE (conejo): bípedo con cuchillo oxidado, bandolera y oreja rota ──
   if (tiene('conejo_cuerpo')) R.conejo = c => {
-    const r = nuevoRig('bipedo'), Rz = r.raiz, x = ctxDe(c, '#a03a1c');
+    const r = nuevoRig('bipedo'), Rz = r.raiz, x = ctxDe(c, '#8a4a2c');
     r.paso = 11;
     for (const s of [1, -1]) {
       const p = piv(r, G(Rz, [0.12 * s, 0.38, 0]));
@@ -207,7 +208,7 @@ export function crearBestias(PAQ, K) {
 
   // ── BABOSA ABISAL (baba): un solo cuerpo que se aplasta; brilla un poco, como antes ──
   if (tiene('baba_cuerpo')) R.baba = c => {
-    const r = nuevoRig('baba'), Rz = r.raiz, x = ctxDe(c, '#f090a8', 0.12);
+    const r = nuevoRig('baba'), Rz = r.raiz, x = ctxDe(c, '#c97a92', 0.12);
     r.caer = 'nada'; r.hundir = 0.05;
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0, 0]));
     P(cu, 'baba_cuerpo', x);
@@ -217,7 +218,7 @@ export function crearBestias(PAQ, K) {
 
   // ── PULPO BRUJO (pulpo · Kraken): el brujo lleva sombrero y anteojos; el Kraken, no ──
   if (tiene('pulpo_cuerpo')) R.pulpo = c => {
-    const r = nuevoRig('pulpo'), Rz = r.raiz, x = ctxDe(c, '#5a8a20');
+    const r = nuevoRig('pulpo'), Rz = r.raiz, x = ctxDe(c, '#5b7a3a');
     r.caer = 'encoge';
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0, 0]));
     P(cu, 'pulpo_cuerpo', x);
@@ -234,7 +235,7 @@ export function crearBestias(PAQ, K) {
 
   // ── SALTARÍN ABISAL (saltador): ahora abre la boca de agujas al atacar ──
   if (tiene('salt_cuerpo')) R.saltador = c => {
-    const r = nuevoRig('salto'), Rz = r.raiz, x = ctxDe(c, '#c07a20');
+    const r = nuevoRig('salto'), Rz = r.raiz, x = ctxDe(c, '#9a6a30');
     r.paso = 9; r.caer = 'panza'; r.hundir = 0.5; r.aleteo = 9; r.amplAla = 0.3;
     const cu = r.cuerpo = piv(r, G(Rz, [0, 0, 0]));
     P(cu, 'salt_cuerpo', x);
@@ -282,7 +283,7 @@ export function crearBestias(PAQ, K) {
   // ── PECES (pez · pez_dardo): escamas, aletas con radios, cola ahorquillada ──
   const pezB = (c, v) => {
     const r = nuevoRig('pez'), Rz = r.raiz;
-    const D = v === 'pez' ? { piel: '#8a1840', cu: [0.2, 0.28, 0.4], n: 'pez' } : { piel: '#a85a20', cu: [0.09, 0.11, 0.45], n: 'dardo' };
+    const D = v === 'pez' ? { piel: '#7a2440', cu: [0.2, 0.28, 0.4], n: 'pez' } : { piel: '#8e5a2e', cu: [0.09, 0.11, 0.45], n: 'dardo' };
     const x = ctxDe(c, D.piel), [sx, sy, sz] = D.cu;
     r.caer = 'panza'; r.hundir = 0.3; r.colaAmp = 0; r.vuela = true;
     const cu = r.cuerpo = piv(r, G(Rz, [0, sy + 0.05, 0]));

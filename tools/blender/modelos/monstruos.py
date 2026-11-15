@@ -107,7 +107,7 @@ def arana_cuerpo(lod):
     desplazar(ab, 0.012, 9.0, semilla=2)
     def piel_ab(P, N, C):
         z = P[:, 2] + 0.44; x = np.abs(P[:, 0]); y = P[:, 1] - 0.44
-        chev = np.clip(1 - np.abs(((z * 4.2 + x * 3.0) % 1.0) - 0.5) * 7, 0, 1) * (y > 0.05) * (x < 0.26)
+        chev = np.clip(1.6 - np.abs(((z * 3.2 + x * 2.6) % 1.0) - 0.5) * 6, 0, 1) * np.clip(y * 6, 0, 1) * (x < 0.3)
         k = 0.62 + 0.38 * np.clip(y / 0.33 + 0.4, 0, 1)            # panza más oscura
         M = np.ones((len(P), 3)) * k[:, None]
         M = mezclar(M, (0.16, 0.13, 0.12), chev * 0.9)           # chevrones casi negros
