@@ -1637,6 +1637,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyL' && $('m-mision').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyI' && $('m-inv').classList.contains('on')) cerrarModales();   // como P, O, M y L: la misma tecla abre y cierra
     return;
   }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
@@ -6023,7 +6024,7 @@ function prepararRankNv() {
   };
   x.style.visibility = q.value ? 'visible' : 'hidden';
   q.oninput = () => buscar(false);
-  q.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); buscar(true); q.blur(); } };
+  q.onkeydown = e => { if (e.key !== 'Escape') e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); buscar(true); q.blur(); } };
   x.onclick = () => { q.value = ''; buscar(true); };
   $('rk-mas').onclick = () => { if (!rkNv.esp) { pedirRankNv(rkNv.filas.length); pintarRankNv(); } };
   pintarRankNv();
@@ -6239,7 +6240,7 @@ function pintarCuenta(cont, modo, enJuego) {
   cont.innerHTML = h;
   const msg = (t, ok) => { const p = cont.querySelector('.msg'); p.textContent = t; p.className = 'msg ' + (ok ? 'ok' : 'err'); };
   const v = id => { const e = cont.querySelector('#' + id); return e ? e.value.trim() : ''; };
-  cont.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { const b = cont.querySelector('[data-acc]'); if (b) b.click(); } }));
+  cont.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); if (e.key === 'Enter') { const b = cont.querySelector('[data-acc]'); if (b) b.click(); } }));
   cont.querySelectorAll('[data-m]').forEach(a => a.onclick = () => pintarCuenta(cont, a.dataset.m, enJuego));
   cont.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
     const acc = b.dataset.acc, cli = sb();
