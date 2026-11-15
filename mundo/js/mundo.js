@@ -38,7 +38,7 @@ import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=3
 import { construirLugares, faltanPropios } from './lugares.js?v=392';
 import { cargarModelado } from './modelado.js?v=392';
 import { crearRuinas } from './ruinas.js?v=392';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque } from './terreno.js?v=392';
+import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=392';
 import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=392';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=392';
 const MAQUINAS = maquinasAbismo();
@@ -1238,7 +1238,12 @@ async function crearFlora() {
   if (floraFina) {
     await ceder();
     try {
-      const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX, lim: MUNDO.borde, lugares: lugares3d() });
+      /* A trozos (generador, un paso por fila): se cede el hilo cada ~25 ms (tareas por debajo de 50 ms) y el celular no se congela varios segundos. Mismo resultado que crearSotobosque. */
+      const sotoD = { alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX, lim: MUNDO.borde, lugares: lugares3d() };
+      const itSoto = generarSotobosque(sotoD);
+      let pasoS = itSoto.next(), tCed = performance.now();
+      while (!pasoS.done) { if (performance.now() - tCed > 25) { await ceder(); tCed = performance.now(); } pasoS = itSoto.next(); }
+      const soto = pasoS.value;
       for (const ml of soto.mallas) { escena.add(ml); sotoMallas.push(ml); }
       trozosFlora.push(...soto.celdas);
       respaldosShader.push(['soto', () => { for (const ml of sotoMallas) ml.visible = false; soto.material.visible = false; }]);
