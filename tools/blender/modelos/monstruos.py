@@ -458,3 +458,367 @@ def gato_cola(lod):
 @modelo('bes_gato_pata', tris=(180, 76, 28), **PIEZA)
 def gato_pata(lod):
     return acabar(unir(pata_bestia(0.5, 0.05, True, 'hoja', (0.85, 0.82, 0.9), pie=(0.075, 0.035, 0.09), color_garra='#e6ddc4')), 60, 0.08, 19, 0.15)
+
+
+# ═══════════ CONEJO SALVAJE (conejo; bípedo con cuchillo) ═══════════
+# Rig: piernas (±0.12, 0.38, 0) de la raíz; cuerpo (0, 0.38, 0); brazos (±0.25, 0.42, 0) del cuerpo (giro Z ±0.15),
+# mano (0, −0.3, 0) del brazo; el cuchillo en la mano derecha (−x) dentro de un grupo girado −0.55 en X; cabeza (0, 0.56, 0).
+CUERO = '#4a3020'
+CREMA = (1.9, 1.75, 1.25)
+
+
+@modelo('bes_conejo_cuerpo', tris=(560, 240, 80), **PIEZA)
+def conejo_cuerpo(lod):
+    o = masa_g([(0, 0.24, 0.0, 0.2, 0.25, 0.17), (0, 0.33, 0.05, 0.17, 0.16, 0.13), (0, 0.06, -0.01, 0.19, 0.12, 0.16)], voxel=0.025, tris=380, ruido_f=0.01, ruido_e=20, semilla=21)
+    color_g(o, lambda P, N, C: mezclar(np.ones((len(P), 3)) * (0.88 + 0.2 * ruido_fbm(P, 16, 2, 2))[:, None], CREMA, np.clip(N[:, 2] * 1.6 - 0.5, 0, 1) * np.clip(1 - np.abs(P[:, 0]) / 0.13, 0, 1)))
+    p = [o, elip((0, 0.1, -0.19), (0.075, 0.07, 0.06), 1, 'liso', '#e9e0cf')]   # cola de algodón
+    # Bandolera de cuero en diagonal con su bolsa y hebilla.
+    ban = [(math.cos(a) * 0.205, 0.24 + math.sin(a) * 0.17 * math.cos(a) + 0.12 * math.cos(a), math.sin(a) * 0.175) for a in np.linspace(0, 2 * math.pi, 15)]
+    p.append(tubo_g(ban, 0.022, 4, 'liso', CUERO, punta=False))
+    p.append(elip((-0.15, 0.1, 0.12), (0.06, 0.06, 0.04), 1, 'liso', '#5a3c26'))
+    p.append(elip((0.0, 0.25, 0.175), (0.03, 0.03, 0.012), 1, 'liso', '#a88a4a'))
+    return acabar(unir(p), 60, 0.06, 22, 0.12)
+
+
+@modelo('bes_conejo_cabeza', tris=(480, 200, 70), **PIEZA)
+def conejo_cabeza(lod):
+    cr = masa_g([(0, 0.13, 0.0, 0.18, 0.17, 0.17), (0, 0.07, 0.13, 0.1, 0.075, 0.085), (0.09, 0.08, 0.07, 0.07), (-0.09, 0.08, 0.07, 0.07)], voxel=0.02, tris=280, ruido_f=0.006, ruido_e=22, semilla=23)
+    def cara(P, N, C):
+        M = mezclar(np.ones((len(P), 3)), CREMA, np.clip(N[:, 2] * 1.5 - 0.2, 0, 1) * (P[:, 1] < 0.13))
+        cic = np.clip(1 - np.abs((P[:, 1] - 0.18) - (P[:, 0] + 0.08) * 0.9) / 0.012, 0, 1) * (np.abs(P[:, 0] + 0.08) < 0.06) * (P[:, 2] > 0.08)
+        return mezclar(M, (0.35, 0.25, 0.25), cic)                         # cicatriz sobre el ojo izquierdo
+    color_g(cr, cara)
+    p = [cr, elip((0, 0.1, 0.235), (0.028, 0.022, 0.018), 1, 'liso', '#d97d8c'), elip((0, 0.025, 0.215), (0.032, 0.035, 0.012), 1, 'liso', '#f1ebdc')]
+    for s in (1, -1):
+        p.append(elip((s * 0.08, 0.18, 0.145), (0.032, 0.036, 0.022), 1, 'liso', '#140c0c'))
+        p.append(elip((s * 0.08, 0.182, 0.162), (0.012, 0.014, 0.008), 1, 'emisivo', '#ff5a2a'))
+        p.append(elip((s * 0.075, 0.215, 0.14), (0.05, 0.014, 0.035), 1, 'hoja', (0.45, 0.4, 0.4)))     # ceño
+        roto = s < 0
+        top = (s * 0.11, 0.56 if not roto else 0.47, -0.07)
+        o = tubo_g([(s * 0.065, 0.27, -0.02), (s * 0.09, 0.42, -0.05), top], [0.055, 0.05, 0.012 if not roto else 0.03], 6, 'hoja', TIN, n=7,
+                   perfil=lambda t, a: 1 - 0.55 * abs(math.sin(a)))
+        color_g(o, lambda P, N, C: mezclar(C, (2.0, 1.4, 1.4), np.clip(N[:, 2] * 1.8 - 0.4, 0, 1) * 0.85))
+        p.append(o)
+    for i in range(3):   # bigotes
+        for s in (1, -1):
+            p.append(cono_g((s * 0.05, 0.08 - i * 0.015, 0.2), (s * 0.18, 0.1 - i * 0.03, 0.17), 0.0035, 3, 'liso', '#efe9dc'))
+    return acabar(unir(p), 55, 0.06, 24, 0.12)
+
+
+@modelo('bes_conejo_brazo', tris=(130, 56, 20), **PIEZA)
+def conejo_brazo(lod):
+    t = tubo_g([(0, 0.02, 0), (0, -0.14, 0.02), (0, -0.27, 0.0)], [0.055, 0.045, 0.04], 6, 'hoja', TIN, n=6, punta=False)
+    p = [t, elip((0, -0.3, 0.01), (0.055, 0.06, 0.055), 1, 'hoja', CREMA)]
+    p.append(tubo_g([(0, -0.2, 0), (0, -0.25, 0.005)], 0.047, 6, 'liso', '#6a5a48', punta=False))   # vendas
+    return acabar(unir(p), 60, 0.06, 25, 0.1)
+
+
+@modelo('bes_conejo_pierna', tris=(180, 76, 26), **PIEZA)
+def conejo_pierna(lod):
+    m = elip((0, -0.08, -0.01), (0.09, 0.14, 0.11), 2, 'hoja', TIN)
+    t = tubo_g([(0, -0.1, -0.02), (0, -0.22, -0.06), (0, -0.33, 0.0)], [0.06, 0.05, 0.045], 6, 'hoja', TIN, n=6, punta=False)
+    pie = elip((0, -0.355, 0.08), (0.065, 0.035, 0.16), 2, 'hoja', (1.1, 1.05, 1.0))
+    color_g(pie, lambda P, N, C: mezclar(C, CREMA, np.clip(-N[:, 1], 0, 1)))
+    return acabar(unir([m, t, pie]), 60, 0.06, 26, 0.1)
+
+
+@modelo('bes_conejo_cuchillo', tris=(110, 50, 20), **PIEZA)
+def conejo_cuchillo(lod):
+    hoja_ = masa_g([(0, 0, 0.2, 0.012, 0.05, 0.14), (0, 0.008, 0.33, 0.01, 0.035, 0.07)], voxel=0.008, tris=70, marca='liso', color='#8f949a', semilla=27)
+    color_g(hoja_, lambda P, N, C: mezclar(C, '#7a4a2a', np.clip(ruido_fbm(P, 30, 4, 2) * 3, 0, 1) * 0.7))   # óxido
+    p = [hoja_, tubo_g([(0, 0, -0.13), (0, 0, 0.05)], 0.022, 5, 'liso', '#d6c9a8', punta=False),
+         elip((0, 0, 0.065), (0.06, 0.018, 0.018), 1, 'liso', CUERO)]
+    return acabar(unir(p), 50, 0.05, 28, 0.15)
+
+
+# ═══════════ BABOSA ABISAL (baba · Madre Babosa) ═══════════
+# Rig: un solo pivote, el cuerpo en la raíz (se aplasta y estira entero). Alto ~0.66.
+@modelo('bes_baba_cuerpo', tris=(1100, 460, 150), **PIEZA)
+def baba_cuerpo(lod):
+    o = elip((0, 0.0, 0.0), (0.6, 0.66, 0.55), 3, 'hoja', TIN)
+    def domo(P):   # base plana con falda que se derrama (coordenadas de Blender: z arriba)
+        z = np.maximum(P[:, 2], 0) ** 1.0
+        k = 1 + 0.16 * np.exp(-z / 0.07)
+        return np.c_[P[:, 0] * k, P[:, 1] * k, z * (1 - 0.15 * (z < 0.02))]
+    deformar(o, domo)
+    desplazar(o, 0.03, 3.5, semilla=31); desplazar(o, 0.01, 11, semilla=32)
+    def gel(P, N, C):
+        M = np.ones((len(P), 3)) * (0.75 + 0.25 * np.clip(P[:, 1] / 0.6, 0, 1))[:, None]
+        burb = np.clip(ruido_fbm(P, 9, 33, 1) * 4 - 1.6, 0, 1)
+        M = mezclar(M, (1.8, 1.8, 1.8), burb * 0.7)                                         # burbujas
+        M = mezclar(M, (2.4, 2.4, 2.4), np.clip(N[:, 1] * 1.4 - 0.9, 0, 1) * np.clip((P[:, 0] + P[:, 2]) * 2, 0, 1))   # brillo
+        return M
+    color_g(o, gel)
+    p = [o]
+    for s in (1, -1):
+        p.append(elip((s * 0.15, 0.43, 0.46), (0.06, 0.075, 0.035), 1, 'liso', '#120c1c'))
+        p.append(elip((s * 0.15 - 0.02, 0.455, 0.49), (0.016, 0.018, 0.01), 1, 'emisivo', '#ffffff'))
+    p.append(elip((0, 0.29, 0.5), (0.08, 0.025, 0.02), 1, 'liso', '#3a1424'))
+    # Lo que se tragó: una calavera medio hundida y la empuñadura de una espada.
+    p.append(elip((0.42, 0.2, 0.3), (0.1, 0.09, 0.1), 2, 'liso', '#d8cdb4'))
+    for s in (1, -1): p.append(elip((0.44 + s * 0.035, 0.21, 0.385), (0.025, 0.028, 0.02), 1, 'liso', '#2a2018'))
+    p.append(tubo_g([(-0.12, 0.45, -0.2), (-0.2, 0.78, -0.3)], 0.022, 5, 'liso', '#4a3a2c', punta=False))
+    p.append(tubo_g([(-0.2, 0.66, -0.36), (-0.2, 0.62, -0.18)], 0.02, 4, 'liso', '#8a7a52', punta=False))
+    return acabar(unir(p), 60, 0.05, 34, 0.08)
+
+
+# ═══════════ PULPO BRUJO (pulpo · Kraken) ═══════════
+# Rig: cuerpo en la raíz; 8 tentáculos: grupo (0, 0.5, 0) del cuerpo girado i·45° en Y y pivote (0, 0, 0.18) dentro.
+@modelo('bes_pulpo_cuerpo', tris=(720, 300, 100), **PIEZA)
+def pulpo_cuerpo(lod):
+    o = masa_g([(0, 0.86, -0.1, 0.33, 0.4, 0.34), (0, 0.62, 0.03, 0.31, 0.21, 0.28), (0, 0.48, 0.0, 0.22, 0.1, 0.2)], voxel=0.035, tris=520, ruido_f=0.012, ruido_e=8, semilla=41)
+    def piel(P, N, C):
+        M = np.ones((len(P), 3)) * (0.85 + 0.2 * np.clip(N[:, 1], 0, 1))[:, None]
+        man = np.clip(ruido_fbm(P, 7, 42, 2) * 4 - 0.8, 0, 1)
+        M = mezclar(M, (0.4, 0.38, 0.45), man * 0.8)                                  # manchas oscuras
+        return mezclar(M, (1.7, 1.6, 1.5), np.clip(-N[:, 1] - 0.3, 0, 1))
+    color_g(o, piel)
+    p = [o]
+    for s in (1, -1):
+        p.append(elip((s * 0.15, 0.72, 0.26), (0.1, 0.1, 0.08), 2, 'liso', '#d9d09c'))
+        p.append(elip((s * 0.15, 0.72, 0.335), (0.065, 0.022, 0.012), 1, 'emisivo', '#ff2a9a'))
+        p.append(elip((s * 0.14, 0.81, 0.24), (0.11, 0.035, 0.07), 1, 'hoja', (0.6, 0.55, 0.6)))     # párpado
+    return acabar(unir(p), 60, 0.08, 43, 0.12)
+
+
+@modelo('bes_pulpo_sombrero', tris=(300, 130, 44), **PIEZA)
+def pulpo_sombrero(lod):
+    ala = elip((0, 1.12, -0.06), (0.42, 0.03, 0.4), 2, 'liso', '#2c2348')
+    copa = tubo_g([(0, 1.12, -0.08), (0.02, 1.38, -0.12), (0.1, 1.6, -0.22), (0.24, 1.66, -0.3)], [0.26, 0.17, 0.08, 0.02], 8, 'liso', '#2c2348', n=10)
+    banda = tubo_g([(0, 1.13, -0.08), (0, 1.2, -0.09)], 0.255, 10, 'liso', '#b8922a', punta=False)
+    est = elip((0.0, 1.2, 0.17), (0.04, 0.04, 0.012), 1, 'emisivo', '#ffd84a')
+    p = [ala, copa, banda, est]
+    for s in (1, -1):   # monturas doradas de los anteojos
+        ar = [(s * 0.15 + math.cos(a) * 0.1, 0.72 + math.sin(a) * 0.1, 0.33) for a in np.linspace(0, 2 * math.pi, 11)]
+        p.append(tubo_g(ar, 0.012, 4, 'liso', '#d8b048', punta=False))
+    return acabar(unir(p), 50, 0.08, 44, 0.15)
+
+
+@modelo('bes_pulpo_tent', tris=(170, 70, 26), **PIEZA)
+def pulpo_tent(lod):
+    pts = [(0, 0.02, -0.02), (0, -0.22, 0.16), (0, -0.4, 0.34), (0, -0.44, 0.5), (0, -0.38, 0.6), (0, -0.3, 0.58)]
+    t = tubo_g(pts, [0.085, 0.07, 0.05, 0.035, 0.022, 0.01], 7, 'hoja', TIN, n=14)
+    color_g(t, lambda P, N, C: mezclar(np.ones((len(P), 3)), (1.8, 1.6, 1.5), np.clip(-N[:, 1] * 1.2 - N[:, 2] * 0.3, 0, 1)))
+    p = [t]
+    for i, k in enumerate(np.linspace(0.15, 0.8, 6)):   # ventosas en la cara de abajo
+        q = curva(np.array(pts), 30)[int(k * 29)]
+        r = 0.028 * (1 - k * 0.6)
+        p.append(elip((q[0], q[1] - 0.035 * (1 - k), q[2] - 0.01), (r, r * 0.5, r), 1, 'liso', '#e6cdb8'))
+    return acabar(unir(p), 60, 0.06, 45, 0.1)
+
+
+# ═══════════ SALTARÍN ABISAL (saltador): sapo-rape de las profundidades con farol ═══════════
+# Rig: cuerpo en la raíz; mandíbula (0, 0.36, 0.3) del cuerpo; gema (luz) en (0, 0.56, 0.47); aletas (±0.3, 0.4, −0.02)
+# giradas ∓0.25 en Z (la pieza sube en +y); patas (±0.22, 0.25, −0.1) de la raíz.
+@modelo('bes_salt_cuerpo', tris=(820, 340, 110), **PIEZA)
+def salt_cuerpo(lod):
+    o = masa_g([(0, 0.48, -0.08, 0.33, 0.28, 0.36), (0, 0.5, 0.22, 0.3, 0.22, 0.2), (0.0, 0.62, 0.05, 0.22, 0.14, 0.26)], voxel=0.03, tris=560, ruido_f=0.014, ruido_e=10, semilla=51)
+    def piel(P, N, C):
+        M = np.ones((len(P), 3)) * 0.95
+        M = mezclar(M, (0.35, 0.3, 0.3), np.clip(ruido_fbm(P, 11, 52, 1) * 5 - 1.8, 0, 1))           # pecas
+        return mezclar(M, (2.0, 1.8, 1.4), np.clip(-N[:, 1] * 1.4 - 0.2, 0, 1))
+    color_g(o, piel)
+    p = [o]
+    p.append(tubo_g([(0, 0.7, 0.12), (0, 0.86, 0.26), (0, 0.8, 0.42), (0, 0.62, 0.47)], [0.03, 0.022, 0.016, 0.012], 5, 'hoja', (0.6, 0.55, 0.5), n=10))   # caña del farol
+    for i in range(7):   # dientes de aguja de arriba
+        x = (i - 3) * 0.06; z = 0.36 + 0.05 * math.cos(x * 4)
+        p.append(cono_g((x, 0.42, z), (x * 1.05, 0.34, z + 0.02), 0.013, 4, 'liso', '#efe7d2'))
+    for s in (1, -1):
+        p.append(elip((s * 0.13, 0.63, 0.34), (0.035, 0.035, 0.03), 1, 'emisivo', '#ffe14a'))
+    for z in np.linspace(0.05, -0.38, 6):   # cresta del lomo
+        y = 0.78 - 0.1 * (z + 0.05) ** 2 * 4
+        p.append(cono_g((0, y - 0.04, z), (0, y + 0.07, z - 0.04), 0.03, 4, 'hoja', (0.45, 0.4, 0.35)))
+    return acabar(unir(p), 55, 0.08, 53, 0.14)
+
+
+@modelo('bes_salt_mandibula', tris=(200, 86, 30), **PIEZA)
+def salt_mandibula(lod):
+    j = masa_g([(0, -0.02, 0.0, 0.27, 0.07, 0.14), (0, -0.01, 0.08, 0.23, 0.05, 0.08)], voxel=0.02, tris=130, semilla=54)
+    color_g(j, lambda P, N, C: mezclar(np.ones((len(P), 3)), (2.0, 1.8, 1.4), np.clip(-N[:, 1], 0, 1)))
+    p = [j, elip((0, 0.035, 0.02), (0.2, 0.02, 0.09), 1, 'liso', '#3a0f1c')]
+    for i in range(6):
+        x = (i - 2.5) * 0.065
+        p.append(cono_g((x, 0.02, 0.1), (x * 1.08, 0.1, 0.12), 0.013, 4, 'liso', '#efe7d2'))
+    return acabar(unir(p), 60, 0.05, 55, 0.05)
+
+
+@modelo('bes_salt_aleta', tris=(110, 50, 20), **PIEZA)
+def salt_aleta(lod):
+    m = elip((0, 0.24, -0.04), (0.025, 0.26, 0.2), 2, 'hoja', (0.5, 0.45, 0.4))
+    deformar(m, lambda P: P + np.c_[np.zeros(len(P)), 0.12 * (P[:, 2] / 0.62) ** 2, np.zeros(len(P))])   # se curva hacia atrás
+    p = [m]
+    for k in (-0.08, 0.0, 0.08):
+        p.append(cono_g((0, 0.02, k * 0.5), (0, 0.5, k * 2.4 - 0.08), 0.014, 4, 'liso', '#d8c79c'))
+    return acabar(unir(p), 60, 0.06, 56, 0.1)
+
+
+@modelo('bes_salt_pata', tris=(140, 60, 22), **PIEZA)
+def salt_pata(lod):
+    m = elip((0, 0.0, 0.0), (0.1, 0.15, 0.18), 2, 'hoja', (0.8, 0.75, 0.7))
+    pie = elip((0, -0.2, 0.1), (0.1, 0.03, 0.15), 2, 'hoja', (0.6, 0.55, 0.5))
+    deformar(pie, lambda P: P + np.c_[np.zeros(len(P)), np.zeros(len(P)), -0.25 * np.abs(P[:, 0])])   # membrana abierta
+    return acabar(unir([m, pie]), 60, 0.06, 57, 0.1)
+
+
+# ═══════════ MURCIÉLAGO VAMPIRO (murcielago): bola de pelo con un solo ojo rojo ═══════════
+# Rig (volador): cuerpo (0, 0.35, 0); cabeza (0, 0.08, 0) del cuerpo; alas (±0.16, 0.1, 0.02) del cuerpo, giro Z ±0.15
+# (la derecha apunta a +x, la izquierda a −x: dos piezas espejadas); patas (±0.07, −0.15, 0) del cuerpo.
+MEMBRANA = '#6e3428'
+HUESO_ALA = '#2a2226'
+
+
+@modelo('bes_murc_cuerpo', tris=(360, 150, 50), **PIEZA)
+def murc_cuerpo(lod):
+    o = elip((0, 0.06, -0.02), (0.24, 0.25, 0.22), 3, 'hoja', TIN)
+    desplazar(o, 0.02, 22, semilla=61)
+    color_g(o, lambda P, N, C: np.ones((len(P), 3)) * (0.85 + 0.3 * ruido_fbm(P, 20, 62, 2))[:, None])
+    return acabar(decimar(o, 340), 70, 0.08, 63, 0.15)
+
+
+@modelo('bes_murc_cabeza', tris=(380, 160, 56), **PIEZA)
+def murc_cabeza(lod):
+    p = [elip((0, 0.06, 0.17), (0.14, 0.14, 0.07), 2, 'hoja', (1.3, 1.25, 1.2)),       # cuenca
+         elip((0, 0.06, 0.205), (0.1, 0.1, 0.05), 2, 'liso', '#efe6dc'),               # ojo
+         elip((0, 0.06, 0.245), (0.065, 0.07, 0.02), 1, 'emisivo', '#ff2424'),         # iris
+         elip((0, 0.06, 0.262), (0.014, 0.05, 0.008), 1, 'liso', '#14080a'),            # pupila de rendija
+         elip((0, 0.165, 0.18), (0.13, 0.035, 0.05), 1, 'hoja', (0.4, 0.38, 0.42))]   # párpado ceñudo
+    for s in (1, -1):
+        o = tubo_g([(s * 0.1, 0.17, -0.02), (s * 0.15, 0.3, -0.05), (s * 0.19, 0.44, -0.08)], [0.07, 0.05, 0.006], 6, 'hoja', TIN, n=7,
+                   perfil=lambda t, a: 1 - 0.6 * abs(math.sin(a)))
+        color_g(o, lambda P, N, C: mezclar(C, (2.0, 1.3, 1.3), np.clip(N[:, 2] * 1.8 - 0.3, 0, 1) * 0.8))
+        p.append(o)
+        p.append(cono_g((s * 0.055, -0.08, 0.19), (s * 0.05, -0.16, 0.205), 0.016, 4, 'liso', '#f4efd8'))
+    return acabar(unir(p), 55, 0.06, 64, 0.12)
+
+
+def murc_ala(s):
+    W = np.array((0.42, 0.06, 0.16)); O = np.array((0.0, 0.0, 0.0))
+    puntas = [np.array(q) for q in ((0.88, 0.03, 0.04), (0.78, 0.0, -0.2), (0.52, -0.01, -0.3), (0.22, -0.01, -0.24))]
+    base = np.array((0.04, -0.02, -0.16))
+    V = [O, W]; F = []
+    bordes = puntas + [base]
+    for i, t in enumerate(bordes):
+        V.append(t)
+        if i < len(bordes) - 1:   # punto medio del borde, metido hacia dentro (festón)
+            m = (t + bordes[i + 1]) * 0.5; m = m + (W - m) * 0.22; V.append(m)
+    n = len(V)
+    for i in range(2, n - 1): F.append((1, i, i + 1))
+    F.append((1, n - 1, 0))
+    V = [np.array((v[0] * s, v[1], v[2])) for v in V]
+    mem = malla('membrana', [g2b(v) for v in V], F, 'liso', MEMBRANA)
+    subdividir(mem, 1, simple=True)
+    deformar(mem, lambda P: P + np.c_[np.zeros(len(P)), np.zeros(len(P)), -0.03 * np.sin(np.hypot(P[:, 0], P[:, 1]) * 4)])   # comba
+    color_g(mem, lambda P, N, C: C * (0.8 + 0.35 * ruido_fbm(P, 12, 65, 2))[:, None])
+    dos_caras(mem)
+    p = [mem, tubo_g([(0, 0, 0), (0.2 * s, 0.05, 0.1), W * (s, 1, 1)], [0.03, 0.022, 0.018], 5, 'liso', HUESO_ALA, punta=False)]
+    for t in puntas: p.append(tubo_g([W * (s, 1, 1), (W + (t - W) * 0.5) * (s, 1, 1) + (0, 0.015, 0), t * (s, 1, 1)], [0.015, 0.011, 0.004], 4, 'liso', HUESO_ALA))
+    p.append(cono_g(W * (s, 1, 1), (W + (0.04, 0.05, 0.04)) * (s, 1, 1), 0.014, 4, 'liso', '#d9ccb0'))   # garra del pulgar
+    return acabar(unir(p), 60, 0, 66, 0)
+
+
+@modelo('bes_murc_ala_d', tris=(170, 80, 30), **PIEZA)
+def murc_ala_d(lod): return murc_ala(1)
+
+
+@modelo('bes_murc_ala_i', tris=(170, 80, 30), **PIEZA)
+def murc_ala_i(lod): return murc_ala(-1)
+
+
+@modelo('bes_murc_pie', tris=(60, 30, 20), **PIEZA)
+def murc_pie(lod):
+    p = [tubo_g([(0, 0, 0), (0, -0.15, 0.02)], [0.022, 0.016], 4, 'liso', '#1d1a24', punta=False)]
+    p += garras((0, -0.16, 0.02), 3, 0.022, 0.05, 0.008, '#cfc2a2', (0, -0.5, 1))
+    return acabar(unir(p), 60, 0, 1, 0)
+
+
+# ═══════════ PECES (pez · pez_dardo) ═══════════
+# Rig (pez): cuerpo (0, sy + 0.05, 0); cola (0, 0, −sz·0.92) del cuerpo; aletas (±sx·0.9, −sy·0.2, sz·0.2) del cuerpo
+# (la pieza apunta a +x; la izquierda va girada 180° en Y); mandíbula (0, −sy·0.3, sz·0.7) del cuerpo (solo «pez»).
+# pez: sx, sy, sz = 0.2, 0.28, 0.4 · pez_dardo: 0.09, 0.11, 0.45 (con pico).
+ALETA = '#c05a20'
+
+
+def escamas(P, N, C, sx, sy, sz, panza=(1.9, 1.7, 1.3)):
+    u = P[:, 2] / sz * 9; v = P[:, 1] / sy * 6 + 0.5 * np.floor(u)
+    esc = np.clip(1 - np.hypot((u % 1) - 0.5, (v % 1) - 0.5) * 2.2, 0, 1)
+    M = np.ones((len(P), 3)) * (0.75 + 0.35 * esc)[:, None]
+    M = mezclar(M, panza, np.clip(-N[:, 1] * 1.5 - 0.1, 0, 1))
+    return mezclar(M, (0.3, 0.25, 0.3), np.clip(N[:, 1] * 2 - 1.2, 0, 1) * 0.6)    # lomo oscuro
+
+
+@modelo('bes_pez_cuerpo', tris=(560, 240, 80), **PIEZA)
+def pez_cuerpo(lod):
+    sx, sy, sz = 0.2, 0.28, 0.4
+    o = masa_g([(0, 0.0, 0.0, sx, sy, sz), (0, 0.08, 0.1, sx * 0.85, sy * 0.8, sz * 0.6), (0, -0.04, 0.22, sx * 0.85, sy * 0.7, sz * 0.4)], voxel=0.025, tris=360, semilla=71)
+    color_g(o, lambda P, N, C: escamas(P, N, C, sx, sy, sz))
+    p = [o]
+    # Aleta del lomo y de la panza: membrana fina con radios.
+    for (y0, y1, z0, z1, sg) in ((sy * 0.85, sy * 1.45, 0.2, -0.22, 1), (-sy * 0.8, -sy * 1.15, -0.05, -0.25, -1)):
+        m = elip((0, (y0 + y1) / 2, (z0 + z1) / 2), (0.014, abs(y1 - y0) / 2, abs(z1 - z0) / 2), 2, 'liso', ALETA)
+        p.append(m)
+        for k in np.linspace(0, 1, 4):
+            z = z0 + (z1 - z0) * k
+            p.append(cono_g((0, y0 * 0.95, z), (0, y1 * (1 - 0.15 * abs(k - 0.5)), z - 0.06), 0.008, 3, 'liso', '#e8b080'))
+    for s in (1, -1):
+        p.append(elip((s * sx * 0.6, sy * 0.3, sz * 0.72), (0.04, 0.045, 0.03), 1, 'emisivo', '#ffd84a'))
+        p.append(elip((s * sx * 0.66, sy * 0.3, sz * 0.74), (0.016, 0.03, 0.012), 1, 'liso', '#100808'))
+        p.append(tubo_g([(s * sx * 0.82, sy * 0.4, sz * 0.4), (s * sx * 0.9, 0.0, sz * 0.45), (s * sx * 0.75, -sy * 0.45, sz * 0.38)], 0.008, 3, 'liso', '#3a0c1c', punta=False))   # agalla
+    for i in range(5):   # dientes de arriba
+        x = (i - 2) * 0.035
+        p.append(cono_g((x, -sy * 0.18, sz * 0.92 - abs(x) * 0.6), (x, -sy * 0.34, sz * 0.94 - abs(x) * 0.6), 0.012, 4, 'liso', '#f2ead6'))
+    return acabar(unir(p), 55, 0.06, 72, 0.12)
+
+
+@modelo('bes_pez_mandibula', tris=(130, 56, 20), **PIEZA)
+def pez_mandibula(lod):
+    j = elip((0, -0.01, 0.06), (0.13, 0.05, 0.13), 2, 'hoja', (1.6, 1.4, 1.2))
+    p = [j]
+    for i in range(6):
+        x = (i - 2.5) * 0.04
+        p.append(cono_g((x, 0.02, 0.13 + 0.04 * (1 - abs(x) * 8)), (x, 0.08, 0.15 + 0.04 * (1 - abs(x) * 8)), 0.012, 4, 'liso', '#f2ead6'))
+    return acabar(unir(p), 60, 0.05, 73, 0.05)
+
+
+def cola_pez(alto, largo, color):
+    p = []
+    for sg in (1, -1):
+        p.append(elip((0, sg * alto * 0.45, -largo * 0.55), (0.014, alto * 0.42, largo * 0.5), 2, 'liso', color))
+        for k in (0.3, 0.7, 1.0):
+            p.append(cono_g((0, 0, -0.02), (0, sg * alto * k * 0.85, -largo * (0.6 + 0.4 * k)), 0.008, 3, 'liso', '#e8b080'))
+    p.append(elip((0, 0, 0), (0.05, alto * 0.25, 0.08), 1, 'liso', color))
+    return p
+
+
+@modelo('bes_pez_cola', tris=(150, 64, 36), **PIEZA)
+def pez_cola(lod):
+    return acabar(unir(cola_pez(0.4, 0.3, ALETA)), 60, 0.1, 74, 0.08)
+
+
+@modelo('bes_pez_aleta', tris=(70, 34, 22), **PIEZA)
+def pez_aleta(lod):
+    m = elip((0.07, 0, -0.01), (0.075, 0.01, 0.045), 2, 'liso', ALETA)
+    p = [m] + [cono_g((0.0, 0.0, 0.0), (0.14, 0.0, z), 0.007, 3, 'liso', '#e8b080') for z in (0.02, -0.02, -0.05)]
+    return acabar(unir(p), 60, 0.08, 75, 0.05)
+
+
+@modelo('bes_dardo_cuerpo', tris=(420, 180, 60), **PIEZA)
+def dardo_cuerpo(lod):
+    sx, sy, sz = 0.09, 0.11, 0.45
+    o = masa_g([(0, 0.0, 0.0, sx, sy, sz), (0, 0.01, 0.28, sx * 0.8, sy * 0.8, sz * 0.3)], voxel=0.016, tris=260, semilla=76)
+    color_g(o, lambda P, N, C: escamas(P, N, C, sx, sy, sz, (2.0, 1.8, 1.5)))
+    p = [o]
+    # Pico de lanza aserrado.
+    p.append(tubo_g([(0, 0.0, sz * 0.85), (0, 0.005, sz * 1.25), (0, 0.01, sz * 1.7)], [0.035, 0.018, 0.004], 5, 'liso', '#d9c9a0'))
+    for k in np.linspace(0.95, 1.55, 5):
+        for s in (1, -1):
+            p.append(cono_g((s * 0.012, 0.0, sz * k), (s * 0.04, 0.0, sz * k - 0.02), 0.006, 3, 'liso', '#efe2c0'))
+    for s in (1, -1):
+        p.append(elip((s * sx * 0.62, sy * 0.3, sz * 0.66), (0.025, 0.028, 0.02), 1, 'emisivo', '#fff06a'))
+    m = elip((0, sy * 1.15, -0.12), (0.01, sy * 0.4, 0.14), 2, 'liso', '#d87848')
+    p.append(m)
+    return acabar(unir(p), 55, 0.06, 77, 0.12)
+
+
+@modelo('bes_dardo_cola', tris=(110, 50, 32), **PIEZA)
+def dardo_cola(lod):
+    return acabar(unir(cola_pez(0.18, 0.18, '#d87848')), 60, 0.1, 78, 0.08)
