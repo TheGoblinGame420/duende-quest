@@ -103,17 +103,36 @@ async function bajar() {
 setInterval(subir, 30000);
 
 // ── SONIDO (sintetizado, sin archivos) ──
-let AC = null;
+let AC = null, SALIDA = null, voces = 0, colgado = false;
+const ultSon = {};   // ultimo instante (ms) de cada tipo de sonido
+// Sin saturar: en una oleada grande sonaban decenas de golpes y monedas a la vez (se sumaban hasta distorsionar).
+// Ahora: el mismo sonido no se repite antes de 45 ms, hay como mucho 10 voces a la vez y todo pasa por un compresor
+// suave (un sonido solo queda por debajo de su umbral: suena igual que antes).
+const SON_MIN_MS = 45, SON_MAX_VOCES = 10;
 function son(tipo) {
   if (!E.sonido) return;
   try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state !== 'running' && AC.resume) { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); }   // iPhone lo suspende al cambiar de app o con una llamada; el siguiente toque lo despierta
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      try { SALIDA = AC.createDynamicsCompressor(); SALIDA.threshold.value = -18; SALIDA.knee.value = 12; SALIDA.ratio.value = 6; SALIDA.attack.value = 0.003; SALIDA.release.value = 0.2; SALIDA.connect(AC.destination); } catch (e) { SALIDA = null; }
+      AC.onstatechange = () => { if (AC.state === 'running') colgado = false; };
+    }
+    if (AC.state !== 'running') {   // iPhone lo suspende al cambiar de app o con una llamada; el siguiente toque lo despierta
+      if (AC.resume) { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); }
+      if (colgado) return;   // mientras sigue dormido, solo uno en cola: al despertar no suena todo junto
+      colgado = true;
+    }
+    const ahora = performance.now();
+    if (voces >= SON_MAX_VOCES && ahora - (ultSon._voz || 0) > 2000) voces = 0;   // por si algun final no llego: nunca se queda mudo
+    if (ahora - (ultSon[tipo] || -1e9) < SON_MIN_MS || voces >= SON_MAX_VOCES) return;
+    ultSon._voz = ahora;
+    ultSon[tipo] = ahora;
     const o = AC.createOscillator(), g = AC.createGain(), t0 = AC.currentTime;
     const P = { golpe: ['square', 220, 90, 0.12], moneda: ['triangle', 880, 1320, 0.12], robo: ['sawtooth', 300, 120, 0.25], lista: ['sine', 660, 990, 0.18], mejora: ['triangle', 523, 1046, 0.25], nivel: ['sine', 523, 1568, 0.45], tap: ['sine', 400, 300, 0.05] }[tipo] || ['sine', 440, 440, 0.1];
     o.type = P[0]; o.frequency.setValueAtTime(P[1], t0); o.frequency.exponentialRampToValueAtTime(P[2], t0 + P[3]);
     g.gain.setValueAtTime(0.08, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + P[3]);
-    o.connect(g).connect(AC.destination); o.start(t0); o.stop(t0 + P[3] + 0.02);
+    o.connect(g).connect(SALIDA || AC.destination); voces++; o.onended = () => { voces = Math.max(0, voces - 1); try { o.disconnect(); g.disconnect(); } catch (e) {} };
+    o.start(t0); o.stop(t0 + P[3] + 0.02);
   } catch (e) {}
 }
 const vibrar = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
