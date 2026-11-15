@@ -388,6 +388,8 @@ body.movil #v-look .flecha{width:36px;height:36px;}
 body.movil #v-look .colores button{width:30px;height:30px;}
 .ventana{position:relative;background:#140c2c;border:1px solid var(--borde);border-radius:14px;padding:18px;width:min(460px,92vw);max-height:86vh;max-height:86dvh;overflow:auto;}
 .ventana h2{font:400 14px var(--px);text-align:center;margin-bottom:12px;}
+/* «HAS CAÍDO»: la fuente pixel dibuja la Í mayúscula como «í» minúscula; solo este título va en la fuente de títulos (con su Í). */
+#v-muerte .ventana h2{font-family:var(--titulo);font-weight:800;font-size:20px!important;letter-spacing:.06em;}
 .ventana p{font:500 14px/1.5 var(--sans);color:var(--txt2);margin-bottom:8px;}
 .cerrar{position:absolute;right:10px;top:10px;width:30px;height:30px;}
 /* El titulo no se mete bajo la ✕ ("MERCADER GRUMO" chocaba en el movil) y la ✕ se acierta con el dedo */

@@ -145,7 +145,7 @@ const CSS = `
 .vv-clase p{font:500 12.5px/1.45 var(--sans)!important;color:var(--txt2);margin:0!important;}
 .vv-clase .habs{display:flex;gap:3px;flex-wrap:wrap;}
 .vv-clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid var(--borde);border-radius:4px;}
-.vv-tals{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vv-tals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
 @media (max-width:520px){.vv-tals{grid-template-columns:1fr;}}
 .vv-tal{display:flex;gap:9px;align-items:center;border:1px solid var(--borde);border-radius:10px;padding:8px 9px;background:rgba(255,255,255,.035);}
 .vv-tal.on{border-color:rgba(255,216,74,.5);}
