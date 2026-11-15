@@ -225,12 +225,16 @@
       requestAnimationFrame(function () { el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' }); });
       return true;
     }
+    // Las secciones de abajo no se maquetan hasta acercarse (content-visibility, portada.css §14) y su alto es
+    // estimado: antes de saltar a un ancla se maquetan todas para que el salto caiga justo en su sitio.
+    var todoMaquetado = function () { raiz.classList.add('cv-todo'); };
     d.addEventListener('click', function (e) {
       var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (a && a.getAttribute('href').length > 1) todoMaquetado();
       if (a && abrirDestino(a.getAttribute('href'))) { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); }
     });
-    addEventListener('hashchange', function () { abrirDestino(location.hash); });
-    if (location.hash) abrirDestino(location.hash);
+    addEventListener('hashchange', function () { todoMaquetado(); abrirDestino(location.hash); });
+    if (location.hash) { todoMaquetado(); abrirDestino(location.hash); }
 
     // ---------- Barra de secciones en celular ----------
     var nav = d.querySelector('body > nav, nav[aria-label="Principal"]');
@@ -241,8 +245,12 @@
       barra.className = 'secciones'; barra.setAttribute('aria-label', 'Secciones');
       barra.innerHTML = lista.map(function (x) { return '<a href="#' + x[0] + '" data-sec="' + x[0] + '">' + x[1] + '</a>'; }).join('');
       nav.insertAdjacentElement('afterend', barra);
-      var medir = function () { raiz.style.setProperty('--alto-nav', nav.getBoundingClientRect().height + 'px'); };
-      requestAnimationFrame(medir); addEventListener('resize', medir);
+      // Alto del menú: con ResizeObserver se lee después de maquetar (sin forzar otra maquetación) y la
+      // variable solo se reescribe si cambia (cada cambio en :root recalcula los estilos de toda la página).
+      var altoNav = '';
+      var ponAlto = function (h) { var v = Math.round(h) + 'px'; if (v !== altoNav) { altoNav = v; raiz.style.setProperty('--alto-nav', v); } };
+      if ('ResizeObserver' in window) new ResizeObserver(function (es) { var e = es[es.length - 1]; ponAlto(e.borderBoxSize && e.borderBoxSize[0] ? e.borderBoxSize[0].blockSize : nav.getBoundingClientRect().height); }).observe(nav);
+      else { var medir = function () { ponAlto(nav.getBoundingClientRect().height); }; requestAnimationFrame(medir); addEventListener('resize', medir); }
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entradas) {
           entradas.forEach(function (en) {
@@ -282,13 +290,27 @@
       var flota = d.createElement('a');
       flota.className = 'jugar-flota'; flota.href = '/jugar/?web=1'; flota.innerHTML = '<span aria-hidden="true">▶</span> Jugar gratis ahora';
       d.body.appendChild(flota);
-      var mostrar = function () {
-        var pasado = hero.getBoundingClientRect().bottom < 0;
-        var alFinal = innerHeight + scrollY > d.documentElement.scrollHeight - 300;
+      var pasado = false, alFinal = false;
+      var pintar = function () {
         flota.classList.toggle('ver', pasado && !alFinal);
         var b = d.querySelector('.secciones'); if (b) b.classList.toggle('ver', pasado);
       };
-      addEventListener('scroll', mostrar, { passive: true }); requestAnimationFrame(mostrar);
+      if ('IntersectionObserver' in window) {
+        // Sin leer medidas en cada scroll (forzaba maquetar la página entera): el navegador avisa cuando
+        // el héroe sale por arriba y cuando el final de la página (una marca vacía al final) está a menos de 300 px.
+        var fin = d.createElement('div'); fin.setAttribute('aria-hidden', 'true'); d.body.appendChild(fin);
+        new IntersectionObserver(function (es) {
+          var e = es[es.length - 1]; pasado = !e.isIntersecting && e.boundingClientRect.bottom <= 0; pintar();
+        }).observe(hero);
+        new IntersectionObserver(function (es) { alFinal = es[es.length - 1].isIntersecting; pintar(); }, { rootMargin: '0px 0px 300px 0px' }).observe(fin);
+      } else {
+        var mostrar = function () {
+          pasado = hero.getBoundingClientRect().bottom < 0;
+          alFinal = innerHeight + scrollY > d.documentElement.scrollHeight - 300;
+          pintar();
+        };
+        addEventListener('scroll', mostrar, { passive: true }); requestAnimationFrame(mostrar);
+      }
     }
   }
 

@@ -2114,16 +2114,8 @@ section[id]{scroll-margin-top:72px;}
 // Antes aqui habia ~470 KB de JPEG en base64 (const IMG + setImg) que
 // sustituian esos PNG por versiones con fondo negro en cada visita.
 
-// PARTICLES
-const EM=['✨','💎','🌙','🔥','🚀','⭐','💚','⚔️','🏰','🎲','🧿','👾'];
-const pc=document.getElementById('particles');
-for(let i=0;i<28;i++){
-  const p=document.createElement('div');
-  p.className='particle';
-  p.textContent=EM[Math.floor(Math.random()*EM.length)];
-  p.style.cssText=`left:${Math.random()*100}vw;font-size:${.6+Math.random()*1.4}rem;animation-duration:${12+Math.random()*20}s;animation-delay:${Math.random()*20}s;`;
-  pc.appendChild(p);
-}
+// PARTICLES: quitadas (15-nov-2026). #particles y .particle están ocultos por CSS desde
+// la portada sobria; crear 28 nodos invisibles en cada visita solo costaba tiempo al arrancar.
 
 // COPY CA
 function copyCa(){
