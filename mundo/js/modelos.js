@@ -429,6 +429,8 @@ class Modelo {
   // estado: quieto | anda | corre | ataca | lanza | herido | muere | salta | vuela | nada
   //         (+ 'monta': sentado en la silla de una montura)
   animar(estado, tEstado, t) { animarRig(this, estado || 'quieto', tEstado || 0, t || 0); }
+  // Nivel de detalle por distancia (solo los rigs que lo traen: monstruos de Blender, bestias.js). k = distancia a la camara / alto.
+  detalle(k) { if (this.r && this.r.detalle) this.r.detalle(k); }
   // Destello blanco ~120 ms.
   golpe() {
     if (performance.now() < (this._rojoHasta || 0)) return; // el aviso rojo manda: tu golpe no lo borra
@@ -3186,7 +3188,7 @@ function decorarJefe(r) {
 // ponerMonstruosPaq(PAQ) cuando llegan los modelos propios. Sin paquete, todo sigue como antes.
 let BESTIAS = null;
 export function ponerMonstruosPaq(paq) {
-  try { BESTIAS = crearBestias(paq, { nuevoRig, G, piv, M, mat, fuera, conBorde, ponBorde }); }
+  try { BESTIAS = crearBestias(paq, { nuevoRig, G, piv, M, mat, fuera, conBorde, ponBorde, silla }); }
   catch (e) { BESTIAS = null; console.warn('[3D] sin monstruos modelados:', e); }
   return BESTIAS ? Object.keys(BESTIAS) : [];
 }
@@ -3228,7 +3230,11 @@ const ALTO_MONTURA = { lagarto: 1.4, conejo: 2.1, rana: 1.25, hellgato: 1.6, hel
 export function crearMontura(id) {
   const d = MONTURAS[id] || MONTURAS.lagarto || { hoja: 'lagarto' };
   const c = { k: 'montura_' + id, color: d.tinte || null, jefe: false, e: 0, montura: true };
-  const r = (ARQ[d.hoja] || ARQ.lagarto)(c);
+  /* Con las piezas de Blender (bestias.js) si esa hoja las tiene y su rig pone la silla; si no, el arquetipo de siempre.
+     El alto (ALTO_MONTURA) no cambia: Modelo escala el rig a ese alto, asi que la montura mide lo mismo que antes. */
+  let r = null, bes = '';
+  if (BESTIAS && BESTIAS[d.hoja]) try { r = BESTIAS[d.hoja](c); if (r && r.marcaSilla) bes = '#b'; else r = null; } catch (e) { console.warn('[3D] montura ' + id + ':', e); r = null; }
+  if (!r) r = (ARQ[d.hoja] || ARQ.lagarto)(c);
   if (!r.marcaSilla) {
     // Por si un arquetipo no trae silla: encima del cuerpo.
     const cu = r.lomo || r.cuerpo || r.raiz;
@@ -3237,7 +3243,7 @@ export function crearMontura(id) {
     r.marcaSilla = G(cu, [0, 0, 0]);
     r.marcaSilla.position.y = box.max.y * 0.8 - cu.position.y;
   }
-  const m = new Modelo(r, ALTO_MONTURA[d.hoja] || 1.5, 'mo:' + id);
+  const m = new Modelo(r, ALTO_MONTURA[d.hoja] || 1.5, 'mo:' + id + bes);
   m.obj.updateMatrixWorld(true);
   const v = r.marcaSilla.getWorldPosition(new THREE.Vector3());
   m.silla = new THREE.Object3D();

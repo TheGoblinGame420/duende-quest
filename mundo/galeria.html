@@ -42,10 +42,11 @@ import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE
 import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, ponerMonstruosPaq } from './js/modelos.js?v=392';
 import { cargarModelado } from './js/modelado.js?v=392';
 
-// Parametros: ?filtro=texto|otro&estado=quieto&gira=0&ry=1.57&compacta=1&paq=1 (paq=1: monstruos modelados en Blender, como en el juego)
+// Parametros: ?filtro=texto|otro&estado=quieto&gira=0&ry=1.57&compacta=1&paq=1&lod=2 (paq=1: monstruos modelados en Blender, como en el juego; lod: su nivel de detalle fijo)
 const Q = new URLSearchParams(location.search);
 if (Q.get('paq') === '1') try { ponerMonstruosPaq(await cargarModelado('/assets/3d/', {})); } catch (e) { console.warn(e); }
 const RY = parseFloat(Q.get('ry') || '0.5');
+const LOD = Q.has('lod') ? +Q.get('lod') : -1;
 const FILTRO = (Q.get('filtro') || '').toLowerCase();
 if (Q.get('compacta')) document.documentElement.classList.add('compacta');
 const ESTADOS = ['quieto', 'anda', 'corre', 'ataca', 'lanza', 'herido', 'muere', 'salta', 'vuela', 'nada'];
@@ -130,6 +131,7 @@ for (const [titulo, lista] of grupos) {
     rej.appendChild(d);
     let m = null;
     try { m = it.crear(); } catch (e) { errores.push(it.sub + ': ' + e.message); console.error(e); }
+    if (m && LOD >= 0 && m.r && m.r.detalleNivel) m.r.detalleNivel(LOD);   /* ?lod=1|2: nivel de detalle fijo (monstruos de Blender) */
     const escena = new THREE.Scene();
     escena.add(new THREE.HemisphereLight(0xffffff, 0x6a7a58, 1.1));
     const sol = new THREE.DirectionalLight(0xfff2dd, 1.1); sol.position.set(3, 6, 4); escena.add(sol);
