@@ -700,6 +700,29 @@ const ceder = (() => {
   try { const mc = new MessageChannel(), cola = []; mc.port1.onmessage = () => { const f = cola.shift(); if (f) f(); }; return () => new Promise(r => { cola.push(r); mc.port2.postMessage(0); }); } catch (e) {}
   return () => new Promise(r => setTimeout(r, 0));
 })();
+/* Compila los shaders a trozos de la escena (render.compileAsync lo hacia de un tiron: ~1,3 s seguidos con CPU x4 en el celular).
+   Mismos programas: cada trozo usa la escena entera para las luces (el tercer parametro de compile). hijos: los de la escena que
+   se compilan (todos por defecto). espera: ms maximos esperando a que el driver termine los programas (como compileAsync). */
+async function compilarATrozos(esc, cam, hijos, espera) {
+  if (!render.properties || typeof render.compile !== 'function') { if (render.compileAsync) await Promise.race([render.compileAsync(esc, cam), new Promise(r => setTimeout(r, espera || 0))]); return; }
+  const lista = hijos || esc.children.slice(), mats = new Set(), sinLuces = () => {};
+  let i = 0, n = 32;
+  while (i < lista.length) {
+    const trozo = lista.slice(i, i + n), t0 = performance.now();
+    for (const m of render.compile({ traverse: f => { for (const o of trozo) o.traverse(f); }, traverseVisible: sinLuces }, cam, esc)) mats.add(m);
+    i += trozo.length;
+    const dt = performance.now() - t0;
+    n = dt > 20 ? Math.max(1, n >> 1) : dt < 6 ? Math.min(1024, n * 2) : n;
+    await ceder();
+  }
+  const fin = performance.now() + (espera || 0);
+  while (performance.now() < fin) {
+    let listo = true;
+    for (const m of mats) { const pg = render.properties.get(m).currentProgram; if (pg && pg.isReady && !pg.isReady()) { listo = false; break; } }
+    if (listo) break;
+    await new Promise(r => setTimeout(r, 10));
+  }
+}
 const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transition = ''; $('carga-i').style.transform = `scaleX(${k})`; if (k >= 0.7) $('carga-i').classList.add('latido'); if (txt) $('carga-s').textContent = Math.round(k * 100) + '% · ' + txt; };
 
 // ── TERRENO ──
@@ -10532,7 +10555,8 @@ async function inicio() {
   // El socket y el 'hola' salen ya, en paralelo con shaders, mapa y NPC (antes, al final).
   // El rescate (#r=) pregunta antes de entrar: ese caso conecta abajo, como siempre.
   if (ENTRADA_DIRECTA && (TG || !rescateHash)) { entradaPedida = true; conectar(); }
-  try { if (render.compileAsync) await Promise.race([render.compileAsync(escena, camara), new Promise(r => setTimeout(r, 4000))]); } catch (e) {}
+  const compilados = new Set(escena.children);
+  try { await compilarATrozos(escena, camara, null, 4000); } catch (e) { console.warn('[3D] compilado a trozos:', e); }
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();
@@ -10543,8 +10567,9 @@ async function inicio() {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
     if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearMonstruo('arana').obj); /* el material de los monstruos de Blender (bestias.js) tambien se compila aqui */ cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
     cal.forEach(m => { m.position.set(P.x, -50, P.z); escena.add(m); });
-    render.compile(escena, camara);
-    cal.forEach(m => escena.remove(m));
+    /* Solo lo nuevo desde el compilado de arriba (estas piezas y lo que haya llegado entre medias): lo demas ya tiene sus programas. */
+    try { await compilarATrozos(escena, camara, escena.children.filter(o => !compilados.has(o)), 0); }
+    finally { cal.forEach(m => escena.remove(m)); }
   } catch (e) { console.warn(e); }
   await ceder();
   // Los NPC en paralelo (sin modelos 3D, sus hojas se bajaban una tras otra).
