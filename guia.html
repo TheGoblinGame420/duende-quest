@@ -61,10 +61,10 @@ a:hover{color:#93c5fd;}
 :focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
 .top{background:var(--panel);border-bottom:1px solid var(--borde);}
 .top-in{max-width:760px;margin:0 auto;padding:.3rem 16px;display:flex;align-items:center;justify-content:space-between;gap:.6rem 1rem;flex-wrap:wrap;}
-.brand{display:inline-flex;align-items:center;min-height:40px;padding:.6rem .4rem;margin-left:-.4rem;gap:.5rem;color:var(--txt);font-weight:700;text-decoration:none;letter-spacing:.03em;}
+.brand{display:inline-flex;align-items:center;min-height:44px;padding:.6rem .4rem;margin-left:-.4rem;gap:.5rem;color:var(--txt);font-weight:700;text-decoration:none;letter-spacing:.03em;}
 .brand img{width:20px;height:20px;image-rendering:pixelated;}
 .top nav{display:flex;gap:0 .4rem;flex-wrap:wrap;margin-right:-.4rem;}
-.top nav a{display:inline-flex;align-items:center;min-height:40px;padding:.6rem .4rem;color:var(--txt2);text-decoration:none;font-size:.9rem;}
+.top nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:.6rem .4rem;color:var(--txt2);text-decoration:none;font-size:.9rem;}
 .top nav a:hover,.top nav a[aria-current="page"]{color:var(--txt);}
 main{max-width:760px;margin:0 auto;padding:1.5rem 16px 3rem;}
 .migas{font-size:.85rem;color:var(--txt2);margin-bottom:.9rem;}
@@ -115,9 +115,11 @@ td.n{white-space:nowrap;}
 .final p{color:var(--txt2);}
 footer{border-top:1px solid var(--borde);background:var(--panel);}
 footer .in{max-width:760px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
-footer a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;color:var(--txt2);}
+footer a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:10px 6px;color:var(--txt2);}
 footer a:hover{color:var(--txt);}
 @media (max-width:520px){h1{font-size:1.4rem;}.cta .btn{width:100%;}table{font-size:.86rem;}th,td{padding:.5rem .45rem;}}
+/* Objetivos táctiles de 44 px en el celular: índice y migas (15-nov-2026) */
+@media (pointer:coarse),(max-width:700px){.toc li{margin-bottom:0;}.toc a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;}.migas ol{align-items:center;}.migas a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;}}
 </style>
 </head>
 <body>
