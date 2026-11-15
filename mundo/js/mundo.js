@@ -10205,7 +10205,7 @@ async function inicio() {
   if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
   try {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
-    if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
+    if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearMonstruo('arana').obj); /* el material de los monstruos de Blender (bestias.js) tambien se compila aqui */ cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
     cal.forEach(m => { m.position.set(P.x, -50, P.z); escena.add(m); });
     render.compile(escena, camara);
     cal.forEach(m => escena.remove(m));

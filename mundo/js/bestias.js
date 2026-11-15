@@ -306,5 +306,27 @@ export function crearBestias(PAQ, K) {
   if (tiene('pez_cuerpo')) R.pez = c => pezB(c, 'pez');
   if (tiene('dardo_cuerpo')) R.pez_dardo = c => pezB(c, 'pez_dardo');
 
+  // ── COSA DEL PANTANO (cosa): los pivotes de humano() con L 0.45, T 0.55, A 0.6, ancho 1.3, encorvado 0.35 ──
+  if (tiene('cosa_cuerpo')) R.cosa = c => {
+    const r = nuevoRig('bipedo'), Rz = r.raiz, x = ctxDe(c, '#4f7a2a', 0.06);
+    for (const s of [1, -1]) {
+      const p = piv(r, G(Rz, [0.156 * s, 0.45, 0]));
+      P(p, 'cosa_pierna', x);
+      if (s > 0) r.pI = p; else r.pD = p;
+    }
+    const cu = r.cuerpo = piv(r, G(Rz, [0, 0.45, 0], [0.35, 0, 0]));
+    P(cu, 'cosa_cuerpo', x);
+    for (const s of [1, -1]) {
+      const b = piv(r, G(cu, [0.371 * s, 0.462, 0], [0, 0, 0.12 * s]));
+      P(b, 'cosa_brazo', x);
+      const mano = G(b, [0, -0.62, 0]);
+      if (s > 0) { r.bI = b; r.manoI = mano; } else { r.bD = b; r.manoD = mano; }
+    }
+    const cb = r.cabeza = piv(r, G(cu, [0, 0.56, 0], [-0.28, 0, 0]));
+    P(cb, 'cosa_cabeza', x);
+    r.paso = 6; r.H = 0.95; r.topeCabeza = 0.46;
+    return r;
+  };
+
   return Object.keys(R).length ? R : null;
 }

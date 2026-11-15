@@ -822,3 +822,83 @@ def dardo_cuerpo(lod):
 @modelo('bes_dardo_cola', tris=(110, 50, 32), **PIEZA)
 def dardo_cola(lod):
     return acabar(unir(cola_pez(0.18, 0.18, '#d87848')), 60, 0.1, 78, 0.08)
+
+
+# ═══════════ COSA DEL PANTANO (cosa): mole de barro y musgo, encorvada, con brazos largos ═══════════
+# Rig (bípedo, el de humano() con L 0.45, T 0.55, A 0.6, ancho 1.3, encorvado 0.35): piernas (±0.156, 0.45, 0) de la raíz;
+# cuerpo (0, 0.45, 0) girado 0.35 en X; brazos (±0.371, 0.462, 0) del cuerpo (giro Z ±0.12), mano (0, −0.62, 0);
+# cabeza (0, 0.56, 0) del cuerpo girada −0.28 en X.
+BARRO = '#3b3424'
+BABA_V = '#a6e83c'
+
+
+def piel_cosa(P, N, C):
+    M = np.ones((len(P), 3)) * (0.8 + 0.3 * ruido_fbm(P, 7, 81, 2))[:, None]
+    lodo = np.clip(ruido_fbm(P, 5, 82, 2) * 3 - 0.2, 0, 1) * np.clip(-N[:, 1] + 0.4, 0, 1)
+    M = mezclar(M, (0.42, 0.36, 0.25), lodo)                                   # barro seco abajo
+    return mezclar(M, (1.35, 1.4, 0.9), np.clip(N[:, 1] * 2 - 1.1, 0, 1) * 0.7)   # musgo claro arriba
+
+
+def babas(rng, n, centro, radio, alto=0.1):
+    out = []
+    for i in range(n):
+        a = rng.uniform(0, 2 * math.pi); b = np.array(centro) + (math.cos(a) * radio[0], rng.uniform(-radio[1], radio[1]), math.sin(a) * radio[2])
+        out.append(tubo_g([b, b + (0, -alto * 0.5, 0.005), b + (0, -alto, 0)], [0.022, 0.016, 0.012], 4, 'emisivo', BABA_V))
+    return out
+
+
+@modelo('bes_cosa_cuerpo', tris=(760, 320, 110), **PIEZA)
+def cosa_cuerpo(lod):
+    o = masa_g([(0, 0.3, 0.0, 0.36, 0.32, 0.27), (0, 0.5, -0.07, 0.42, 0.17, 0.26), (0, 0.1, 0.04, 0.3, 0.15, 0.23), (0.3, 0.46, 0.0, 0.13), (-0.3, 0.46, 0.0, 0.13)],
+               voxel=0.04, tris=560, ruido_f=0.03, ruido_e=6, semilla=83)
+    color_g(o, piel_cosa)
+    rng = azar(84); p = [o]
+    for s in (1, -1):   # lianas que cuelgan de los hombros
+        for k in range(2):
+            x = s * (0.18 + k * 0.12); b = (x, 0.56, 0.12 - k * 0.2)
+            p.append(tubo_g([b, (x * 1.05, 0.38, b[2] + 0.06), (x * 1.1, 0.16, b[2] + 0.04)], [0.025, 0.02, 0.008], 4, 'liso', '#2c3e1a', n=5))
+    for i in range(4):   # juncos secos clavados en el lomo
+        x = (i - 1.5) * 0.09; b = (x, 0.52, -0.2)
+        p.append(tubo_g([b, (x * 1.4, 0.8, -0.32 - 0.04 * i)], [0.012, 0.004], 3, 'liso', '#7a6a3a'))
+    p += babas(rng, 6, (0, 0.2, 0.0), (0.3, 0.12, 0.24), 0.12)
+    return acabar(unir(p), 60, 0.06, 85, 0.15)
+
+
+@modelo('bes_cosa_cabeza', tris=(400, 170, 60), **PIEZA)
+def cosa_cabeza(lod):
+    cr = masa_g([(0, 0.22, 0.04, 0.24, 0.21, 0.22), (0, 0.13, 0.13, 0.19, 0.1, 0.13), (0, 0.38, -0.02, 0.17, 0.08, 0.15)], voxel=0.03, tris=240, ruido_f=0.02, ruido_e=8, semilla=86)
+    color_g(cr, piel_cosa)
+    p = [cr, elip((0, 0.13, 0.235), (0.11, 0.03, 0.03), 1, 'liso', '#160e08')]
+    for s in (1, -1):
+        p.append(elip((s * 0.09, 0.27, 0.215), (0.04, 0.032, 0.025), 1, 'emisivo', '#d8ff40'))
+        p.append(elip((s * 0.09, 0.305, 0.205), (0.06, 0.02, 0.04), 1, 'hoja', (0.4, 0.38, 0.3)))   # ceño de barro
+    for (x, z, t) in ((0.12, -0.05, 0.05), (-0.06, 0.02, 0.04), (0.02, -0.12, 0.035)):   # setas en la coronilla
+        p.append(tubo_g([(x, 0.4, z), (x, 0.4 + t, z)], 0.012, 4, 'liso', '#d8c8a8', punta=False))
+        p.append(elip((x, 0.4 + t, z), (t * 0.9, t * 0.45, t * 0.9), 1, 'liso', '#a8502e'))
+    p += babas(azar(87), 3, (0, 0.12, 0.17), (0.1, 0.0, 0.05), 0.08)
+    return acabar(unir(p), 60, 0.05, 88, 0.12)
+
+
+@modelo('bes_cosa_brazo', tris=(220, 96, 34), **PIEZA)
+def cosa_brazo(lod):
+    t = tubo_g([(0, 0.04, 0), (0, -0.25, 0.03), (0, -0.55, 0.04)], [0.11, 0.085, 0.07], 7, 'hoja', TIN, n=8, punta=False)
+    desplazar(t, 0.015, 9, semilla=89)
+    color_g(t, piel_cosa)
+    p = [t, elip((0, -0.6, 0.03), (0.1, 0.09, 0.1), 2, 'hoja', (0.8, 0.8, 0.7))]
+    for k in (-1, 0, 1):   # tres dedos largos con garra
+        b = np.array((k * 0.05, -0.64, 0.05))
+        p.append(tubo_g([b, b + (k * 0.02, -0.09, 0.03), b + (k * 0.03, -0.15, 0.08)], [0.03, 0.022, 0.006], 5, 'hoja', (0.5, 0.48, 0.4)))
+    p += babas(azar(90), 2, (0, -0.6, 0.03), (0.06, 0.0, 0.06), 0.1)
+    return acabar(unir(p), 60, 0.05, 91, 0.12)
+
+
+@modelo('bes_cosa_pierna', tris=(170, 76, 28), **PIEZA)
+def cosa_pierna(lod):
+    t = tubo_g([(0, 0.03, 0), (0, -0.22, 0.02), (0, -0.4, 0.0)], [0.12, 0.1, 0.11], 7, 'hoja', TIN, n=6, punta=False)
+    desplazar(t, 0.012, 9, semilla=92)
+    color_g(t, piel_cosa)
+    p = [t]
+    for k in (-1, 0, 1):   # pie de raíces
+        a = k * 0.6
+        p.append(tubo_g([(0, -0.38, 0.0), (math.sin(a) * 0.12, -0.44, math.cos(a) * 0.12), (math.sin(a) * 0.2, -0.46, math.cos(a) * 0.2)], [0.05, 0.035, 0.008], 5, 'hoja', (0.55, 0.5, 0.4)))
+    return acabar(unir(p), 60, 0.05, 93, 0.12)
