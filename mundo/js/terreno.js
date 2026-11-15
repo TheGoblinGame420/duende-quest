@@ -169,10 +169,23 @@ const MATORRAL = { noche: 0.07, selva: 0.07, castillo: 0.03, cavernas: 0.03, aca
 
 // d: { alturaEn, pendienteEn, enCamino, zonaEn, campos, casas, vecinos, trozo, fx: { uT, uViento, uBrillo } }.
 // Devuelve celdas { x, z, mallas, cerca, lejos } con la forma de las de la flora (el mismo recorte por distancia).
+// Version sincrona (la de siempre): recorre el generador de un tiron.
 export function crearSotobosque(d) {
+  const it = generarSotobosque(d);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  return r.value;
+}
+// La misma obra a trozos: un yield por fila del sembrado y cada pocas celdas al montar las mallas, para que el arranque
+// ceda el hilo entre medias (mundo.js lo recorre con await ceder()). El resultado (return) es identico al de crearSotobosque.
+export function* generarSotobosque(d) {
   const T = plantillas(), celdas = new Map(), PASO = 3.5;
   const LIM = d.lim || 600, LUGS = d.lugares || [];   /* v376: el mundo crecio (d.lim = MUNDO.borde) y los lugares del borde quedan despejados */
-  for (let x = -LIM; x <= LIM; x += PASO) for (let z = -LIM; z <= LIM; z += PASO) {
+  /* Los ~200 campamentos en casillas de 16 m: para saber si hay uno a menos de 15 m basta mirar las 9 casillas de alrededor (antes se recorrian todos en cada punto). */
+  const camposR = new Map();
+  for (const c of d.campos) { const k = Math.floor(c.x / 16) + ',' + Math.floor(c.z / 16); let l = camposR.get(k); if (!l) camposR.set(k, l = []); l.push(c); }
+  const anilloCampo = (jx, jz) => { const gx = Math.floor(jx / 16), gz = Math.floor(jz / 16); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = camposR.get((gx + i) + ',' + (gz + j)); if (l) for (const c of l) { const r = Math.hypot(c.x - jx, c.z - jz); if (r > 6 && r < 15) return true; } } return false; };
+  for (let x = -LIM; x <= LIM; x += PASO) { yield; for (let z = -LIM; z <= LIM; z += PASO) {
     const ix = Math.round(x * 2), iz = Math.round(z * 2);
     if (hash2(ix, iz, 43) >= 0.3) continue;   /* el 70 % se descarta antes de mirar nada */
     const jx = x + (hash2(ix, iz, 41) - 0.5) * PASO, jz = z + (hash2(ix, iz, 42) - 0.5) * PASO;
@@ -182,7 +195,7 @@ export function crearSotobosque(d) {
     const zona = d.zonaEn(jx, jz), lista = SOTO[zona];
     if (!lista) continue;
     let prob = cam < 10 ? 0.3 : (MATORRAL[zona] || 0);
-    if (prob < 0.2 && d.campos.some(c => { const r = Math.hypot(c.x - jx, c.z - jz); return r > 6 && r < 15; })) prob = 0.22;
+    if (prob < 0.2 && anilloCampo(jx, jz)) prob = 0.22;
     if (hash2(ix, iz, 43) >= prob) continue;
     const h = d.alturaEn(jx, jz);
     if (h < 0.6 || d.pendienteEn(jx, jz) > 0.7) continue;
@@ -198,7 +211,7 @@ export function crearSotobosque(d) {
     for (let i = 0; i < p.C.length; i++) c.C.push(p.C[i] * tono);
     c.V.push(...p.V);
     for (const i of p.I) c.I.push(i + b);
-  }
+  } }
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
   mat.onBeforeCompile = sh => {
     sh.uniforms.uT = d.fx.uT; sh.uniforms.uViento = d.fx.uViento; sh.uniforms.uBrillo = d.fx.uBrillo;
@@ -210,7 +223,9 @@ export function crearSotobosque(d) {
   };
   mat.customProgramCacheKey = () => 'dq-soto';
   const salida = [], mallas = [];
+  let nCel = 0;
   for (const [ck, c] of celdas) {
+    if ((++nCel & 15) === 0) yield;
     const g = new THREE.BufferGeometry(), nv = c.P.length / 3;
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(c.P), 3));
     g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(c.C), 3));
