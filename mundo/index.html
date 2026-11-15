@@ -1011,6 +1011,8 @@ body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.
 body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .ob-btn{display:none;}
 body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis){max-height:22px;}
 body:is(.movil,.compacto) #oro.quieto,body:is(.movil,.compacto) #temp3.quieto{display:none;}
+/* La tarjeta «¡Tu duende merece un nombre!» (z-index 9) se montaba encima de las ventanas abiertas en el móvil: se esconde mientras haya una abierta y vuelve al cerrarla. */
+body:has(.modal.on) #tarjeta-bautizo{visibility:hidden;}
 body:is(.movil,.compacto) #mini #mini-r{transition:opacity .5s;}
 body:is(.movil,.compacto) #mini #mini-r.quieto{opacity:0;}
 body:is(.movil,.compacto) #joy .pista-joy{transition:opacity .4s;}

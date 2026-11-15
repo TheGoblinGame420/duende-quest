@@ -87,7 +87,7 @@ export function vestirSuelo(mat, tex, caminos, anis) {
 // Plantillas: { P: posiciones, C: colores (lineales), V: [viento, brillo] por vertice, I: indices }.
 const _c = new THREE.Color();
 function plantilla(geo, pintar) {
-  const g = geo.index ? geo : geo.toNonIndexed(), p = g.attributes.position, n = g.attributes.normal;
+  const g = geo, p = g.attributes.position, n = g.attributes.normal;
   const P = [], Cc = [], V = [];
   for (let i = 0; i < p.count; i++) {
     const r = pintar(p.getX(i), p.getY(i), p.getZ(i), n ? n.getX(i) : 0, n ? n.getY(i) : 1, n ? n.getZ(i) : 0);

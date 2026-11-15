@@ -16,7 +16,7 @@ import { MAZMORRAS, MONSTRUOS, HABS, costoHab, FIS, SUELO, RANURAS } from '../mm
 let reloj = process.env.SEM ? Date.parse(process.env.SEM + 'T12:00:00Z') : 1_800_000_000_000 + 7 * 60 * 1000;
 Date.now = () => reloj;
 const almacen = new Map();
-const state = { storage: { get: async k => almacen.get(k), put: async (k, v) => { almacen.set(k, v); }, delete: async k => almacen.delete(k) }, blockConcurrencyWhile: f => f() };
+const state = { storage: { get: async k => almacen.get(k), put: async (k, v) => { almacen.set(k, v); }, delete: async k => almacen.delete(k), list: async () => new Map() }, blockConcurrencyWhile: f => f() };
 
 class WsFalso { constructor() { this.l = {}; } accept() {} addEventListener(t, f) { (this.l[t] = this.l[t] || []).push(f); } send() {} close() {} emitir(t, ev) { for (const f of this.l[t] || []) f(ev); } }
 const espera = () => new Promise(r => setImmediate(r));

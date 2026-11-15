@@ -97,6 +97,15 @@ const srv = http.createServer((req, res) => {
     });
     return;
   }
+  // Embudo de la carga (js/origen.js manda un beacon a /mmo/ev): en produccion lo valida worker.js y lo
+  // guarda el mundo. Aqui pasa tal cual, para que la consola no se llene de 404 al probar.
+  if (p === '/mmo/ev' && req.method === 'POST') {
+    let cuerpo = ''; req.on('data', d => { cuerpo += d; if (cuerpo.length > 4096) req.destroy(); }); req.on('end', async () => {
+      try { const r = await mundo.evRecibir(new Request('https://mmo/mmo/ev', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '127.0.0.1' }, body: cuerpo })); res.writeHead(r.status); res.end(); }
+      catch (e) { res.writeHead(204); res.end(); }
+    });
+    return;
+  }
   // Solo en este servidor local: ejecutar codigo sobre el mundo para preparar
   // pruebas (subir de nivel, dar oro, poner monstruos...). `jug(nombre)`
   // devuelve la sesion de un jugador conectado.
