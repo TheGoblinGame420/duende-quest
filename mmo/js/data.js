@@ -516,12 +516,20 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 391;
+export const VERSION = 392;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 146, fecha: '15 nov 2026', items: [
+    '🕷 13 monstruos rehechos con modelos nuevos: arañas, babas, lagartos, serpientes, murciélagos, pulpos, peces y más (y sus jefes de mazmorra).',
+    '⛺ Campamentos y lugares de la franja exterior con tiendas, empalizadas, torres de vigía y hogueras propias.',
+    '⚔ Golpes con más peso: chispas según el arma, aviso en el suelo del ataque fuerte y brillo del botín. La sacudida de cámara se regula en el menú ⚙.',
+    '⛲ La fuente de la plaza tiene agua viva, los banderines son de tela, el cofre de la Cueva es nuevo y la cámara ya no se mete dentro de las casas.',
+    '📱 Entras antes al mundo en celulares flojos y cambiar la calidad ya no pide recargar.',
+    '🏘 CLASSIC: casas nuevas, sombras suaves y luces cálidas de noche.',
+  ] },
   { n: 145, fecha: '13 nov 2026', solo3d: true, items: [
     '🪓 Ahora se puede talar CUALQUIER árbol del mundo abierto (pinos, robles, palmeras, árboles secos y mágicos): acércate y toca «Talar árbol» (tecla E en PC, botón TALAR en el celular).',
     '🌲 Cada árbol vuelve a dar madera a los 5 minutos. Dentro del pueblo no se tala.',
