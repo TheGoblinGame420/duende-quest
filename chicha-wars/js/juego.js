@@ -107,6 +107,7 @@ function son(tipo) {
   if (!E.sonido) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state !== 'running' && AC.resume) { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); }   // iPhone lo suspende al cambiar de app o con una llamada; el siguiente toque lo despierta
     const o = AC.createOscillator(), g = AC.createGain(), t0 = AC.currentTime;
     const P = { golpe: ['square', 220, 90, 0.12], moneda: ['triangle', 880, 1320, 0.12], robo: ['sawtooth', 300, 120, 0.25], lista: ['sine', 660, 990, 0.18], mejora: ['triangle', 523, 1046, 0.25], nivel: ['sine', 523, 1568, 0.45], tap: ['sine', 400, 300, 0.05] }[tipo] || ['sine', 440, 440, 0.1];
     o.type = P[0]; o.frequency.setValueAtTime(P[1], t0); o.frequency.exponentialRampToValueAtTime(P[2], t0 + P[3]);
