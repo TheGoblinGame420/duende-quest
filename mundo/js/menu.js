@@ -12,6 +12,7 @@
 //   dq3_calidad  auto|minima|baja|media|alta|ultra (sin clave = auto; baja|media|alta son las de antes)
 //   dq3_gfx      JSON con las opciones avanzadas que el jugador cambio a mano
 //   dq3_fps      '1' = contador de FPS a la vista
+//   dq3_auto_tope  nivel maximo de «Automatico» en este equipo (lo pone bajarAuto si el juego iba lento; opcional)
 // ═══════════════════════════════════════════════════════
 
 export const NIVELES = ['minima', 'baja', 'media', 'alta', 'ultra'];
@@ -99,6 +100,9 @@ export function crearGfx(ent) {
     px: 1, lejos: 170, sombras: 0, det: 1, fx: 1, post: false, aa: false, fps: 60, din: true,
     pxReal: 1, cuadroMs: 16.4, cuadros: 0, arranque: null,
   };
+  // Tope de «Automatico» medido en partidas anteriores (bajarAuto): si este equipo ya fue lento, se empieza ahi.
+  G.detectadoEquipo = G.detectado;
+  const tope = leerLS('dq3_auto_tope'); if (NIVELES.includes(tope) && NIVELES.indexOf(tope) < NIVELES.indexOf(G.detectado)) G.detectado = tope;
   const g = leerLS('dq3_calidad'); if (NIVELES.includes(g)) G.nivel = g;
   try { const o = JSON.parse(leerLS('dq3_gfx') || '{}'); if (o && typeof o === 'object') for (const k of CLAVES_GFX) if (OPC[k].includes(o[k])) G.propio[k] = o[k]; } catch (er) {}
   recalcular(G);
@@ -109,6 +113,8 @@ export function crearGfx(ent) {
 // una opcion con null vuelve a lo del preajuste. Devuelve true si algo cambio.
 export function fusionarGfx(G, parcial) {
   const p = parcial || {}, antes = JSON.stringify([G.nivel, G.propio, G.verFps]);
+  // Elegir «Automatico» a mano vuelve a mirar el equipo (olvida el tope que puso bajarAuto).
+  if (p.nivel === 'auto' && G.detectadoEquipo && G.detectado !== G.detectadoEquipo) { G.detectado = G.detectadoEquipo; ponerLS('dq3_auto_tope', null); }
   if (p.nivel === 'auto' || NIVELES.includes(p.nivel)) { G.nivel = p.nivel; G.propio = {}; }
   for (const k of CLAVES_GFX) if (k in p) {
     if (p[k] == null) delete G.propio[k];
@@ -123,6 +129,18 @@ export function fusionarGfx(G, parcial) {
   ponerLS('dq3_calidad', G.nivel === 'auto' ? null : G.nivel);
   ponerLS('dq3_gfx', G.personalizado ? JSON.stringify(G.propio) : null);
   ponerLS('dq3_fps', G.verFps ? '1' : null);
+  return true;
+}
+// «Automatico» que se quedo corto: si el equipo no llega ni con la resolucion al minimo, baja un nivel (no de baja a
+// minima) y lo recuerda para las siguientes partidas (dq3_auto_tope). Solo en Automatico; lo elegido a mano no se toca.
+// Devuelve true si bajo (quien llama aplica los ajustes nuevos).
+export function bajarAuto(G) {
+  if (!G || G.nivel !== 'auto') return false;
+  const i = NIVELES.indexOf(G.detectado);
+  if (i <= 1) return false;
+  G.detectado = NIVELES[i - 1];
+  ponerLS('dq3_auto_tope', G.detectado);
+  recalcular(G);
   return true;
 }
 export function faltaReiniciar(G) { return !!G.arranque && (G.aa !== G.arranque.aa || G.det !== G.arranque.det); }

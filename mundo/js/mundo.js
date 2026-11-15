@@ -54,7 +54,7 @@ import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=3
 import { crearRituales } from './rituales.js?v=391';
 import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=391';
 import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=391';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=391';
+import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=391';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -415,6 +415,14 @@ function resolucionDinamica(ms) {
   lentas = dtProm > lento ? lentas + 1 : 0; buenas = dtProm < ref + 1.2 ? buenas + 1 : 0;
   if (lentas >= 2 && composer) { postCaido = true; ponerPost(false); lentas = 0; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
   if (lentas >= 2 && sol.castShadow) { sombrasCaidas = true; ponerSombras(0); lentas = 0; console.info('[3D] sombras desactivadas por rendimiento'); return; }
+  // En «Automatico», antes de acortar la vista: si ni con la resolucion al minimo llega, la calidad baja un nivel (en
+  // vivo, sin recargar) y este equipo empieza ahi la proxima vez (menu.js, bajarAuto). Pasado el tiron de entrar.
+  if (dtProm > muyLento && pxAct <= min + 0.01 && cuadro > 300 && bajarAuto(GFX)) {
+    aplicarGfx({});
+    console.info('[3D] calidad automatica rebajada a ' + GFX.efectivo + ' por rendimiento');
+    aviso('El juego iba lento: la calidad automática pasó a ' + NOMBRE_NIVEL[GFX.efectivo] + '. Puedes cambiarla en ' + K('el menú (Esc)', 'el menú (⚙)') + ' → Gráficos.');
+    return;
+  }
   // > 38 ms (< 26 fps): un movil topado a 30 Hz (ahorro de bateria) da ~33 ms aunque vaya sobrado; a ese no se le acorta la vista.
   if (dtProm > muyLento && pxAct <= min + 0.01 && lejosDin > 95) {
     lejosDin -= 20;
@@ -448,6 +456,7 @@ function aplicarGfx(parcial) {
   if ('nivel' in p || 'lejos' in p || 'din' in p || GFX.lejos !== lejosAntes) { lejosDin = Q.lejos; try { ambiente(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }
   try { musica.ligera(POBRE || GFX.fx === 0); } catch (e) {}
   try { acabadoLuz(acabZ, acabDia, acabNub); FX.calidad(GFX.fx >= 1 && FINO()); ATM.calidad(GFX.efectivo); } catch (e) {}
+  try { ajustarModelado(); } catch (e) { console.warn('[3D] nivel de detalle en vivo', e); }
   lentas = 0; buenas = 0; resT = 0;
   try { if (MENU) MENU.refrescar(); } catch (e) {}
   for (const f of oyentesGfx) { try { f(GFX); } catch (e) {} }
@@ -986,7 +995,11 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
    y el alto arbol a arbol: los que estan a menos de LOD0_R pasan a UNA malla instanciada por modelo (lodCerca) y se
    esconden de la de su celda. Con la vegetacion en «baja» todo baja un escalon: bajo por celda y medio junto al duende.
    Devuelve los que no tienen modelo propio (siguen con el kit). */
-const LIGERA = CAL === 'baja', LOD0_R = CAL === 'alta' ? 40 : LIGERA ? 22 : MOVIL ? 24 : 30, LOD1_R = CAL === 'alta' ? 60 : MOVIL ? 30 : 36, CERCA_MAX = 96;
+/* LIGERA (vegetacion en «baja» al cargar) decide que mallas se construyen; los radios siguen a la calidad en vivo (radiosLod). */
+const LIGERA = CAL === 'baja', CERCA_MAX = 96;
+let LOD0_R = 30, LOD1_R = 36, LOD_D = 100;
+function radiosLod(det) { LOD0_R = det === 2 ? 40 : det === 0 ? 22 : MOVIL ? 24 : 30; LOD1_R = det === 2 ? 60 : MOVIL ? 30 : 36; LOD_D = det === 2 ? 125 : det === 0 ? 80 : 100; }
+radiosLod(GFX.det);
 const mallasPropias = [], cercaPropia = new Map(), ocultasPropias = [], suciasPropias = new Set();
 /* Orilla inmediata: hay agua a 8 m o menos. Las especies de orilla (sauce) solo salen ahi; el llano del pueblo esta a 1,5 m sobre el agua pero lejos de ella, y antes se llenaba de sauces. Solo cambia la especie: ni se mueve ni se quita ningun arbol. */
 function juntoAlAgua(x, z) { for (let a = 0; a < 8; a++) { const c = Math.cos(a * 0.7854), s = Math.sin(a * 0.7854); if (alturaEn(x + c * 4, z + s * 4) <= MUNDO.agua || alturaEn(x + c * 8, z + s * 8) <= MUNDO.agua) return true; } return false; }
@@ -1017,6 +1030,7 @@ function floraPropia(tipo, todos, celdas, fina, fijo) {
     else { im.computeBoundingSphere(); im.visible = false; }
     if (Q.sombras && lod < 2 && cj.max[1] * base >= 5) im.castShadow = true;
     im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
+    im.userData.dqLod = { b: lod - (LIGERA ? 1 : 0) };   /* su nivel con la vegetacion en media (ajustarModelado) */
     escena.add(im); mallasPropias.push(im);
     return im;
   };
@@ -1207,7 +1221,6 @@ const TROZO = 96, trozosFlora = [];
 // Las celdas de flora mas alla de la niebla no se dibujan.
 // Con el kit: las celdas cercanas con sus modelos y las lejanas con figuras
 // sencillas (LOD).
-const LOD_D = { baja: 80, media: 100, alta: 125 }[CAL];
 function cullFlora() {
   const lim2 = (escena.fog.far + TROZO * 0.75) ** 2, lod2 = LOD_D * LOD_D;
   const ver = (l, v) => { if (l.length && l[0].visible !== v) for (const im of l) im.visible = v; };
@@ -1216,7 +1229,8 @@ function cullFlora() {
     ver(c.mallas, v); ver(c.cerca, cerca); ver(c.lejos, v && !cerca);
     if (c.propias) {
       const medio = v && Math.hypot(Math.max(Math.abs(c.x - P.x) - TROZO / 2, 0), Math.max(Math.abs(c.z - P.z) - TROZO / 2, 0)) < LOD1_R;
-      const pr = c.propias, m1 = LIGERA ? v : medio;
+      /* Sin mallas «lejos» (el mundo se cargo con la vegetacion en baja) la del medio cubre toda la vista, como antes. */
+      const pr = c.propias, m1 = pr.lejos.length ? medio : v;
       if (pr.lejos.length && pr.lejos[0].visible !== (v && !m1)) for (const im of pr.lejos) im.visible = v && !m1;
       if (pr.medio.length && pr.medio[0].l1.visible !== m1) { for (const en of pr.medio) en.l1.visible = m1; lodX = 1e9; }
     }
@@ -1249,8 +1263,33 @@ function objetosPropios(nombre, lista) {
   if (inst) m.computeBoundingSphere();
   if (Q.sombras) { m.castShadow = true; m.receiveShadow = true; }
   m.matrixAutoUpdate = false; m.matrixWorldAutoUpdate = false;
+  m.userData.dqLod = { obj: true, rep: lista.length > 2 };   /* nivel de objeto: lo recalcula ajustarModelado al cambiar la calidad */
   escena.add(m); mallasPropias.push(m);
   return m;
+}
+/* Cambio de calidad en vivo (aplicarGfx): los modelos propios ya puestos (flora, decorado, objetos y cofres) cambian de
+   nivel de detalle y de tarjetas de follaje sin recargar. Cada malla guarda en userData.dqLod su nivel «base» (flora: el
+   de la vegetacion en media, que sube uno en baja) o que es un objeto (lodObjeto). Las geometrias que nadie dibuja ya se
+   sueltan. Lo que se construye al cargar (cuantos arboles, sotobosque, suelo) sigue pidiendo recargar. */
+let lodVivo = '';
+function ajustarModelado() {
+  if (!PAQ) return 0;
+  radiosLod(GFX.det); lodX = 1e9;
+  const ligera = GFX.efectivo === 'minima' || GFX.efectivo === 'baja', mas = GFX.det === 0 ? 1 : 0, lo = lodObjeto(), rep = GFX.efectivo === 'media' ? 1 : 0;
+  const clave = ligera + '|' + mas + '|' + lo + '|' + rep;
+  if (clave === lodVivo) return 0;
+  lodVivo = clave;
+  PAQ.ponerLigera(ligera);
+  const viejas = new Set();
+  let n = 0;
+  escena.traverse(o => {
+    const d = o.userData.dqLod, g0 = o.geometry, org = d && g0 && PAQ.origen(g0);
+    if (!org) return;
+    const g = PAQ.geo(org.n, d.obj ? Math.max(lo, d.rep ? rep : 0) : Math.min(2, d.b + mas), ligera);
+    if (g !== g0) { o.geometry = g; viejas.add(g0); n++; }
+  });
+  if (viejas.size) { const usadas = new Set(); escena.traverse(o => { if (o.geometry) usadas.add(o.geometry); }); for (const g of viejas) if (!usadas.has(g)) PAQ.soltar(g); }
+  return n;
 }
 function crearBanderines() {
   // 0-4 no: esa cuerda atravesaba el campanario (-17, 31).
@@ -6606,10 +6645,10 @@ function crearCofres3() {
     const g = new THREE.Group(), madera = new THREE.MeshLambertMaterial({ color: COLOR_COFRE[c.tipo], flatShading: true });
     /* Cofre propio (paquete «objetos»): caja y tapa por separado; la tapa gira en la misma bisagra. Sin paquete, el de cajas. */
     const nP = 'cofre_' + ({ comun: 'madera', epico: 'hierro', legendario: 'dorado' })[c.tipo], hayP = !!(PAQ && PAQ.modelos[nP + '_base'] && PAQ.modelos[nP + '_tapa']);
-    const caja = hayP ? new THREE.Mesh(PAQ.geo(nP + '_base', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); if (!hayP) caja.position.y = 0.3;
+    const caja = hayP ? new THREE.Mesh(PAQ.geo(nP + '_base', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); if (!hayP) caja.position.y = 0.3; else caja.userData.dqLod = { obj: true };
     if (!hayP) for (const x of [-0.4, 0.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.78), oro); b.position.set(x, 0.31, 0); g.add(b); }
     const tapa = new THREE.Group(); tapa.position.set(0, 0.6, -0.375);
-    const t = hayP ? new THREE.Mesh(PAQ.geo(nP + '_tapa', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); if (!hayP) t.position.set(0, 0, 0.375); tapa.add(t);
+    const t = hayP ? new THREE.Mesh(PAQ.geo(nP + '_tapa', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); if (!hayP) t.position.set(0, 0, 0.375); else t.userData.dqLod = { obj: true }; tapa.add(t);
     if (hayP) mallasPropias.push(caja, t);
     const cierre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.06), oro); cierre.position.set(0, -0.02, 0.76); if (!hayP) tapa.add(cierre);
     const gema = new THREE.Mesh(new THREE.OctahedronGeometry(c.tipo === 'legendario' ? 0.28 : 0.2, 0), new THREE.MeshBasicMaterial({ color: c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#fde68a' }));
