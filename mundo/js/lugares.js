@@ -216,16 +216,19 @@ function ajuste(PAQ, n) {
 // Junta las piezas de un lugar (ya colocadas como las del kit: {n, x, y, z, rx, ry, rz, s} con s en unidades del kit)
 // en UNA geometria del nivel de detalle `lod`, con normales (sombreado suave del material de modelado.js).
 const _m = new THREE.Matrix4(), _mp = new THREE.Matrix4(), _nm = new THREE.Matrix3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3(), _n = new THREE.Vector3();
+const SIN_AJUSTE = new THREE.Matrix4();
 function fundirPropio(PAQ, piezas, lod) {
-  const ls = piezas.map(p => { const a = ajuste(PAQ, p.n); return { p, a, g: PAQ.geo(a.mod, lod) }; });
+  // p.m: un modelo propio por su nombre, a su tamaño real por p.s (vivacs de los campamentos); p.n: una pieza del kit.
+  const ls = piezas.map(p => { const a = p.m ? { mod: p.m, M: SIN_AJUSTE, k: p.k || null } : ajuste(PAQ, p.n); return { p, a, g: PAQ.geo(a.mod, lod) }; });
   let nv = 0, ni = 0;
   for (const { g } of ls) { nv += g.attributes.position.count; ni += g.index.count; }
   const pos = new Float32Array(nv * 3), nor = new Int8Array(nv * 3), col = new Float32Array(nv * 3), tin = new Float32Array(nv), idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
   let ov = 0, oi = 0;
   for (const { p, a, g } of ls) {
     const P = g.attributes.position.array, N = g.attributes.normal.array, C = g.attributes.color.array, T = g.attributes.tinte.array, I = g.index.array, n = P.length / 3;
-    _e.set(p.rx, p.ry, p.rz); _q.setFromEuler(_e); _v.set(p.x, p.y, p.z); _s.set(p.s / (ESC[p.n[0]] || 1), p.s / (ESC[p.n[0]] || 1), p.s / (ESC[p.n[0]] || 1));
-    // p.s viene en unidades del kit (ESC · s del lugar); el ajuste ya pasa el modelo a metros de la pieza a escala ESC.
+    // p.s de una pieza del kit viene en sus unidades (ESC · s del lugar); el ajuste ya pasa el modelo a metros de la pieza a escala ESC.
+    const sc = p.m ? p.s : p.s / (ESC[p.n[0]] || 1);
+    _e.set(p.rx || 0, p.ry || 0, p.rz || 0); _q.setFromEuler(_e); _v.set(p.x, p.y, p.z); _s.set(sc, sc, sc);
     _mp.compose(_v, _q, _s); _m.multiplyMatrices(_mp, a.M); _nm.getNormalMatrix(_m);
     const k = a.k, e = _m.elements;
     for (let i = 0; i < n; i++) {
@@ -251,7 +254,41 @@ function fundirPropio(PAQ, piezas, lod) {
   return geo;
 }
 
-// opts: { escena, KIT (paquete 'lugares') o PAQ (modelos propios; manda si llega), lugares (LUGARES3D), alturaEn, agua, ponerSolido, sombras, ligero }
+// ── Vivacs de los campamentos de la franja exterior (v392) ──
+// Los 31 campamentos de monstruos fuertes de la franja (mmo/js/mundo3d.js, camposExteriores) eran solo un claro. Al
+// borde de cada uno, del lado de fuera, queda el vivac de quienes acampan alli: hoguera, una o dos tiendas, estandarte,
+// pertrechos y un trozo de empalizada. Solo dibujo y colisiones del cliente (como los lugares); los monstruos, sus
+// puntos de aparicion y el servidor no cambian. Nada a menos de 6 m de un punto de recoleccion o un cofre, ni a 30 m
+// de un lugar con nombre, ni encima de un arbol o una roca (o.ocupado), ni en el agua o en una ladera.
+function vivac(c, o) {
+  const r = rng(7919 + c.id * 104729), out = [];
+  const a0 = Math.atan2(c.z, c.x) + (r() - 0.5) * 0.9;   // hacia fuera del centro del mundo
+  const y0 = o.alturaEn(c.x, c.z);
+  const pon = (m, rad, a, s, opc = {}) => {
+    const x = Math.cos(a) * rad, z = Math.sin(a) * rad, wx = c.x + x, wz = c.z + z, h = o.alturaEn(wx, wz), radio = opc.radio || 1;
+    if (h < o.agua + 0.4 || o.pendienteEn(wx, wz) > 0.5) return false;
+    if (o.lugares.some(L => Math.hypot(L.x - wx, L.z - wz) < 30)) return false;
+    if ((o.evitar || []).some(p => Math.abs(p.x - wx) < 8 && Math.abs(p.z - wz) < 8 && Math.hypot(p.x - wx, p.z - wz) < 5 + radio)) return false;
+    if (o.ocupado && o.ocupado(wx, wz, radio)) return false;
+    out.push({ m, x, y: h - y0 - 0.05, z, ry: opc.ry !== undefined ? opc.ry : Math.atan2(-x, -z), s, k: opc.k || null, solido: opc.solido || 0, wx, wz, tan: opc.tan || 0 });
+    return true;
+  };
+  if (!pon('hoguera', 10, a0, 1, { radio: 0.8 })) return null;
+  pon('tronco', 8.4, a0 + 0.14, 0.34, { ry: -a0 - 0.14, radio: 0.9 });
+  pon('lena', 10.9, a0 - 0.16, 1, { radio: 0.6 });
+  pon('tienda', 12.2, a0 + 0.42, 0.85, { radio: 1.4, solido: 1.15, k: r() < 0.5 ? [0.92, 0.72, 0.62] : null });
+  if (r() < 0.65) pon(r() < 0.5 ? 'tienda_media' : 'tienda', 12.4, a0 - 0.46, 0.85, { radio: 1.4, solido: 1.1 });
+  pon('estandarte', 9.4, a0 - 0.95, 0.9, { radio: 0.5, k: r() < 0.5 ? [0.42, 0.4, 0.46] : null });
+  if (!o.ligero) {
+    pon('barril', 11.6, a0 + 0.96, 0.6, { radio: 0.5 });
+    pon('cajon', 12.5, a0 + 1.06, 0.55, { radio: 0.6, ry: r() * 6.28 });
+  }
+  for (const d of [-0.17, 0, 0.17]) pon('empalizada', 15.2, a0 + d, 0.85, { radio: 1.3, ry: -(a0 + d) - Math.PI / 2, tan: 1, solido: 1 });
+  return out.length >= 4 ? { y0, piezas: out } : null;
+}
+
+// opts: { escena, KIT (paquete 'lugares') o PAQ (modelos propios; manda si llega), lugares (LUGARES3D), alturaEn, agua, ponerSolido, sombras, ligero,
+//         y para los vivacs (solo con PAQ): campos (campamentos exteriores), pendienteEn, evitar (nodos y cofres), ocupado(x, z, r) }
 export function construirLugares(o) {
   const hechos = [], propio = !!o.PAQ;
   for (const L of o.lugares) {
@@ -285,6 +322,19 @@ export function construirLugares(o) {
     if (o.sombras) { m.castShadow = true; m.receiveShadow = true; }
     o.escena.add(m);
     hechos.push({ L, m });
+  }
+  if (propio && o.campos && o.pendienteEn) for (const c of o.campos) {
+    let v = null;
+    try { v = vivac(c, o); } catch (e) { console.warn('[3D] vivac', c.id, e); }
+    if (!v) continue;
+    for (const p of v.piezas) {
+      if (!p.solido) continue;
+      if (p.tan) {   // tramo de empalizada: tres circulos a lo largo
+        const a = -p.ry - Math.PI / 2, tx = -Math.sin(a), tz = Math.cos(a);
+        for (const d of [-0.8, 0, 0.8]) o.ponerSolido(p.wx + tx * d, p.wz + tz * d, 0.55);
+      } else o.ponerSolido(p.wx, p.wz, p.solido);
+    }
+    hechos.push({ L: { id: 'campo' + c.id, x: c.x, z: c.z }, m: null, piezas: v.piezas, y0: v.y0, ry: 0 });
   }
   // Un lugar propio: sus piezas fundidas en una malla por nivel de detalle, dentro de un THREE.LOD (el motor elige el
   // nivel con la camara). En calidad baja y minima, solo los niveles medio y bajo.

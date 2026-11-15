@@ -5902,7 +5902,10 @@ function cargarLugares() {
   /* v392: con los modelos propios de Blender (familia campamentos, ya en PAQ) no se baja el kit; si falta alguno, o con ?sinCampamentos, el kit de siempre. */
   const propio = !PRUEBA.has('sinCampamentos') && !faltanPropios(PAQ).length;
   (propio ? Promise.resolve(null) : cargarPaquete('/assets/3d/', 'lugares')).then(K2 => {
-    LUGARES = construirLugares({ escena, KIT: K2, PAQ: propio ? PAQ : null, lugares: LUGARES3D, alturaEn, agua: MUNDO.agua, ponerSolido, sombras: Q.sombras, ligero: GFX.efectivo === 'minima' || GFX.efectivo === 'baja' });
+    LUGARES = construirLugares({ escena, KIT: K2, PAQ: propio ? PAQ : null, lugares: LUGARES3D, alturaEn, agua: MUNDO.agua, ponerSolido, sombras: Q.sombras, ligero: GFX.efectivo === 'minima' || GFX.efectivo === 'baja',
+      /* vivacs de los 31 campamentos exteriores (solo con los modelos propios): lejos de nodos, cofres y de lo que ya es solido */
+      campos: campamentos(MAPAS, MONSTRUOS).filter(c => c.exterior), pendienteEn, evitar: [...nodos3d(MAPAS, MONSTRUOS), ...cofres3d(MAPAS, MONSTRUOS)],
+      ocupado: (x, z, r) => { const gx = Math.floor(x / REJ), gz = Math.floor(z / REJ); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const s of solidos.get((gx + i) + ',' + (gz + j)) || []) if (Math.hypot(s.x - x, s.z - z) < s.r + r) return true; return false; } });
     LUGARES.visibilidad(P.x, P.z, escena.fog.far);
   }).catch(e => console.warn('[3D] sin lugares de la franja exterior:', e));
 }
