@@ -11,12 +11,18 @@ const PI = Math.PI;
 
 // ── Sprites del dueño (si existen) ──
 const SPR = new Map();
-export async function cargarSprites(base) {
+// primero(k): true si el sprite se ve al empezar. Esos se esperan; el resto (el otro fondo, toldos y niveles de
+// herramientas que aun no tienes) baja despues de a pocos, sin competir con lo que si se ve. Mientras falte alguno,
+// el juego usa su dibujo de respaldo como siempre.
+export async function cargarSprites(base, primero) {
   try {
     const r = await fetch(base + 'sprites.json', { cache: 'no-cache' });
     if (!r.ok) return 0;
-    const l = await r.json();
-    await Promise.all(Object.entries(l).map(([k, v]) => new Promise(ok => { const im = new Image(); im.onload = () => { SPR.set(k, { im, ...v }); ok(); }; im.onerror = ok; im.src = base + v.src; })));
+    const l = Object.entries(await r.json());
+    const carga = ([k, v]) => new Promise(ok => { const im = new Image(); im.onload = () => { SPR.set(k, { im, ...v }); ok(); }; im.onerror = ok; im.src = base + v.src; });
+    const ya = l.filter(([k]) => { try { return !primero || primero(k); } catch (e) { return true; } }), luego = l.filter(e => !ya.includes(e));
+    await Promise.all(ya.map(carga));
+    if (luego.length) { const sig = () => { const lote = luego.splice(0, 4); if (lote.length) Promise.all(lote.map(carga)).then(sig); }; setTimeout(sig, 1500); }
   } catch (e) {}
   return SPR.size;
 }

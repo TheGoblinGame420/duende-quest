@@ -1277,7 +1277,21 @@ function precalentar() {
     if (cola.length) (window.requestIdleCallback || (f => setTimeout(f, 60)))(uno, { timeout: 1500 }); };
   setTimeout(uno, 1200);
 }
-A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista(); precalentar();
+// Que sprites se esperan antes de jugar: lo que se ve en la escena con TU partida (fondo de esta hora, tu toldo,
+// tus ollas y herramientas, duendes, clientes, iconos). Lo demas baja despues (cargarSprites en arte.js).
+function alInicio(k) {
+  if (k.startsWith('fondo_mercado_')) { const h = new Date().getHours(); return k === 'fondo_mercado_' + (h >= 19 || h < 6 ? 'noche' : 'dia'); }
+  if (k.startsWith('puesto_toldo_')) return k === 'puesto_toldo_' + Math.min(2, E.nv.toldo || 0);
+  if (k === 'chichera_hoja') return E.personaje !== 'chichero';
+  const m = /^(olla|jarra|vaso|cucharon|tabla|colador|exprimidor)_(\d)$/.exec(k); if (!m) return true;
+  const usados = new Set([...Object.values(D.HABILIDADES), ...Object.values(D.POCIONES)].map(h => h.img));
+  if (usados.has(k)) return true;
+  const n = +m[2], eq = E.eq || {};
+  if (m[1] === 'olla') return (E.nv.ollas || []).some(v => v + 1 === n);
+  if (m[1] === 'jarra') return Math.min(5, eq.jarra || 0) + 1 === n;
+  return (eq[m[1]] || 0) + 1 === n;
+}
+A.cargarSprites('/assets/chicha-wars/', alInicio).then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista(); precalentar();
   setTimeout(() => { const im = A.img(SPR_PJ[E.personaje]); if (im) { titere(SPR_PJ[E.personaje], im, 'idle'); titere(SPR_PJ[E.personaje], im, 'accion'); } }, 400); });
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
 pintarPanel(); pintarHud(); pintarChacra(true);
