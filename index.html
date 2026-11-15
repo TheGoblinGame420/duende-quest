@@ -880,7 +880,7 @@ section[id]{scroll-margin-top:72px;}
     <article class="juego origins">
       <div class="juego-media">
         <!-- Vista del mundo de hoy (v391, grabada del juego sin la interfaz). Sin audio: el sonido del juego está en /mundo/. -->
-        <video id="hero-video" data-src="/assets/video/origins-plaza.mp4" poster="/assets/capturas/origins-plaza-retrato.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest ORIGINS: la plaza de Pueblo Duende al atardecer y de noche"></video>
+        <video id="hero-video" data-src="/assets/video/origins-plaza.mp4" data-poster="/assets/capturas/origins-plaza-retrato.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest ORIGINS: la plaza de Pueblo Duende al atardecer y de noche"></video>
         <span class="juego-tag">NUEVO · 3D</span>
       </div>
       <h3>$DUENDE ORIGINS</h3>
@@ -1069,7 +1069,7 @@ section[id]{scroll-margin-top:72px;}
   <h2 class="px-title" id="trailer-h">Mira el tráiler</h2>
   <p class="px-sub">30 segundos de juego real: clases, mazmorras, juego online y el premio de chicha morada.</p>
   <div style="max-width:340px;margin:0 auto;border-radius:14px;overflow:hidden;border:1px solid var(--borde);background:#000;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" poster="assets/video/trailer-2-poster.webp" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
+    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" data-poster="assets/video/trailer-2-poster.webp" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
       <source src="assets/video/trailer-2.mp4" type="video/mp4">
       Tu navegador no puede reproducir el video.
     </video>
@@ -2411,6 +2411,14 @@ window.addEventListener('load', cargarRankingLanding);
 <script src="js/price-feed.js?v=391"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
+<script>
+// Pósteres de vídeo diferidos (15-nov-2026): un poster="" se descarga al leer el HTML aunque el vídeo
+// esté lejos o en una pestaña oculta, y competía con la imagen principal. Se pone al acercarse (800 px).
+(function(){var vs=document.querySelectorAll('video[data-poster]');function pon(v){if(!v.getAttribute('poster'))v.setAttribute('poster',v.getAttribute('data-poster'));}
+if(!('IntersectionObserver' in window)){[].forEach.call(vs,pon);return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){pon(e.target);io.unobserve(e.target);}});},{rootMargin:'800px 0px'});
+[].forEach.call(vs,function(v){io.observe(v);});})();
+</script>
 <script>
 // Vista de ORIGINS en la tarjeta: vídeo mudo que se carga tras la página (nunca con ahorro de datos,
 // 2G ni movimiento reducido) y se pausa fuera de la pantalla.

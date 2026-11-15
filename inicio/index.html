@@ -45,6 +45,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .enl{display:flex;gap:8px;}
 .enl a{color:var(--txt2);text-decoration:none;font:600 13px var(--sans);padding:8px 12px;border-radius:999px;border:1px solid rgba(167,139,250,.3);background:rgba(255,255,255,.04);}
 .enl a:hover{color:#fff;border-color:var(--mor);}
+/* 15-nov-2026: botones de 44 px en una línea; en celular «Instalar» queda en icono, así al aparecer no empuja las cartas */
+.enl a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;white-space:nowrap;}
+@media (max-width:420px){.enl .inst-t{display:none;}}
 .hola{text-align:center;margin:6px 0 20px;}
 .hola h1{font:400 clamp(13px,2.4vw,20px)/1.6 var(--px);text-shadow:0 0 18px rgba(167,139,250,.6);}
 .hola h1 span{color:var(--oro);}
@@ -102,7 +105,7 @@ footer a{color:var(--cian);text-decoration:none;}
 <main>
   <header>
     <a class="marca" href="/inicio/"><img src="/assets/ui/coin.png" alt=""><b>DUENDE QUEST</b></a>
-    <nav class="enl"><a href="#" data-instalar hidden style="display:none;color:#ffd84a;border-color:#ffd84a">⬇ Instalar app</a><a href="/" class="op">La web</a><a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">Telegram</a></nav>
+    <nav class="enl"><a href="#" data-instalar hidden style="display:none;color:#ffd84a;border-color:#ffd84a" aria-label="Instalar Duende Quest como app" title="Instalar como app"><span aria-hidden="true">⬇</span><span class="inst-t">&nbsp;Instalar app</span></a><a href="/" class="op">La web</a><a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">Telegram</a></nav>
   </header>
   <section class="hola">
     <h1 id="saludo">¿A qué mundo vas <span>hoy</span>?</h1>

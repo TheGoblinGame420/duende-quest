@@ -61,6 +61,21 @@
   ].join('\n');
   var st = d.createElement('style'); st.textContent = css; d.head.appendChild(st);
 
+  // ¿Se ve la sección? Se mira UNA vez al empezar, antes de mover nada (15-nov-2026): antes cada
+  // getComputedStyle tras mover secciones forzaba un recálculo de estilos de toda la página (~0,5 s
+  // en un celular de gama baja). Solo el CSS (modo anuncio) oculta secciones; lo que se crea aquí se ve.
+  var vis = null;
+  function seVe(el) {
+    if (!vis) {
+      vis = {};
+      ['trust', 'tokenomics', 'roadmap', 'que-es', 'trailer', 'capturas', 'game', 'ranking', 'telegram', 'community', 'nfts', 'boosters', 'arsenal', 'nft-store',
+        'exchange', 'donate', 'juegos', 'utilidad', 'como-comprar', 'lo-nuevo', 'empieza', 'faq'].forEach(function (id) {
+        var e = d.getElementById(id); if (e) vis[id] = getComputedStyle(e).display !== 'none';
+      });
+    }
+    return el.id in vis ? vis[el.id] : !el.hidden;
+  }
+
   // ---------- Bloques plegables ----------
   function plegar(ids, ico, titulo, desc, idBloque) {
     var secs = ids.map(function (id) { return d.getElementById(id); }).filter(Boolean);
@@ -82,7 +97,7 @@
       if (det.open) cuerpo.querySelectorAll('.reveal').forEach(function (r) { r.classList.add('visible'); });
     });
     // Si todo lo de adentro está oculto (p. ej. visitas desde anuncios, sin parte cripto), el bloque tampoco se muestra
-    var visibles = secs.filter(function (s) { return getComputedStyle(s).display !== 'none'; });
+    var visibles = secs.filter(seVe);
     if (!visibles.length) det.hidden = true;
     return det;
   }
@@ -90,7 +105,7 @@
   // ---------- Pestañas ----------
   function pestanas(items, titulo, idBloque) {
     var secs = items.map(function (x) { return [d.getElementById(x[0]), x[1]]; })
-      .filter(function (x) { return x[0] && getComputedStyle(x[0]).display !== 'none'; });
+      .filter(function (x) { return x[0] && seVe(x[0]); });
     if (secs.length < 2) return null;
     var cont = d.createElement('section');
     cont.className = 'pestanas'; cont.id = idBloque; cont.setAttribute('aria-label', titulo);
@@ -113,7 +128,8 @@
         if (on) {
           x[0].querySelectorAll('.reveal').forEach(function (r) { r.classList.add('visible'); });
           if (animar) { x[0].classList.remove('entra'); void x[0].offsetWidth; x[0].classList.add('entra'); }
-          if (lista.scrollWidth > lista.clientWidth) lista.scrollTo({ left: b.offsetLeft - (lista.clientWidth - b.offsetWidth) / 2, behavior: (quieto || !animar) ? 'auto' : 'smooth' });
+          // Al arrancar la 1.a pestaña ya está a la izquierda: no se mide (cada medida fuerza una maquetación)
+          if (animar && lista.scrollWidth > lista.clientWidth) lista.scrollTo({ left: b.offsetLeft - (lista.clientWidth - b.offsetWidth) / 2, behavior: (quieto || !animar) ? 'auto' : 'smooth' });
         }
       });
     }
@@ -129,6 +145,7 @@
   }
 
   function iniciar() {
+    seVe(d.body);   // foto de qué se ve, antes de mover nada
     // El token, a la vista y en pestañas (en modo anuncio las tres secciones están ocultas y no se arma)
     pestanas([['trust', 'Contrato y transparencia'], ['tokenomics', 'Tokenomics'], ['roadmap', 'Hoja de ruta']], 'El token $DUENDE', 'bloque-token');
     // El juego: qué es, tráiler, capturas y modo arcade en un solo bloque
@@ -218,14 +235,14 @@
     // ---------- Barra de secciones en celular ----------
     var nav = d.querySelector('body > nav, nav[aria-label="Principal"]');
     var lista = [['juegos', 'Juegos'], ['utilidad', 'Utilidad'], ['como-comprar', 'Comprar'], ['bloque-token', 'Token'], ['lo-nuevo', 'Novedades'], ['bloque-juego', 'El juego'], ['empieza', 'Empieza'], ['bloque-comunidad', 'Comunidad'], ['bloque-tienda', 'Tienda'], ['faq', 'Preguntas']]
-      .filter(function (x) { var el = d.getElementById(x[0]); return el && !el.hidden && getComputedStyle(el).display !== 'none'; });
+      .filter(function (x) { var el = d.getElementById(x[0]); return el && !el.hidden && seVe(el); });
     if (nav && lista.length) {
       var barra = d.createElement('div');
       barra.className = 'secciones'; barra.setAttribute('aria-label', 'Secciones');
       barra.innerHTML = lista.map(function (x) { return '<a href="#' + x[0] + '" data-sec="' + x[0] + '">' + x[1] + '</a>'; }).join('');
       nav.insertAdjacentElement('afterend', barra);
       var medir = function () { raiz.style.setProperty('--alto-nav', nav.getBoundingClientRect().height + 'px'); };
-      medir(); addEventListener('resize', medir);
+      requestAnimationFrame(medir); addEventListener('resize', medir);
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entradas) {
           entradas.forEach(function (en) {
@@ -271,7 +288,7 @@
         flota.classList.toggle('ver', pasado && !alFinal);
         var b = d.querySelector('.secciones'); if (b) b.classList.toggle('ver', pasado);
       };
-      addEventListener('scroll', mostrar, { passive: true }); mostrar();
+      addEventListener('scroll', mostrar, { passive: true }); requestAnimationFrame(mostrar);
     }
   }
 
