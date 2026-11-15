@@ -24,3 +24,12 @@ Retomada la v392 que otra sesión dejó sin commit. Commits en master (sin push,
 - Ritmo medido con jugador simulado (scratchpad .../cw-cierre/ritmo3.mjs) contra v391: el jugador activo hereda igual (12,9-13,4 min contra 13,4). El que toca poco (cada 8 s) se atascaba con la v392 tal como estaba (2 de 3 partidas sin salir: utensilios gastados, sin monedas para repararlos). Ajustes: utensilios duran el triple, gastado = pelea a medias (no se apaga), el robo de monedas es como mucho el 3 % de lo que tienes y la vida de los duendes sube +1 cada 5 oleadas (no cada 4). Tras el ajuste: 4 de 4 heredan (14-17 min; v391: 14,7-18,6).
 - Arreglado de paso (también estaba en v391 publicada): sin las imágenes de los duendes cargadas, el Duende dorado tiraba el dibujo de respaldo y congelaba el juego. Ahora el bucle sigue aunque un cuadro falle.
 - Falta: que el integrador suba ?v= y publique; ver con el dueño si la abuela de la hoja de poses (chichera_hoja) debe ser también la de la portada y las Skins (ahí sigue chichera_maestra).
+
+## Pulido de la v392 (15-nov, agente r2-chicha): en master, sin publicar
+Revisado con fotos en 360x740, 412x915, 740x360 y 1280x720 (primera partida, paneles, granja, modales, sonido, sin red, guardado):
+- Primer minuto: el jugador nuevo que no tocaba nada veía la olla lista sin saber servirla y los clientes se iban «¡No hay chicha!». Ahora la guía marca «¡Toca para servir!» en las 3 primeras tandas, y un duende que roba tiene prioridad («¡Tócalo!» aunque aún no hayas removido).
+- «Cómo jugar» con el celular acostado dejaba el botón Entendido fuera de la pantalla (no se podía cerrar): los modales tienen ahora scroll.
+- Granja con el celular acostado: dos columnas (antes las parcelas quedaban tapadas). Los textos −25 / −0:30 de sembrar y regar salían fuera de la pantalla y empujaban la granja: arreglado.
+- HUD: sonido y menú no se encogen (zona de toque 46 px); en celulares angostos las monedas se abrevian (12,3k) y el chip de vasos se oculta (se ve en las jarras). Antes, con cifras grandes, el botón de menú quedaba fuera de la pantalla.
+- Avisos que duran según su largo; sin conexión: un aviso al perderla y otro al volver; vender o cambiar sin red ya no falla en silencio. Sonido que se reanuda si el celular lo suspendió.
+- Ritmo (jugador simulado): herencia a los 12,7 min (activo) y 14,8-15,5 min (toca poco): igual que antes.
