@@ -14,9 +14,9 @@ import math
 import numpy as np
 from dq_lib import *
 
-MADERA = '#4f3f2e'; MADERA_OSC = '#3a2d21'; MADERA_CLARA = '#6a563e'; MADERA_GRIS = '#5d5850'; CORTE = '#9a8462'
+MADERA = '#5a4834'; MADERA_OSC = '#433428'; MADERA_CLARA = '#76604a'; MADERA_GRIS = '#6a645a'; CORTE = '#9a8462'
 HIERRO = '#2f2f34'; HIERRO_CLARO = '#56565c'; OXIDO = '#5b3a26'
-PIEDRA = '#807b72'; PIEDRA_OSC = '#625e57'; PIEDRA_CLARA = '#968f84'
+PIEDRA = '#948f85'; PIEDRA_OSC = '#736f68'; PIEDRA_CLARA = '#a8a296'
 LONA = '#8a7c62'; LONA_OSC = '#5f5446'; LONA_ROJA = '#6a3227'; CUERDA = '#8c7a58'
 TIERRA = '#4a3a2b'; CENIZA = '#3b3836'; MUSGO = '#34421f'; BARRO = '#7a4a30'
 BRASA = '#ffb45a'; LLAMA = '#ffcf7a'; VIOLETA = '#8a5cf0'; VERDE_RUNA = '#3fd6b4'
@@ -795,7 +795,7 @@ def cripta():
     """Mausoleo (4,45 × 5,75 × 2,4; el tejado va aparte): hiladas de sillares, pilastras, portada con la reja
     entreabierta, escalones y una runa violeta en el dintel."""
     W, D, H = 2.22, 2.88, 2.4; p = []
-    hil = N(4, 2, 1); rng = azar(21); GRIS = '#8b8983'
+    hil = N(4, 2, 1); rng = azar(21); GRIS = '#a19e97'
     for k in range(hil):
         h = (H - 0.25) / hil; z = 0.25 + (k + 0.5) * h
         p.append(caja(2 * W - 0.5 - 0.04 * (k % 2), 2 * D - 0.5, h - 0.03 * (hil > 2), (0, 0.1, z), marca='monolito', color=hexlin(GRIS) * rng.uniform(0.85, 1.1), tono=0.15, semilla=k))
