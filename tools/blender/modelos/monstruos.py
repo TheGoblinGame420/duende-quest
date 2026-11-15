@@ -305,10 +305,10 @@ def serp_cuello(lod):
     t = tubo_g([(0, -0.1, -0.06), (0, 0.12, -0.04), (0, 0.32, 0.02), (0, 0.48, 0.08)], [0.13, 0.12, 0.105, 0.095], 9, 'hoja', TIN, n=10, punta=False)
     color_g(t, lambda P, N, C: mezclar(np.ones((len(P), 3)), (2.4, 2.2, 0.9), np.clip(N[:, 2] * 2 - 0.3, 0, 1)))   # garganta clara delante
     # Capucha: lámina gruesa detrás del cuello, curvada hacia delante, con anteojos oscuros en el dorso.
-    h = elip((0, 0.33, -0.02), (0.26, 0.2, 0.045), 3, 'hoja', TIN)
+    h = elip((0, 0.34, -0.03), (0.2, 0.16, 0.04), 3, 'hoja', TIN)
     deformar(h, lambda P: P - np.c_[np.zeros(len(P)), 1.2 * P[:, 0] ** 2, np.zeros(len(P))])   # bordes hacia delante (+z del juego = −y de Blender)
     def capucha(P, N, C):
-        dx = np.abs(P[:, 0]) - 0.1; dy = P[:, 1] - 0.36
+        dx = np.abs(P[:, 0]) - 0.08; dy = P[:, 1] - 0.36
         d = np.hypot(dx, dy * 1.3)
         anillo = np.clip(1 - np.abs(d - 0.05) * 30, 0, 1) * (N[:, 2] < 0)
         M = mezclar(np.ones((len(P), 3)) * 0.9, (2.3, 2.1, 0.9), np.clip(N[:, 2] * 2, 0, 1) * 0.8)   # el frente, claro
