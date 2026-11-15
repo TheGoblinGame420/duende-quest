@@ -1090,8 +1090,8 @@ function pintarChacra(forzar) {
   const firma = [E.parc, E.semilla, E.fama.n, E.chacra.map(p => p ? p.k + etapaCul(p, ahora) + (p.r ? 'r' : '') : '-').join(), E.parc < D.PARCELAS.max && E.monedas >= costoParc()].join('|');
   if (forzar || firma !== chPrev) {
     const nace = chPrev.split('|')[3] || ''; chPrev = firma;
-    { const bs = $('g-semillas'), sl = bs.scrollLeft; bs.innerHTML = Object.entries(D.CULTIVOS).map(([k, c]) => { const bloq = E.fama.n < c.fama;
-        return `<button class="sem${E.semilla === k ? ' on' : ''}${bloq ? ' bloq' : ''}" data-k="${k}"><img src="${IMG}cul_${k}_2.webp" alt=""><b>${c.nombre}</b><small>${bloq ? 'Fama ' + c.fama : mmss(c.seg * 1000) + ' · <span class="mon"></span>' + c.semilla}</small></button>`; }).join(''); bs.scrollLeft = sl; }
+    { const bs = $('g-semillas'), sl = bs.scrollLeft, st = bs.scrollTop; bs.innerHTML = Object.entries(D.CULTIVOS).map(([k, c]) => { const bloq = E.fama.n < c.fama;
+        return `<button class="sem${E.semilla === k ? ' on' : ''}${bloq ? ' bloq' : ''}" data-k="${k}"><img src="${IMG}cul_${k}_2.webp" alt=""><b>${c.nombre}</b><small>${bloq ? 'Fama ' + c.fama : mmss(c.seg * 1000) + ' · <span class="mon"></span>' + c.semilla}</small></button>`; }).join(''); bs.scrollLeft = sl; bs.scrollTop = st; }
     const antes = nace.split(',');
     chGrid.innerHTML = E.chacra.map((p, i) => {
       const base = `<img src="${IMG}parcela.webp" alt="">`;
