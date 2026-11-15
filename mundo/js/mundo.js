@@ -54,7 +54,7 @@ import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=3
 import { crearRituales } from './rituales.js?v=391';
 import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=391';
 import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=391';
-import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=391';
+import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=391';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -415,6 +415,14 @@ function resolucionDinamica(ms) {
   lentas = dtProm > lento ? lentas + 1 : 0; buenas = dtProm < ref + 1.2 ? buenas + 1 : 0;
   if (lentas >= 2 && composer) { postCaido = true; ponerPost(false); lentas = 0; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
   if (lentas >= 2 && sol.castShadow) { sombrasCaidas = true; ponerSombras(0); lentas = 0; console.info('[3D] sombras desactivadas por rendimiento'); return; }
+  // En «Automatico», antes de acortar la vista: si ni con la resolucion al minimo llega, la calidad baja un nivel (en
+  // vivo, sin recargar) y este equipo empieza ahi la proxima vez (menu.js, bajarAuto). Pasado el tiron de entrar.
+  if (dtProm > muyLento && pxAct <= min + 0.01 && cuadro > 300 && bajarAuto(GFX)) {
+    aplicarGfx({});
+    console.info('[3D] calidad automatica rebajada a ' + GFX.efectivo + ' por rendimiento');
+    aviso('El juego iba lento: la calidad automática pasó a ' + NOMBRE_NIVEL[GFX.efectivo] + '. Puedes cambiarla en ' + K('el menú (Esc)', 'el menú (⚙)') + ' → Gráficos.');
+    return;
+  }
   // > 38 ms (< 26 fps): un movil topado a 30 Hz (ahorro de bateria) da ~33 ms aunque vaya sobrado; a ese no se le acorta la vista.
   if (dtProm > muyLento && pxAct <= min + 0.01 && lejosDin > 95) {
     lejosDin -= 20;
@@ -448,6 +456,7 @@ function aplicarGfx(parcial) {
   if ('nivel' in p || 'lejos' in p || 'din' in p || GFX.lejos !== lejosAntes) { lejosDin = Q.lejos; try { ambiente(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }
   try { musica.ligera(POBRE || GFX.fx === 0); } catch (e) {}
   try { acabadoLuz(acabZ, acabDia, acabNub); FX.calidad(GFX.fx >= 1 && FINO()); ATM.calidad(GFX.efectivo); } catch (e) {}
+  try { ajustarModelado(); } catch (e) { console.warn('[3D] nivel de detalle en vivo', e); }
   lentas = 0; buenas = 0; resT = 0;
   try { if (MENU) MENU.refrescar(); } catch (e) {}
   for (const f of oyentesGfx) { try { f(GFX); } catch (e) {} }
@@ -681,6 +690,14 @@ try { if (screen.orientation && screen.orientation.addEventListener) screen.orie
 try { if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(ajustar, 120)); } catch (e) {}
 ajustar();
 
+/* Cede el hilo un momento durante la carga: parte las tareas largas (el celular no se congela ni avisa de «la pagina no
+   responde», la barra sigue viva y llegan los mensajes de red). Con MessageChannel y no setTimeout: en segundo plano un
+   setTimeout espera 1 s y la carga se alargaria. */
+const ceder = (() => {
+  try { if (globalThis.scheduler && typeof scheduler.yield === 'function') return () => scheduler.yield(); } catch (e) {}
+  try { const mc = new MessageChannel(), cola = []; mc.port1.onmessage = () => { const f = cola.shift(); if (f) f(); }; return () => new Promise(r => { cola.push(r); mc.port2.postMessage(0); }); } catch (e) {}
+  return () => new Promise(r => setTimeout(r, 0));
+})();
 const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transition = ''; $('carga-i').style.transform = `scaleX(${k})`; if (k >= 0.7) $('carga-i').classList.add('latido'); if (txt) $('carga-s').textContent = Math.round(k * 100) + '% · ' + txt; };
 
 // ── TERRENO ──
@@ -691,7 +708,20 @@ function distSeg(px, pz, ax, az, bx, bz) {
 }
 // Caminos de tierra desde el pueblo a cada zona (guian al jugador).
 const CAMINOS = Object.values(ZONAS3D).map(c => [0, 0, c.x * 0.72, c.z * 0.72]);
-function enCamino(x, z) { let m = Infinity; for (const [a, b, c, d] of CAMINOS) m = Math.min(m, distSeg(x, z, a, b, c, d)); return m; }
+/* Distancia al camino mas cercano. La piden el suelo, el minimapa y la flora al cargar (cientos de miles de veces):
+   tramos en un arreglo plano y distancia al cuadrado, con la raiz solo al final. Da el mismo numero que distSeg. */
+const CAM_F = new Float64Array(CAMINOS.length * 5);
+CAMINOS.forEach(([a, b, c, d], i) => { CAM_F[i * 5] = a; CAM_F[i * 5 + 1] = b; CAM_F[i * 5 + 2] = c - a; CAM_F[i * 5 + 3] = d - b; CAM_F[i * 5 + 4] = (c - a) * (c - a) + (d - b) * (d - b); });
+function enCamino(x, z) {
+  let m = Infinity, ex = 0, ez = 0;
+  for (let k = 0; k < CAM_F.length; k += 5) {
+    const ax = CAM_F[k], az = CAM_F[k + 1], dx = CAM_F[k + 2], dz = CAM_F[k + 3];
+    let t = ((x - ax) * dx + (z - az) * dz) / CAM_F[k + 4]; t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const qx = x - (ax + dx * t), qz = z - (az + dz * t), d2 = qx * qx + qz * qz;
+    if (d2 < m) { m = d2; ex = qx; ez = qz; }
+  }
+  return Math.hypot(ex, ez);
+}
 function colorSuelo(x, z, h, out) {
   out.setRGB(0, 0, 0);
   for (const [id, k] of mezclaEn(x, z)) { const t = SUELO_C[id]; out.r += t.r * k; out.g += t.g * k; out.b += t.b * k; }
@@ -709,20 +739,25 @@ function colorSuelo(x, z, h, out) {
   out.multiplyScalar(v);
   return out;
 }
-function crearTerreno() {
+async function crearTerreno() {
   const g = new THREE.PlaneGeometry(LADO, LADO, SEG, SEG);
   g.rotateX(-Math.PI / 2);
   const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  /* El minimapa (pintarMapaBase) usa estos mismos puntos y colores: una rejilla de SEG x SEG con el color sin apagar. */
+  const crudo = new Float32Array(SEG * SEG * 3);
   for (let i = 0; i < pos.count; i++) {
+    if ((i & 16383) === 16383) await ceder();   /* el celular no se queda congelado mientras se levanta el suelo */
     const x = pos.getX(i), z = pos.getZ(i), h = alturaEn(x, z);
     pos.setY(i, h);
     colorSuelo(x, z, h, c);
+    { const ix = i % (SEG + 1), iz = (i - ix) / (SEG + 1); if (ix < SEG && iz < SEG) { const o = (iz * SEG + ix) * 3; if (h < MUNDO.agua) { crudo[o] = -1; } else { crudo[o] = c.r; crudo[o + 1] = c.g; crudo[o + 2] = c.b; } } }
     /* Ambientacion medieval mistica: el suelo pierde saturacion y brillo (el minimapa conserva sus colores), y bajo el agua el fondo es limo oscuro que se ve desde la orilla. */
     const gris = (c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722) * 0.86;
     c.r = (c.r * 0.86 - gris) * 0.72 + gris; c.g = (c.g * 0.86 - gris) * 0.72 + gris; c.b = (c.b * 0.86 - gris) * 0.72 + gris;
     if (h < MUNDO.agua) c.lerp(C_LIMO, clamp((MUNDO.agua - h) / 5, 0, 0.82));
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
+  mapaCrudo = crudo;
   /* dqM por vertice para el detalle del suelo (terreno.js): roca por pendiente, distancia al camino (tope 12 m) y orilla mojada. */
   const fino = FINO(), dqM = fino ? new Float32Array(pos.count * 3) : null;
   // Acabado del suelo (de calidad media para arriba; se decide al cargar, como la vegetacion): manchas grandes
@@ -737,6 +772,7 @@ function crearTerreno() {
       return (a + (b - a) * sx) * (1 - sz) + (c2 + (d - c2) * sx) * sz;
     };
     for (let iz = 0; iz < N; iz++) for (let ix = 0; ix < N; ix++) {
+      if (ix === 0 && (iz & 63) === 63) await ceder();
       const i = iz * N + ix, x = pos.getX(i), z = pos.getZ(i), h = pos.getY(i);
       const hl = pos.getY(iz * N + Math.max(0, ix - 1)), hr = pos.getY(iz * N + Math.min(SEG, ix + 1)), hu = pos.getY(Math.max(0, iz - 1) * N + ix), hd = pos.getY(Math.min(SEG, iz + 1) * N + ix);
       const curva = ((hl + hr + hu + hd) / 4 - h) / paso;   // > 0: hondonada; < 0: loma
@@ -961,7 +997,11 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
    y el alto arbol a arbol: los que estan a menos de LOD0_R pasan a UNA malla instanciada por modelo (lodCerca) y se
    esconden de la de su celda. Con la vegetacion en «baja» todo baja un escalon: bajo por celda y medio junto al duende.
    Devuelve los que no tienen modelo propio (siguen con el kit). */
-const LIGERA = CAL === 'baja', LOD0_R = CAL === 'alta' ? 40 : LIGERA ? 22 : MOVIL ? 24 : 30, LOD1_R = CAL === 'alta' ? 60 : MOVIL ? 30 : 36, CERCA_MAX = 96;
+/* LIGERA (vegetacion en «baja» al cargar) decide que mallas se construyen; los radios siguen a la calidad en vivo (radiosLod). */
+const LIGERA = CAL === 'baja', CERCA_MAX = 96;
+let LOD0_R = 30, LOD1_R = 36, LOD_D = 100;
+function radiosLod(det) { LOD0_R = det === 2 ? 40 : det === 0 ? 22 : MOVIL ? 24 : 30; LOD1_R = det === 2 ? 60 : MOVIL ? 30 : 36; LOD_D = det === 2 ? 125 : det === 0 ? 80 : 100; }
+radiosLod(GFX.det);
 const mallasPropias = [], cercaPropia = new Map(), ocultasPropias = [], suciasPropias = new Set();
 /* Orilla inmediata: hay agua a 8 m o menos. Las especies de orilla (sauce) solo salen ahi; el llano del pueblo esta a 1,5 m sobre el agua pero lejos de ella, y antes se llenaba de sauces. Solo cambia la especie: ni se mueve ni se quita ningun arbol. */
 function juntoAlAgua(x, z) { for (let a = 0; a < 8; a++) { const c = Math.cos(a * 0.7854), s = Math.sin(a * 0.7854); if (alturaEn(x + c * 4, z + s * 4) <= MUNDO.agua || alturaEn(x + c * 8, z + s * 8) <= MUNDO.agua) return true; } return false; }
@@ -992,6 +1032,7 @@ function floraPropia(tipo, todos, celdas, fina, fijo) {
     else { im.computeBoundingSphere(); im.visible = false; }
     if (Q.sombras && lod < 2 && cj.max[1] * base >= 5) im.castShadow = true;
     im.matrixAutoUpdate = false; im.matrixWorldAutoUpdate = false;
+    im.userData.dqLod = { b: lod - (LIGERA ? 1 : 0) };   /* su nivel con la vegetacion en media (ajustarModelado) */
     escena.add(im); mallasPropias.push(im);
     return im;
   };
@@ -1050,15 +1091,24 @@ function lodCerca() {
   suciasPropias.clear();
   for (const cp of cercaPropia.values()) { cp.im.count = cp.n; cp.im.visible = cp.n > 0; if (cp.n) { cp.im.instanceMatrix.needsUpdate = true; cp.im.instanceColor.needsUpdate = true; } }
 }
-function crearFlora() {
+async function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
   const paso = CAL === 'baja' ? 11 : MOVIL ? 9 : 7;   // en baja, ~33% menos arboles y rocas
   const LUGS = lugares3d(), FL = MUNDO.borde + 20, TALA = nodos3d(MAPAS, MONSTRUOS).filter(n => n.tipo === 'madera');   /* v378: los arboles talables se ven solos, sin otro arbol encima */
+  /* Los ~200 campamentos en casillas de 16 m: para saber si hay uno a menos de 7 m basta mirar las 9 casillas de alrededor. */
+  const camposR = new Map();
+  for (const c of campos) { const k = Math.floor(c.x / 16) + ',' + Math.floor(c.z / 16); let l = camposR.get(k); if (!l) camposR.set(k, l = []); l.push(c); }
+  const cercaCampo = (x, z) => { const gx = Math.floor(x / 16), gz = Math.floor(z / 16); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = camposR.get((gx + i) + ',' + (gz + j)); if (l) for (const c of l) if (Math.hypot(c.x - x, c.z - z) < 7) return true; } return false; };
+  let filaF = 0;
   for (let x = -FL; x <= FL; x += paso) for (let z = -FL; z <= FL; z += paso) {
+    if (z === -FL && ++filaF % 40 === 0) await ceder();
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
-    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26) || TALA.some(n => Math.abs(n.x - jx) < 6 && Math.abs(n.z - jz) < 6)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
+    /* Primero lo barato: si el sorteo no toca ninguna planta de la zona, no hace falta mirar altura, pendiente ni caminos
+       (la mayoria de los puntos). Mismo sorteo y mismas condiciones que abajo: sale el mismo bosque, en menos tiempo. */
     const zona = zonaEn(jx, jz);
+    { const fz = FLORA[zona]; let r0 = hashR(x, z, 3), hay = false; if (fz) for (const f of fz) { if (r0 < f[1]) { hay = true; break; } r0 -= f[1]; } if (!hay) continue; }
+    if ((Math.max(Math.abs(jx), Math.abs(jz)) > 600 && hashR(x, z, 6) < 0.35) || LUGS.some(l => Math.abs(l.x - jx) < 26 && Math.abs(l.z - jz) < 26 && Math.hypot(l.x - jx, l.z - jz) < 26) || TALA.some(n => Math.abs(n.x - jx) < 6 && Math.abs(n.z - jz) < 6)) continue;   /* franja nueva (v376): algo menos densa y despejada en los lugares */
     const h = alturaEn(jx, jz);
     if (h < 0.5 || pendienteEn(jx, jz) > 0.95) continue;
     if (enCamino(jx, jz) < 5) continue;
@@ -1067,7 +1117,7 @@ function crearFlora() {
     let r = hashR(x, z, 3);
     for (const [tipo, dens, color] of FLORA[zona] || []) {
       if (r < dens) {
-        if (campos.some(c => Math.hypot(c.x - jx, c.z - jz) < 7) || VECINOS.some(v => Math.hypot(v.x - jx, v.z - jz) < 5)) break;
+        if (cercaCampo(jx, jz) || VECINOS.some(v => Math.hypot(v.x - jx, v.z - jz) < 5)) break;
         const s = 0.75 + hashR(x, z, 4) * 0.6;
         (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color, zona });
         if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s, t: tipo }); }
@@ -1077,6 +1127,7 @@ function crearFlora() {
       r -= dens;
     }
   }
+  await ceder();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: false });
   const piezas = {
     pino: [[new THREE.CylinderGeometry(0.25, 0.35, 2, 5), '#5a3c25', 1], [new THREE.ConeGeometry(2, 6, 7), null, 4.6]],
@@ -1097,6 +1148,7 @@ function crearFlora() {
   // (el verde puro de todas las copas iguales aplanaba el bosque). Se decide al cargar.
   const floraFina = FINO();
   for (const tipo in tipos) {
+    await ceder();   /* una tarea por especie, no una sola de varios segundos */
     const todos = PAQ ? floraPropia(tipo, tipos[tipo], celdas, floraFina) : tipos[tipo];
     const porCelda = new Map();
     for (const t of todos) { const ck = Math.floor(t.x / TROZO) + '|' + Math.floor(t.z / TROZO); let l = porCelda.get(ck); if (!l) porCelda.set(ck, l = []); l.push(t); }
@@ -1160,6 +1212,7 @@ function crearFlora() {
   trozosFlora.push(...celdas.values());
   /* Sotobosque (terreno.js): troncos caidos, tocones con raices, helechos, piedras con musgo y setas que brillan junto a caminos y campamentos. Solo dibujo (sin colision), una malla por celda, de media para arriba. */
   if (floraFina) {
+    await ceder();
     try {
       const soto = crearSotobosque({ alturaEn, pendienteEn, enCamino, zonaEn, campos, casas: CASAS, vecinos: VECINOS, trozo: TROZO, fx: SOTO_FX, lim: MUNDO.borde, lugares: lugares3d() });
       for (const ml of soto.mallas) { escena.add(ml); sotoMallas.push(ml); }
@@ -1172,7 +1225,6 @@ const TROZO = 96, trozosFlora = [];
 // Las celdas de flora mas alla de la niebla no se dibujan.
 // Con el kit: las celdas cercanas con sus modelos y las lejanas con figuras
 // sencillas (LOD).
-const LOD_D = { baja: 80, media: 100, alta: 125 }[CAL];
 function cullFlora() {
   const lim2 = (escena.fog.far + TROZO * 0.75) ** 2, lod2 = LOD_D * LOD_D;
   const ver = (l, v) => { if (l.length && l[0].visible !== v) for (const im of l) im.visible = v; };
@@ -1181,7 +1233,8 @@ function cullFlora() {
     ver(c.mallas, v); ver(c.cerca, cerca); ver(c.lejos, v && !cerca);
     if (c.propias) {
       const medio = v && Math.hypot(Math.max(Math.abs(c.x - P.x) - TROZO / 2, 0), Math.max(Math.abs(c.z - P.z) - TROZO / 2, 0)) < LOD1_R;
-      const pr = c.propias, m1 = LIGERA ? v : medio;
+      /* Sin mallas «lejos» (el mundo se cargo con la vegetacion en baja) la del medio cubre toda la vista, como antes. */
+      const pr = c.propias, m1 = pr.lejos.length ? medio : v;
       if (pr.lejos.length && pr.lejos[0].visible !== (v && !m1)) for (const im of pr.lejos) im.visible = v && !m1;
       if (pr.medio.length && pr.medio[0].l1.visible !== m1) { for (const en of pr.medio) en.l1.visible = m1; lodX = 1e9; }
     }
@@ -1214,8 +1267,33 @@ function objetosPropios(nombre, lista) {
   if (inst) m.computeBoundingSphere();
   if (Q.sombras) { m.castShadow = true; m.receiveShadow = true; }
   m.matrixAutoUpdate = false; m.matrixWorldAutoUpdate = false;
+  m.userData.dqLod = { obj: true, rep: lista.length > 2 };   /* nivel de objeto: lo recalcula ajustarModelado al cambiar la calidad */
   escena.add(m); mallasPropias.push(m);
   return m;
+}
+/* Cambio de calidad en vivo (aplicarGfx): los modelos propios ya puestos (flora, decorado, objetos y cofres) cambian de
+   nivel de detalle y de tarjetas de follaje sin recargar. Cada malla guarda en userData.dqLod su nivel «base» (flora: el
+   de la vegetacion en media, que sube uno en baja) o que es un objeto (lodObjeto). Las geometrias que nadie dibuja ya se
+   sueltan. Lo que se construye al cargar (cuantos arboles, sotobosque, suelo) sigue pidiendo recargar. */
+let lodVivo = '';
+function ajustarModelado() {
+  if (!PAQ) return 0;
+  radiosLod(GFX.det); lodX = 1e9;
+  const ligera = GFX.efectivo === 'minima' || GFX.efectivo === 'baja', mas = GFX.det === 0 ? 1 : 0, lo = lodObjeto(), rep = GFX.efectivo === 'media' ? 1 : 0;
+  const clave = ligera + '|' + mas + '|' + lo + '|' + rep;
+  if (clave === lodVivo) return 0;
+  lodVivo = clave;
+  PAQ.ponerLigera(ligera);
+  const viejas = new Set();
+  let n = 0;
+  escena.traverse(o => {
+    const d = o.userData.dqLod, g0 = o.geometry, org = d && g0 && PAQ.origen(g0);
+    if (!org) return;
+    const g = PAQ.geo(org.n, d.obj ? Math.max(lo, d.rep ? rep : 0) : Math.min(2, d.b + mas), ligera);
+    if (g !== g0) { o.geometry = g; viejas.add(g0); n++; }
+  });
+  if (viejas.size) { const usadas = new Set(); escena.traverse(o => { if (o.geometry) usadas.add(o.geometry); }); for (const g of viejas) if (!usadas.has(g)) PAQ.soltar(g); }
+  return n;
 }
 function crearBanderines() {
   // 0-4 no: esa cuerda atravesaba el campanario (-17, 31).
@@ -5575,7 +5653,21 @@ const GAMA_MAPA = THREE.ColorManagement && THREE.ColorManagement.enabled ? 1 / 2
 // Destino 📍 personal del mapa (solo en este navegador). Se ve en el minimapa con flecha y metros.
 let destino3 = null;
 try { const d = JSON.parse(localStorage.getItem('dq_destino3') || 'null'); if (d && Number.isFinite(d.x) && Number.isFinite(d.z)) destino3 = { x: d.x, z: d.z }; } catch (e) {}
+/* Con el suelo ya hecho (crearTerreno deja sus colores en mapaCrudo) el mapa base es copiar: un pixel por punto del
+   suelo (SEG x SEG, algo mas fino que los 220 de antes) sin volver a calcular altura ni color. Sin ellos, como antes. */
+let mapaCrudo = null;
 function pintarMapaBase() {
+  if (mapaCrudo) {
+    const N = SEG, D = mapaCrudo, c = document.createElement('canvas'); c.width = c.height = N;
+    const x = c.getContext('2d'), img = x.createImageData(N, N), agua = new THREE.Color('#2f74b5');
+    for (let k = 0, o = 0; k < N * N; k++, o += 3) {
+      const r = D[o] < 0 ? agua.r : D[o], g = D[o] < 0 ? agua.g : D[o + 1], b = D[o] < 0 ? agua.b : D[o + 2];
+      img.data[k * 4] = Math.pow(r, GAMA_MAPA) * 255; img.data[k * 4 + 1] = Math.pow(g, GAMA_MAPA) * 255; img.data[k * 4 + 2] = Math.pow(b, GAMA_MAPA) * 255; img.data[k * 4 + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    mapaBase = c; mapaCrudo = null;
+    return;
+  }
   const N = 220, c = document.createElement('canvas'); c.width = c.height = N;
   const x = c.getContext('2d'), img = x.createImageData(N, N), col = new THREE.Color();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -6557,10 +6649,10 @@ function crearCofres3() {
     const g = new THREE.Group(), madera = new THREE.MeshLambertMaterial({ color: COLOR_COFRE[c.tipo], flatShading: true });
     /* Cofre propio (paquete «objetos»): caja y tapa por separado; la tapa gira en la misma bisagra. Sin paquete, el de cajas. */
     const nP = 'cofre_' + ({ comun: 'madera', epico: 'hierro', legendario: 'dorado' })[c.tipo], hayP = !!(PAQ && PAQ.modelos[nP + '_base'] && PAQ.modelos[nP + '_tapa']);
-    const caja = hayP ? new THREE.Mesh(PAQ.geo(nP + '_base', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); if (!hayP) caja.position.y = 0.3;
+    const caja = hayP ? new THREE.Mesh(PAQ.geo(nP + '_base', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); if (!hayP) caja.position.y = 0.3; else caja.userData.dqLod = { obj: true };
     if (!hayP) for (const x of [-0.4, 0.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.78), oro); b.position.set(x, 0.31, 0); g.add(b); }
     const tapa = new THREE.Group(); tapa.position.set(0, 0.6, -0.375);
-    const t = hayP ? new THREE.Mesh(PAQ.geo(nP + '_tapa', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); if (!hayP) t.position.set(0, 0, 0.375); tapa.add(t);
+    const t = hayP ? new THREE.Mesh(PAQ.geo(nP + '_tapa', lodObjeto()), PAQ.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); if (!hayP) t.position.set(0, 0, 0.375); else t.userData.dqLod = { obj: true }; tapa.add(t);
     if (hayP) mallasPropias.push(caja, t);
     const cierre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.06), oro); cierre.position.set(0, -0.02, 0.76); if (!hayP) tapa.add(cierre);
     const gema = new THREE.Mesh(new THREE.OctahedronGeometry(c.tipo === 'legendario' ? 0.28 : 0.2, 0), new THREE.MeshBasicMaterial({ color: c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#fde68a' }));
@@ -10150,7 +10242,7 @@ async function inicio() {
   if (!USAR_MODELOS) await Promise.all([cargarAnim(), cargarImg(A + 'skins/duende_anim.png')]);
   progreso(0.3, 'Levantando montañas…');
   await new Promise(r => setTimeout(r, 20));
-  agua = crearTerreno();
+  agua = await crearTerreno();
   progreso(0.45, 'Trayendo árboles y casas…');
   if (kitP) {
     try { KIT = await Promise.race([kitP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
@@ -10167,7 +10259,8 @@ async function inicio() {
   }
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
-  crearFlora();
+  await crearFlora();
+  await ceder();
   // Hitos de los encargos: un obelisco con un cristal que brilla en cada zona.
   for (const zE of ZONAS_ENC) {
     const hi = hitoDe(zE, ZONAS3D, alturaEn), y = alturaEn(hi.x, hi.z);
@@ -10182,8 +10275,10 @@ async function inicio() {
   for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
   try { crearPuestosVecinos(); } catch (e) { console.warn(e); }
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
+  await ceder();
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
+  await ceder();
   cargarLugares();   /* v376: no espera: los lugares del borde aparecen cuando llega su paquete */
   try { crearRuinas({ escena, KIT, PAQ, alturaEn, CAMINOS, portal, arena: ARENA3D, hitos: ZONAS_ENC.map(zE => hitoDe(zE, ZONAS3D, alturaEn)), cueva, abismo, nivel: GFX.efectivo, sombras: Q.sombras, respaldos: respaldosShader }); } catch (e) { console.warn('[3D] sin ruinas modeladas:', e); }
   crearCofres3();
@@ -10191,6 +10286,7 @@ async function inicio() {
   abismo.dueno(asedio && asedio.dueno);
   crearCorrientes();
   crearCorrientesMundo();
+  await ceder();
   progreso(0.7, 'Preparando los gráficos…');
   // El socket y el 'hola' salen ya, en paralelo con shaders, mapa y NPC (antes, al final).
   // El rescate (#r=) pregunta antes de entrar: ese caso conecta abajo, como siempre.
@@ -10201,6 +10297,7 @@ async function inicio() {
   pintarMapaBase();
   setTimeout(() => { try { if (GFX.efectivo !== 'minima') pintarMapaHD(true); } catch (e) {} }, 12000);   /* el mapa nitido se prepara solo, a trozos de 3 ms: al abrirlo ya esta, y el minimapa gana detalle. En Minima se pinta al abrir el mapa. */
   if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
+  await ceder();
   try {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
     if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
@@ -10208,12 +10305,14 @@ async function inicio() {
     render.compile(escena, camara);
     cal.forEach(m => escena.remove(m));
   } catch (e) { console.warn(e); }
+  await ceder();
   // Los NPC en paralelo (sin modelos 3D, sus hojas se bajaban una tras otra).
   const figsNpc = await Promise.all(NPCS3D.map(n => figuraModelo(() => crearNpc(n.hoja, n.tipo === 'chichera' ? { color: '#7c3aed', acc: 'paja', accC: '#d9b35c' } : undefined)) || figuraHoja(n.hoja, 62)));
   NPCS3D.forEach((n, i) => npcs.push({ ...n, y: alturaEn(n.x, n.z), fig: figsNpc[i], lbl: etiqueta('') }));
   // La plaza entra ya; los narradores de zona, al acercarte (vecinosCerca).
   const figsVec = await Promise.all(VECINOS.map(n => n.zona === 'pueblo' ? (figuraModelo(() => crearNpc(n.hoja, n.look)) || figuraHoja(n.hoja, 62)) : null));
   VECINOS.forEach((n, i) => npcs.push({ ...n, y: alturaEn(n.x, n.z), fig: figsVec[i], perezoso: n.zona !== 'pueblo', lbl: etiqueta('') }));
+  await ceder();
   try { crearAventureros(); } catch (e) { console.warn(e); }
   try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   try { crearDecoTemporada(); } catch (e) { console.warn(e); }

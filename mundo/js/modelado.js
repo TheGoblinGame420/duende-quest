@@ -33,15 +33,19 @@ async function leerBin(url) {
   return r.arrayBuffer();
 }
 
-let promesa = null;
-// fx: { uT, uViento, uMusgo, uBrillo } (uniformes vivos que ya mueve mundo.js). Devuelve null si no hay paquetes.
-export function cargarModelado(base, fx) {
-  if (!promesa) promesa = (async () => {
-    const r = await fetch(base + 'dq_indice.json' + V);
-    if (!r.ok) throw new Error('dq_indice.json ' + r.status);
-    const ind = await r.json(), fams = Object.keys(ind.paquetes || {});
-    // Un paquete que falla no tumba a los demas: esa familia se queda con lo de antes.
-    const paqs = (await Promise.all(fams.map(async f => {
+// Baja el indice y los paquetes (sin construir nada). Un paquete que falla no tumba a los demas: esa familia se queda con lo de antes.
+function bajar(base) {
+  return (async () => {
+    /* mundo/index.html ya pidio el indice (y precargo los paquetes) al abrir la pagina; si no, se pide aqui. */
+    let ind = null;
+    try { if (base === BASE_DEF && typeof window !== 'undefined' && window.__dqIndice) ind = await window.__dqIndice; } catch (e) { ind = null; }
+    if (!ind || !ind.paquetes) {
+      const r = await fetch(base + 'dq_indice.json' + V);
+      if (!r.ok) throw new Error('dq_indice.json ' + r.status);
+      ind = await r.json();
+    }
+    const fams = Object.keys(ind.paquetes || {});
+    return (await Promise.all(fams.map(async f => {
       try {
         const h = '?h=' + ind.paquetes[f].h;
         const [j, buf] = await Promise.all([fetch(base + 'dq_' + f + '.json' + h).then(x => { if (!x.ok) throw new Error(f + '.json ' + x.status); return x.json(); }), leerBin(base + 'dq_' + f + '.bin' + h)]);
@@ -49,6 +53,20 @@ export function cargarModelado(base, fx) {
         return { j, buf };
       } catch (e) { console.warn('[3D] sin el paquete de modelos «' + f + '»:', e); return null; }
     }))).filter(Boolean);
+  })();
+}
+// La descarga empieza en cuanto el navegador evalua este modulo (al llegar el JS), y no cuando mundo.js empieza a
+// armar el mundo: con datos moviles los paquetes bajan mientras se ejecuta el codigo del juego y se levanta el
+// terreno, en vez de despues. ?sinModelado (pruebas) no baja nada.
+const BASE_DEF = '/assets/3d/';
+let pre = null;
+try { if (typeof location !== 'undefined' && typeof fetch === 'function' && !/[?&]sinModelado(=|&|$)/.test(location.search) && /\/mundo\//.test(location.pathname)) { pre = bajar(BASE_DEF); pre.catch(() => {}); } } catch (e) { pre = null; }
+
+let promesa = null;
+// fx: { uT, uViento, uMusgo, uBrillo } (uniformes vivos que ya mueve mundo.js). Devuelve null si no hay paquetes.
+export function cargarModelado(base, fx) {
+  if (!promesa) promesa = (async () => {
+    const paqs = await (base === BASE_DEF && pre ? pre : bajar(base));
     return paqs.length ? crear(paqs, { ...(fx || {}), base }) : null;
   })();
   return promesa;
@@ -65,13 +83,15 @@ function crear(paqs, fx) {
     if (s.flora) (floraDe[s.flora] = floraDe[s.flora] || []).push({ n, alto: s.tam || s.alto || 0, modo: s.modo || '', zonas: s.zonas || null, orilla: !!s.orilla, lejos: s.lejos && j.modelos[s.lejos] ? s.lejos : n });
     if (s.kit) kit[s.kit] = n;
   }
-  // Geometria de un modelo en un nivel (0 alto, 1 medio, 2 bajo). Se crea una vez.
-  function geo(n, lod = 0) {
-    const k = n + '|' + lod;
-    if (cache.has(k)) return cache.get(k);
+  // Geometria de un modelo en un nivel (0 alto, 1 medio, 2 bajo). Se crea una vez. sinCartas: sin las tarjetas de
+  // follaje (por omision, lo que pida la calidad vigente; ver ponerLigera). origen(g) dice de que modelo y nivel es.
+  const origen = new WeakMap();
+  function geo(n, lod = 0, sinCartas = ligera) {
     const m = modelos[n];
     if (!m) throw new Error('modelo ' + n + ' no esta en los paquetes');
-    const L = m.lods[Math.min(lod, m.lods.length - 1)], v = L.v, buf = m.buf;
+    const nl = Math.min(lod, m.lods.length - 1), L = m.lods[nl], sc = !!(L.uv && sinCartas), k = n + '|' + nl + (sc ? '|s' : '');
+    if (cache.has(k)) return cache.get(k);
+    const v = L.v, buf = m.buf;
     // Formato v2/v3 (tools/blender/dq_lib.py, _bloque): planos de bytes; posiciones a 12 bits en diferencias, indices relativos.
     // v3: los niveles con tarjetas de follaje (L.uv) llevan dos planos mas (u, v) antes de los indices.
     const B = new Uint8Array(buf, L.o), ni = L.i, oi = (L.uv ? 16 : 14) * v;
@@ -90,14 +110,16 @@ function crear(paqs, fx) {
     g.setAttribute('tinte', new THREE.BufferAttribute(tin, 1));
     g.setAttribute('dqW', new THREE.BufferAttribute(w8, 1, true));
     if (L.uv) { const uv = new Uint8Array(v * 2); for (let i = 0; i < v; i++) { uv[i * 2] = B[14 * v + i]; uv[i * 2 + 1] = B[15 * v + i]; } g.setAttribute('dqUV', new THREE.BufferAttribute(uv, 2, true)); }
-    /* En calidad baja o minima (al cargar) las tarjetas de follaje ni se suben: queda la masa simple. */
+    /* En calidad baja o minima las tarjetas de follaje ni se suben: queda la masa simple. */
     let ix = idx;
-    if (L.uv && ligera) { let k = 0; ix = new Uint16Array(ni); for (let i = 0; i < ni; i += 3) if (tin[idx[i]] !== 9) { ix[k++] = idx[i]; ix[k++] = idx[i + 1]; ix[k++] = idx[i + 2]; } ix = ix.subarray(0, k); }
+    if (sc) { let k = 0; ix = new Uint16Array(ni); for (let i = 0; i < ni; i += 3) if (tin[idx[i]] !== 9) { ix[k++] = idx[i]; ix[k++] = idx[i + 1]; ix[k++] = idx[i + 2]; } ix = ix.subarray(0, k); }
     g.setIndex(new THREE.BufferAttribute(ix, 1));
     g.computeBoundingSphere();
-    cache.set(k, g);
+    cache.set(k, g); origen.set(g, { n, lod: nl, sinCartas: sc, k });
     return g;
   }
+  // Suelta una geometria que ya no se dibuja (tras cambiar la calidad): libera la GPU y la copia en memoria.
+  function soltar(g) { const o = origen.get(g); if (!o || cache.get(o.k) !== g) return false; cache.delete(o.k); g.dispose(); return true; }
   // Variantes que un guion declaro para un tipo de flora en una zona ({'flora': tipo, 'zonas': [...], 'orilla': true}).
   // Las de orilla solo salen junto al agua (y alli mandan). null = ese tipo sigue con el kit.
   const memo = new Map();
@@ -111,7 +133,12 @@ function crear(paqs, fx) {
     memo.set(k, r);
     return r;
   }
-  return { modelos, geo, flora, kit, material: materialOrganico(fx, ligera ? '' : follaje, ligera), caja: n => modelos[n] && { min: modelos[n].min, max: modelos[n].max }, tris: (n, lod) => modelos[n].lods[lod].i / 3 };
+  const material = materialOrganico(fx, follaje, ligera);
+  // Cambio de calidad en vivo (menu de graficos): de baja/minima a media o mas, las tarjetas de follaje vuelven a
+  // pedirse (y la textura de detalle pasa a 256 con su follaje); al reves, las geometrias nuevas salen sin tarjetas.
+  // Quien dibuja cambia luego la geometria de sus mallas (mundo.js, ajustarModelado).
+  function ponerLigera(si) { si = !!si; if (si === ligera) return false; ligera = si; if (!si && material.userData.dqSubir) material.userData.dqSubir(); return true; }
+  return { modelos, geo, flora, kit, material, origen: g => origen.get(g), soltar, ponerLigera, ligera: () => ligera, caja: n => modelos[n] && { min: modelos[n].min, max: modelos[n].max }, tris: (n, lod) => modelos[n].lods[lod].i / 3 };
 }
 
 // Textura de detalle (UNA para todos los modelos propios; 256 px, 128 en calidad baja). Sin UV: se proyecta desde la
@@ -169,7 +196,14 @@ function cargarFollaje(url, tex, cartas) {
 function materialOrganico(fx, follaje, ligera) {
   const mat = transparentar(new THREE.MeshLambertMaterial({ vertexColors: true }));
   const prev = mat.onBeforeCompile, cero = { value: 0 }, det = { value: texturaDetalle(ligera ? 128 : 256) }, cartas = { value: 0 };
-  cargarFollaje(follaje, det.value, cartas);
+  /* En baja y minima el follaje no se baja; si luego se sube la calidad en el menu, dqSubir lo pide (y pasa la textura a 256). */
+  let subido = !ligera;
+  if (subido) cargarFollaje(follaje, det.value, cartas);
+  mat.userData.dqSubir = () => {
+    if (subido) return; subido = true;
+    if (det.value.image.width < 256) { const vieja = det.value; det.value = texturaDetalle(256); vieja.dispose(); }
+    cargarFollaje(follaje, det.value, cartas);
+  };
   mat.onBeforeCompile = (sh, r) => {
     prev(sh, r);
     sh.uniforms.uT = fx.uT || cero; sh.uniforms.uViento = fx.uViento || cero; sh.uniforms.uMusgo = fx.uMusgo || cero; sh.uniforms.uBrillo = fx.uBrillo || { value: 1 }; sh.uniforms.uDqDet = det; sh.uniforms.uDqCartas = cartas;
