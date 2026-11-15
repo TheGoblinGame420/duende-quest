@@ -22,6 +22,8 @@ import * as THREE from 'three';
 import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=391';
 // Trajes 3D de las skins: un solo modulo generado por tools/unir_skins.mjs desde mundo/js/skins/*.js.
 import { SKINS3D } from './skins3d.js?v=391';
+// Monstruos modelados en Blender (se activan con ponerMonstruosPaq).
+import { crearBestias } from './bestias.js?v=391';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -3179,15 +3181,26 @@ function decorarJefe(r) {
 }
 
 // ═══════════ API ═══════════
+// Monstruos modelados en Blender (mundo/js/bestias.js, paquete dq_monstruos): mundo.js llama a
+// ponerMonstruosPaq(PAQ) cuando llegan los modelos propios. Sin paquete, todo sigue como antes.
+let BESTIAS = null;
+export function ponerMonstruosPaq(paq) {
+  try { BESTIAS = crearBestias(paq, { nuevoRig, G, piv, M, mat, fuera, conBorde, ponBorde }); }
+  catch (e) { BESTIAS = null; console.warn('[3D] sin monstruos modelados:', e); }
+  return BESTIAS ? Object.keys(BESTIAS) : [];
+}
 // o (opcional): { ligero: true } = calidad baja (sin adornos menudos ni pivotes de capa o mandibula).
 export function crearMonstruo(k, o) {
   const d = MONSTRUOS[k] || { hoja: 'goblin_normal', nivel: 1 };
   let alto = 62 / PX_M;
   try { if (MONSTRUOS[k]) alto = statsMonstruo(k).alto / PX_M; } catch (e) {}
   const c = { k, color: d.tinte || null, jefe: !!d.jefe, e: d.jefe ? 0.22 : 0, vuela: !!d.vuela, ligero: !!(o && o.ligero) };
-  const r = (ARQ[d.hoja] || ARQ.goblin_normal)(c);
+  /* Bichos modelados en Blender (bestias.js) si llego su paquete; si no (o si falla), el arquetipo de siempre. */
+  let r = null, bes = '';
+  if (BESTIAS && BESTIAS[d.hoja]) try { r = BESTIAS[d.hoja](c); bes = '#b'; } catch (e) { console.warn('[3D] bestia ' + d.hoja + ':', e); r = null; bes = ''; }
+  if (!r) r = (ARQ[d.hoja] || ARQ.goblin_normal)(c);
   if (c.jefe) decorarJefe(r);
-  const m = new Modelo(r, alto, 'm:' + k + (c.jefe ? ':j' : '') + (c.ligero ? '#l' : ''));
+  const m = new Modelo(r, alto, 'm:' + k + (c.jefe ? ':j' : '') + (c.ligero ? '#l' : '') + bes);
   if (c.jefe) m._aura(c.color || '#ff4444');
   m.tipo = 'monstruo'; m.k = k; m.hoja = d.hoja; m.vuela = !!d.vuela; m.jefe = c.jefe;
   return m;

@@ -24,7 +24,7 @@ import { waChicha, mesChicha } from '/mmo/js/data.js?v=391';   // WhatsApp de la
 import { NOVEDADES } from '/mmo/js/data.js?v=391';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
 import { iniciarRegalo } from '/mmo/js/regalo.js?v=391';
 import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=391';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX } from './modelos.js?v=391';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=391';
 import { crearMusica } from './musica.js?v=391';
 import { crearSonidos } from './sonidos.js?v=391';
 import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=391';
@@ -10440,6 +10440,8 @@ async function inicio() {
     if (PAQ) {
       if (KIT && KIT.sustituir) for (const k in PAQ.kit) try { KIT.sustituir(k, PAQ.geo(PAQ.kit[k], 0), PAQ.caja(PAQ.kit[k])); } catch (e) { console.warn(e); }
       respaldosShader.push(['modelado', () => { const m2 = new THREE.MeshLambertMaterial({ vertexColors: true }); for (const im of mallasPropias) im.material = m2; }]);
+      /* Monstruos modelados en Blender (bestias.js): los que aun eran de primitivas pasan a sus piezas del paquete. */
+      try { ponerMonstruosPaq(PAQ); } catch (e) { console.warn('[3D] sin monstruos modelados:', e); }
     }
   }
   progreso(0.55, 'Plantando bosques…');
@@ -10486,7 +10488,7 @@ async function inicio() {
   await ceder();
   try {
     const cal = [new THREE.Mesh(GEO_BALA, matBala('#ffffff')), new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }))];
-    if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
+    if (USAR_MODELOS) { cal.push(crearMonstruo('goblin_normal').obj); cal.push(crearMonstruo('arana').obj); /* el material de los monstruos de Blender (bestias.js) tambien se compila aqui */ cal.push(crearDuende({}).obj); cal.push(crearDuende({ skin: 'legendaria', arma: 'chispa' }).obj); }
     cal.forEach(m => { m.position.set(P.x, -50, P.z); escena.add(m); });
     render.compile(escena, camara);
     cal.forEach(m => escena.remove(m));
