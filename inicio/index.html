@@ -16,7 +16,7 @@
 <meta property="og:locale" content="es_PE">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Duende Quest 3D: mundo abierto de duendes con alas">
+<meta property="og:image:alt" content="Duende Quest ORIGINS: la plaza de Pueblo Duende en 3D, mundo abierto gratis desde tu celular">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="manifest" href="/inicio/manifest.json">
@@ -26,7 +26,7 @@
 <script src="/js/origen.js?v=391"></script>
 <script src="/js/pwa.js?v=391" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/capturas/origins-plaza-retrato.jpg" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
@@ -45,6 +45,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .enl{display:flex;gap:8px;}
 .enl a{color:var(--txt2);text-decoration:none;font:600 13px var(--sans);padding:8px 12px;border-radius:999px;border:1px solid rgba(167,139,250,.3);background:rgba(255,255,255,.04);}
 .enl a:hover{color:#fff;border-color:var(--mor);}
+/* 15-nov-2026: botones de 44 px en una línea; en celular «Instalar» queda en icono, así al aparecer no empuja las cartas */
+.enl a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;white-space:nowrap;}
+@media (max-width:420px){.enl .inst-t{display:none;}}
 .hola{text-align:center;margin:6px 0 20px;}
 .hola h1{font:400 clamp(13px,2.4vw,20px)/1.6 var(--px);text-shadow:0 0 18px rgba(167,139,250,.6);}
 .hola h1 span{color:var(--oro);}
@@ -62,7 +65,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .carta.origins{border-color:rgba(244,114,182,.5);}
 .carta.ultimo{border-color:var(--oro);box-shadow:0 0 0 2px rgba(255,216,74,.7),0 18px 50px rgba(0,0,0,.45);}
 .vista{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/12;max-height:42vh;width:100%;background:#0b0718;transform:translateZ(30px);}
-.vista video{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;}
+.vista video{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;}
 .classic .vista{background:linear-gradient(180deg,#7ec8f0 0%,#bfe6ff 55%,#5fae4a 55%,#3d8a34 100%);}
 .classic .vista::after{content:"";position:absolute;left:0;right:0;bottom:0;height:45%;background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 16px,transparent 16px 32px);}
 .nube{position:absolute;top:14%;width:90px;height:26px;background:#fff;border-radius:20px;opacity:.85;animation:nube 22s linear infinite;}
@@ -91,7 +94,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .una{max-width:620px;margin:6px auto 0;text-align:center;font-size:14px;color:#fde68a;padding:11px 16px;border-radius:14px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.35);}
 .una b{color:#fff;}
 footer{text-align:center;margin-top:22px;font-size:13px;color:var(--txt2);}
-footer a{color:var(--cian);text-decoration:none;}
+footer a{color:var(--cian);text-decoration:none;display:inline-block;padding:14px 4px;}
+.marca{min-height:44px;}
 @media (max-width:680px){.cartas{grid-template-columns:1fr;}.vista{aspect-ratio:16/11;}.duende{bottom:12%;transform:scale(1.35);}.enl a.op{display:none;}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;}.carta{transition:none;}}
 </style>
@@ -102,7 +106,7 @@ footer a{color:var(--cian);text-decoration:none;}
 <main>
   <header>
     <a class="marca" href="/inicio/"><img src="/assets/ui/coin.png" alt=""><b>DUENDE QUEST</b></a>
-    <nav class="enl"><a href="#" data-instalar hidden style="display:none;color:#ffd84a;border-color:#ffd84a">⬇ Instalar app</a><a href="/" class="op">La web</a><a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">Telegram</a></nav>
+    <nav class="enl"><a href="#" data-instalar hidden style="display:none;color:#ffd84a;border-color:#ffd84a" aria-label="Instalar Duende Quest como app" title="Instalar como app"><span aria-hidden="true">⬇</span><span class="inst-t">&nbsp;Instalar app</span></a><a href="/" class="op">La web</a><a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">Telegram</a></nav>
   </header>
   <section class="hola">
     <h1 id="saludo">¿A qué mundo vas <span>hoy</span>?</h1>
@@ -111,7 +115,7 @@ footer a{color:var(--cian);text-decoration:none;}
   <section class="cartas">
     <a class="carta origins" data-ir="/mundo/">
       <div class="vista">
-        <video data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest Origins"></video>
+        <video data-src="/assets/video/origins-plaza.mp4" poster="/assets/capturas/origins-plaza-retrato.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest Origins: la plaza de Pueblo Duende"></video>
         <span class="etq">NUEVO · 3D</span>
       </div>
       <h2>Duende Quest Origins</h2>
@@ -232,7 +236,7 @@ footer a{color:var(--cian);text-decoration:none;}
     requestAnimationFrame(cuadro);
   }
   requestAnimationFrame(cuadro);
-  // Video de ORIGINS: al abrir solo se ve el poster (42 KB). El mp4 (1,7 MB) se pide cuando la pagina ya cargo,
+  // Video de ORIGINS: al abrir solo se ve el poster (51 KB). El mp4 (0,55 MB) se pide cuando la pagina ya cargo,
   // nunca con ahorro de datos, 2G o "reducir movimiento", y se pausa cuando la carta no se ve.
   var vid = document.querySelector('video[data-src]');
   if (vid) {

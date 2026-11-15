@@ -18,14 +18,14 @@
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Duende Quest 3D: un duende con alas vuela sobre el bosque y pelea contra un jefe">
+<meta property="og:image:alt" content="Duende Quest ORIGINS: la plaza de Pueblo Duende en 3D, mundo abierto gratis desde tu celular">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Te invitaron a jugar Duende Quest gratis 🧝">
 <meta name="twitter:description" content="Entra con este link: recibes un kit de bienvenida (oro y pociones) y, al llegar a nivel 10, tú y tu amigo ganan oro. En el celular, sin descargar.">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png"><link rel="manifest" href="/inicio/manifest.json">
-<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/capturas/origins-plaza-retrato.jpg" fetchpriority="high">
 <style>
 :root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -51,7 +51,7 @@ footer{text-align:center;font-size:13px;color:var(--txt2);}
 .iab{display:none;max-width:420px;margin:0 auto 10px;padding:10px 12px;border-radius:14px;background:rgba(20,12,44,.95);border:1px solid rgba(125,211,252,.5);font:600 13px/1.4 var(--sans);color:var(--txt);text-align:center;}
 .iab.on{display:block;}
 .iab a{display:inline-block;margin-top:6px;padding:7px 12px;border-radius:10px;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:800;}
-footer a{color:var(--txt2);}
+footer a{color:var(--txt2);display:inline-block;padding:14px 6px;}
 .consejo{margin-top:14px;padding:10px 14px;border-radius:14px;background:rgba(255,216,74,.08);border:1px solid rgba(255,216,74,.35);color:var(--oro);font:600 14px/1.45 var(--sans);text-align:center;}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub,.consejo{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
@@ -62,7 +62,7 @@ footer a{color:var(--txt2);}
 <div class="aurora" aria-hidden="true"></div>
 <main>
   <div class="marca"><img src="/assets/ui/coin.png" alt="" width="34" height="34">DUENDE QUEST</div>
-  <div class="poster"><img src="/assets/video/promo3d-poster.jpg" alt="El pueblo de Duende Quest con duendes jugando en 3D" width="540" height="960" fetchpriority="high"><span>JUEGO PERUANO</span></div>
+  <div class="poster"><img src="/assets/capturas/origins-plaza-retrato.jpg" alt="La plaza de Pueblo Duende en 3D al atardecer: fuente, mercado y duendes" width="540" height="960" fetchpriority="high"><span>JUEGO PERUANO</span></div>
   <section>
     <h1>Crea tu duende y caza monstruos con amigos. <b>Gratis en tu celular, sin descargar.</b></h1>
     <p class="sub">Un mundo con jefes, mazmorras y misiones para jugar en grupo. Se abre en el navegador del celular o de la PC.</p>
@@ -115,7 +115,7 @@ footer a{color:var(--txt2);}
   var GANCHOS = {
     jefe: { h1: 'Caza goblins y derrota al <b>jefe Sabueso</b> con tus patas.', poster: '/assets/promo/historia_3.jpg', alt: 'Un duende pelea contra goblins en el bosque de Duende Quest', consejo: '💡 Haz las misiones del Guardia Tito: tras tres cortas, el jefe Sabueso te espera.' },
     vuelo: { h1: 'Tu duende tiene alas: <b>sal del pueblo y vuela.</b>', poster: '/assets/promo/historia_2.jpg', alt: 'Una isla flotante con un castillo en el cielo de Duende Quest', consejo: '💡 Fuera del pueblo toca VOLAR: las columnas de viento celestes recargan tus alas.' },
-    amigos: { h1: 'Arma tu grupo y <b>cacen juntos con tus patas.</b>', poster: '/assets/video/promo3d-poster.jpg', alt: 'El pueblo de Duende Quest con duendes jugando en 3D', consejo: '💡 Invita a tu pata con tu enlace: cuando llegue a Nv 10, los dos ganan oro.' },
+    amigos: { h1: 'Arma tu grupo y <b>cacen juntos con tus patas.</b>', poster: '/assets/capturas/origins-plaza-retrato.jpg', alt: 'La plaza de Pueblo Duende en 3D al atardecer: fuente, mercado y duendes', consejo: '💡 Invita a tu pata con tu enlace: cuando llegue a Nv 10, los dos ganan oro.' },
     botin: { h1: 'Caza monstruos y <b>llévate su botín.</b>', poster: '/assets/promo/historia_1.jpg', alt: 'Un duende con su espada en Duende Quest', consejo: '💡 Tu primera caza trae botín seguro, y los jefes sueltan equipo raro o mejor.' }
   };
   var gancho = '';

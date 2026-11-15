@@ -22,17 +22,18 @@
 <meta property="og:locale" content="es_PE">
 <meta property="og:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta property="og:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
-<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/portada.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Duende Quest Online, el MMORPG de los duendes: juega gratis en la web y en Telegram">
+<meta property="og:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D: la plaza de Pueblo Duende en ORIGINS y una batalla contra un jefe en CLASSIC">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@elduendesolana">
 <meta name="twitter:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
-<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
-<meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
+<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/portada.jpg">
+<meta name="twitter:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D">
 <meta name="theme-color" content="#090615">
 <link rel="manifest" href="/inicio/manifest.json">
 <script src="/js/pwa.js?v=391" defer></script>
@@ -73,7 +74,7 @@
       "alternateName": "Duende Quest Online",
       "url": "https://duende-quest.alfonso12hc.workers.dev/",
       "image": "https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png",
-      "screenshot": ["https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-dragon-acantilados.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-pueblo-jugadores.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-cavernas-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-jefe-selva.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-movil.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/arcade-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg"],
+      "screenshot": ["https://duende-quest.alfonso12hc.workers.dev/assets/capturas/origins-plaza.jpg", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/origins-plaza-noche.jpg", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-dragon-acantilados.png","https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-pueblo-jugadores.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-cavernas-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-jefe-selva.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-movil.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/arcade-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg"],
       "description": "RPG y MMORPG de duendes en pixel art, gratis en el navegador y en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real.",
       "inLanguage": "es",
       "genre": ["RPG", "MMORPG", "3D", "Mundo abierto", "Acción", "Pixel art"],
@@ -715,6 +716,7 @@ section[id]{scroll-margin-top:72px;}
 .cap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;max-width:1100px;margin:0 auto;}
 .cap{margin:0;display:flex;flex-direction:column;gap:.45rem;min-width:0;}
 .cap-grande{grid-column:span 2;grid-row:span 2;}
+.cap-doble{grid-column:span 2;}
 .cap-abrir{display:block;width:100%;padding:0;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:#05070c;cursor:zoom-in;box-shadow:var(--sombra);transition:border-color .15s;}
 .cap-abrir:hover{border-color:var(--pri-txt);}
 .cap-abrir img{display:block;width:100%;height:auto;aspect-ratio:1160/720;object-fit:cover;}
@@ -802,8 +804,8 @@ section[id]{scroll-margin-top:72px;}
     <li><a href="#faq">Preguntas</a></li>
   </ul>
   <div class="nav-right">
-    <a class="nav-play" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a">⬇ Instalar</a>
-    <a class="nav-play" href="/jugar/?web=1">Jugar gratis</a>
+    <a class="nav-play nav-instalar" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a" aria-label="Instalar Duende Quest como app" title="Instalar como app"><span aria-hidden="true">⬇</span><span class="nav-instalar-t"> Instalar</span></a>
+    <a class="nav-play nav-jugar" href="/jugar/?web=1">Jugar gratis</a>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>
       <span class="dot"></span>
@@ -819,7 +821,7 @@ section[id]{scroll-margin-top:72px;}
 <section class="hero" aria-labelledby="hero-h1">
   <div class="hero-top">
     <div class="hero-txt">
-      <a class="hero-nuevo" href="/novedades"><span id="nuevo-temp">Nuevo: Semana de la T'anta Wawa (3–12 nov) · 5 mazmorras</span> <span aria-hidden="true">›</span></a>
+      <a class="hero-nuevo" href="/novedades"><span id="nuevo-temp">Nuevo: Cosecha del Maíz Morado (13–30 nov) · 5 mazmorras</span> <span aria-hidden="true">›</span></a>
       <p class="hero-blink"><span class="solo-cripto">Memecoin en Solana · Con juego jugable hoy</span><span class="solo-anuncio">Juego peruano · Multijugador · Gratis</span></p>
       <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub"><span class="solo-cripto">La memecoin peruana que ya tiene su propio juego</span><span class="solo-anuncio">El juego de rol online de duendes, hecho en Perú</span></span></h1>
       <p class="hero-sub"><span class="solo-cripto">$DUENDE es el token de la comunidad de Duende Quest, un MMORPG gratis en 3D y 2D que ya puedes jugar en el celular o en la PC, sin instalar nada y sin tener el token.</span><span class="solo-anuncio">Crea tu duende, caza monstruos y vence jefes con otros jugadores. En el celular o en la PC, sin instalar nada.</span></p>
@@ -845,7 +847,7 @@ section[id]{scroll-margin-top:72px;}
     <div class="hero-arte">
       <picture class="solo-cripto"><source type="image/webp" srcset="assets/lore/chicha-duende-playa.webp"><img class="arte-foto" src="assets/lore/chicha-duende-playa.jpg" width="420" height="525" loading="lazy" decoding="async" alt="Botella de chicha morada con la etiqueta $Duende, junto a maíz morado, en la playa de Chancay"></picture>
       <img class="arte-duende solo-cripto" src="assets/lore/duende-chicha.webp" width="200" height="300" decoding="async" fetchpriority="high" alt="El Duende, la mascota de $DUENDE, brinda con un vaso de chicha morada">
-      <img class="arte-juego solo-anuncio" src="/assets/video/promo3d-poster.jpg" width="540" height="960" loading="lazy" decoding="async" alt="Duende Quest en 3D: el mundo abierto del juego">
+      <img class="arte-juego solo-anuncio" src="/assets/capturas/origins-plaza-retrato.jpg" srcset="/assets/capturas/origins-plaza-retrato-270.jpg 270w, /assets/capturas/origins-plaza-retrato.jpg 540w" sizes="(max-width:900px) 90px, 300px" width="540" height="960" loading="lazy" decoding="async" alt="La plaza de Pueblo Duende en ORIGINS al atardecer: fuente, puestos del mercado y otros duendes">
       <img class="hero-coin" src="assets/ui/coin.png" alt="" id="hero-coin" width="88" height="88">
     </div>
   </div>
@@ -877,8 +879,8 @@ section[id]{scroll-margin-top:72px;}
   <div class="juegos" aria-label="Elige tu juego">
     <article class="juego origins">
       <div class="juego-media">
-        <video id="hero-video" data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Tráiler de Duende Quest ORIGINS"></video>
-        <button type="button" class="juego-son" id="hero-son" aria-label="Activar sonido del tráiler">🔇 Activar sonido</button>
+        <!-- Vista del mundo de hoy (v391, grabada del juego sin la interfaz). Sin audio: el sonido del juego está en /mundo/. -->
+        <video id="hero-video" data-src="/assets/video/origins-plaza.mp4" data-poster="/assets/capturas/origins-plaza-retrato.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest ORIGINS: la plaza de Pueblo Duende al atardecer y de noche"></video>
         <span class="juego-tag">NUEVO · 3D</span>
       </div>
       <h3>$DUENDE ORIGINS</h3>
@@ -1006,7 +1008,24 @@ section[id]{scroll-margin-top:72px;}
   <div class="nuevo-grid">
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada de verdad</b><p><strong>Llega a nivel 60 y reclama 2 litros</strong>, con 14 días jugados y 30 horas de juego. También por puntos: desde Nv 10 cazar suma hasta 600 al día, y con 25.000 (unos 42 días) y 100.000 reclamas un litro cada vez. Con tu cuenta, cupos por mes y envío en Perú. No es un sorteo. <a href="/chicha/?web=1">Cómo funciona</a></p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
-    <div class="nuevo-card"><span class="ico" aria-hidden="true" id="temp-ico">🍞</span><b>Temporadas con premios</b><p id="temp-txt">T'anta Wawa (3–12 nov), Cosecha del Maíz Morado (13–30 nov), Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true" id="temp-ico">🌽</span><b>Temporadas con premios</b><p id="temp-txt">Cosecha del Maíz Morado (13–30 nov): los monstruos sueltan mazorcas. Luego vienen Navidad y Carnaval, con objetos para juntar y títulos únicos.</p></div>
+    <!-- El aviso de temporada sigue la fecha. Copia de las fechas de TEMPORADAS en mmo/js/data.js:
+         [nombre, inicio, fin (exclusivo), texto de fechas]. Sin temporada en curso, anuncia la siguiente. -->
+    <script>try { (function () {
+      var T = [["Semana de la T'anta Wawa", Date.UTC(2026, 10, 3), Date.UTC(2026, 10, 13), '3–12 nov'], ['Cosecha del Maíz Morado', Date.UTC(2026, 10, 13), Date.UTC(2026, 11, 1), '13–30 nov'],
+        ['Navidad Duende', Date.UTC(2026, 11, 1), Date.UTC(2027, 0, 7), '1 dic – 6 ene'], ['Verano Duende', Date.UTC(2027, 0, 7), Date.UTC(2027, 0, 30), '7–29 ene'],
+        ['Carnaval Duende', Date.UTC(2027, 1, 4), Date.UTC(2027, 1, 15), '4–14 feb'], ['Vendimia Duende', Date.UTC(2027, 2, 4), Date.UTC(2027, 2, 22), '4–21 mar'],
+        ['Lluvia de Estrellas', Date.UTC(2027, 3, 15), Date.UTC(2027, 4, 3), '15 abr – 2 may'], ['Festival del Viento', Date.UTC(2027, 4, 14), Date.UTC(2027, 4, 29), '14–28 may'],
+        ['Fiesta del Sol', Date.UTC(2027, 5, 12), Date.UTC(2027, 5, 28), '12–27 jun']];
+      var ahora = Date.now(), act = null, sig = null;
+      for (var i = 0; i < T.length; i++) { if (ahora >= T[i][1] && ahora < T[i][2]) act = T[i]; else if (!sig && ahora < T[i][1]) sig = T[i]; }
+      if (ahora < Date.UTC(2026, 10, 3)) return;
+      var aviso = document.getElementById('nuevo-temp'), txt = document.getElementById('temp-txt');
+      if (act) { aviso.textContent = 'Nuevo: ' + act[0] + ' (' + act[3] + ') · 5 mazmorras'; if (act[0] !== 'Cosecha del Maíz Morado') txt.textContent =act[0] + ' (' + act[3] + '): objetos para juntar y títulos únicos. Cada temporada trae los suyos.'; }
+      else if (sig) { aviso.textContent = 'Nuevo: 5 mazmorras · Próxima temporada: ' + sig[0]; txt.textContent = 'La próxima es ' + sig[0] + ' (' + sig[3] + '): objetos para juntar y títulos únicos. El juego te avisa al entrar.'; }
+      else { aviso.textContent = 'Nuevo: 5 mazmorras y Desafíos'; txt.textContent = 'Temporadas con objetos para juntar y títulos únicos. El juego te avisa al entrar cuando empieza una.'; }
+      if (!act || act[0] !== 'Cosecha del Maíz Morado') document.getElementById('temp-ico').textContent = '🏆';
+    })(); } catch (e) {}</script>
     <script>try { if (Date.now() < Date.UTC(2026, 10, 3)) { document.getElementById('nuevo-temp').textContent = 'Nuevo: 5 mazmorras · Noche de Duendes'; document.getElementById('temp-ico').textContent = '🎃'; document.getElementById('temp-txt').textContent = "Noche de Duendes (hasta el 2 nov), T'anta Wawa (3–12 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos."; } } catch (e) {}</script>
   </div>
   <p style="text-align:center;margin-top:1rem"><a href="/novedades">Ver todas las novedades</a> · <a href="/guia">Guía del juego</a></p>
@@ -1050,7 +1069,7 @@ section[id]{scroll-margin-top:72px;}
   <h2 class="px-title" id="trailer-h">Mira el tráiler</h2>
   <p class="px-sub">30 segundos de juego real: clases, mazmorras, juego online y el premio de chicha morada.</p>
   <div style="max-width:340px;margin:0 auto;border-radius:14px;overflow:hidden;border:1px solid var(--borde);background:#000;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" poster="assets/video/trailer-2-poster.webp" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
+    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" data-poster="assets/video/trailer-2-poster.webp" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
       <source src="assets/video/trailer-2.mp4" type="video/mp4">
       Tu navegador no puede reproducir el video.
     </video>
@@ -1062,13 +1081,22 @@ section[id]{scroll-margin-top:72px;}
 
 <section class="section" id="capturas" aria-labelledby="capturas-h">
   <h2 class="px-title" id="capturas-h">Así se ve el juego</h2>
-  <p class="px-sub">Capturas reales de Duende Quest Online y del modo arcade, tal como se juegan en el navegador. Toca una imagen para verla en grande.</p>
+  <p class="px-sub">Capturas reales de ORIGINS (3D), CLASSIC (2D) y del modo arcade, tal como se juegan en el navegador. Toca una imagen para verla en grande.</p>
   <p class="cap-desliza" aria-hidden="true">Desliza para ver más →</p>
   <div class="cap-grid">
     <figure class="cap cap-grande">
+      <button type="button" class="cap-abrir" data-full="assets/capturas/origins-plaza" data-ext=".jpg" aria-label="Ampliar captura: la plaza de Pueblo Duende en ORIGINS">
+        <picture>
+          <source type="image/webp" srcset="assets/capturas/origins-plaza-640.webp 640w, assets/capturas/origins-plaza.webp 1280w" sizes="(max-width:700px) 84vw, (max-width:900px) 92vw, 550px">
+          <img src="assets/capturas/origins-plaza.jpg" width="1280" height="720" loading="lazy" decoding="async" alt="ORIGINS en 3D: la plaza de Pueblo Duende al atardecer, con la torre de piedra, casas de madera, puestos del mercado y duendes paseando.">
+        </picture>
+      </button>
+      <figcaption><b>ORIGINS: mundo abierto en 3D</b>La plaza de Pueblo Duende al atardecer, con el pueblo modelado de nuevo.</figcaption>
+    </figure>
+    <figure class="cap">
       <button type="button" class="cap-abrir" data-full="assets/capturas/mmo-dragon-acantilados" aria-label="Ampliar captura: jefe Dragón Ancestral">
         <picture>
-          <source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados-640.webp 640w, assets/capturas/mmo-dragon-acantilados.webp 1160w" sizes="(max-width:700px) 84vw, (max-width:900px) 92vw, 550px">
+          <source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados-640.webp 640w, assets/capturas/mmo-dragon-acantilados.webp 1160w" sizes="(max-width:700px) 84vw, (max-width:900px) 46vw, 270px">
           <img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" loading="lazy" decoding="async" alt="Tres jugadores (un mago, un guerrero y un sacerdote) combaten al jefe Dragón Ancestral, nivel 64, en los Acantilados Mágicos de Duende Quest Online; arriba se ve la barra de vida del jefe y abajo la barra de habilidades.">
         </picture>
       </button>
@@ -1101,17 +1129,26 @@ section[id]{scroll-margin-top:72px;}
       </button>
       <figcaption><b>Cada zona tiene su jefe</b>El Señor de la Guerra en la Selva Esmeralda.</figcaption>
     </figure>
-    <figure class="cap">
+    <figure class="cap cap-doble">
+      <button type="button" class="cap-abrir" data-full="assets/capturas/origins-plaza-noche" data-ext=".jpg" aria-label="Ampliar captura: Pueblo Duende de noche en ORIGINS">
+        <picture>
+          <source type="image/webp" srcset="assets/capturas/origins-plaza-noche-640.webp 640w, assets/capturas/origins-plaza-noche.webp 1280w" sizes="(max-width:700px) 84vw, (max-width:900px) 92vw, 550px">
+          <img src="assets/capturas/origins-plaza-noche.jpg" width="1280" height="720" loading="lazy" decoding="async" alt="ORIGINS de noche: la plaza de Pueblo Duende iluminada por faroles y ventanas, con cielo estrellado.">
+        </picture>
+      </button>
+      <figcaption><b>Día y noche</b>El pueblo cambia con la hora: de noche se encienden faroles y ventanas.</figcaption>
+    </figure>
+    <figure class="cap cap-doble">
       <button type="button" class="cap-abrir" data-full="assets/capturas/arcade-combate" aria-label="Ampliar captura: modo arcade">
         <picture>
-          <source type="image/webp" srcset="assets/capturas/arcade-combate-640.webp 640w, assets/capturas/arcade-combate.webp 1136w" sizes="(max-width:700px) 84vw, (max-width:900px) 46vw, 270px">
+          <source type="image/webp" srcset="assets/capturas/arcade-combate-640.webp 640w, assets/capturas/arcade-combate.webp 1136w" sizes="(max-width:700px) 84vw, (max-width:900px) 92vw, 550px">
           <img class="cap-ancha" src="assets/capturas/arcade-combate.png" width="1136" height="523" loading="lazy" decoding="async" alt="Modo arcade de Duende Quest: el duende guerrero con escudo y espada pelea contra un enemigo, recoge monedas y suma puntos; abajo, el marcador con puntaje, vida, combo y objetos.">
         </picture>
       </button>
       <figcaption><b>Modo arcade</b>Oleadas, combos, objetos y ranking global.</figcaption>
     </figure>
   </div>
-  <p class="cap-pie">Los nombres de las capturas son de jugadores de prueba. Todo lo que ves está en el juego hoy, sin retoques.</p>
+  <p class="cap-pie">Los nombres de las capturas son de jugadores de prueba. Todo lo que ves está en el juego hoy, sin retoques; las de ORIGINS están tomadas con la interfaz oculta.</p>
 </section>
 
 <!-- ========== EMPIEZA EN 3 PASOS ========== -->
@@ -2003,7 +2040,7 @@ section[id]{scroll-margin-top:72px;}
   var webp = false;
   try { webp = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) {}
   var actual = 0;
-  function ruta(b) { return b.getAttribute('data-full') + (webp ? '.webp' : '.png'); }
+  function ruta(b) { return b.getAttribute('data-full') + (webp ? '.webp' : (b.getAttribute('data-ext') || '.png')); }
   function mostrar(i) {
     actual = (i + botones.length) % botones.length;
     var b = botones[actual];
@@ -2375,15 +2412,23 @@ window.addEventListener('load', cargarRankingLanding);
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>
-// Sonido del tráiler de ORIGINS: los navegadores solo dejan reproducir con
-// sonido tras un toque, así que el vídeo empieza mudo.
-(function(){var v=document.getElementById('hero-video'),b=document.getElementById('hero-son');if(!v||!b)return;
+// Pósteres de vídeo diferidos (15-nov-2026): un poster="" se descarga al leer el HTML aunque el vídeo
+// esté lejos o en una pestaña oculta, y competía con la imagen principal. Se pone al acercarse (800 px).
+(function(){var vs=document.querySelectorAll('video[data-poster]');function pon(v){if(!v.getAttribute('poster'))v.setAttribute('poster',v.getAttribute('data-poster'));}
+if(!('IntersectionObserver' in window)){[].forEach.call(vs,pon);return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){pon(e.target);io.unobserve(e.target);}});},{rootMargin:'800px 0px'});
+[].forEach.call(vs,function(v){io.observe(v);});})();
+</script>
+<script>
+// Vista de ORIGINS en la tarjeta: vídeo mudo que se carga tras la página (nunca con ahorro de datos,
+// 2G ni movimiento reducido) y se pausa fuera de la pantalla.
+(function(){var v=document.getElementById('hero-video'),b=document.getElementById('hero-son');if(!v)return;
 var cx=navigator.connection,lento=matchMedia('(prefers-reduced-motion: reduce)').matches||!!(cx&&(cx.saveData||/2g/.test(cx.effectiveType||''))),visible=true;
 function cargar(){if(v.src)return;v.src=v.dataset.src;if(visible)v.play().catch(function(){});}
 function tras(){if(window.requestIdleCallback)requestIdleCallback(cargar,{timeout:2000});else setTimeout(cargar,300);}
 if(!lento){if(document.readyState==='complete')tras();else addEventListener('load',tras);}
 if('IntersectionObserver' in window)new IntersectionObserver(function(es){visible=es[0].isIntersecting;if(!v.src)return;if(visible)v.play().catch(function(){});else v.pause();}).observe(v);
-b.onclick=function(){if(!v.src)v.src=v.dataset.src;v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.volume=0.8;v.play().catch(function(){});}b.textContent=v.muted?'🔇 Activar sonido':'🔊 Sonido activado';};})();
+if(b)b.onclick=function(){if(!v.src)v.src=v.dataset.src;v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.volume=0.8;v.play().catch(function(){});}b.textContent=v.muted?'🔇 Activar sonido':'🔊 Sonido activado';};})();
 </script>
 </body>
 </html>
