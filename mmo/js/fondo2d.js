@@ -614,17 +614,19 @@ function capaNiebla(e) {
   return c;
 }
 
-// Rayos de sol oblicuos (mosaico de 640 px): haces suaves que bajan del follaje.
+// Rayos de sol oblicuos (mosaico de 640 px con 2 haces que no tocan los bordes).
+// Se copia solo el rectángulo de cada haz: poca área compuesta por cuadro.
 function rayos(m) {
   if (m.rayos) return m.rayos;
-  const e = m.e, W = 640, H = 300, c = lienzo(W, H), g = c.getContext('2d'), r = rng(semilla('rayos' + m.id));
-  const col = mez(e.c[2], '#ffe6b8', .55);
-  for (let i = 0; i < 4; i++) {
-    const x = 60 + i * 150 + r() * 70, w = 18 + r() * 34, inc = 70 + r() * 40, a = .08 + r() * .08;
+  const e = m.e, W = 640, H = 280, c = lienzo(W, H), g = c.getContext('2d'), r = rng(semilla('rayos' + m.id));
+  const col = mez(e.c[2], '#ffe6b8', .55), cajas = [];
+  for (let i = 0; i < 2; i++) {
+    const x = 40 + i * 300 + r() * 100, w = 16 + r() * 24, inc = 50 + r() * 30, a = .09 + r() * .08;
     const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, css(col, 0)); gr.addColorStop(.35, css(col, a)); gr.addColorStop(.8, css(col, a * .7)); gr.addColorStop(1, css(col, 0));
-    g.fillStyle = gr;
-    for (const dx of [0, -W, W]) { g.beginPath(); g.moveTo(x + dx, 0); g.lineTo(x + dx + w, 0); g.lineTo(x + dx + w + inc + w * .6, H); g.lineTo(x + dx + inc, H); g.closePath(); g.fill(); }
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + w, 0); g.lineTo(x + w + inc + w * .6, H); g.lineTo(x + inc, H); g.closePath(); g.fill();
+    cajas.push([Math.floor(x), Math.ceil(w * 1.6 + inc) + 1]);
   }
+  c.cajas = cajas;
   return m.rayos = c;
 }
 // Niebla delante de los pies (se dibuja DESPUÉS de los personajes).
@@ -750,7 +752,7 @@ export function fondoMundo(v) {
     const R = rayos(m), y = v.SUELO - R.height + 10;
     let x = -Math.floor((((v.camX * .3) % R.width) + R.width) % R.width);
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - n * 2;
-    for (; x < v.VW; x += R.width) g.drawImage(R, x, y);
+    for (; x < v.VW; x += R.width) for (const [bx, bw] of R.cajas) if (x + bx < v.VW && x + bx + bw > 0) g.drawImage(R, bx, 0, bw, R.height, x + bx, y, bw, R.height);
     g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   }
   // Velo de noche y viñeta, en una sola copia.
@@ -767,12 +769,12 @@ export function fondoMundo(v) {
     const L = llamas(), h = halo('#ffb45a', 128), fuerza = .38 + .5 * n;
     for (let i = 0; i < A.length; i++) {
       const sx = A[i] - cx;
-      if (sx < -70 || sx > v.VW + 70) continue;
+      if (sx < -96 || sx > v.VW + 96) continue;
       const f = v.frame + i * 13, par = .82 + .18 * Math.sin(f * .31) * Math.sin(f * .17 + i);
       if (!v.ligero) {
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = fuerza * par;
         // Halo (más amplio de noche) y charco de luz cálida sobre el suelo.
-        const R = 64 + 40 * n; g.drawImage(n > .3 ? luzFuego() : h, sx - R, v.SUELO - 50 - R, R * 2, R * 2);
+        const R = 64 + 28 * n; g.drawImage(n > .3 ? luzFuego() : h, sx - R, v.SUELO - 50 - R, R * 2, R * 2);
         g.globalAlpha = (.2 + .6 * n) * par; g.drawImage(luzFuego(), sx - 70 - 40 * n, v.SUELO - 13, 140 + 80 * n, 34);
         // Brasas que suben de la llama (solo con poca luz).
         if (n > .3) {
