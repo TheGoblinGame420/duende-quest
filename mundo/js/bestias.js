@@ -12,14 +12,15 @@
 // pasa de 1 aclara hacia ese color (vientres, gargantas). Los ojos y brasas (marca 7) brillan.
 // Un material por tinte, compartido.
 // Si el paquete no llegó (o con ?sinBestias), crearMonstruo sigue con el modelo viejo.
-// Solo monstruos: NPC y monturas no pasan por aquí.
+// Monstruos y las monturas con esas mismas hojas (lagarto, conejo, hellgato, murciélago: c.montura pone la silla);
+// las NPC no pasan por aquí, y las mascotas son hojas 2D (sprites), no modelos.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 
 const PI = Math.PI;
 const SIN = typeof location !== 'undefined' && /[?&]sinBestias(=|&|$)/.test(location.search);
 
-// K: utilidades internas de modelos.js (nuevoRig, G, piv, M, mat, fuera, conBorde, ponBorde).
+// K: utilidades internas de modelos.js (nuevoRig, G, piv, M, mat, fuera, conBorde, ponBorde, silla).
 export function crearBestias(PAQ, K) {
   if (SIN || !PAQ || !PAQ.modelos) return null;
   const tiene = n => !!PAQ.modelos['bes_' + n];
@@ -107,20 +108,23 @@ export function crearBestias(PAQ, K) {
     }
   }
 
-  // ── LAGARTO (lagarto) ──
+  // ── LAGARTO (lagarto · montura «lagarto» y «torre»): de montura va alzado 0,3 sobre patas más largas, con la cola
+  // más corta y la silla, como lagarto() de modelos.js ──
   if (tiene('lagarto_cuerpo')) R.lagarto = c => {
-    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#8c2f74');
+    const r = nuevoRig('cuadrupedo'), Rz = r.raiz, x = ctxDe(c, '#8c2f74'), alza = c.montura ? 0.3 : 0;
     r.paso = 11; r.caer = 'lado'; r.hundir = 0.5; r.colaAmp = 0.35;
-    const cu = r.cuerpo = piv(r, G(Rz, [0, 0.32, 0]));
+    const cu = r.cuerpo = piv(r, G(Rz, [0, 0.32 + alza, 0]));
     P(cu, 'lagarto_cuerpo', x);
     const cb = r.cabeza = piv(r, G(cu, [0, 0.06, 0.55]));
     P(cb, 'lagarto_cabeza', x);
     const mj = r.mandibula = piv(r, G(cb, [0, -0.06, 0.05]));
     P(mj, 'lagarto_mandibula', x);
     const cola = r.cola = piv(r, G(cu, [0, 0, -0.55]));
-    P(cola, 'lagarto_cola', x);
-    patas4(r, 'lagarto_pata', 0.24, 0.32, 0.3, -0.3, x, 0.5);
-    r.lomo = cu; r.H = 0.6; r.largoMax = 2.0;
+    P(cola, 'lagarto_cola', x, null, null, alza ? [1, 1, 0.6] : null);
+    patas4(r, 'lagarto_pata', 0.24, 0.32 + alza, 0.3, -0.3, x, alza ? 0.15 : 0.5, alza ? [1.25, 1.75, 1.25] : null);
+    if (c.montura) K.silla(r, cu, [0, 0.17, -0.02], 0.26);
+    /* De montura, algo más de largo permitido: con la cola recortada, así mide de alto lo mismo que antes (~1,26 m). */
+    r.lomo = cu; r.H = 0.6; r.largoMax = alza ? 2.07 : 2.0;
     return r;
   };
 
@@ -180,12 +184,14 @@ export function crearBestias(PAQ, K) {
     K.M(fl, 'cono', K.mat('#c084fc', { e: 1 }), [0, 0, 0], [0.07, 0.22, 0.07]).userData.sinFlash = true;
     r.flamas.push(fl);
     patas4(r, 'gato_pata', 0.15, 0.52, 0.4, -0.38, x);
+    if (c.montura) K.silla(r, cu, [0, 0.21, -0.05], 0.24);     // montura «hellgato»
     r.lomo = cu; r.H = 0.8; r.largoMax = 2.2;
     return r;
   };
 
   // ── CONEJO SALVAJE (conejo): bípedo con cuchillo oxidado, bandolera y oreja rota ──
   if (tiene('conejo_cuerpo')) R.conejo = c => {
+    if (c.montura) return conejoMontura(c);
     const r = nuevoRig('bipedo'), Rz = r.raiz, x = ctxDe(c, '#8a4a2c');
     r.paso = 11;
     for (const s of [1, -1]) {
@@ -208,6 +214,28 @@ export function crearBestias(PAQ, K) {
     r.H = 1; r.topeCabeza = 0.34;
     return r;
   };
+
+  // Montura «conejo» (Conejo Saltarín): el mismo conejo a cuatro patas, sin cuchillo. Los pivotes y la silla son los de
+  // conejoMontura() de modelos.js (rig 'salto'); el torso va tumbado hacia delante (lomo arriba, panza abajo), los
+  // brazos hacen de patas delanteras y las piernas de patas traseras.
+  function conejoMontura(c) {
+    const r = nuevoRig('salto'), Rz = r.raiz, x = ctxDe(c, '#8a5a3c');
+    r.paso = 10; r.caer = 'lado'; r.hundir = 0.5;
+    const cu = r.cuerpo = piv(r, G(Rz, [0, 0, 0]));
+    P(G(cu, [0, 0.3, -0.36], [1.25, 0, 0]), 'conejo_cuerpo', x, null, null, [1.15, 1.3, 1.1]);
+    const cb = r.cabeza = piv(r, G(cu, [0, 0.5, 0.3]));
+    P(cb, 'conejo_cabeza', x, null, [-0.15, 0, 0]);
+    for (const s of [1, -1]) {
+      const p = piv(r, G(Rz, [0.2 * s, 0.36, -0.2]));
+      P(p, 'conejo_pierna', x);
+      const b = piv(r, G(Rz, [0.13 * s, 0.36, 0.2]));
+      P(b, 'conejo_brazo', x, null, null, [1.2, 0.95, 1.2]);
+      if (s > 0) { r.pI = p; r.bI = b; } else { r.pD = p; r.bD = b; }
+    }
+    r.H = 1; r.topeCabeza = 0.6;
+    K.silla(r, cu, [0, 0.62, -0.12], 0.24);
+    return r;
+  }
 
   // ── BABOSA ABISAL (baba): un solo cuerpo que se aplasta; brilla un poco, como antes ──
   if (tiene('baba_cuerpo')) R.baba = c => {
@@ -279,6 +307,7 @@ export function crearBestias(PAQ, K) {
       P(p, 'murc_pie', x);
       r.patas.push([p, 0, 'x', false]);
     }
+    if (c.montura) K.silla(r, cu, [0, 0.32, -0.04], 0.16);     // montura «abismo» (Murciélago del Abismo)
     r.lomo = cu; r.H = 0.5; r.topeCabeza = 0.15;
     return r;
   };
