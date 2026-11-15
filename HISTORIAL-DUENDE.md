@@ -115,6 +115,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v378 | Talar árboles: 21 árboles talables (12 en el Campamento de los Leñadores, 3 por zona de la primera hora) como puntos de recolección de tipo madera, tocón que vuelve a crecer, material Madera y 4 recetas nuevas solo en ORIGINS | Opus |
 | v379 | Talar cualquier árbol de la flora fuera del pueblo (mensaje talar validado en el servidor: distancia, zona, 5 min por árbol y 120 talas al día); el dueño no encontraba los árboles marcados | Opus |
 | v392 | Ronda nocturna de 9 agentes: Chicha Wars v392 terminada (Granja, utensilios que se gastan, clavo, arreglo del congelamiento del duende dorado); familias Blender monstruos (13 hojas, mundo/js/bestias.js) y campamentos (lugares.js); agua de la fuente, banderines de tela, cofre de la Cueva, cámara junto a casas y colisión de enseres; LOD en vivo, arranque partido con ceder() y bajarAuto; sensación de golpe (dq3_sacudida); CLASSIC con casas renderizadas en Blender (assets/2d) y luces; portada con capturas nuevas; errores corregidos (tools/qa_barra_jefe.mjs). |
+| v393 | Ronda 2: sotobosque por generador y compilarATrozos (peor tarea del arranque 788 → 229 ms); LOD por distancia de bestias y monturas nuevas; familia abismo (islas, puentes, Núcleo, cueva); agua con ocaso, cáusticas y post en alta; CLASSIC con decorado de Blender (sprites2d_deco.py); portada con content-visibility; HAS CAÍDO legible; Chicha Wars con guía del primer minuto y botones de 44 px. |
 
 ## Reglas del dueño (siguen vigentes)
 

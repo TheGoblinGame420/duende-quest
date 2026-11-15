@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 392;
+export const VERSION = 393;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 147, fecha: '15 nov 2026', items: [
+    '🌌 El Abismo estrena islas flotantes con raíces y cristales, puentes rotos y un Núcleo imponente; la Cueva tiene paredes y estalactitas nuevas.',
+    '🌊 Agua con el reflejo del cielo y del atardecer, y en calidad alta, luz de fondo y halos en antorchas y faroles.',
+    '🦎 Las monturas y mascotas de lagarto, conejo, hellgato y murciélago usan los modelos nuevos.',
+    '⚡ El mundo ya no se congela al cargar en celulares flojos.',
+    '🏘 CLASSIC: árboles, rocas, ruinas, fuente, faroles y puestos nuevos.',
+  ] },
   { n: 146, fecha: '15 nov 2026', items: [
     '🕷 13 monstruos rehechos con modelos nuevos: arañas, babas, lagartos, serpientes, murciélagos, pulpos, peces y más (y sus jefes de mazmorra).',
     '⛺ Campamentos y lugares de la franja exterior con tiendas, empalizadas, torres de vigía y hogueras propias.',
