@@ -692,9 +692,11 @@ def murc_cabeza(lod):
 
 
 def murc_ala(s):
-    W = np.array((0.42, 0.06, 0.16)); O = np.array((0.0, 0.0, 0.0))
-    puntas = [np.array(q) for q in ((0.88, 0.03, 0.04), (0.78, 0.0, -0.2), (0.52, -0.01, -0.3), (0.22, -0.01, -0.24))]
-    base = np.array((0.04, -0.02, -0.16))
+    # Ala de gaviota: el brazo sube hasta la muñeca y los dedos caen hacia atrás y hacia fuera, así la membrana
+    # baja en pendiente y de FRENTE se ve como una superficie (antes era plana en y ≈ 0: de frente, una raya).
+    W = np.array((0.42, 0.17, 0.14)); O = np.array((0.0, 0.0, 0.0))
+    puntas = [np.array(q) for q in ((0.88, 0.05, 0.04), (0.8, -0.08, -0.18), (0.55, -0.16, -0.28), (0.24, -0.13, -0.24))]
+    base = np.array((0.04, -0.09, -0.15))
     V = [O, W]; F = []
     bordes = puntas + [base]
     for i, t in enumerate(bordes):
@@ -707,12 +709,16 @@ def murc_ala(s):
     V = [np.array((v[0] * s, v[1], v[2])) for v in V]
     mem = malla('membrana', [g2b(v) for v in V], F, 'liso', MEMBRANA)
     subdividir(mem, 1, simple=True)
-    deformar(mem, lambda P: P + np.c_[np.zeros(len(P)), np.zeros(len(P)), -0.03 * np.sin(np.hypot(P[:, 0], P[:, 1]) * 4)])   # comba
-    color_g(mem, lambda P, N, C: C * (0.8 + 0.35 * ruido_fbm(P, 12, 65, 2))[:, None])
+    deformar(mem, lambda P: P + np.c_[np.zeros(len(P)), np.zeros(len(P)), -0.05 * np.sin(np.hypot(P[:, 0], P[:, 1]) * 4)])   # comba (más honda)
+    # Más clara junto al brazo y oscura en el festón: la pendiente de la membrana se lee también de lejos.
+    color_g(mem, lambda P, N, C: C * ((0.85 + 0.35 * ruido_fbm(P, 12, 65, 2)) * (0.8 + 0.45 * np.clip((P[:, 1] + 0.12) / 0.29, 0, 1)))[:, None])
     dos_caras(mem)
-    p = [mem, tubo_g([(0, 0, 0), (0.2 * s, 0.05, 0.1), W * (s, 1, 1)], [0.03, 0.022, 0.018], 5, 'liso', HUESO_ALA, punta=False)]
-    for t in puntas: p.append(tubo_g([W * (s, 1, 1), (W + (t - W) * 0.5) * (s, 1, 1) + (0, 0.015, 0), t * (s, 1, 1)], [0.015, 0.011, 0.004], 4, 'liso', HUESO_ALA))
-    p.append(cono_g(W * (s, 1, 1), (W + (0.04, 0.05, 0.04)) * (s, 1, 1), 0.014, 4, 'liso', '#d9ccb0'))   # garra del pulgar
+    E = np.array((0.2, 0.12, 0.08))   # codo
+    p = [mem, tubo_g([(0, 0, 0), E * (s, 1, 1), W * (s, 1, 1)], [0.045, 0.034, 0.026], 6, 'liso', HUESO_ALA, punta=False)]   # brazo grueso: de frente se ve el ala
+    p.append(elip(E * (s, 1, 1), (0.038, 0.034, 0.036), 1, 'liso', HUESO_ALA))                       # nudillo del codo
+    p.append(elip(W * (s, 1, 1), (0.034, 0.03, 0.032), 1, 'liso', HUESO_ALA))                        # muñeca
+    for t in puntas: p.append(tubo_g([W * (s, 1, 1), (W + (t - W) * 0.5) * (s, 1, 1) + (0, 0.02, 0), t * (s, 1, 1)], [0.02, 0.014, 0.005], 4, 'liso', HUESO_ALA))
+    p.append(cono_g(W * (s, 1, 1), (W + (0.04, 0.07, 0.05)) * (s, 1, 1), 0.018, 4, 'liso', '#d9ccb0'))   # garra del pulgar
     return acabar(unir(p), 60, 0, 66, 0)
 
 
