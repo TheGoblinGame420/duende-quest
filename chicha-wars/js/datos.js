@@ -289,10 +289,10 @@ export const maizCosecha = fama => Math.round(CULTIVOS.maiz.da * (1 + (fama - 1)
 
 // ── CHICHA ESPECIAL: la preparas tu con lo que cosechas. Tus proximos vasos se venden mas caros. ──
 export const CHICHAS = {
-  clasica: { nombre: 'Chicha de la casa', img: 'vaso_2', maiz: 10, receta: { canela: 1, azucar: 1 }, vasos: 40, mult: 1.4, fama: 1 },
-  pina:    { nombre: 'Chicha con piña', img: 'vaso_3', maiz: 15, receta: { pina: 2, canela: 1, azucar: 1 }, vasos: 60, mult: 1.7, fama: 3 },
-  frutada: { nombre: 'Chicha frutada', img: 'vaso_4', maiz: 20, receta: { pina: 1, manzana: 2, limon: 1, azucar: 1 }, vasos: 80, mult: 2.0, fama: 5 },
-  abuela:  { nombre: 'Chicha de la abuela', img: 'vaso_5', maiz: 30, receta: { pina: 2, manzana: 2, limon: 2, canela: 2, azucar: 2 }, vasos: 120, mult: 2.5, fama: 8 },
+  clasica: { nombre: 'Chicha de la casa', img: 'vaso_2', maiz: 10, receta: { canela: 1, azucar: 1 }, vasos: 40, mult: 1.3, fama: 1 },
+  pina:    { nombre: 'Chicha con piña', img: 'vaso_3', maiz: 15, receta: { pina: 2, canela: 1, azucar: 1 }, vasos: 60, mult: 1.45, fama: 3 },
+  frutada: { nombre: 'Chicha frutada', img: 'vaso_4', maiz: 20, receta: { pina: 1, manzana: 2, limon: 1, azucar: 1 }, vasos: 80, mult: 1.6, fama: 5 },
+  abuela:  { nombre: 'Chicha de la abuela', img: 'vaso_5', maiz: 30, receta: { pina: 2, manzana: 2, limon: 2, canela: 2, azucar: 2 }, vasos: 120, mult: 1.8, fama: 8 },
 };
 export const PASOS_CHICHA = ['Hierve el maíz morado con la fruta', 'Cuela la chicha', 'Endulza y sirve'];
 export const CALIDAD = [{ nombre: 'Buena', extra: 0 }, { nombre: 'Rica', extra: 0.25 }, { nombre: 'Perfecta', extra: 0.5 }];
