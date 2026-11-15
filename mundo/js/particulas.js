@@ -132,16 +132,23 @@ export function crearParticulas(escena, max, movil, pobre, cal) {
     }
   }
   // Golpe: chispas alargadas que saltan y un destello; el critico suma un anillo expansivo y estrellas.
+  // o.tipo (opcional, solo forma; el daño no cambia): 'dagas' muchas chispas finas y rapidas, 'odachi' pocas y
+  // gordas con polvo, 'magia' estrellas que flotan (varas y chispa); sin tipo, el corte de siempre (katana).
+  const TIPO_GOLPE = { dagas: { n: 1.3, v: 1.3, vida: 0.7, tam: 0.6, gr: 16, f: 1, fl: 0.75 }, odachi: { n: 0.8, v: 0.8, vida: 1.2, tam: 1.6, gr: 22, f: 1, fl: 1.35 }, magia: { n: 0.9, v: 0.6, vida: 1.6, tam: 1.2, gr: -1, f: 2, fl: 1.1 } };
   function golpe(x, y, z, o) {
     o = o || {};
-    const crit = !!o.critico, t0 = reloj();
+    const crit = !!o.critico, t0 = reloj(), tg = TIPO_GOLPE[o.tipo];
     c.set(o.color || '#fff1c1');
-    const n = cuenta(crit ? 22 : 10), v = crit ? 9 : 6;
+    const n = cuenta((crit ? 22 : 10) * (tg ? tg.n : 1)), v = (crit ? 9 : 6) * (tg ? tg.v : 1);
+    const vida = tg ? tg.vida : 1, tam = tg ? tg.tam : 1, gr = tg ? tg.gr : 16, fo = tg ? tg.f : 1;
     for (let k = 0; k < n; k++) {
       const a = Math.random() * Math.PI * 2, e = Math.random() * 1.5 - 0.5, s = v * (0.45 + Math.random() * 0.55), ce = Math.sqrt(Math.max(0, 1 - e * e));
-      una(x, y, z, Math.cos(a) * ce * s, e * s + 1.5, Math.sin(a) * ce * s, t0 + Math.random() * 0.03, 0.22 + Math.random() * 0.18, 0.28 + Math.random() * 0.2, 16, c.r, c.g, c.b, 1);
+      una(x, y, z, Math.cos(a) * ce * s, e * s + 1.5, Math.sin(a) * ce * s, t0 + Math.random() * 0.03, (0.22 + Math.random() * 0.18) * vida, (0.28 + Math.random() * 0.2) * tam, gr, c.r, c.g, c.b, fo);
     }
-    una(x, y, z, 0, 0, 0, t0, crit ? 0.2 : 0.13, crit ? 2.4 : 1.3, 0, (c.r + 1) / 2, (c.g + 1) / 2, (c.b + 1) / 2, 5);
+    const fl = tg ? tg.fl : 1;
+    una(x, y, z, 0, 0, 0, t0, crit ? 0.2 : 0.13, (crit ? 2.4 : 1.3) * fl, 0, (c.r + 1) / 2, (c.g + 1) / 2, (c.b + 1) / 2, 5);
+    // Odachi: polvo que salta del suelo con el peso del tajo (no en calidad pobre: humo = quads grandes).
+    if (o.tipo === 'odachi' && !pobre) for (let k = 0; k < 3; k++) { const a = Math.random() * 6.283; una(x + Math.cos(a) * 0.3, y - 0.9, z + Math.sin(a) * 0.3, Math.cos(a) * 1.4, 0.7, Math.sin(a) * 1.4, t0 + k * 0.02, 0.55, 1.6, -0.4, 0.42, 0.38, 0.32, 3); }
     if (crit) {
       una(x, y, z, 0, 0, 0, t0, 0.36, 2.0, 0, 1, 0.85, 0.35, 4);
       if (mitad(4, 2) > 1) una(x, y, z, 0, 0, 0, t0 + 0.07, 0.42, 2.9, 0, 1, 0.62, 0.2, 4);   // en baja, un solo anillo
