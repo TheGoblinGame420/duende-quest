@@ -355,23 +355,40 @@ let composer = null;
 // Sin post-proceso, una viñeta CSS (#vineta en index.html) da el mismo marco por casi nada.
 document.body.classList.add('sin-post');
 const GRADO = {
-  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 }, uZona: { value: new THREE.Vector3(1, 1, 1) } },
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 }, uCon: { value: 1.06 }, uTono: { value: 1 }, uZona: { value: new THREE.Vector3(1, 1, 1) }, uHora: { value: new THREE.Vector3() } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   // Correccion de color (trabaja en lineal, antes de OutputPass): saturacion, contraste con pivote en el tono
   // medio de la escena (uCon), sombras un pelo frias y luces un pelo calidas (uTono), hombro suave para que lo muy
   // brillante no se queme en blanco plano, y viñeta.
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; uniform vec3 uZona; varying vec2 vUv;
+  // r2: uHora = (ocaso, noche, -). Al ocaso, sombras violaceas y luces ambar; de noche, sombras azules y algo
+  // desaturadas mientras faroles y antorchas siguen calidos (fuego contra sombra fria).
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uTono; uniform vec3 uZona; uniform vec3 uHora; varying vec2 vUv;
     void main() { vec4 c = texture2D(tDiffuse, vUv); c.rgb = max(c.rgb, 0.0); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-      c.rgb = mix(vec3(l), c.rgb, uSat) * uZona;
+      float alto = smoothstep(0.03, 0.45, l);
+      c.rgb = mix(vec3(l), c.rgb, uSat * (1.0 - 0.16 * uHora.y * (1.0 - alto))) * uZona;
       c.rgb = pow(c.rgb / 0.4, vec3(uCon)) * 0.4;
       c.rgb *= mix(vec3(1.0), mix(vec3(0.95, 0.985, 1.06), vec3(1.045, 1.01, 0.95), smoothstep(0.02, 0.55, l)), uTono);
+      vec3 hS = mix(vec3(1.0), vec3(0.95, 0.92, 1.06), uHora.x) * mix(vec3(1.0), vec3(0.92, 0.97, 1.1), uHora.y);
+      vec3 hL = mix(vec3(1.0), vec3(1.07, 1.0, 0.88), uHora.x) * mix(vec3(1.0), vec3(1.06, 0.99, 0.9), uHora.y);
+      c.rgb *= mix(hS, hL, alto);
       vec3 h = max(c.rgb - 0.78, 0.0); c.rgb = min(c.rgb, 0.78) + h / (1.0 + h * 4.5);
       vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
 };
+// Ocaso y noche para el tono por hora del pase de color (lo pone ambiente(); se copia al crear el pase).
+const HORA_GRADO = new THREE.Vector3();
+// Resplandor por hora: de dia solo lo muy brillante (umbral 0.92, como siempre); al caer la tarde y de noche el umbral
+// baja y el resplandor sube un poco, para que antorchas, faroles, runas y cristales tengan halo sin quemar el cielo de dia.
+let bloomP = null;
+function ajustarBloom() {
+  if (!bloomP) return;
+  const k = Math.max(HORA_GRADO.y, HORA_GRADO.x * 0.5);
+  bloomP.threshold = 0.92 - 0.3 * k; bloomP.strength = 0.32 + 0.14 * k;
+  if (bloomP.highPassUniforms) bloomP.highPassUniforms.luminosityThreshold.value = bloomP.threshold;
+}
 // Se enciende y apaga en vivo (menu de graficos); los modulos se descargan la primera vez.
 let postCargando = false;
 function ponerPost(si) {
-  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; gradoU = null; } document.body.classList.add('sin-post'); return; }
+  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; gradoU = null; bloomP = null; } document.body.classList.add('sin-post'); return; }
   if (composer || postCargando || PRUEBA_SIN_POST()) return;
   postCargando = true;
   Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import('three/addons/postprocessing/' + n + '.js'))).then(([E, R, B, O, S]) => {
@@ -380,8 +397,9 @@ function ponerPost(si) {
     const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 });
     const c = new E.EffectComposer(render, rt);
     c.addPass(new R.RenderPass(escena, camara));
-    c.addPass(new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92));
-    const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms;
+    bloomP = new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92); ajustarBloom();
+    c.addPass(bloomP);
+    const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms; gradoU.uHora.value.copy(HORA_GRADO);
     c.addPass(gp);
     c.addPass(new O.OutputPass());
     c.setPixelRatio(render.getPixelRatio()); c.setSize(w, h);
@@ -595,6 +613,7 @@ function ambiente(z) {
   nieblaTinteObj.copy(cieloObj);
   if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
+  HORA_GRADO.set(ocasoK, fijo ? 0 : nocheK, 0); if (gradoU) gradoU.uHora.value.copy(HORA_GRADO); ajustarBloom();
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.78) * 4.5, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
@@ -842,7 +861,9 @@ async function crearTerreno() {
 const AGUA_U = { uT: { value: 0 }, uCielo: { value: C(CIELO.pueblo) }, uSol: { value: new THREE.Vector3(0.5, 0.8, 0.3) }, uSolC: { value: C('#fff2dd') },
   uLuz: { value: 1 }, uProf: { value: null }, uEsc: { value: new THREE.Vector2(1, 0) },
   /* del cielo (cielo.js): cenit, direccion de la luz visible (sol o luna), nubes y su deriva: el agua las refleja */
-  uTop: cielo.u.uTop, uLuzD: cielo.u.uLuzD, uNubL: cielo.u.uNubL, dqRuido: cielo.u.dqRuido, dqDes: cielo.u.dqDes, dqNub: cielo.u.dqNub };
+  uTop: cielo.u.uTop, uLuzD: cielo.u.uLuzD, uNubL: cielo.u.uNubL, dqRuido: cielo.u.dqRuido, dqDes: cielo.u.dqDes, dqNub: cielo.u.dqNub,
+  /* r2: color y fuerza del ocaso del cielo, para que el agua refleje la franja naranja del lado del sol */
+  uOca: cielo.u.uOca, uOcaK: cielo.u.uOcaK };
 function materialAgua(pos) {
   const N = SEG + 1, datos = new Uint8Array(N * N * 4);
   for (let i = 0; i < pos.count; i++) {
@@ -853,7 +874,7 @@ function materialAgua(pos) {
   tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
   AGUA_U.uProf.value = tex;
   AGUA_U.uEsc.value.set(SEG / (LADO * N), (0.5 * SEG + 0.5) / N);
-  const baja = CAL === 'baja';
+  const baja = CAL === 'baja', alta = CAL === 'alta';
   return new THREE.ShaderMaterial({
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), AGUA_U),
     transparent: true, fog: true,
@@ -870,6 +891,7 @@ function materialAgua(pos) {
     fragmentShader: `// dq:agua
       uniform float uT; uniform vec3 uCielo; uniform vec3 uSol; uniform vec3 uSolC; uniform float uLuz; uniform sampler2D uProf; uniform vec2 uEsc;
       uniform vec3 uTop; uniform vec3 uLuzD; uniform vec3 uNubL; uniform sampler2D dqRuido; uniform vec4 dqDes; uniform float dqNub;
+      uniform vec3 uOca; uniform float uOcaK;
       varying vec3 vW;
       #include <common>
       #include <fog_pars_fragment>
@@ -892,7 +914,10 @@ function materialAgua(pos) {
         vec3 rf = reflect(-v, n); float ry = max(rf.y, 0.0);
         vec3 cieloR = mix(uCielo, uTop, pow(ry, 0.6) * 0.7);
         ${baja ? '' : `float nb = texture2D(dqRuido, rf.xz / (ry + 0.2) * 0.13 + dqDes.xy).r; float th = mix(0.8, 0.22, dqNub);
-        cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);`}
+        cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);
+        /* Ocaso reflejado: la franja calida del horizonte (la misma cuenta que la cupula de cielo.js) del lado del sol. */
+        float ladoS = 0.5 + 0.5 * dot(normalize(rf.xz + vec2(0.0001)), normalize(uSol.xz + vec2(0.0001)));
+        cieloR = mix(cieloR, uOca, clamp(exp(-ry * 5.0) * (0.25 + 0.75 * ladoS * ladoS) * uOcaK, 0.0, 0.8));`}
         col = mix(col, cieloR, 0.1 + 0.58 * fres) * uLuz;
         // Brillo del astro que se ve (sol, o luna de noche): destello fino y una estela ancha y suave.
         float nh = max(dot(n, normalize(uLuzD + v)), 0.0);
@@ -902,8 +927,18 @@ function materialAgua(pos) {
         float espuma = orilla * (0.35 + 0.65 * ola);
         ${baja ? '' : 'if (orilla > 0.01) espuma *= 0.55 + 0.9 * texture2D(dqRuido, q * 0.05 + vec2(t * 0.012, t * -0.007)).g;'}
         col = mix(col, vec3(0.8, 0.86, 0.86) * uLuz, espuma * 0.5);
+        float cau = 0.0;
+        ${alta ? `/* Solo en alta y ultra: causticas (la red de luz que el oleaje dibuja en el fondo poco hondo), desplazadas por la
+           normal de la ola como una refraccion falsa. Dos lecturas del ruido que se cruzan; se apagan en lo hondo y al mirar rasante. */
+        float lejC = 1.0 - smoothstep(25.0, 55.0, distance(cameraPosition, vW));   /* lejos la red se vuelve ruido: se apaga */
+        if (hondo < 0.6 && lejC > 0.0) {
+          float ca = texture2D(dqRuido, q * 0.045 + n.xz * 0.4 + vec2(t * 0.011, t * 0.007)).g;
+          float cb = texture2D(dqRuido, q * 0.052 - n.xz * 0.4 + vec2(t * -0.009, t * 0.012)).g;
+          cau = pow(1.0 - abs(ca - cb), 10.0) * (1.0 - smoothstep(0.05, 0.6, hondo)) * (1.0 - fres) * (1.0 - espuma) * lejC;
+          col += uSolC * uLuz * cau * 0.42;
+        }` : ''}
         /* Orilla clara: en lo poco hondo se ve el fondo (limo y piedra del terreno) y se va cerrando hacia lo profundo. */
-        gl_FragColor = vec4(col, clamp(mix(0.3, 0.9, smoothstep(0.0, 0.75, hondo)) + fres * 0.14 + espuma * 0.3, 0.0, 0.95));
+        gl_FragColor = vec4(col, clamp(mix(0.3, 0.9, smoothstep(0.0, 0.75, hondo)) + fres * 0.14 + espuma * 0.3 + cau * 0.12, 0.0, 0.95));
         #include <colorspace_fragment>
         #include <fog_fragment>
       }`,
@@ -1829,7 +1864,10 @@ function teñir(img, hue, sat) {
   x.putImageData(d, 0, 0);
   return c;
 }
-const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }); })();
+const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
+  /* De media para arriba (misma textura, mismo coste): nucleo mas oscuro bajo los pies y penumbra larga y tenue, como una sombra de contacto de verdad. */
+  if (CAL !== 'baja') { g.addColorStop(0, 'rgba(0,0,0,.58)'); g.addColorStop(0.22, 'rgba(0,0,0,.44)'); g.addColorStop(0.55, 'rgba(0,0,0,.16)'); g.addColorStop(0.8, 'rgba(0,0,0,.05)'); } else g.addColorStop(0, 'rgba(0,0,0,.45)');
+  g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }); })();
 const anilloMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
 const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Math.PI / 2), anilloMat);
 anillo.visible = false;
