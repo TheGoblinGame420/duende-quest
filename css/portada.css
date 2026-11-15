@@ -47,6 +47,15 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 #wallet-connect-btn{border-radius:10px;border-color:rgba(196,181,253,.3);color:var(--txt);}
 .live-price-pill{border-radius:10px;}
 @media(max-width:1180px){.nav-links{display:none;}}
+/* Barra sin desbordes (15-nov-2026): enlaces y botones en una sola línea; «Instalar» queda en icono
+   salvo en pantallas muy anchas; en celular el «Jugar gratis» de la barra cede su sitio al botón
+   flotante de abajo (js/portada-orden.js), que es el mismo enlace. */
+.nav-links a,.nav-play,#wallet-connect-btn{white-space:nowrap;}
+.nav-instalar{justify-content:center;min-width:44px;padding:.4rem .7rem;}
+@media(max-width:1439px){.nav-instalar-t{display:none;}}
+@media(max-width:820px){.nav-right .nav-jugar{display:none;}}
+/* Con la barra de secciones fija (hasta 1180 px), el título de la sección no queda debajo de ella */
+@media(max-width:1180px){html section[id],html .pestanas,html details.pliegue{scroll-margin-top:calc(var(--alto-nav,64px) + 62px);}}
 
 /* ── 4. Botones ── */
 .btn-main,.btn-play-big,.nav-play{

@@ -16,7 +16,7 @@
 <meta property="og:locale" content="es_PE">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Duende Quest 3D: mundo abierto de duendes con alas">
+<meta property="og:image:alt" content="Duende Quest ORIGINS: la plaza de Pueblo Duende en 3D, mundo abierto gratis desde tu celular">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="manifest" href="/inicio/manifest.json">
@@ -26,7 +26,7 @@
 <script src="/js/origen.js?v=391"></script>
 <script src="/js/pwa.js?v=391" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/capturas/origins-plaza-retrato.jpg" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
@@ -62,7 +62,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .carta.origins{border-color:rgba(244,114,182,.5);}
 .carta.ultimo{border-color:var(--oro);box-shadow:0 0 0 2px rgba(255,216,74,.7),0 18px 50px rgba(0,0,0,.45);}
 .vista{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/12;max-height:42vh;width:100%;background:#0b0718;transform:translateZ(30px);}
-.vista video{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;}
+.vista video{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;}
 .classic .vista{background:linear-gradient(180deg,#7ec8f0 0%,#bfe6ff 55%,#5fae4a 55%,#3d8a34 100%);}
 .classic .vista::after{content:"";position:absolute;left:0;right:0;bottom:0;height:45%;background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 16px,transparent 16px 32px);}
 .nube{position:absolute;top:14%;width:90px;height:26px;background:#fff;border-radius:20px;opacity:.85;animation:nube 22s linear infinite;}
@@ -111,7 +111,7 @@ footer a{color:var(--cian);text-decoration:none;}
   <section class="cartas">
     <a class="carta origins" data-ir="/mundo/">
       <div class="vista">
-        <video data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest Origins"></video>
+        <video data-src="/assets/video/origins-plaza.mp4" poster="/assets/capturas/origins-plaza-retrato.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest Origins: la plaza de Pueblo Duende"></video>
         <span class="etq">NUEVO · 3D</span>
       </div>
       <h2>Duende Quest Origins</h2>
@@ -232,7 +232,7 @@ footer a{color:var(--cian);text-decoration:none;}
     requestAnimationFrame(cuadro);
   }
   requestAnimationFrame(cuadro);
-  // Video de ORIGINS: al abrir solo se ve el poster (42 KB). El mp4 (1,7 MB) se pide cuando la pagina ya cargo,
+  // Video de ORIGINS: al abrir solo se ve el poster (51 KB). El mp4 (0,55 MB) se pide cuando la pagina ya cargo,
   // nunca con ahorro de datos, 2G o "reducir movimiento", y se pausa cuando la carta no se ve.
   var vid = document.querySelector('video[data-src]');
   if (vid) {
