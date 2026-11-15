@@ -2037,10 +2037,14 @@ section[id]{scroll-margin-top:72px;}
   if (!botones.length || !visor) return;
   var img = document.getElementById('cap-visor-img');
   var txt = document.getElementById('cap-visor-txt');
-  var webp = false;
-  try { webp = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) {}
+  // ¿El navegador abre WebP? Se mira al abrir la primera captura, no al cargar la portada (el lienzo cuesta CPU al arrancar)
+  var webp = null;
+  function conWebp() {
+    if (webp === null) { webp = false; try { webp = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) {} }
+    return webp;
+  }
   var actual = 0;
-  function ruta(b) { return b.getAttribute('data-full') + (webp ? '.webp' : (b.getAttribute('data-ext') || '.png')); }
+  function ruta(b) { return b.getAttribute('data-full') + (conWebp() ? '.webp' : (b.getAttribute('data-ext') || '.png')); }
   function mostrar(i) {
     actual = (i + botones.length) % botones.length;
     var b = botones[actual];
@@ -2114,16 +2118,8 @@ section[id]{scroll-margin-top:72px;}
 // Antes aqui habia ~470 KB de JPEG en base64 (const IMG + setImg) que
 // sustituian esos PNG por versiones con fondo negro en cada visita.
 
-// PARTICLES
-const EM=['✨','💎','🌙','🔥','🚀','⭐','💚','⚔️','🏰','🎲','🧿','👾'];
-const pc=document.getElementById('particles');
-for(let i=0;i<28;i++){
-  const p=document.createElement('div');
-  p.className='particle';
-  p.textContent=EM[Math.floor(Math.random()*EM.length)];
-  p.style.cssText=`left:${Math.random()*100}vw;font-size:${.6+Math.random()*1.4}rem;animation-duration:${12+Math.random()*20}s;animation-delay:${Math.random()*20}s;`;
-  pc.appendChild(p);
-}
+// PARTICLES: quitadas (15-nov-2026). #particles y .particle están ocultos por CSS desde
+// la portada sobria; crear 28 nodos invisibles en cada visita solo costaba tiempo al arrancar.
 
 // COPY CA
 function copyCa(){

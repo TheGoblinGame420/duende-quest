@@ -388,3 +388,24 @@ footer{background:#08070a;border-top-color:var(--marco);}
 @media (pointer:coarse),(max-width:900px){
   html .secciones a,html .hero-nuevo,html .hero-ca-copiar,html .hero-ca-ver,html .hero-creador a,html .btn-sm,html .store-tab,html .nft-buy-btn{min-height:44px;}
 }
+
+/* -- 14. Carga ligera (15-nov-2026): el navegador no maqueta ni pinta las secciones de abajo
+   hasta que se acercan a la pantalla (antes: ~4 s de maquetado con CPU x4 en 360x740).
+   "auto" recuerda el alto real una vez vista; 760px es solo la estimación inicial (media real 360-1280 px). --
+   El héroe, la cabecera y el pie quedan fuera: se ven al entrar o se fijan a la pantalla. Los bloques
+   plegables (.pliegue) tampoco: cerrados ya no se maquetan por dentro y miden menos de 200 px. */
+@supports (content-visibility:auto){
+  .section:not(.hero),.pestanas{content-visibility:auto;contain-intrinsic-size:auto 760px;}
+  .pestanas-panel>.section,.pliegue-cuerpo>.section{content-visibility:visible;contain-intrinsic-size:none;}
+  /* Al saltar a un ancla (js/portada-orden.js) se maqueta todo, para que el salto caiga en su sitio */
+  html.cv-todo .section,html.cv-todo .pestanas{content-visibility:visible;}
+}
+
+/* -- 15. Celular angosto (15-nov-2026): el aviso «Nuevo: ...» del héroe se cortaba con «...» en 360 px;
+   ahora baja a una segunda línea y se lee entero. -- */
+@media(max-width:420px){
+  .hero-nuevo{border-radius:16px;text-align:center;justify-content:center;}
+  .hero-nuevo #nuevo-temp{white-space:normal;overflow:visible;text-overflow:clip;}
+}
+/* La casilla de monto del canje se quedaba en 42 px de alto */
+@media (pointer:coarse),(max-width:900px){html .exc-input{min-height:44px;}}

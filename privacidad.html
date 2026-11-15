@@ -33,10 +33,10 @@ a:hover{color:#93c5fd;}
 :focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
 .top{background:var(--panel);border-bottom:1px solid var(--borde);}
 .top-in{max-width:720px;margin:0 auto;padding:.3rem 16px;display:flex;align-items:center;justify-content:space-between;gap:.6rem 1rem;flex-wrap:wrap;}
-.brand{display:inline-flex;align-items:center;min-height:40px;padding:.6rem .4rem;margin-left:-.4rem;gap:.5rem;color:var(--txt);font-weight:700;text-decoration:none;letter-spacing:.03em;}
+.brand{display:inline-flex;align-items:center;min-height:44px;padding:.6rem .4rem;margin-left:-.4rem;gap:.5rem;color:var(--txt);font-weight:700;text-decoration:none;letter-spacing:.03em;}
 .brand img{width:20px;height:20px;image-rendering:pixelated;}
 .top nav{display:flex;gap:0 .4rem;flex-wrap:wrap;margin-right:-.4rem;}
-.top nav a{display:inline-flex;align-items:center;min-height:40px;padding:.6rem .4rem;color:var(--txt2);text-decoration:none;font-size:.9rem;}
+.top nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:.6rem .4rem;color:var(--txt2);text-decoration:none;font-size:.9rem;}
 .top nav a:hover,.top nav a[aria-current="page"]{color:var(--txt);}
 main{max-width:720px;margin:0 auto;padding:2rem 16px 3rem;}
 h1{font-size:1.65rem;line-height:1.25;margin-bottom:.35rem;}
@@ -62,7 +62,7 @@ th{color:var(--txt2);font-weight:600;background:var(--panel);}
 td:first-child{width:58%;}
 footer{border-top:1px solid var(--borde);background:var(--panel);}
 footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
-footer a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;color:var(--txt2);}
+footer a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:10px 6px;color:var(--txt2);}
 footer a:hover{color:var(--txt);}
 @media (max-width:520px){h1{font-size:1.4rem;}td:first-child{width:auto;}}
 </style>
@@ -182,7 +182,7 @@ footer a:hover{color:var(--txt);}
     <li>en esos avisos solo va el identificador del clic en el anuncio y un código seudónimo de tu personaje (una huella cifrada en lugar de tu cuenta). <strong>Nunca</strong> enviamos tu nombre, correo, teléfono, dirección IP ni tu ID de Telegram.</li>
   </ul>
   <p>Lo usamos solo para saber qué anuncios traen jugadores y dejar de pagar los que no. Si pulsas «No, gracias» no se carga nada de Meta. Dentro de la Mini App de Telegram nunca te lo preguntamos ni se carga el píxel. Puedes retirar tu permiso cuando quieras con este botón, que también borra las cookies de Meta de este sitio; a partir de tu siguiente entrada al juego dejamos de avisar a Meta.</p>
-  <p><button type="button" id="medir-retirar" style="padding:8px 14px;border-radius:8px;cursor:pointer">Retirar mi permiso de medición</button> <span id="medir-estado"></span></p>
+  <p><button type="button" id="medir-retirar" style="padding:8px 14px;min-height:44px;border-radius:8px;cursor:pointer">Retirar mi permiso de medición</button> <span id="medir-estado"></span></p>
   <script>
   (function () {
     var b = document.getElementById('medir-retirar'), e = document.getElementById('medir-estado');
