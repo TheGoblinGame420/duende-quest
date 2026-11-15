@@ -271,7 +271,7 @@ def tienda_media():
 @pieza('hoguera', (520, 221, 60), ao_dist=0.9)
 def hoguera():
     """Hoguera de campamento (1,4 × 1,35 × 0,55): cerco de piedras, ceniza, leños cruzados y ascuas."""
-    p = anillo_piedras(0.56, 9, 0.15, 3, -0.03, PIEDRA_OSC)
+    p = anillo_piedras(0.56, 8, 0.15, 3, -0.03, PIEDRA_OSC)
     p.append(torno([(0.5, 0.0), (0.42, 0.04), (0, 0.05)], N(10, 8, 6), 'liso', CENIZA))
     p += brasas(0.42, 0.04, 2)
     return acabar(p, 'hoguera', base=0.15, guardar=('emisivo',))
@@ -801,7 +801,7 @@ def cripta():
         p.append(caja(2 * W - 0.5 - 0.04 * (k % 2), 2 * D - 0.5, h - 0.03 * (hil > 2), (0, 0.1, z), marca='monolito', color=hexlin(GRIS) * rng.uniform(0.85, 1.1), tono=0.15, semilla=k))
         if _L[0] == 0:   # sillares de la fachada y de los costados: bloques sueltos con su llaga
             for sx in (-1, 1):
-                nb = 4; L = (2 * D - 1.2) / nb; off = 0.5 * L * (k % 2)
+                nb = 3; L = (2 * D - 1.2) / nb; off = 0.5 * L * (k % 2)
                 for b in range(nb):
                     y0 = -D + 0.6 + b * L + off; y1 = min(D - 0.4, y0 + L)
                     if y1 - y0 > 0.2: p.append(caja(0.06, y1 - y0 - 0.04, h - 0.04, (sx * (W - 0.25 + 0.03), 0.1 + (y0 + y1) / 2 - 0.1, z), marca='monolito', color=hexlin(GRIS) * rng.uniform(0.8, 1.15), semilla=k * 9 + b))
