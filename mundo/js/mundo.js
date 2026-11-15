@@ -7919,7 +7919,7 @@ $('chat-f').addEventListener('submit', e => { e.preventDefault(); enviarInputCha
 $('chat-in').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); enviarInputChat(); return; }
   if (e.key === 'Escape') { $('chat-in').blur(); $('chat-in').style.display = 'none'; }
-});
+}, true);   /* en captura: el stopPropagation de arriba (tambien en captura) impedia que este oyente corriera y Escape no cerraba el chat */
 
 // Raton: arrastrar gira la camara; un clic (sin arrastre) elige objetivo.
 let arrastre = null;
