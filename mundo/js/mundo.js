@@ -376,10 +376,19 @@ const GRADO = {
 };
 // Ocaso y noche para el tono por hora del pase de color (lo pone ambiente(); se copia al crear el pase).
 const HORA_GRADO = new THREE.Vector3();
+// Resplandor por hora: de dia solo lo muy brillante (umbral 0.92, como siempre); al caer la tarde y de noche el umbral
+// baja y el resplandor sube un poco, para que antorchas, faroles, runas y cristales tengan halo sin quemar el cielo de dia.
+let bloomP = null;
+function ajustarBloom() {
+  if (!bloomP) return;
+  const k = Math.max(HORA_GRADO.y, HORA_GRADO.x * 0.5);
+  bloomP.threshold = 0.92 - 0.3 * k; bloomP.strength = 0.32 + 0.14 * k;
+  if (bloomP.highPassUniforms) bloomP.highPassUniforms.luminosityThreshold.value = bloomP.threshold;
+}
 // Se enciende y apaga en vivo (menu de graficos); los modulos se descargan la primera vez.
 let postCargando = false;
 function ponerPost(si) {
-  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; gradoU = null; } document.body.classList.add('sin-post'); return; }
+  if (!si) { if (composer) { try { for (const p of composer.passes) if (p.dispose) p.dispose(); composer.dispose(); } catch (e) {} composer = null; gradoU = null; bloomP = null; } document.body.classList.add('sin-post'); return; }
   if (composer || postCargando || PRUEBA_SIN_POST()) return;
   postCargando = true;
   Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import('three/addons/postprocessing/' + n + '.js'))).then(([E, R, B, O, S]) => {
@@ -388,7 +397,8 @@ function ponerPost(si) {
     const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 });
     const c = new E.EffectComposer(render, rt);
     c.addPass(new R.RenderPass(escena, camara));
-    c.addPass(new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92));
+    bloomP = new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92); ajustarBloom();
+    c.addPass(bloomP);
     const gp = new S.ShaderPass(GRADO); gradoU = gp.uniforms; gradoU.uHora.value.copy(HORA_GRADO);
     c.addPass(gp);
     c.addPass(new O.OutputPass());
@@ -603,7 +613,7 @@ function ambiente(z) {
   nieblaTinteObj.copy(cieloObj);
   if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
-  HORA_GRADO.set(ocasoK, fijo ? 0 : nocheK, 0); if (gradoU) gradoU.uHora.value.copy(HORA_GRADO);
+  HORA_GRADO.set(ocasoK, fijo ? 0 : nocheK, 0); if (gradoU) gradoU.uHora.value.copy(HORA_GRADO); ajustarBloom();
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.78) * 4.5, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
@@ -1826,7 +1836,10 @@ function teñir(img, hue, sat) {
   x.putImageData(d, 0, 0);
   return c;
 }
-const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }); })();
+const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
+  /* De media para arriba (misma textura, mismo coste): nucleo mas oscuro bajo los pies y penumbra larga y tenue, como una sombra de contacto de verdad. */
+  if (CAL !== 'baja') { g.addColorStop(0, 'rgba(0,0,0,.58)'); g.addColorStop(0.22, 'rgba(0,0,0,.44)'); g.addColorStop(0.55, 'rgba(0,0,0,.16)'); g.addColorStop(0.8, 'rgba(0,0,0,.05)'); } else g.addColorStop(0, 'rgba(0,0,0,.45)');
+  g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }); })();
 const anilloMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
 const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Math.PI / 2), anilloMat);
 anillo.visible = false;
