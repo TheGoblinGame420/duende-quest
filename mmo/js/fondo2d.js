@@ -169,6 +169,35 @@ function tronco(g, x, y, h, a, r, c) {
   g.stroke();
 }
 let _luces = null, _lucesX0 = 0;
+// Casas renderizadas desde los modelos de Blender del juego (tools/blender/sprites2d.mjs):
+// atlas de 28 KB con la fila de día y, debajo, solo las ventanas encendidas. Se carga
+// la primera vez que hace falta una casa; mientras tanto (o si falla, o con
+// localStorage dq_casas2d = '0') se dibuja la casa procedural de siempre.
+let _casas = null, _casasPide = false;
+function pedirCasas() {
+  if (_casasPide) return; _casasPide = true;
+  try { if (localStorage.getItem('dq_casas2d') === '0') return; } catch (e) {}
+  const img = new Image();
+  const meta = fetch(new URL('../../assets/2d/casas2d.json', import.meta.url)).then(r => r.ok ? r.json() : null).catch(() => null);
+  img.onload = () => meta.then(j => {
+    if (!j || !j.casas) return;
+    _casas = { img, j, lista: Object.values(j.casas) };
+    if (M) { M.trozos.clear(); M.luces.clear(); }   // re-hornea con las casas nuevas
+  });
+  img.src = new URL('../../assets/2d/casas2d.webp', import.meta.url).href;
+}
+function casaSprite(g, x, y, s, r, noche) {
+  if (!_casas) { pedirCasas(); return false; }
+  const { img, j, lista } = _casas, c = lista[(r() * lista.length) | 0], k = .82 + (s - .8) * .45;
+  const w = c.w * k, h = c.h * k, dx = x - w / 2, dy = y - c.suelo * k + 2;
+  sombraBase(g, x, y, w * .55);
+  g.drawImage(img, c.x, 0, c.w, c.h, dx, dy, w, h);
+  if (noche) {
+    g.drawImage(img, c.x, j.alto + j.sep, c.w, c.h, dx, dy, w, h);
+    if (_luces) for (let i = 0; i < c.luces.length && i < 6; i++) _luces.push(dx + c.luces[i][0] * k + _lucesX0, dy + c.luces[i][1] * k);
+  }
+  return true;
+}
 const PIEZAS = {
   roble(g, x, y, s, r, e) {
     const h = (110 + r() * 60) * s, c = '#2c221c';
@@ -301,6 +330,7 @@ const PIEZAS = {
     g.lineCap = 'butt';
   },
   casa(g, x, y, s, r, e, noche) {
+    if (casaSprite(g, x, y, s, r, noche)) return;
     const w = (86 + r() * 34) * s, h1 = 40 * s, h2 = (34 + r() * 10) * s, ht = (38 + r() * 14) * s;
     const piedra = mez(e.t, '#7a766e', .6), yeso = mez('#8a7c66', e.c[1], .35), viga = '#2a1e16', teja = mez('#4a2e26', e.c[0], .35);
     sombraBase(g, x, y, w * .6);
