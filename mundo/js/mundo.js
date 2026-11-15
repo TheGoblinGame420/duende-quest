@@ -542,6 +542,8 @@ const lluvia = (() => {
   return { m, n, pos };
 })();
 let fovGolpe = 0;
+// Donde cayo tu ultima presa ('md3'): el botin ('gana' con item) brilla ahi con el color de su rareza (brilloBotin3).
+let ultBaja3 = null;
 let nocheBonoAnt = null;   // ultimo estado del +10% XP nocturno (null: aun sin evaluar)
 let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, Q.lejos];
 // Tinte de la niebla por zona (el horizonte de la cupula usa el mismo color),
@@ -1901,9 +1903,11 @@ function numero(x, y, z, txt, color, grande, clave) {
   let d = poolNum.pop();
   if (!d) { d = document.createElement('div'); d.className = 'num'; capa.appendChild(d); }
   d.textContent = cifraCorta(txt); d.style.color = color || '#fff'; d.style.fontSize = grande ? (typeof grande === 'number' ? grande + 'px' : '22px') : ''; d.style.display = ''; d.style.opacity = 1;
-  numeros.push({ d, x, y, z, t: 0, dx: (Math.random() - 0.5) * 0.8, g: !!grande, k: clave || null, suma: parseInt(txt, 10) || 0, pop: 0 });
+  // Celular (lado corto < 560 px): los numeros que salen de un monstruo se abren hacia un lado (lat) y no tapan el centro.
+  const lat = Math.min(innerWidth, innerHeight) < 560 && Math.hypot(x - P.x, z - P.z) > 0.6 ? 1 : 0;
+  numeros.push({ d, x, y, z, t: 0, dx: lat ? 0 : (Math.random() - 0.5) * 0.8, g: !!grande, k: clave || null, suma: parseInt(txt, 10) || 0, pop: 0, lat, lx: 0 });
 }
-let numeros = [];
+let numeros = [], numLado = 1;
 // ── GESTOS: un emoji grande 2,5 s sobre el duende que lo hace (sin texto libre) ──
 const gestosVivos = new Map();   // id del jugador -> { d, t }
 function mostrarGesto(pid, gid) {
@@ -2075,6 +2079,12 @@ const PESO_ARMA = {
 function pesoArma() {
   if (!yo || (CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara')) return PESO_ARMA.katana;
   return PESO_ARMA[yo.arma || 'katana'] || PESO_ARMA.katana;
+}
+// Forma de las chispas de TU golpe (particulas.js golpe, o.tipo): solo aspecto, nada de daño.
+function tipoChispa() {
+  if (!yo) return '';
+  if ((CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara') || yo.arma === 'chispa') return 'magia';
+  return yo.arma === 'dagas' || yo.arma === 'odachi' ? yo.arma : '';
 }
 // Variantes de los paquetes CC0 (Kenney y OpenGameArt): una al azar.
 const SFX_K = { paso_h: 5, paso_p: 5, paso_m: 5, paso_n: 5, g_carne: 5, g_metal: 5, g_critico: 3, desenv: 3, monedas: 2, libro: 3, tela: 4, puerta: 1,
@@ -2594,7 +2604,8 @@ function recibir(m) {
       if (revancha3 && m.id === revancha3.id) revancha3 = null;   // ya cayó: no marcar una revancha vacía
       const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; const y = (o.y || alturaEn(o.x, o.z)) + 1;
       if (m.huye) { FX.emitir(o.x, y, o.z, { n: 6, color: '#cbd5e1', vel: 1.2, vida: 0.6, grav: -1.5, tam: 1.6, forma: 'humo' }); try { sfxK('paso_h', 0.25, o.x, o.z); } catch (e) {} }
-      else { if (m.id === objetivo || performance.now() - (o.predT || 0) < 600) { vib('heavy'); sacudir = Math.max(sacudir, 0.12); pausaGolpe(o, 90); } sfx('muerte', 0.36, o.x, o.z); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.32, o.x, o.z); FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 1.6, forma: 'estrella' }); FX.emitir(o.x, y - 0.5, o.z, { n: 7, color: '#5b5266', vel: 1.1, vida: 1.1, grav: -1, tam: 3, radio: 0.4, forma: 'humo' }); }
+      else { if (m.id === objetivo || performance.now() - (o.predT || 0) < 600) ultBaja3 = { x: o.x, y, z: o.z, t: performance.now() };
+        if (m.id === objetivo || performance.now() - (o.predT || 0) < 600) { vib('heavy'); sacudir = Math.max(sacudir, 0.12); pausaGolpe(o, 90); } sfx('muerte', 0.36, o.x, o.z); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.32, o.x, o.z); FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 1.6, forma: 'estrella' }); FX.emitir(o.x, y - 0.5, o.z, { n: 7, color: '#5b5266', vel: 1.1, vida: 1.1, grav: -1, tam: 3, radio: 0.4, forma: 'humo' }); }
       if (!m.huye && o.panicoT && performance.now() - o.panicoT < 1800) numero(o.x, y + 1.2, o.z, '¡Remate!', '#fbbf24');   // lo cazaste mientras huía (solo texto)
       const dj = MONSTRUOS[o.k];
       if (!m.huye && (o.j || (dj && dj.jefe)) && (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 30)) {
@@ -2692,6 +2703,7 @@ function recibir(m) {
       // Botin con su nombre y rareza (antes siempre decia "equipo nuevo", tambien si se vendio por bolsa llena).
       if (m.item && !m.primero) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
       if (m.item && !m.item.vendido && m.primero !== 2) botinFuerte(m.item);   // primero===2: ya va equipado (no ofrecer «Equipar»)
+      if (m.item) { const it = m.item, tG = performance.now(); setTimeout(() => { try { brilloBotin3(it, tG); } catch (e) {} }, 150); }   /* el servidor manda 'gana' justo ANTES de 'md3' */   // primero===2: ya va equipado (no ofrecer «Equipar»)
       // Primera caza del personaje: botin garantizado (y nivel 2), con fiesta.
       if (m.primero) {
         paso('caza1');   // embudo: primera caza (ms desde el clic en entrar)
@@ -3214,7 +3226,7 @@ function ataqueVisto(m) {
   if (corteYa) P.corteLocal = null;   // una sola confirmacion omitida por toque
   if (de) { if (!(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (m.v && !(de === P && performance.now() - (P.proyLocalT || 0) < 700)) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
   if (m.d > 0) o.hp = Math.max(0, o.hp - m.d);
-  if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.golpe(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { critico: m.c, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1' });
+  if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.golpe(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { critico: m.c, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', tipo: m.p === miId ? tipoChispa() : '' });
   // 3.er golpe del combo (el servidor lo marca con f): numero grande naranja con '!'.
   const fuerte = !!(m.f && m.p === miId && m.d > 0 && !m.c);
   if (m.p === miId || (o.id === objetivo && !(o.fig && o.fig._cerca === false))) {   // un monstruo oculto por el tope no suelta números ajenos
@@ -3330,6 +3342,11 @@ let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = n
 let pausaAnim = 0, pausaMon = 0;
 // Movimiento reducido (ajuste del sistema): casi sin sacudida de camara y sin congelar el golpe.
 const MENOS_MOV = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } })();
+// Sacudida de camara (Menu -> Interfaz, por dispositivo; localStorage dq3_sacudida = normal|suave|off):
+// multiplica el temblor y el golpe de zoom. No toca la pausa del impacto ni la vibracion.
+let SACUDIDA_K = 1;
+function leerSacudida() { let v = 'normal'; try { v = localStorage.getItem('dq3_sacudida') || 'normal'; } catch (e) {} if (!['normal', 'suave', 'off'].includes(v)) v = 'normal'; SACUDIDA_K = v === 'off' ? 0 : v === 'suave' ? 0.45 : 1; return v; }
+leerSacudida();
 function pausaGolpe(o, ms) { if (MENOS_MOV) return; pausaAnim = Math.max(pausaAnim, performance.now() + ms); if (o) pausaMon = o.id; }
 const zonas3 = new Map();
 // Pisotones: si estabas dentro del circulo al marcarse (zonaDentro) y sales a tiempo, cuenta como esquivado.
@@ -6710,6 +6727,21 @@ function metaCofreSem(pts, cof) {
   requestAnimationFrame(() => b.classList.add('on'));
   b._tm = setTimeout(() => b.classList.remove('on'), 2500);
 }
+// El botin cae donde murio tu presa: latido de luz del color de su rareza y unas estrellas que suben.
+// Solo si la baja fue hace poco y cerca; en particulas «Pocas» (minima y baja), solo el latido.
+function brilloBotin3(it, tG) {
+  const b = ultBaja3;
+  // Solo la baja que llego junto con este botin (no una anterior de la racha).
+  if (!b || !it || b.t < tG - 400 || Math.hypot(b.x - P.x, b.z - P.z) > 30) return;
+  ultBaja3 = null;
+  const r = it.r || 0, col = (RAREZAS[r] && RAREZAS[r].color) || '#d0d0d0', y = b.y - 0.6;
+  FX.brillo(b.x, y, b.z, col, r >= 2);
+  // Comun: campanita suave donde cae (los raros y mejores ya suenan en botinFuerte).
+  if (r === 0) try { SON.tocar('botin', { r: 0, vol: 0.35, x: b.x, z: b.z }); } catch (e) {}
+  if (PARCO) return;
+  FX.emitir(b.x, y, b.z, { n: 4 + r * 3, color: col, vel: 0.9, vida: 1.1 + r * 0.2, grav: -2.2, radio: 0.35, tam: 1.1, forma: 'estrella', retraso: 0.25 });
+  if (r >= 2) setTimeout(() => FX.brillo(b.x, y + 0.4, b.z, col, true), 320);
+}
 function botinFuerte(it) {
   if (!it) return;
   const fuerte = it.r >= 2;   // haz, vibracion y presumir solo epico o mas; la tarjeta de mejora para todos
@@ -8411,6 +8443,11 @@ if ($('sel-vib')) {
   $('sel-vib').value = ['normal', 'suave', 'off'].includes(vb0) ? vb0 : 'normal';
   $('sel-vib').onchange = () => { const v = $('sel-vib').value; try { localStorage.setItem('dq3_vib', v); } catch (e) {} if (v !== 'off') vib('success'); };
 }
+// Ajustes -> Sacudida de camara (por dispositivo). Al cambiarla, una sacudida de muestra.
+if ($('sel-sacudida')) {
+  $('sel-sacudida').value = leerSacudida();
+  $('sel-sacudida').onchange = () => { const v = $('sel-sacudida').value; try { if (v === 'normal') localStorage.removeItem('dq3_sacudida'); else localStorage.setItem('dq3_sacudida', v); } catch (e) {} leerSacudida(); sacudir = Math.max(sacudir, 0.3); };
+}
 const joy = { id: null, x: 0, y: 0, dx: 0, dy: 0 };
 const camTouch = { id: null, x: 0, y: 0, mov: 0 };
 if (MOVIL) {
@@ -9983,7 +10020,7 @@ function cuadroBucle(t) {
   // Sensacion de velocidad: el campo de vision se abre un poco al galopar o volar rapido.
   // Golpe critico: la camara se acerca un instante y vuelve (v322).
   fovGolpe *= Math.exp(-dt * 9); if (Math.abs(fovGolpe) < 0.05) fovGolpe = 0;
-  const fovObj = fovBase + fovGolpe + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10) + ((P.vuela || P.planea) && !MENOS_MOV ? 5 : 0);
+  const fovObj = fovBase + fovGolpe * SACUDIDA_K + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10) + ((P.vuela || P.planea) && !MENOS_MOV ? 5 : 0);
   if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * (1 - Math.exp(-dt * (fovGolpe ? 14 : 3))); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
@@ -10098,7 +10135,7 @@ function cuadroBucle(t) {
   });
   for (const [id, z] of zonas3) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); if (performance.now() - z.ini > z.ms + 1500) { quitarZona3(id); continue; } const kk = Number.isFinite(k) ? k : 0; z.disco.material.opacity = 0.12 + 0.4 * kk; const sd = Math.max(0.05, kk) * z.r; const sdOk = Number.isFinite(sd) ? sd : 0.01; z.disco.scale.set(sdOk, 1, sdOk); if (z.f === 'l') z.disco.scale.x = z.w; if (z.anillo) { const sa = Math.max(0.01, kk * z.r); z.anillo.scale.setScalar(Number.isFinite(sa) ? sa : 0.01); z.anillo.material.opacity = 0.5 + 0.45 * kk; } }
   // Sacudida suave (seno con fase, sin ruido): crece algo mas que lineal y con tope, asi los golpes chicos no marean.
-  if (sacudir > 0) { sacudir = Math.max(0, Math.min(0.6, sacudir) - dt); const am = sacudir * (0.3 + sacudir * 0.4) * (MENOS_MOV ? 0.15 : 1); camara.position.x += Math.sin(t * 0.09) * am; camara.position.y += Math.cos(t * 0.11) * am; }
+  if (sacudir > 0) { sacudir = Math.max(0, Math.min(0.6, sacudir) - dt); const am = sacudir * (0.3 + sacudir * 0.4) * (MENOS_MOV ? 0.15 : 1) * SACUDIDA_K; camara.position.x += Math.sin(t * 0.09) * am; camara.position.y += Math.cos(t * 0.11) * am; }
   alasMesh.visible = (P.vuela || P.planea) && !!yo;
   if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t, P.planea ? 'planea' : ((P.vy || 0) > 1 ? 'sube' : ''));
   if (P.vuela && !PARCO && (++estelaN % 3) === 0) FX.emitir(P.x - (P.vx || 0) * 0.05, P.y + 1.2, P.z - (P.vz || 0) * 0.05, { n: 1, color: caEstela, vida: 0.5, vel: 0.3, grav: -0.5, radio: 0.6, tam: 1 });
@@ -10109,6 +10146,12 @@ function cuadroBucle(t) {
     if (!s || n.t > 1.1) { n.d.style.display = 'none'; poolNum.push(n.d); return false; }
     let k = n.t < 0.12 ? 1 + (n.g ? 0.8 : 0.4) * (1 - n.t / 0.12) : 1;
     if (n.pop > 0) { k *= 1 + 0.25 * n.pop; n.pop = Math.max(0, n.pop - dt * 6); }
+    if (n.lat) {
+      // Lado: el del monstruo respecto al centro de la pantalla (si esta justo al centro, alterna).
+      if (!n.lx) { const cx = innerWidth / 2; n.lx = s[0] < cx - 8 ? -1 : s[0] > cx + 8 ? 1 : (numLado = -numLado); }
+      const e = Math.min(1, n.t / 0.32), ab = 1 - (1 - e) * (1 - e);
+      s[0] += n.lx * (16 + 30 * ab); s[1] -= 12 * ab;
+    }
     n.d.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-50%) scale(${k.toFixed(2)})`;
     n.d.style.opacity = 1 - Math.max(0, n.t - 0.7) / 0.4;
     return true;

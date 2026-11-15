@@ -127,8 +127,9 @@ function mat(color, o) {
   MATS.set(k, m);
   return m;
 }
-const BLANCO = new THREE.MeshBasicMaterial({ color: 0xffffff });   // destello de golpe
-const ROJO_AVISO = new THREE.MeshBasicMaterial({ color: 0xff3b2f });   // monstruo a punto de pegar
+// Destello de golpe y aviso rojo: con luz (Lambert) y un piso emisivo, asi se ve la forma del monstruo y no una mancha plana.
+const BLANCO = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x9a948a });   // destello de golpe
+const ROJO_AVISO = new THREE.MeshLambertMaterial({ color: 0xff3b2f, emissive: 0x6a0d07 });   // monstruo a punto de pegar
 
 // ── PIEZAS ──
 // M(padre, geometria, color|material, pos, escala, rot, opciones de material)

@@ -438,7 +438,7 @@ export function iniciarMenu(api) {
       if (n.matches('.cerrar,h2')) { n.remove(); continue; }
       if (tiene('sel-calidad')) { n.remove(); continue; }
       if (tiene('sel-brillo')) { hueco.graficos.appendChild(n); continue; }
-      if (tiene('sel-vib') || tiene('sel-texto') || tiene('sel-hud')) { hueco.interfaz.appendChild(n); continue; }
+      if (tiene('sel-vib') || tiene('sel-sacudida') || tiene('sel-texto') || tiene('sel-hud')) { hueco.interfaz.appendChild(n); continue; }
       if (tiene('sel-mano')) { hueco.controles.appendChild(n); continue; }
       if (tiene('b-teclas')) { dest = 'teclado'; hueco.controles.appendChild(teclado); }
       else if (tiene('b-leyenda')) dest = 'ayuda';
