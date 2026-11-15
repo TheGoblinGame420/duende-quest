@@ -429,6 +429,8 @@ class Modelo {
   // estado: quieto | anda | corre | ataca | lanza | herido | muere | salta | vuela | nada
   //         (+ 'monta': sentado en la silla de una montura)
   animar(estado, tEstado, t) { animarRig(this, estado || 'quieto', tEstado || 0, t || 0); }
+  // Nivel de detalle por distancia (solo los rigs que lo traen: monstruos de Blender, bestias.js). k = distancia a la camara / alto.
+  detalle(k) { if (this.r && this.r.detalle) this.r.detalle(k); }
   // Destello blanco ~120 ms.
   golpe() {
     if (performance.now() < (this._rojoHasta || 0)) return; // el aviso rojo manda: tu golpe no lo borra

@@ -2018,6 +2018,10 @@ class Figura3D {
     this.sombra.visible = enRango && (!sol.castShadow || d > 24 || !ver);
     if (this.montura) this.montura.obj.visible = ver;
     if (!ver) { if (enRango) ponerSombra(this.sombra, this.sombraBase, x, y, z); return; }
+    /* Nivel de detalle por distancia a la camara (monstruos de Blender, bestias.js; los demas modelos lo ignoran), en altos del
+       bicho; los chicos cuentan como de 1,5 m: lo que pelea a tu lado (camara a ~11 m) siempre va con todo su detalle. */
+    { const cp = camara.position, dx = x - cp.x, dy = y - cp.y, dz = z - cp.z, dc = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      this.modelo.detalle(dc / Math.max(1.5, this.alto)); if (this.montura) this.montura.detalle(dc / Math.max(1.5, this.montura.alto)); }
     const animar = d < 45 || (cuadro + this.raiz.id) % 2 === 0;
     if (this.montura) {
       const mo = this.montura;

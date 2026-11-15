@@ -54,9 +54,12 @@ export function crearBestias(PAQ, K) {
     if (!g.boundingBox) g.computeBoundingBox();
     return g;
   }
+  // Piezas del rig que se está armando (malla, nombre, malla, nombre...): las usa el nivel de detalle.
+  let PZ = null;
   // Pieza colgada de un pivote (estática respecto a él: lo que se anima es el pivote).
   function P(padre, n, ctx, pos, rot, esc) {
     const me = new THREE.Mesh(geo(n, ctx.lig), ctx.m);
+    if (PZ) PZ.push(me, n);
     if (pos) me.position.set(pos[0], pos[1], pos[2]);
     if (rot) me.rotation.set(rot[0], rot[1], rot[2]);
     if (esc != null) typeof esc === 'number' ? me.scale.setScalar(esc) : me.scale.set(esc[0], esc[1], esc[2]);
@@ -328,6 +331,38 @@ export function crearBestias(PAQ, K) {
     r.paso = 6; r.H = 0.95; r.topeCabeza = 0.46;
     return r;
   };
+
+  // ── Nivel de detalle por distancia ──
+  // Cada rig sale con r.detalle(k), k = distancia a la cámara / alto del bicho (mundo.js lo llama en cada cuadro en
+  // que la figura se ve): a más de LEJOS[0] altos pasa al nivel 1 y a más de LEJOS[1] al 2 (el más simple del
+  // paquete). Para volver a acercar el nivel hay que bajar de un 12 % menos (histéresis): un bicho que ronda el
+  // umbral no parpadea. Solo cambia la geometría de cada malla (misma pose, material y sombra), y las geometrías
+  // salen de la caché del paquete: cambiar de nivel no crea nada nuevo tras la primera vez.
+  // En calidad baja (c.ligero) el nivel más cercano ya es el 1. r.detalleNivel(n) fija el nivel (galería, pruebas).
+  const LEJOS = [10, 20];
+  for (const k of Object.keys(R)) {
+    const f = R[k];
+    R[k] = c => {
+      const pz = PZ = [];
+      let r;
+      try { r = f(c); } finally { PZ = null; }
+      const base = c.ligero ? 1 : 0;
+      let nv = base;
+      const poner = n => {
+        n = Math.max(base, Math.min(2, n | 0));
+        if (n === nv) return;
+        nv = n;
+        for (let i = 0; i < pz.length; i += 2) pz[i].geometry = PAQ.geo('bes_' + pz[i + 1], n);
+      };
+      r.detalleNivel = poner;
+      r.detalle = d => {
+        const n = Math.max(base, d > LEJOS[1] * (nv >= 2 ? 0.88 : 1) ? 2 : d > LEJOS[0] * (nv >= 1 ? 0.88 : 1) ? 1 : 0);
+        if (n !== nv) poner(n);
+      };
+      r.nivelDetalle = () => nv;
+      return r;
+    };
+  }
 
   return Object.keys(R).length ? R : null;
 }
