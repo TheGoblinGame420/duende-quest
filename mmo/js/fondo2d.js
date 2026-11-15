@@ -115,6 +115,15 @@ function halo(hex, tam) {
   _halos.set(k, c);
   return c;
 }
+// Luz de fuego: núcleo cálido intenso y caída larga (para mezclar con 'lighter').
+let _fuego = null;
+function luzFuego() {
+  if (_fuego) return _fuego;
+  const c = lienzo(128, 128), x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,190,110,.85)'); gr.addColorStop(.18, 'rgba(255,150,70,.5)'); gr.addColorStop(.5, 'rgba(230,110,40,.17)'); gr.addColorStop(1, 'rgba(200,80,30,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+  return _fuego = c;
+}
 let _llamas = null;
 function llamas() {
   if (_llamas) return _llamas;
@@ -129,7 +138,21 @@ function llamas() {
 }
 
 // ── Piezas del decorado (se dibujan una vez, al hornear) ──
-function sombraBase(g, x, y, a) { g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(x, y, a, Math.max(2, a * .16), 0, 0, TAU); g.fill(); }
+// Sombra suave: un disco difuminado de 64 px que se estira (una copia, sin trazados).
+let _sombra = null;
+function disco() {
+  if (_sombra) return _sombra;
+  const c = lienzo(64, 64), x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.45, 'rgba(0,0,0,.8)'); gr.addColorStop(.75, 'rgba(0,0,0,.32)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  return _sombra = c;
+}
+function sombraBase(g, x, y, a) {
+  // Sombra ancha y difusa del cielo + contacto oscuro al pie.
+  const h = Math.max(3, a * .2);
+  g.save(); g.globalAlpha = .34; g.drawImage(disco(), x - a * 1.25, y - h * 1.1, a * 2.5, h * 2.2);
+  g.globalAlpha = .4; g.drawImage(disco(), x - a * .8, y - h * .55, a * 1.6, h * 1.1); g.restore();
+}
 function volumen(g, x0, x1, c, k) { const gr = g.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, css(luzc(c, k))); gr.addColorStop(.55, css(c)); gr.addColorStop(1, css(luzc(c, -k * 1.6))); return gr; }
 function copa(g, x, y, R, r, ho, n) {
   const P = []; for (let i = 0; i < n; i++) { const a = r() * TAU, d = Math.sqrt(r()) * R * .75; P.push([x + Math.cos(a) * d * 1.15, y + Math.sin(a) * d * .7, R * (.34 + r() * .26)]); }
@@ -144,6 +167,36 @@ function tronco(g, x, y, h, a, r, c) {
   g.strokeStyle = css(luzc(c, -.45), .6); g.lineWidth = 1; g.beginPath();
   for (let i = 0; i < 4; i++) { const bx = x - a * .5 + r() * a, by = y - r() * h * .8; g.moveTo(bx, by); g.lineTo(bx + (r() - .5) * 2, by - 6 - r() * 12); }
   g.stroke();
+}
+let _luces = null, _lucesX0 = 0;
+// Casas renderizadas desde los modelos de Blender del juego (tools/blender/sprites2d.mjs):
+// atlas de 28 KB con la fila de día y, debajo, solo las ventanas encendidas. Se carga
+// la primera vez que hace falta una casa; mientras tanto (o si falla, o con
+// localStorage dq_casas2d = '0') se dibuja la casa procedural de siempre.
+let _casas = null, _casasPide = false;
+function pedirCasas() {
+  if (_casasPide) return; _casasPide = true;
+  try { if (localStorage.getItem('dq_casas2d') === '0') return; } catch (e) {}
+  const img = new Image();
+  const meta = fetch(new URL('../../assets/2d/casas2d.json', import.meta.url)).then(r => r.ok ? r.json() : null).catch(() => null);
+  img.onload = () => meta.then(j => {
+    if (!j || !j.casas) return;
+    _casas = { img, j, lista: Object.values(j.casas) };
+    if (M) { M.trozos.clear(); M.luces.clear(); }   // re-hornea con las casas nuevas
+  });
+  img.src = new URL('../../assets/2d/casas2d.webp', import.meta.url).href;
+}
+function casaSprite(g, x, y, s, r, noche) {
+  if (!_casas) { pedirCasas(); return false; }
+  const { img, j, lista } = _casas, c = lista[(r() * lista.length) | 0], k = .82 + (s - .8) * .45;
+  const w = c.w * k, h = c.h * k, dx = x - w / 2, dy = y - c.suelo * k + 2;
+  sombraBase(g, x, y, w * .55);
+  g.drawImage(img, c.x, 0, c.w, c.h, dx, dy, w, h);
+  if (noche) {
+    g.drawImage(img, c.x, j.alto + j.sep, c.w, c.h, dx, dy, w, h);
+    if (_luces) for (let i = 0; i < c.luces.length && i < 6; i++) _luces.push(dx + c.luces[i][0] * k + _lucesX0, dy + c.luces[i][1] * k);
+  }
+  return true;
 }
 const PIEZAS = {
   roble(g, x, y, s, r, e) {
@@ -277,6 +330,7 @@ const PIEZAS = {
     g.lineCap = 'butt';
   },
   casa(g, x, y, s, r, e, noche) {
+    if (casaSprite(g, x, y, s, r, noche)) return;
     const w = (86 + r() * 34) * s, h1 = 40 * s, h2 = (34 + r() * 10) * s, ht = (38 + r() * 14) * s;
     const piedra = mez(e.t, '#7a766e', .6), yeso = mez('#8a7c66', e.c[1], .35), viga = '#2a1e16', teja = mez('#4a2e26', e.c[0], .35);
     sombraBase(g, x, y, w * .6);
@@ -311,7 +365,7 @@ const PIEZAS = {
       g.fillRect(vx - vw / 2, vy, vw, vh);
       if (!enc) { g.fillStyle = 'rgba(160,190,220,.22)'; g.fillRect(vx - vw / 2, vy, vw / 2, vh / 2); }
       g.fillStyle = viga; g.fillRect(vx - .5, vy, 1, vh); g.fillRect(vx - vw / 2, vy + vh / 2 - .5, vw, 1);
-      if (enc) { g.save(); g.globalCompositeOperation = 'lighter'; g.drawImage(halo('#ffb45a', 64), vx - 26, vy + vh / 2 - 26, 52, 52); g.restore(); }
+      if (enc) { g.save(); g.globalCompositeOperation = 'lighter'; g.drawImage(halo('#ffb45a', 64), vx - 26, vy + vh / 2 - 26, 52, 52); g.restore(); if (_luces) _luces.push(vx + _lucesX0, vy + vh / 2); }
     };
     vent(x + w * .12, y - 27, 12, 12); vent(x - w * .22, y - h1 - h2 + 11, 11, 13); vent(x + w * .2, y - h1 - h2 + 11, 11, 13);
   },
@@ -380,6 +434,73 @@ function decorDe(mp, id, e) {
   return { g: L, p: P, ant };
 }
 
+// Disco difuso de un color (para manchas de musgo, polvo o nieve en el suelo).
+const _manchas = new Map();
+function mancha(col) {
+  const k = typeof col === 'string' ? col : hex(col);
+  let c = _manchas.get(k);
+  if (c) return c;
+  c = lienzo(64, 64); const x = c.getContext('2d');
+  x.drawImage(disco(), 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = k; x.fillRect(0, 0, 64, 64);
+  _manchas.set(k, c);
+  return c;
+}
+// Variación grande del suelo por celdas de 48 px del mundo (casa entre trozos):
+// manchas húmedas, musgo, charcos con reflejo, hojas caídas, grietas,
+// ventisqueros u ondas de arena. Se hornea con el trozo: no cuesta por cuadro.
+function variarSuelo(g, e, c, x0, y0, h) {
+  const arena = e.su === 'arena', nieve = e.su === 'nieve', piedra = e.su === 'adoquin' || e.su === 'losa' || e.su === 'roca';
+  const hojas = e.cerca === 'bosque' || e.cerca === 'aldea' || e.cerca === 'pinos';
+  const prof = Math.max(8, h - 14);
+  const i0 = Math.floor((x0 - 90) / 48);
+  for (let i = i0; i * 48 < x0 + TROZO + 90; i++) {
+    const k = hz(i, 401), k2 = hz(i, 402), k3 = hz(i, 403);
+    const bx = i * 48 - x0 + k2 * 30, by = y0 + 7 + k3 * prof;
+    g.save();
+    if (k < .2) {
+      // Mancha húmeda u oscura, ancha y suave
+      const w = 70 + k2 * 120, hh = 10 + k3 * 14;
+      g.globalAlpha = .16 + k * .7; g.drawImage(disco(), bx - w / 2, by - hh / 2, w, hh);
+    } else if (k < .36) {
+      // Musgo (o polvo claro en la arena, ventisquero en la nieve)
+      const col = nieve ? '#f2f5fa' : arena ? css(luzc(c, .35)) : css(mez(e.mu, e.ho[1], .3));
+      const w = 50 + k2 * 90, hh = 8 + k3 * 10;
+      g.globalAlpha = nieve ? .55 : arena ? .4 : .42; g.drawImage(mancha(col), bx - w / 2, by - hh / 2, w, hh);
+      if (!arena && !nieve) { g.globalAlpha = .7; g.fillStyle = css(luzc(e.mu, .15)); for (let j = 0; j < 7; j++) g.fillRect(bx + (hz(i, j + 40) - .5) * w * .7, by + (hz(j, i + 40) - .5) * hh * .6, 1 + (j & 1), 1); }
+    } else if (k < .44 && !arena && !nieve && y0 + h - by > 10) {
+      // Charco: agua oscura con el cielo reflejado en un filo claro
+      const w = 16 + k2 * 26, hh = 2.5 + k3 * 2.5;
+      g.globalAlpha = .85; g.fillStyle = css(luzc(c, -.55)); g.beginPath(); g.ellipse(bx, by, w, hh, 0, 0, TAU); g.fill();
+      g.fillStyle = css(mez(e.c[1], e.c[2], .6)); g.globalAlpha = .55; g.beginPath(); g.ellipse(bx - w * .15, by - hh * .25, w * .72, hh * .45, 0, 0, TAU); g.fill();
+      g.globalAlpha = .5; g.fillStyle = css(luzc(e.c[2], .4)); g.fillRect(bx - w * .5, by - hh * .4, w * .35, 1);
+      g.globalAlpha = .6; g.fillStyle = css(luzc(c, .25)); g.fillRect(bx - w * .8, by + hh - 1, w * 1.5, 1);
+    } else if (k > .82 && piedra) {
+      // Grieta ramificada
+      g.globalAlpha = .7; g.strokeStyle = css(luzc(c, -.6)); g.lineWidth = 1; g.beginPath();
+      let px = bx, py = by; g.moveTo(px, py);
+      for (let j = 0; j < 4; j++) { px += 5 + hz(i, j + 60) * 8; py += (hz(j, i + 60) - .5) * 6; g.lineTo(px, py); }
+      g.moveTo(bx + 8, by); g.lineTo(bx + 10, by + 5); g.stroke();
+    } else if (k > .7 && arena) {
+      // Ondas de arena
+      g.globalAlpha = .35; g.strokeStyle = css(luzc(c, -.3)); g.lineWidth = 1; g.beginPath();
+      for (let j = 0; j < 3; j++) { const yy = by + j * 4; g.moveTo(bx - 22, yy); g.quadraticCurveTo(bx - 8, yy - 3, bx + 6, yy); g.quadraticCurveTo(bx + 16, yy + 2, bx + 26, yy - 1); }
+      g.stroke();
+    }
+    // Hojas caídas en los bosques y la aldea
+    if (hojas && !nieve && k2 > .45) {
+      const tonos = [mez(e.ho[1], '#9a6a2a', .45), mez(e.ho[0], '#5a3a1a', .35), mez(e.ho[1], '#c8903a', .6)];
+      for (let j = 0; j < 5; j++) {
+        const lx = bx + (hz(i, j + 80) - .5) * 60, ly = y0 + 4 + hz(j, i + 80) * prof;
+        g.globalAlpha = .8; g.fillStyle = css(tonos[j % 3]); g.fillRect(lx, ly, 2, 1); g.fillRect(lx + 1, ly - 1, 1, 1);
+      }
+    }
+    g.restore();
+  }
+  // Oclusión al pie del borde: el suelo se mete bajo la hierba y las piedras.
+  const ao = g.createLinearGradient(0, y0, 0, y0 + 12); ao.addColorStop(0, 'rgba(0,0,0,.32)'); ao.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = ao; g.fillRect(0, y0, TROZO, 12);
+}
+
 // ── Suelo de un trozo (coordenadas del mundo para que case con el vecino) ──
 function pintarSuelo(g, e, x0, y0, H) {
   const h = H - y0;
@@ -410,6 +531,7 @@ function pintarSuelo(g, e, x0, y0, H) {
       else if (k > .9) { g.fillStyle = css(luzc(c, e.su === 'arena' || e.su === 'nieve' ? .3 : -.4), .5); g.fillRect(bx, by, 6 + k * 8, 1); }
     }
   }
+  variarSuelo(g, e, c, x0, y0, h);
   // Oscurece hacia abajo (profundidad) y borde superior irregular.
   const gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.5)');
   g.fillStyle = gr; g.fillRect(0, y0, TROZO, h);
@@ -522,6 +644,32 @@ function capaNiebla(e) {
   return c;
 }
 
+// Rayos de sol oblicuos (mosaico de 640 px con 2 haces que no tocan los bordes).
+// Se copia solo el rectángulo de cada haz: poca área compuesta por cuadro.
+function rayos(m) {
+  if (m.rayos) return m.rayos;
+  const e = m.e, W = 640, H = 280, c = lienzo(W, H), g = c.getContext('2d'), r = rng(semilla('rayos' + m.id));
+  const col = mez(e.c[2], '#ffe6b8', .55), cajas = [];
+  for (let i = 0; i < 2; i++) {
+    const x = 40 + i * 300 + r() * 100, w = 16 + r() * 24, inc = 50 + r() * 30, a = .09 + r() * .08;
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, css(col, 0)); gr.addColorStop(.35, css(col, a)); gr.addColorStop(.8, css(col, a * .7)); gr.addColorStop(1, css(col, 0));
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + w, 0); g.lineTo(x + w + inc + w * .6, H); g.lineTo(x + inc, H); g.closePath(); g.fill();
+    cajas.push([Math.floor(x), Math.ceil(w * 1.6 + inc) + 1]);
+  }
+  c.cajas = cajas;
+  return m.rayos = c;
+}
+// Niebla delante de los pies (se dibuja DESPUÉS de los personajes).
+export function fondoFrente(v) {
+  if (v.ligero || !M || M.id !== v.id) return;
+  const m = M, g = v.g, n = Math.max(nocheAhora(), m.e.nmin || 0), N = m.niebla;
+  let x = -Math.floor((((v.camX * 1.15 - v.frame * .35) % CAPA_W) + CAPA_W) % CAPA_W);
+  g.globalAlpha = .55 - .25 * n;
+  const y = v.SUELO - 40;
+  g.drawImage(N, x, y); if (x + CAPA_W < v.VW) g.drawImage(N, x + CAPA_W, y);
+  g.globalAlpha = 1;
+}
+
 // ── Estado en caché del mapa actual ──
 let M = null;   // { id, e, deco, T, trozos: Map, lejos, cerca, niebla, cielo, cieloK, velo, veloK }
 function mapa(v) {
@@ -530,7 +678,7 @@ function mapa(v) {
   let T = v.SUELO - 215;
   for (const p of v.mp.plataformas || []) T = Math.min(T, p[1] - 12);
   T = Math.max(0, Math.floor(T));
-  M = { id: v.id, e, deco: decorDe(v.mp, v.id, e), T, trozos: new Map(), lejos: capaLejos(e, v.id), cerca: capaCerca(e, v.id), niebla: capaNiebla(e), cielo: null, cieloK: '', velo: null, veloK: '', uso: 0 };
+  M = { id: v.id, e, deco: decorDe(v.mp, v.id, e), T, trozos: new Map(), lejos: capaLejos(e, v.id), cerca: capaCerca(e, v.id), niebla: capaNiebla(e), cielo: null, cieloK: '', velo: null, veloK: '', uso: 0, luces: new Map() };
   return M;
 }
 function cielo(m, v, n) {
@@ -568,7 +716,9 @@ function velo(m, v, n) {
   if (m.veloK === k) return m.velo;
   const W = v.VW, H = v.VH + v.OY, c = m.velo && m.velo.width === W && m.velo.height === H ? m.velo : lienzo(W, H), g = c.getContext('2d');
   g.clearRect(0, 0, W, H);
-  if (n > 0) { g.fillStyle = `rgba(7,10,30,${.4 * n})`; g.fillRect(0, 0, W, H); }
+  // Noche fría: azul más denso arriba y un poco menos a ras de suelo (la niebla
+  // y los faroles ponen ahí el calor).
+  if (n > 0) { const gn = g.createLinearGradient(0, 0, 0, H); gn.addColorStop(0, `rgba(8,14,48,${.56 * n})`); gn.addColorStop(.75, `rgba(10,20,58,${.5 * n})`); gn.addColorStop(1, `rgba(4,8,26,${.56 * n})`); g.fillStyle = gn; g.fillRect(0, 0, W, H); }
   const R = Math.hypot(W, H) / 2, gr = g.createRadialGradient(W / 2, H * .56, R * .45, W / 2, H * .56, R * 1.02);
   gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,6,.5)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
@@ -587,7 +737,11 @@ function trozo(m, v, i, esNoche) {
   const g = c.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, TROZO, H);
   const pinta = o => { if (o.x + o.a < x0 - 30 || o.x - o.a > x0 + TROZO + 30) return; const f = PIEZAS[o.t]; if (f) { g.save(); f(g, o.x - x0, y0 + 1, o.s, rng(o.sem), e, esNoche); g.restore(); } };
+  // Las ventanas encendidas se apuntan (en coordenadas del mundo) para volver a
+  // brillar por encima del velo de la noche.
+  _luces = esNoche ? [] : null; _lucesX0 = x0;
   for (const o of m.deco.g) pinta(o);
+  if (_luces) { for (let j = 0; j < _luces.length; j += 2) m.luces.set((_luces[j] | 0) + ',' + (_luces[j + 1] | 0), [_luces[j], _luces[j + 1] + m.T]); _luces = null; }
   // Grano y bruma sobre el decorado: queda detrás, y los personajes resaltan.
   g.globalCompositeOperation = 'source-atop';
   g.fillStyle = g.createPattern(grano(), 'repeat'); g.fillRect(0, 0, TROZO, y0 + 2);
@@ -623,20 +777,53 @@ export function fondoMundo(v) {
     const y = v.SUELO - 50;
     g.drawImage(m.niebla, x, y); if (x + CAPA_W < v.VW) g.drawImage(m.niebla, x + CAPA_W, y);
   }
+  // Rayos de luz entre el follaje de día (cielo abierto y sin tormenta).
+  if (!v.ligero && n < .5 && !m.e.techo && m.e !== ESTILOS.tormenta && m.e !== ESTILOS.tormenta2) {
+    const R = rayos(m), y = v.SUELO - R.height + 10;
+    let x = -Math.floor((((v.camX * .3) % R.width) + R.width) % R.width);
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - n * 2;
+    for (; x < v.VW; x += R.width) for (const [bx, bw] of R.cajas) if (x + bx < v.VW && x + bx + bw > 0) g.drawImage(R, bx, 0, bw, R.height, x + bx, y, bw, R.height);
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  }
   // Velo de noche y viñeta, en una sola copia.
   g.drawImage(velo(m, v, n), 0, -v.OY);
+  // Ventanas encendidas: su luz cálida atraviesa el velo.
+  if (esNoche && !v.ligero && m.luces.size) {
+    const F = luzFuego(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .5;
+    for (const L of m.luces.values()) { const sx = L[0] - cx; if (sx > -40 && sx < v.VW + 40) g.drawImage(F, sx - 22, L[1] - 22, 44, 44); }
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  }
   // Antorchas: llama y halo cálido (más fuerte de noche).
   const A = m.deco.ant;
   if (A.length) {
     const L = llamas(), h = halo('#ffb45a', 128), fuerza = .38 + .5 * n;
     for (let i = 0; i < A.length; i++) {
       const sx = A[i] - cx;
-      if (sx < -70 || sx > v.VW + 70) continue;
+      if (sx < -96 || sx > v.VW + 96) continue;
       const f = v.frame + i * 13, par = .82 + .18 * Math.sin(f * .31) * Math.sin(f * .17 + i);
-      if (!v.ligero) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = fuerza * par; g.drawImage(h, sx - 64, v.SUELO - 110); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; }
+      if (!v.ligero) {
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = fuerza * par;
+        // Halo (más amplio de noche) y charco de luz cálida sobre el suelo.
+        const R = 64 + 28 * n; g.drawImage(n > .3 ? luzFuego() : h, sx - R, v.SUELO - 50 - R, R * 2, R * 2);
+        g.globalAlpha = (.2 + .6 * n) * par; g.drawImage(luzFuego(), sx - 70 - 40 * n, v.SUELO - 13, 140 + 80 * n, 34);
+        // Brasas que suben de la llama (solo con poca luz).
+        if (n > .3) {
+          g.fillStyle = '#ffb45a';
+          for (let j = 0; j < 3; j++) { const t = (f * .55 + j * 19) % 46, by = v.SUELO - 60 - t; g.globalAlpha = (1 - t / 46) * .9 * n; g.fillRect(sx + Math.sin(f * .07 + j * 2.1) * (2 + t * .12), by, t < 16 ? 2 : 1, t < 16 ? 2 : 1); }
+        }
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+      }
       g.drawImage(L[(f >> 2) % 3], sx - 6, v.SUELO - 59);
     }
   }
+}
+// Sombra suave bajo un personaje o monstruo: disco difuso + contacto (2 copias).
+// k (0..1) baja con la altura del salto. El llamador ya hace save/restore si lo necesita.
+export function fondoSombra(g, x, y, ancho, k) {
+  const d = disco(), w = ancho * k, h = Math.max(2, 6 * k), a = g.globalAlpha;
+  g.globalAlpha = a * .42 * k; g.drawImage(d, x - w * 1.35, y - h * 1.2, w * 2.7, h * 2.4);
+  g.globalAlpha = a * .5 * k; g.drawImage(d, x - w * .7, y - h * .55, w * 1.4, h * 1.1);
+  g.globalAlpha = a;
 }
 // Color de la hierba viva (la que se aparta al pasar) acorde al bioma.
 export function fondoTono(mp) { const e = estiloDe(mp); return e._tono || (e._tono = css(mez(e.mu, e.ho[1], .5))); }
