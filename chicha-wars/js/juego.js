@@ -6,10 +6,10 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=389';
-import * as A from './arte.js?v=389';
-import { pedir } from './red.js?v=389';
-import * as R from './rig.js?v=389';
+import * as D from './datos.js?v=390';
+import * as A from './arte.js?v=390';
+import { pedir } from './red.js?v=390';
+import * as R from './rig.js?v=390';
 
 const W = 540, H = 640, PISO = 360;
 const $ = id => document.getElementById(id);
@@ -28,6 +28,7 @@ function nuevo() {
     stats: { vasos: 0, duendes: 0, tandas: 0, mejoras: 0, oleadas: 0, dorados: 0, jefes: 0, pociones: 0, herencias: 0, oleadaMax: 0 },
     ing: { pina: 0, manzana: 0, canela: 0, limon: 0, azucar: 0 }, poc: {}, act: {}, fama: { n: 1, p: 0 }, rs: 0, ganado: 0, logros: [],
     saz: { n: 1, xp: 0, hab: {}, pend: 0 },
+    chacra: [null, null, null, null, null, null, null, null], parc: D.PARCELAS.inicio, semilla: 'maiz', esp: { n: 0, mult: 1, nom: '' },
     eq: { cucharon: 0, tabla: 0, exprimidor: 0, colador: 0, vaso: 0, jarra: 0 }, rafaga: 0,
     personaje: 'chichera', skin: { chichera: 'clasica', chichero: 'clasico' }, skins: ['clasica', 'clasico'],
     t: Date.now(), sonido: true, elegido: false,
@@ -39,6 +40,9 @@ if (!E || E.v !== 1) E = nuevo();
 E = Object.assign(nuevo(), E);
 E.eq = Object.assign({ cucharon: 0, tabla: 0, exprimidor: 0, colador: 0, vaso: 0, jarra: 0 }, E.eq);
 E.stats = Object.assign(nuevo().stats, E.stats); E.ing = Object.assign(nuevo().ing, E.ing); E.pase.d = E.pase.d || [];
+E.stats.cosechas = E.stats.cosechas || 0; E.stats.chichas = E.stats.chichas || 0;
+if (!Array.isArray(E.chacra) || E.chacra.length !== D.PARCELAS.max) E.chacra = nuevo().chacra;
+E.parc = Math.max(D.PARCELAS.inicio, Math.min(D.PARCELAS.max, E.parc | 0)); if (!D.CULTIVOS[E.semilla]) E.semilla = 'maiz'; E.esp = Object.assign({ n: 0, mult: 1, nom: '' }, E.esp);
 E.eq.cucharon = Math.max(E.eq.cucharon, Math.min(4, E.nv.cucharon || 0));   // el cucharon de pelea de la v1 pasa a ser la herramienta
 function guardar() { E.t = Date.now(); try { localStorage.setItem('cw_estado', JSON.stringify(E)); } catch (e) {} }
 setInterval(guardar, 5000);
@@ -124,6 +128,9 @@ const PUESTOS = [118, 238, 352];
 const SPR_PJ = { chichera: 'chichera_maestra', chichero: 'agricultor' };   // donde se paran los clientes (las jarras van a la derecha del mostrador)
 const dano = () => HR('cucharon').dano;
 const fmtP = n => n >= 100 ? fmt(n) : (Math.round(n * 10) / 10).toLocaleString('es-PE');
+const coma = n => String(Math.round(n * 10) / 10).replace('.', ',');
+// Chicha especial: de los n vasos que se venden, los que quedan de la tanda especial pagan el extra.
+function extraEspecial(n) { const s = E.esp; if (!(s.n > 0)) return 0; const k = Math.min(n, s.n); s.n -= k; return k * precio() * (s.mult - 1); }
 const ayud = () => D.AYUDANTES[E.nv.ayudante];
 const xOlla = i => 182 + i * 92;
 const Y_OLLA = 505;
@@ -206,7 +213,7 @@ function offline() {
   }
   const clientes = Math.floor(dt / 1000 / segCliente() * jr.efic);
   const vendidos = Math.min(E.stock + vasos, clientes * 2);
-  const ganado = Math.round(vendidos * precio());
+  const ganado = Math.round(vendidos * precio() + extraEspecial(vendidos));
   E.maiz -= gastoMaiz; E.stock = Math.min(capStock(), E.stock + vasos - vendidos); E.monedas += ganado; E.ganado = (E.ganado || 0) + ganado;
   E.stats.vasos += vendidos; E.stats.tandas += tandas;
   for (const o of E.ollas) { o.fin = 0; o.lista = false; }
@@ -443,7 +450,9 @@ function logica(dt) {
     else if (c.est === 'espera') {
       if (E.stock > 0 && c.t > 0.5) {
         const n = Math.min(E.stock, 1 + Math.floor(Math.random() * 3) + Math.floor(E.stock / capStock() * 3));
-        let pago = Math.max(1, Math.round(n * precio()));
+        const esp = extraEspecial(n);
+        let pago = Math.max(1, Math.round(n * precio() + esp));
+        if (esp > 0) texto(c.x, PISO - 244, '★ Especial', '#ffd54a', 16);
         const vs = HR('vaso');
         if (Math.random() < vs.propina[0]) { const extra = Math.max(1, Math.round(pago * vs.propina[1])); pago += extra; texto(c.x, PISO - 222, '¡Propina +' + fmt(extra) + '!', '#c5e1a5', 18); }
         E.stock -= n; E.monedas += pago; E.stats.vasos += n; sumar('vende', n); xp(D.XP.vaso * n);
@@ -534,6 +543,7 @@ function dibujar() {
   A.mostrador(x, W, PISO);
   A.estante(x, W - 82, PISO - 62, E.stock, capStock(), E.eq.jarra);
   A.VASO_SPR.k = 'vaso_' + (E.eq.vaso + 1);
+  if (E.esp.n > 0) { const te = '★ ×' + coma(E.esp.mult) + ' · ' + fmt(E.esp.n); x.save(); x.font = '15px "Lilita One", system-ui'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#2a1200'; x.fillStyle = '#ffd54a'; x.strokeText(te, W - 82, PISO - 30); x.fillText(te, W - 82, PISO - 30); x.restore(); }
   // cartel de la chicheria
   x.save(); x.font = '22px "DQ Iconos","Lilita One", system-ui'; x.textAlign = 'center'; x.fillStyle = '#fff3c4'; x.strokeStyle = '#3e2716'; x.lineWidth = 5;
   /* el letrero se quito: ahi van la barra de sazon y los utensilios */ x.restore();
@@ -653,9 +663,9 @@ function pintarHud() {
   const s = fmt(E.monedas) + '|' + fmt(E.maiz) + '|' + E.stock + '|' + nv + '|' + Math.round(k * 50) + '|' + tab + '|' + Math.floor(Date.now() / 1000) + '|' + E.fama.p;
   if (s === hudPrev) return; hudPrev = s;
   $('h-monedas').textContent = fmt(E.monedas); $('h-maiz').textContent = E.maiz >= 10000 ? Math.floor(E.maiz / 1000) + 'k' : fmt(E.maiz); $('h-vasos').textContent = E.stock;
-  const mj = mejorAsequible(); document.querySelector('.tab[data-t="mejoras"]').classList.toggle('punto', !!mj && tab !== 'mejoras');
+  const mj = mejorAsequible(); document.querySelector('.tab[data-t="mejoras"]').classList.toggle('punto', !!mj && !(abierta && tab === 'mejoras'));
   $('h-pase').textContent = nv >= D.PASE.niveles ? 'MAX' : nv; $('h-pase-b').style.width = (nv >= D.PASE.niveles ? 100 : k * 100) + '%';
-  if (tab === 'mejoras' || tab === 'cocina' || tab === 'mercado' || tab === 'misiones' || tab === 'pase') pintarPanelSuave();
+  if (abierta && (tab === 'mejoras' || tab === 'cocina' || tab === 'mercado' || tab === 'misiones' || tab === 'pase')) pintarPanelSuave();
 }
 let avisoT = 0;
 function aviso(t, tipo) {
@@ -665,9 +675,20 @@ function aviso(t, tipo) {
 }
 
 // ── PANELES ──
-let tab = 'cocina';
-function marcarTab(id) { const b = document.querySelector(`.tab[data-t="${id}"]`); if (b && tab !== id) b.classList.add('punto'); }
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; b.classList.remove('punto'); document.querySelectorAll('.tab').forEach(o => o.classList.toggle('on', o === b)); son('tap'); pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); if (tab === 'misiones') cargarRanking(); });
+// Los paneles son ventanas emergentes: se abren desde la barra de abajo y se cierran con la X, tocando fuera o tocando otra vez su boton.
+let tab = 'cocina', abierta = false;
+const TIT_HOJA = { cocina: 'Cocina', mejoras: 'Mejoras', mercado: 'Tienda', misiones: 'Misiones', pase: 'Pase de batalla', skins: 'Skins', semillas: 'Semillas' };
+function marcarTab(id) { const b = document.querySelector(`.tab[data-t="${id}"]`); if (b && !(abierta && tab === id)) b.classList.add('punto'); }
+function abrirHoja(t) {
+  tab = t; abierta = true; $('hoja-t').textContent = TIT_HOJA[t] || '';
+  document.querySelectorAll('.tab').forEach(o => { o.classList.toggle('on', o.dataset.t === t); if (o.dataset.t === t) o.classList.remove('punto'); });
+  const h = $('hoja'); h.classList.remove('on'); void h.offsetWidth; h.classList.add('on');
+  pintarPanel(); if (tab === 'mercado' && NUBE.cuenta) cargarMercado(); if (tab === 'misiones') cargarRanking();
+}
+function cerrarHoja() { abierta = false; $('hoja').classList.remove('on'); document.querySelectorAll('.tab').forEach(o => o.classList.remove('on')); }
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { son('tap'); if (abierta && tab === b.dataset.t) cerrarHoja(); else abrirHoja(b.dataset.t); });
+$('hoja-x').onclick = () => { son('tap'); cerrarHoja(); };
+$('hoja').addEventListener('pointerdown', ev => { if (ev.target === $('hoja')) cerrarHoja(); });
 let panelPrev = '';
 function pintarPanelSuave() { const h = htmlPanel(); if (h !== panelPrev) { panelPrev = h; $('panel').innerHTML = h; } }
 function pintarPanel() { panelPrev = htmlPanel(); const pn = $('panel'); pn.innerHTML = panelPrev; pn.scrollTop = 0; pn.classList.remove('entra'); void pn.offsetWidth; pn.classList.add('entra'); clearTimeout(pintarPanel.t); pintarPanel.t = setTimeout(() => pn.classList.remove('entra'), 450); }
@@ -702,18 +723,38 @@ function htmlHerencia() {
     <small>Tienes <span class="dor">${E.rs}</span> Recetas Secretas: +${Math.round(E.rs * D.HERENCIA.precio * 100)} % de precio y +${Math.round(E.rs * D.HERENCIA.coccion * 100)} % de cocción para siempre.</small>
     <div class="barra"><i style="width:${Math.min(100, E.ganado / meta * 100)}%"></i></div>
     <small>${ok ? `Si heredas ahora recibes <span class="dor">${g}</span> Recetas Secretas. La siguiente, al ganar ${fmt(meta)} monedas.` : `Gana ${fmt(meta)} monedas en esta partida para heredar (llevas ${fmt(E.ganado)}).`}</small>
-    <small class="sig">Reinicia el puesto y la oleada. Conservas herramientas, fama, pase, skins e ingredientes.</small></div>
+    <small class="sig">Reinicia el puesto y la oleada. Conservas herramientas, fama, pase, skins, ingredientes y chacra.</small></div>
     ${btn(confirmaH ? '¿Seguro? Toca otra vez' : 'Heredar +' + g, 'herencia', {}, !ok, ok ? 'oro' : '')}</div>`;
 }
 function htmlTaller() {
   let h = `<div class="sub">Tus ingredientes</div><div class="ings">${Object.keys(D.INGREDIENTES).map(k => chipIng(k, E.ing[k])).join('')}</div>`;
   if (E.fama.n < 2) return h + `<div class="card proximo">${imgCard('ico_ingredientes')}<div class="tx"><b>El Taller se abre en Fama 2</b><small>Vende chicha y espanta duendes para ganar fama. Los duendes sueltan ingredientes: guárdalos para tus pociones.</small></div></div>`;
-  h += `<div class="consejo">Prepara pociones con ingredientes y úsalas cuando más convenga (por ejemplo, Reloj de Celeridad en la hora punta). Los duendes sueltan ingredientes (el Rey, 5) y el Agricultor los vende en el Mercado.</div>`;
+  h += `<div class="consejo">Prepara pociones con ingredientes y úsalas cuando más convenga (por ejemplo, Reloj de Celeridad en la hora punta). Los duendes sueltan ingredientes (el Rey, 5) y el Agricultor los vende en la Tienda. También puedes sembrarlos en tu chacra.</div>`;
   for (const [id, po] of Object.entries(D.POCIONES)) {
     const bloq = E.fama.n < po.fama, puede = !bloq && Object.entries(po.receta).every(([k, n]) => E.ing[k] >= n), q = (E.act[id] || 0) - Date.now(), tiene = E.poc[id] || 0;
     h += `<div class="card pocion${bloq ? ' bloq' : ''}">${imgCard(po.img, q > 0 ? '#ffd54a' : '')}<div class="tx"><b>${po.nombre}${tiene ? ` <span class="cant">×${tiene}</span>` : ''}</b><small>${po.d} · ${po.seg} s${q > 0 ? ` · <span class="activa">activa ${mmss(q)}</span>` : ''}</small>
       ${bloq ? `<small class="max">Se desbloquea en Fama ${po.fama}</small>` : `<div class="rec">${Object.entries(po.receta).map(([k, n]) => chipIng(k, E.ing[k] + '/' + n, E.ing[k] < n)).join('')}</div>`}</div>
       ${bloq ? '' : `<div class="bts">${btn('Preparar', 'craft', { id }, !puede, puede ? 'oro' : '')}${btn('Usar', 'usar', { id }, !tiene)}</div>`}</div>`;
+  }
+  return h;
+}
+const chipMaiz = (kg) => `<span class="ing${E.maiz < kg ? ' falta' : ''}"><img src="${IMG}ing_maiz.webp" alt="">${kg} kg</span>`;
+function htmlChichas() {
+  const s = E.esp; let h = `<div class="sub">Prepara chicha especial con tu cosecha</div>`;
+  if (s.n > 0) h += `<div class="card mejora-ya">${imgCard('jarra_' + (E.eq.jarra + 1), '#ffd54a')}<div class="tx"><b>${esc(s.nom || 'Chicha especial')} en tus jarras</b><small>Tus próximos <span class="dor">${fmt(s.n)}</span> vasos se venden a <span class="dor">×${coma(s.mult)}</span> del precio.</small></div></div>`;
+  for (const [id, c] of Object.entries(D.CHICHAS)) {
+    const bloq = E.fama.n < c.fama, puede = !bloq && E.maiz >= c.maiz && Object.entries(c.receta).every(([k, n]) => E.ing[k] >= n);
+    h += `<div class="card pocion${bloq ? ' bloq' : ''}">${imgCard(c.img)}<div class="tx"><b>${c.nombre}</b><small>${c.vasos} vasos a ×${coma(c.mult)} del precio · hasta +50 % si te sale perfecta</small>
+      ${bloq ? `<small class="max">Se desbloquea en Fama ${c.fama}</small>` : `<div class="rec">${chipMaiz(c.maiz)}${Object.entries(c.receta).map(([k, n]) => chipIng(k, E.ing[k] + '/' + n, E.ing[k] < n)).join('')}</div>`}</div>
+      ${bloq ? '' : btn('Preparar', 'prep', { id }, !puede, puede ? 'oro' : '')}</div>`;
+  }
+  return h + `<div class="consejo" style="margin-bottom:10px">Los ingredientes salen de tu chacra (debajo del puesto): toca una parcela para sembrar, riégala y cosecha. También los sueltan los duendes y los vende el Agricultor.</div>`;
+}
+function htmlSemillas() {
+  let h = `<div class="consejo" style="margin-bottom:8px">Elige qué sembrar y toca una parcela vacía. Los cultivos crecen solos, también con el juego cerrado. Riégalos una vez (la gota azul) para que estén antes.</div>`;
+  for (const [k, c] of Object.entries(D.CULTIVOS)) {
+    const bloq = E.fama.n < c.fama, on = E.semilla === k, da = c.kg ? D.maizCosecha(E.fama.n) + ' kg de maíz' : c.da + ' de ' + D.INGREDIENTES[k].nombre.toLowerCase();
+    h += `<div class="card semilla${on ? ' on' : ''}${bloq ? ' proximo' : ''}">${imgCard('cul_' + k + '_2')}<div class="tx"><b>${c.nombre}</b><small>Lista en ${mmss(c.seg * 1000)} · da ${da}</small><small class="${bloq ? 'max' : 'sig'}">${bloq ? 'Se desbloquea en Fama ' + c.fama : 'Semilla: ' + c.semilla + ' monedas'}</small></div>${bloq ? btn('🔒', 'nada', {}, true) : btn(on ? '✓ Elegida' : 'Elegir', 'semilla', { k }, false, on ? 'on' : 'oro')}</div>`;
   }
   return h;
 }
@@ -723,6 +764,7 @@ function filaMejora(titulo, actual, sig, costo, act, datos, ico) {
 function htmlPanel() {
   if (tab === 'cocina') {
     let h = `<div class="resumen"><div><b>${E.stock}/${capStock()}</b><small>vasos en jarras</small></div><div><b>${fmt(E.maiz)} kg</b><small>maíz morado</small></div><div><b>${fmtP(precio())}</b><small>monedas por vaso</small></div></div>`;
+    h += htmlChichas();
     h += htmlFama();
     if (D.recetasPorGanar(E.ganado) >= D.HERENCIA.min && E.stats.herencias < 1) h += htmlHerencia();
     { const id = Object.keys(D.POCIONES).find(k => (E.poc[k] || 0) > 0 && !activo(k)); if (id && !Object.keys(D.POCIONES).some(activo)) h += `<div class="card">${imgCard(D.POCIONES[id].img)}<div class="tx"><b>Tienes ${D.POCIONES[id].nombre} sin usar</b><small>${D.POCIONES[id].d} durante ${D.POCIONES[id].seg} s.</small></div>${btn('Usar', 'usar', { id }, false, 'oro')}</div>`; }
@@ -730,13 +772,14 @@ function htmlPanel() {
     const mj = mejorAsequible(), sig = mejorasPosibles()[0];
     if (mj) h += `<div class="card mejora-ya">${imgCard(mj[4])}<div class="tx"><b>⬆ ¡Ya puedes mejorar!</b><small>${mj[1]}</small></div>${btn(`<span class="mon"></span>${fmt(mj[0])}`, mj[2], mj[3], false, 'oro')}</div>`;
     else if (sig) h += `<div class="card">${imgCard(sig[4])}<div class="tx"><b>Próxima mejora: ${sig[1]}</b><div class="barra"><i style="width:${Math.min(100, E.monedas / sig[0] * 100)}%"></i></div><small>${fmt(E.monedas)} / ${fmt(sig[0])} monedas</small></div>${btn('Ver todo', 'ir', { t: 'mejoras' })}</div>`;
-    if (E.maiz < maizOlla(0) * 2) h += `<div class="card alerta"><div class="tx"><b>Te queda poco maíz morado</b><small>Sin maíz las ollas no cocinan. Cómpralo en el Mercado.</small></div>${btn('Comprar', 'ir', { t: 'mercado' })}</div>`;
+    if (E.maiz < maizOlla(0) * 2) h += `<div class="card alerta"><div class="tx"><b>Te queda poco maíz morado</b><small>Sin maíz las ollas no cocinan. Siémbralo en tu chacra o cómpralo en la Tienda.</small></div>${btn('Comprar', 'ir', { t: 'mercado' })}</div>`;
     const rh = E.racha, cobr = rh.cobrado === rh.dia, dia = ((rh.n - 1) % 7);
     h += `<div class="card"><div class="ico">📅</div><div class="tx"><b>Racha: día ${rh.n}</b><small>${D.RACHA_MAIZ.includes(dia) ? (D.RACHA[dia]) + ' kg de maíz' : D.RACHA[dia] + ' monedas'} · vuelve mañana para el día ${rh.n + 1}</small></div>${btn(cobr ? '✓ Cobrado' : 'Cobrar', 'racha', {}, cobr, cobr ? '' : 'oro')}</div>`;
     h += `<div class="card">${imgCard('ico_fogata')}<div class="tx"><b>${D.FUEGOS[E.nv.fuego].nombre} · ${fmtP(segTanda())} s por tanda${hervor() ? ' · ¡Hervor Cósmico!' : ''}</b><small>${nOllas()} ${nOllas() > 1 ? 'ollas' : 'olla'} cocinando · ${D.RECETAS[E.nv.receta].nombre}</small></div></div>`;
     h += `<div class="consejo">Toca una olla que hierve para removerla y que esté antes. Toca a los duendes para espantarlos; si te roban, tócalos mientras huyen y recuperas los vasos.</div>`;
     return h;
   }
+  if (tab === 'semillas') return htmlSemillas();
   if (tab === 'mejoras') {
     let h = `<div class="elige">${btn('Herramientas', 'subMej', { k: 'herr' }, false, subMej === 'herr' ? 'on' : '')}${btn('Puesto y ollas', 'subMej', { k: 'puesto' }, false, subMej === 'puesto' ? 'on' : '')}${btn('Taller', 'subMej', { k: 'taller' }, false, subMej === 'taller' ? 'on' : '')}</div>`;
     if (subMej === 'taller') return h + htmlTaller();
@@ -815,7 +858,7 @@ function htmlPanel() {
     let h = `<div class="card agricultor">${imgCard('agricultor')}<div class="tx"><b>El Agricultor</b><small>«Maíz morado fresquito para tu chicha, casera.»</small></div></div><div class="sub">Maíz morado para tus ollas</div>`;
     for (const [kg, c] of D.MAIZ.paquetes) h += `<div class="card">${imgCard('ing_maiz')}<div class="tx"><b>${kg} kg de maíz morado</b><small>Alcanza para ${Math.floor(kg / D.MAIZ.porVaso)} vasos</small></div>${costoBtn(c, 'maiz', { kg, c })}</div>`;
     if (E.fama.n >= 2) {
-      h += `<div class="sub">Ingredientes para el Taller</div>`;
+      h += `<div class="sub">Ingredientes para tus chichas y pociones</div>`;
       for (const [k, ig] of Object.entries(D.INGREDIENTES)) h += `<div class="card">${imgCard(ig.img)}<div class="tx"><b>${ig.nombre}</b><small>Tienes ${E.ing[k]}</small></div><div class="bts fila">${D.PAQ_ING.map(n => btn(`${n} · <span class="mon"></span>${fmt(D.precioIng(precio() / (activo('receta') ? 1.5 : 1), n))}`, 'ing', { k, n }, E.monedas < D.precioIng(precio() / (activo('receta') ? 1.5 : 1), n), 'oro')).join('')}</div></div>`;
     }
     h += htmlCuenta();
@@ -899,11 +942,13 @@ $('panel').addEventListener('click', ev => {
     E.rs += g; E.ganado = 0; E.monedas = b0.monedas; E.maiz = b0.maiz; E.stock = 0; E.nv = b0.nv; E.saz = b0.saz; proy = []; rayos = []; E.ollas = b0.ollas; E.oleada = 1;
     duendes = []; colaSpawn = []; proxOleada = 12; monPrev = E.monedas; subMej = 'puesto';
     son('nivel'); pose('celebra', 2.5); temblar(6); particulas(W / 2, 260, 40, '#ffd54a', { vel: 360, moneda: true });
-    abrirModal(`<h2>La herencia de la Abuela</h2><p>«Toma, ${E.personaje === 'chichero' ? 'hijito' : 'hijita'}: mis recetas secretas.» Recibes <b>${g}</b> Recetas Secretas. Ahora tienes ${E.rs}: tu chicha vale +${Math.round(E.rs * D.HERENCIA.precio * 100)} % y se cocina +${Math.round(E.rs * D.HERENCIA.coccion * 100)} % más rápido, para siempre.</p><p>Tu puesto vuelve a empezar, pero conservas tus herramientas, tu fama, el pase y tus pociones.</p>`);
+    abrirModal(`<h2>La herencia de la Abuela</h2><p>«Toma, ${E.personaje === 'chichero' ? 'hijito' : 'hijita'}: mis recetas secretas.» Recibes <b>${g}</b> Recetas Secretas. Ahora tienes ${E.rs}: tu chicha vale +${Math.round(E.rs * D.HERENCIA.precio * 100)} % y se cocina +${Math.round(E.rs * D.HERENCIA.coccion * 100)} % más rápido, para siempre.</p><p>Tu puesto vuelve a empezar, pero conservas tus herramientas, tu fama, el pase, tus pociones y tu chacra.</p>`);
   } else if (a === 'premium') { pedirPremium(); return; }
-  else if (a === 'personaje') { E.personaje = d.k; son('tap'); }
+  else if (a === 'personaje') { E.personaje = d.k; son('tap'); $('tab-cara').src = IMG + SPR_PJ[E.personaje] + '.webp'; }
   else if (a === 'skin') { E.skin[E.personaje] = d.id; son('mejora'); pose('celebra', 1); }
-  else if (a === 'ir') { document.querySelector(`.tab[data-t="${d.t}"]`).click(); return; }
+  else if (a === 'ir') { abrirHoja(d.t); return; }
+  else if (a === 'semilla') { if (!D.CULTIVOS[d.k] || E.fama.n < D.CULTIVOS[d.k].fama) return; E.semilla = d.k; son('mejora'); cerrarHoja(); pintarChacra(true); guardar(); return; }
+  else if (a === 'prep') { prepararChicha(d.id); return; }
   else if (a === 'subMej') { subMej = d.k; pintarPanel(); return; }
   else if (a === 'mayor') { if (E.stock <= 0) return; const g = Math.round(E.stock * precio() * D.MAYORISTA); E.monedas += g; E.stats.vasos += E.stock; sumar('vende', E.stock); E.stock = 0; son('moneda'); aviso('🛒 Vendiste al por mayor: +' + fmt(g) + ' monedas', 'ok'); particulas(W - 82, PISO - 90, 16, '#ffd54a', { vel: 220, moneda: true }); }
   else if (a === 'herr') {
@@ -963,9 +1008,106 @@ document.addEventListener('visibilitychange', musica);
 $('b-sonido').onclick = () => { E.sonido = !E.sonido; $('b-sonido').textContent = E.sonido ? '🔊' : '🔇'; musica(); guardar(); };
 $('b-sonido').textContent = E.sonido ? '🔊' : '🔇';
 
+// ── CHACRA: parcelas debajo del puesto. Siembras la semilla elegida, riegas una vez y cosechas. Todo va con el reloj real. ──
+const chGrid = $('ch-grid'), chacraEl = $('chacra');
+const costoParc = () => D.PARCELAS.costo[E.parc - D.PARCELAS.inicio];
+const etapaCul = (p, ahora) => ahora >= p.fin ? 2 : (ahora - p.ini) / (p.fin - p.ini) < 0.3 ? 0 : 1;
+let chPrev = '', chAviso = 0;
+function pintarChacra(forzar) {
+  const ahora = Date.now(), cs = D.CULTIVOS[E.semilla];
+  const firma = [E.parc, E.semilla, E.chacra.map(p => p ? p.k + etapaCul(p, ahora) + (p.r ? 'r' : '') : '-').join(), Object.values(E.ing).join(), E.parc < D.PARCELAS.max && E.monedas >= costoParc()].join('|');
+  if (forzar || firma !== chPrev) {
+    const nace = chPrev.split('|')[2] || ''; chPrev = firma;
+    $('ch-sem').innerHTML = `<img src="${IMG}${cs.img}.webp" alt=""><span><small>Semilla · ${cs.semilla}</small>${cs.nombre}</span>`;
+    $('ch-ings').innerHTML = Object.keys(D.INGREDIENTES).map(k => chipIng(k, E.ing[k])).join('');
+    const antes = nace.split(',');
+    chGrid.innerHTML = E.chacra.map((p, i) => {
+      const base = `<img src="${IMG}parcela.webp" alt="">`;
+      if (i > E.parc) return `<div class="parc cerrada lejos" data-i="${i}">${base}</div>`;
+      if (i === E.parc) { const c = costoParc(); return `<button class="parc cerrada" data-i="${i}" aria-label="Comprar parcela">${base}<span class="precio${E.monedas >= c ? ' si' : ''}"><span class="mon"></span>${fmt(c)}</span></button>`; }
+      if (!p) return `<button class="parc vacia" data-i="${i}" aria-label="Sembrar">${base}<span class="mas"><img src="${IMG}${cs.img}.webp" alt="">＋</span></button>`;
+      const et = etapaCul(p, ahora), c = D.CULTIVOS[p.k], cambio = antes[i] !== p.k + et + (p.r ? 'r' : '') && antes[i] !== p.k + et;
+      const cul = `<img class="cul${cambio ? ' nace' : ''}" src="${IMG}${et === 0 ? 'cul_brote' : 'cul_' + p.k + '_' + et}.webp" alt="">`;
+      if (et === 2) return `<button class="parc lista-ya" data-i="${i}" aria-label="Cosechar ${c.nombre}">${base}${cul}<span class="lista"><img src="${IMG}${c.img}.webp" alt=""></span></button>`;
+      return `<button class="parc crece" data-i="${i}" aria-label="${c.nombre} creciendo">${base}${cul}${p.r ? '' : '<span class="gota"></span>'}<em class="tm"></em><i class="pb"><b></b></i></button>`;
+    }).join('');
+  }
+  chGrid.querySelectorAll('.parc.crece').forEach(b => { const p = E.chacra[+b.dataset.i]; if (!p) return; b.querySelector('.pb b').style.width = Math.min(100, (ahora - p.ini) / (p.fin - p.ini) * 100) + '%'; b.querySelector('.tm').textContent = mmss(Math.max(0, p.fin - ahora)); });
+  const listas = E.chacra.filter(p => p && ahora >= p.fin && !p.av);
+  if (listas.length && E.elegido && !enPortada && ahora - chAviso > 20000) { chAviso = ahora; for (const p of E.chacra) if (p && ahora >= p.fin) p.av = 1; aviso('🌱 Tu chacra tiene cosecha lista: tócala para recogerla', 'ok'); son('lista'); }
+  const hr = new Date().getHours(); chacraEl.classList.toggle('noche', hr >= 19 || hr < 6);
+}
+function chSube(b, html) { const r = b.getBoundingClientRect(), c = chacraEl.getBoundingClientRect(), el = document.createElement('div'); el.className = 'ch-sube'; el.innerHTML = html; el.style.left = (r.left - c.left + r.width / 2) + 'px'; el.style.top = Math.max(4, r.top - c.top - 20) + 'px'; chacraEl.appendChild(el); setTimeout(() => el.remove(), 900); }
+function sembrar(i, b) {
+  const c = D.CULTIVOS[E.semilla];
+  if (E.monedas < c.semilla) { aviso('Te faltan monedas para la semilla de ' + c.nombre.toLowerCase() + ' (' + c.semilla + ').', 'err'); return; }
+  E.monedas -= c.semilla; const ahora = Date.now(); E.chacra[i] = { k: E.semilla, ini: ahora, fin: ahora + c.seg * 1000 };
+  son('tap'); vibrar(10); if (b) chSube(b, '−' + c.semilla + ' <span class="mon"></span>');
+}
+function regar(i, b) {
+  const p = E.chacra[i], ahora = Date.now(); if (!p || p.r || ahora >= p.fin) return;
+  const quita = (p.fin - ahora) * D.RIEGO; p.fin -= quita; p.ini -= quita; p.r = 1; son('moneda'); vibrar(10);
+  if (b) { const r = b.getBoundingClientRect(), c = chacraEl.getBoundingClientRect(); for (let j = 0; j < 7; j++) { const g = document.createElement('i'); g.className = 'ch-agua'; g.style.left = (r.left - c.left + r.width * (0.15 + 0.7 * Math.random())) + 'px'; g.style.top = (r.top - c.top - 26 + Math.random() * 14) + 'px'; g.style.animationDelay = (j * 0.05) + 's'; chacraEl.appendChild(g); setTimeout(() => g.remove(), 900); } chSube(b, '−' + mmss(quita)); }
+}
+function cosechar(i, b) {
+  const p = E.chacra[i]; if (!p || Date.now() < p.fin) return;
+  const c = D.CULTIVOS[p.k], doble = Math.random() < D.COSECHA_DOBLE; let n = (c.kg ? D.maizCosecha(E.fama.n) : c.da) * (doble ? 2 : 1);
+  if (c.kg) E.maiz += n; else E.ing[p.k] += n;
+  E.chacra[i] = null; E.stats.cosechas++; sumar('cosecha'); xp(2); son('lista'); vibrar(15);
+  if (b) chSube(b, (doble ? '¡Doble! ' : '') + '+' + n + (c.kg ? ' kg' : '') + ` <img src="${IMG}${c.img}.webp" alt="">`);
+}
+chGrid.addEventListener('click', ev => {
+  const b = ev.target.closest('.parc'); if (!b || !E.elegido) return;
+  const i = +b.dataset.i;
+  if (i > E.parc) return;
+  if (i === E.parc) {
+    const c = costoParc(); if (E.monedas < c) { aviso('Una parcela más cuesta ' + fmt(c) + ' monedas.', 'err'); return; }
+    E.monedas -= c; E.parc++; E.stats.mejoras++; sumar('mejora'); son('mejora'); aviso('🌱 ¡Parcela nueva! Ya tienes ' + E.parc + '.', 'ok');
+  } else if (!E.chacra[i]) sembrar(i, b);
+  else if (Date.now() >= E.chacra[i].fin) cosechar(i, b);
+  else if (!E.chacra[i].r) regar(i, b);
+  else { aviso(D.CULTIVOS[E.chacra[i].k].nombre + ': falta ' + mmss(E.chacra[i].fin - Date.now()), ''); return; }
+  pintarChacra(true); pintarHud(); guardar();
+});
+$('ch-sem').onclick = () => { son('tap'); if (abierta && tab === 'semillas') cerrarHoja(); else abrirHoja('semillas'); };
+setInterval(pintarChacra, 500);
+
+// ── PREPARAR CHICHA ESPECIAL: tres pasos de puntería (para la barra en la zona verde; en la dorada, mejor) ──
+function prepararChicha(id) {
+  const c = D.CHICHAS[id]; if (!c || E.fama.n < c.fama || E.maiz < c.maiz || !Object.entries(c.receta).every(([k, n]) => E.ing[k] >= n)) return;
+  cerrarHoja(); pausa = true; son('tap');
+  const pts = []; let paso = 0, t0 = 0, centro = 0.5, ancho = 0.3, vel = 1, vivo = true, pos = 0;
+  $('modal-c').innerHTML = `<div class="hab-t">${c.nombre}</div><img class="pr-olla" src="${IMG}olla_${Math.min(6, E.nv.ollas[0] + 1)}.webp" alt=""><p id="pr-paso"></p>
+    <div class="pr-barra"><div class="pr-zona" id="pr-zona"><i></i></div><div class="pr-punto" id="pr-punto"></div></div>
+    <div class="pr-pasos">${D.PASOS_CHICHA.map((_, i) => `<span id="pr-s${i}">${i + 1}</span>`).join('')}</div>
+    <button class="b oro grande" id="pr-ya">¡Ahora!</button><small class="hab-pie">Para la barra blanca dentro de la zona verde. En el centro dorado sale perfecta.</small>`;
+  $('modal').classList.add('on');
+  const nuevoPaso = () => { ancho = 0.32 - paso * 0.06; centro = 0.2 + Math.random() * 0.6; vel = 0.75 + paso * 0.3; t0 = performance.now(); $('pr-paso').textContent = `Paso ${paso + 1} de ${D.PASOS_CHICHA.length} · ${D.PASOS_CHICHA[paso]}`; const z = $('pr-zona'); z.style.left = (centro - ancho / 2) * 100 + '%'; z.style.width = ancho * 100 + '%'; };
+  const anim = ahora => { if (!vivo) return; const u = ((ahora - t0) / 1000 * vel) % 2; pos = u < 1 ? u : 2 - u; const el = $('pr-punto'); if (el) el.style.left = pos * 100 + '%'; requestAnimationFrame(anim); };
+  const fin = () => {
+    vivo = false; const suma = pts.reduce((a, b) => a + b, 0), q = suma >= 5 ? 2 : suma >= 3 ? 1 : 0, cal = D.CALIDAD[q];
+    if (E.maiz < c.maiz || !Object.entries(c.receta).every(([k, n]) => E.ing[k] >= n)) { $('modal').classList.remove('on'); pausa = false; ultimo = performance.now(); return; }
+    E.maiz -= c.maiz; for (const [k, n] of Object.entries(c.receta)) E.ing[k] -= n;
+    const vasos = Math.round(c.vasos * (1 + cal.extra)), s = E.esp, total = Math.min(D.TOPE_ESPECIAL, s.n + vasos);
+    s.mult = s.n > 0 ? (s.n * s.mult + vasos * c.mult) / (s.n + vasos) : c.mult; s.n = total; s.nom = c.nombre;
+    E.stats.chichas++; sumar('chicha'); xp(15 + q * 10); guardar();
+    abrirModal(`<div class="hab-t">¡Te salió ${cal.nombre.toLowerCase()}!</div><img class="pr-olla" src="${IMG}${c.img}.webp" alt=""><p><b>${c.nombre}</b>: tus próximos <b>${fmt(vasos)}</b> vasos se venden a <b>×${coma(c.mult)}</b> del precio${cal.extra ? ` (+${Math.round(cal.extra * 100)} % de vasos por la calidad)` : ''}.</p><p>Ahora tienes ${fmt(s.n)} vasos especiales a ×${coma(s.mult)}.</p>`,
+      { txt: '¡A vender!', f: () => { pausa = false; ultimo = performance.now(); pose('celebra', 1.5); particulas(W - 82, PISO - 90, 20, '#ffd54a', { vel: 240 }); pintarChacra(true); pintarHud(); } });
+    son('nivel'); vibrar(50);
+  };
+  $('pr-ya').onclick = () => {
+    if (!vivo || paso >= D.PASOS_CHICHA.length) return;
+    const d = Math.abs(pos - centro), s = d < ancho / 6 ? 2 : d < ancho / 2 ? 1 : 0; pts.push(s);
+    const el = $('pr-s' + paso); el.className = 's' + s; el.textContent = s === 2 ? '¡Perfecto!' : s === 1 ? 'Bien' : 'Falló'; son(s ? 'lista' : 'robo'); vibrar(s ? 20 : 60);
+    paso++; if (paso >= D.PASOS_CHICHA.length) { vivo = false; setTimeout(fin, 550); } else nuevoPaso();
+  };
+  nuevoPaso(); requestAnimationFrame(anim);
+}
+
 // ── PORTADA (pantalla de inicio): el puesto no corre hasta que tocas JUGAR ──
 const portada = $('portada');
 function pintarPortada() {
+  $('tab-cara').src = IMG + SPR_PJ[E.personaje] + '.webp';
   const nocheP = new Date().getHours() >= 19 || new Date().getHours() < 6;
   portada.querySelector('.p-fondo').style.backgroundImage = `url(/assets/chicha-wars/fondo_mercado_${nocheP ? 'noche' : 'dia'}.webp)`;
   $('p-pj').src = '/assets/chicha-wars/' + SPR_PJ[E.personaje] + '.webp';
@@ -975,7 +1117,7 @@ function pintarPortada() {
 }
 let listo = false, primeraVez = true;
 function portadaLista() { if (listo) return; listo = true; const b = $('p-jugar'); b.disabled = false; b.textContent = E.elegido ? 'CONTINUAR' : 'JUGAR'; }
-function abrirPortada() { enPortada = true; guardar(); pintarPortada(); $('p-jugar').textContent = E.elegido ? 'CONTINUAR' : 'JUGAR'; portada.classList.remove('sale'); portada.classList.add('on'); }
+function abrirPortada() { enPortada = true; cerrarHoja(); guardar(); pintarPortada(); $('p-jugar').textContent = E.elegido ? 'CONTINUAR' : 'JUGAR'; portada.classList.remove('sale'); portada.classList.add('on'); }
 $('p-jugar').onclick = () => {
   son('nivel'); portada.classList.add('sale');
   setTimeout(() => { portada.classList.remove('on', 'sale'); enPortada = false; ultimo = performance.now(); monPrev = E.monedas; if (primeraVez) { primeraVez = false; inicio(); } }, 430);
@@ -986,7 +1128,9 @@ $('p-como').onclick = () => { son('tap'); abrirModal(`<h2>Cómo se juega</h2><ul
   <li><img src="/assets/chicha-wars/casera.webp" alt=""><span>Los clientes compran los vasos de tus jarras. Si se llenan, vende al por mayor.</span></li>
   <li><img src="/assets/chicha-wars/duende_pirata.webp" alt=""><span>Los duendes vienen en oleadas a robarte: tócalos para espantarlos. Sueltan ingredientes.</span></li>
   <li><img src="/assets/chicha-wars/tabla_3.webp" alt=""><span>Cada duende espantado sube tu Sazón. Al llenarse la barra eliges 1 de 3 utensilios que pelean solos: cucharón volador, lluvia de limón, canela explosiva…</span></li>
-  <li><img src="/assets/chicha-wars/cucharon_3.webp" alt=""><span>Con las monedas mejora ollas, fuego, recetas y herramientas. Con ingredientes prepara pociones en el Taller.</span></li>
+  <li><img src="/assets/chicha-wars/cul_maiz_2.webp" alt=""><span>Debajo del puesto está tu chacra: toca una parcela para sembrar, riégala (la gota azul) y cosecha maíz, piña, limón, manzana, canela y caña.</span></li>
+  <li><img src="/assets/chicha-wars/vaso_3.webp" alt=""><span>En Cocina preparas chicha especial con tu cosecha: tres pasos de puntería y tus vasos se venden más caros.</span></li>
+  <li><img src="/assets/chicha-wars/cucharon_3.webp" alt=""><span>Con las monedas mejora ollas, fuego, recetas y herramientas. Con ingredientes prepara también pociones en el Taller.</span></li>
   <li><img src="/assets/chicha-wars/ico_pergamino.webp" alt=""><span>Sube tu Fama, completa el Pase y, cuando quieras, recibe la Herencia de la Abuela para volver más fuerte.</span></li>
   <li><img src="/assets/chicha-wars/ico_reloj.webp" alt=""><span>Aunque cierres el juego, tu puesto sigue vendiendo unas horas.</span></li></ul>`); };
 $('p-rank').onclick = async () => { son('tap'); abrirModal(htmlRanking()); await cargarRanking(); if ($('modal').classList.contains('on') && RANK) $('modal-c').innerHTML = htmlRanking() + '<button class="b oro grande" id="modal-ok">Cerrar</button>', $('modal-ok').onclick = () => $('modal').classList.remove('on'); };
@@ -996,12 +1140,12 @@ setTimeout(portadaLista, 7000);   // por si alguna imagen tarda: nunca se queda 
 
 function inicio() {
   if (!E.elegido) {
-    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); } });
+    abrirModal(`<div class="logo">CHICHA WARS</div><p>Prepara la mejor chicha morada del pueblo… y no dejes que los duendes te la roben.</p><p><b>¿Quién atiende el puesto?</b></p><div class="elige grande pj">${btn('<img src="/assets/chicha-wars/chichera_maestra.webp" alt="">Chichera', 'x', { k: 'chichera' }, false, 'on')}${btn('<img src="/assets/chicha-wars/agricultor.webp" alt="">Chichero', 'x', { k: 'chichero' })}</div>`, { txt: '¡A cocinar!', f: () => { E.elegido = true; guardar(); aviso('Tus ollas ya están en el fuego: toca a los duendes cuando lleguen.', ''); setTimeout(() => aviso('🌱 Abajo está tu chacra: toca una parcela para sembrar maíz morado.', 'ok'), 5000); pintarChacra(true); } });
     $('modal-c').querySelectorAll('.elige .b').forEach(b => b.onclick = () => { E.personaje = b.dataset.k; $('modal-c').querySelectorAll('.elige .b').forEach(o => o.classList.toggle('on', o === b)); });
   } else if (vuelta) {
     abrirModal(`<h2>Mientras no estabas</h2><p>Tu puesto siguió abierto ${vuelta.min >= 60 ? Math.floor(vuelta.min / 60) + ' h ' + (vuelta.min % 60) + ' min' : vuelta.min + ' min'}${vuelta.tope ? ` (tu Jarra guarda hasta ${vuelta.horas} h: mejórala para más)` : ''}.</p>
       <div class="resumen"><div><b>${vuelta.tandas}</b><small>tandas</small></div><div><b>${vuelta.vendidos}</b><small>vasos vendidos</small></div><div><b>+${fmt(vuelta.ganado)}</b><small>monedas</small></div></div>
-      ${vuelta.sinMaiz ? '<p class="alerta-t">Se te acabó el maíz morado: compra más en el Mercado.</p>' : ''}`, { txt: 'Cobrar', f: () => { son('moneda'); pose('celebra', 1.2); } });
+      ${vuelta.sinMaiz ? '<p class="alerta-t">Se te acabó el maíz morado: siémbralo en tu chacra o cómpralo en la Tienda.</p>' : ''}${E.chacra.some(q => q && Date.now() >= q.fin) ? '<p>🌱 Tu chacra tiene cosecha lista.</p>' : ''}`, { txt: 'Cobrar', f: () => { son('moneda'); pose('celebra', 1.2); } });
   }
   pintarPanel(); pintarHud();
 }
@@ -1015,8 +1159,8 @@ addEventListener('resize', ajustar); ajustar();
 A.cargarSprites('/assets/chicha-wars/').then(n => { if (n) console.info('[CW] sprites del dueño:', n); portadaLista();
   setTimeout(() => { const im = A.img(SPR_PJ[E.personaje]); if (im) { titere(SPR_PJ[E.personaje], im, 'idle'); titere(SPR_PJ[E.personaje], im, 'accion'); } }, 400); });
 if (document.fonts && document.fonts.load) document.fonts.load('20px "Lilita One"').catch(() => {});
-pintarPanel(); pintarHud();
+pintarPanel(); pintarHud(); pintarChacra(true);
 requestAnimationFrame(cuadro);
 bajar();
 // Para pruebas (consola): __cw.avanzar(segundos) corre el juego sin esperar.
-window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, saz(n = 10) { ganarSazon(n); }, ruleta() { ruleta(); }, jugar() { portadaLista(); if (enPortada) $('p-jugar').click(); }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };
+window.__cw = { E, get duendes() { return duendes; }, avanzar(seg) { for (let i = 0; i < seg * 20; i++) { T += 0.05; logica(0.05); } dibujar(); }, oleadaYa() { proxOleada = 0.01; }, abrir(t) { abrirHoja(t); }, cerrar() { cerrarHoja(); }, chacra(seg = 600) { for (const q of E.chacra) if (q) { q.ini -= seg * 1000; q.fin -= seg * 1000; } pintarChacra(true); }, prep(id) { prepararChicha(id); }, saz(n = 10) { ganarSazon(n); }, ruleta() { ruleta(); }, jugar() { portadaLista(); if (enPortada) $('p-jugar').click(); }, tocar() { for (const d of duendes) if (!d.muerto) golpear(d, dano()); }, recoger() { for (let i = 0; i < nOllas(); i++) if (E.ollas[i].lista) recoger(i); }, comprar() { const m = mejorAsequible(); if (m) { const b = document.createElement('button'); b.dataset.act = m[2]; for (const k in m[3]) b.dataset[k] = m[3][k]; $('panel').appendChild(b); b.click(); return m[1]; } }, ing(n = 10) { for (const k in E.ing) E.ing[k] += n; pintarPanel(); }, fama(p) { ganarFama(p); pintarPanel(); } };

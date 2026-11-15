@@ -43,20 +43,20 @@ M_FLOR = [mat('flor' + str(i), hexa(c), 0.8) for i, c in enumerate(['#e0457b', '
 def mat_suelo():
     m = bpy.data.materials.new('suelo'); m.use_nodes = True
     nt = m.node_tree; b = nt.nodes.get('Principled BSDF'); b.inputs['Roughness'].default_value = 0.9
-    tc = nt.nodes.new('ShaderNodeTexCoord'); mp = nt.nodes.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1.0, 0.75, 1.0)
+    tc = nt.nodes.new('ShaderNodeTexCoord'); mp = nt.nodes.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1.0, 0.8, 1.0)
     nt.links.new(tc.outputs['Object'], mp.inputs['Vector'])
-    v1 = nt.nodes.new('ShaderNodeTexVoronoi'); v1.feature = 'DISTANCE_TO_EDGE'; v1.inputs['Scale'].default_value = 2.6
-    v2 = nt.nodes.new('ShaderNodeTexVoronoi'); v2.feature = 'F1'; v2.inputs['Scale'].default_value = 2.6
+    v1 = nt.nodes.new('ShaderNodeTexVoronoi'); v1.feature = 'DISTANCE_TO_EDGE'; v1.inputs['Scale'].default_value = 5.2
+    v2 = nt.nodes.new('ShaderNodeTexVoronoi'); v2.feature = 'F1'; v2.inputs['Scale'].default_value = 5.2
     nt.links.new(mp.outputs['Vector'], v1.inputs['Vector']); nt.links.new(mp.outputs['Vector'], v2.inputs['Vector'])
-    junta = nt.nodes.new('ShaderNodeValToRGB'); junta.color_ramp.elements[0].position = 0.02; junta.color_ramp.elements[1].position = 0.09
-    junta.color_ramp.elements[0].color = (*hexa('#6b4a34'), 1); junta.color_ramp.elements[1].color = (1, 1, 1, 1)
+    junta = nt.nodes.new('ShaderNodeValToRGB'); junta.color_ramp.elements[0].position = 0.012; junta.color_ramp.elements[1].position = 0.05
+    junta.color_ramp.elements[0].color = (*hexa('#8a6a4e'), 1); junta.color_ramp.elements[1].color = (1, 1, 1, 1)
     nt.links.new(v1.outputs['Distance'], junta.inputs['Fac'])
     tono = nt.nodes.new('ShaderNodeValToRGB')
-    tono.color_ramp.elements[0].color = (*hexa('#c79b70'), 1); tono.color_ramp.elements[1].color = (*hexa('#e6c79c'), 1)
+    tono.color_ramp.elements[0].color = (*hexa('#cfa67c'), 1); tono.color_ramp.elements[1].color = (*hexa('#e2c49a'), 1)
     sep = nt.nodes.new('ShaderNodeSeparateColor'); nt.links.new(v2.outputs['Color'], sep.inputs['Color']); nt.links.new(sep.outputs[0], tono.inputs['Fac'])
     mz = nt.nodes.new('ShaderNodeMix'); mz.data_type = 'RGBA'; mz.blend_type = 'MULTIPLY'; mz.inputs[0].default_value = 1.0
     nt.links.new(tono.outputs['Color'], mz.inputs[6]); nt.links.new(junta.outputs['Color'], mz.inputs[7]); nt.links.new(mz.outputs[2], b.inputs['Base Color'])
-    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = 0.55; bp.inputs['Distance'].default_value = 0.03
+    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = 0.4; bp.inputs['Distance'].default_value = 0.03
     nt.links.new(junta.outputs['Color'], bp.inputs['Height']); nt.links.new(bp.outputs['Normal'], b.inputs['Normal'])
     return m
 
@@ -106,7 +106,8 @@ def casa(x, y, w, d, h, rz=0.0, pisos=None):
         for i in range(n):
             vx = -w / 2 + (i + 0.5) * w / n; vz = p * hp + hp * 0.58
             if p == 0 and abs(vx - px) < 1.0: continue
-            mv = M_VENTANA if (not NOCHE or random.random() < 0.65) else M_VENT_OFF
+            rr = random.random()   # se tira siempre: asi el pueblo es el mismo de dia y de noche
+            mv = M_VENTANA if (not NOCHE or rr < 0.65) else M_VENT_OFF
             cubo('marcoV', (vx, fy, vz), (0.95, 0.08, 1.15), M_MADERA, e); cubo('vidrio', (vx, fy - 0.03, vz), (0.72, 0.08, 0.92), mv, e)
             if p == 1 and random.random() < 0.6:   # balcon con flores
                 cubo('balcon', (vx, fy - 0.3, vz - 0.72), (1.2, 0.55, 0.1), M_MADERA, e)

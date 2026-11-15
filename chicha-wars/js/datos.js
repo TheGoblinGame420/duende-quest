@@ -115,6 +115,7 @@ export const MISIONES = [
   { id: 'tanda', txt: n => `Cocina ${n} tandas`, n: [8, 15, 30], premio: 70 },
   { id: 'mejora', txt: n => `Compra ${n} mejoras`, n: [1, 2, 3], premio: 100 },
   { id: 'oleada', txt: n => `Aguanta ${n} oleadas`, n: [5, 10, 15], premio: 90 },
+  { id: 'cosecha', txt: n => `Cosecha ${n} parcelas de tu chacra`, n: [6, 12, 20], premio: 80 },
 ];
 // Premio por dias seguidos jugando (se reinicia si faltas un dia).
 export const RACHA = [50, 80, 30, 150, 60, 250, 600];   // dia 3 y 5: maiz; el resto, monedas
@@ -213,7 +214,7 @@ export const PAQ_ING = [3, 10];
 
 // ── FAMA DEL PUESTO (permanente: sube vendiendo, cocinando, espantando y mejorando) ──
 export const famaReq = n => Math.round(40 * Math.pow(n, 1.5));   // puntos para pasar del nivel n al n+1
-export const FAMA_PTS = { vende: 1, tanda: 1, espanta: 2, mejora: 6, oleada: 5, pocion: 4 };
+export const FAMA_PTS = { vende: 1, tanda: 1, espanta: 2, mejora: 6, oleada: 5, pocion: 4, cosecha: 1, chicha: 8 };
 export const premioFama = n => ({ monedas: 60 * n, ing: 2 + Math.floor(n / 5) });
 
 // ── HERENCIA DE LA ABUELA (prestigio) ──
@@ -235,6 +236,8 @@ export const DESAFIOS = [
   { id: 'd_dorados', stat: 'dorados', n: 5, txt: 'Atrapa 5 duendes dorados', xp: 200 },
   { id: 'd_jefes', stat: 'jefes', n: 3, txt: 'Vence 3 veces al Rey de los Ladrones', xp: 250 },
   { id: 'd_epicas', stat: 'herrEpica', n: 3, txt: 'Ten 3 herramientas épicas o mejores', xp: 300 },
+  { id: 'd_cosechas', stat: 'cosechas', n: 40, txt: 'Cosecha 40 parcelas de tu chacra', xp: 200 },
+  { id: 'd_chichas', stat: 'chichas', n: 6, txt: 'Prepara 6 chichas especiales', xp: 250 },
   { id: 'd_vasos2', stat: 'vasos', n: 5000, txt: 'Vende 5000 vasos', xp: 300 },
   { id: 'd_ola30', stat: 'oleadaMax', n: 30, txt: 'Llega a la oleada 30', xp: 350 },
 ];
@@ -268,3 +271,29 @@ export const HABILIDADES = {
   fuego:    { nombre: 'Fuego vivo', img: 'ico_fogata', pasiva: true, d: e => `+${8 * e} % de velocidad de cocción` },
   fiesta:   { nombre: 'Vaso de fiesta', img: 'vaso_3', pasiva: true, d: e => `+${8 * e} % de precio por vaso` },
 };
+
+// ── CHACRA (v390): siembras, riegas y cosechas tus propios ingredientes. Crecen con el reloj real, tambien con el juego cerrado. ──
+// seg: segundos hasta la cosecha · da: unidades (el maiz, en kilos) · semilla: monedas · fama: nivel para desbloquear
+export const CULTIVOS = {
+  maiz:    { nombre: 'Maíz morado', img: 'ing_maiz', seg: 45, da: 12, semilla: 4, fama: 1, kg: true },
+  canela:  { nombre: 'Canela', img: 'ing_canela', seg: 90, da: 2, semilla: 12, fama: 1 },
+  azucar:  { nombre: 'Caña de azúcar', img: 'ing_azucar', seg: 120, da: 2, semilla: 12, fama: 1 },
+  limon:   { nombre: 'Limón', img: 'ing_limon', seg: 180, da: 2, semilla: 18, fama: 2 },
+  pina:    { nombre: 'Piña', img: 'ing_pina', seg: 300, da: 3, semilla: 25, fama: 3 },
+  manzana: { nombre: 'Manzana', img: 'ing_manzana', seg: 480, da: 3, semilla: 30, fama: 4 },
+};
+export const PARCELAS = { inicio: 3, max: 8, costo: [150, 500, 1500, 5000, 15000] };   // costo de la 4.ª a la 8.ª
+export const RIEGO = 0.3;            // regar (una vez por siembra) quita el 30 % del tiempo que falta
+export const COSECHA_DOBLE = 0.1;
+export const maizCosecha = fama => Math.round(CULTIVOS.maiz.da * (1 + (fama - 1) * 0.08));
+
+// ── CHICHA ESPECIAL: la preparas tu con lo que cosechas. Tus proximos vasos se venden mas caros. ──
+export const CHICHAS = {
+  clasica: { nombre: 'Chicha de la casa', img: 'vaso_2', maiz: 10, receta: { canela: 1, azucar: 1 }, vasos: 40, mult: 1.4, fama: 1 },
+  pina:    { nombre: 'Chicha con piña', img: 'vaso_3', maiz: 15, receta: { pina: 2, canela: 1, azucar: 1 }, vasos: 60, mult: 1.7, fama: 3 },
+  frutada: { nombre: 'Chicha frutada', img: 'vaso_4', maiz: 20, receta: { pina: 1, manzana: 2, limon: 1, azucar: 1 }, vasos: 80, mult: 2.0, fama: 5 },
+  abuela:  { nombre: 'Chicha de la abuela', img: 'vaso_5', maiz: 30, receta: { pina: 2, manzana: 2, limon: 2, canela: 2, azucar: 2 }, vasos: 120, mult: 2.5, fama: 8 },
+};
+export const PASOS_CHICHA = ['Hierve el maíz morado con la fruta', 'Cuela la chicha', 'Endulza y sirve'];
+export const CALIDAD = [{ nombre: 'Buena', extra: 0 }, { nombre: 'Rica', extra: 0.25 }, { nombre: 'Perfecta', extra: 0.5 }];
+export const TOPE_ESPECIAL = 400;    // vasos especiales guardados como mucho
