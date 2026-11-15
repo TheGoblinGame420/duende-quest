@@ -6212,7 +6212,7 @@ function pintarCuenta(cont, modo, enJuego) {
     + '<button class="btn btn-grande" data-acc="entrar">Entrar</button>'
     + '<p class="ligas"><a data-m="olvido">¿Olvidaste tu contraseña?</a> · <a data-m="enlace">Entrar con un enlace al correo</a></p>';
   else if (modo === 'crear') h += (soyInvitado && enJuego ? '<p class="nota" style="margin:0 0 8px">Al entrar con tu cuenta nueva te preguntamos si le pasas este duende de invitado: no pierdes nada.</p>' : '')
-    + campo('cu-user', 'text', 'Nombre de usuario (3-20 letras o números)', 'username') + campo('cu-email', 'email', 'Correo', 'email')
+    + campo('cu-user', 'text', 'Usuario (3-20 letras o números)', 'username') + campo('cu-email', 'email', 'Correo', 'email')
     + campo('cu-pass', 'password', 'Contraseña (mínimo 8)', 'new-password') + campo('cu-pass2', 'password', 'Repite la contraseña', 'new-password')
     + '<button class="btn btn-grande" data-acc="crear">Crear cuenta gratis</button>';
   else if (modo === 'olvido') h += '<p class="nota" style="margin:0 0 8px">Te enviamos un enlace para poner una contraseña nueva. Ábrelo en este mismo navegador.</p>'
