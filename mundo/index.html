@@ -276,6 +276,8 @@ body.movil #botones #b-gestos,body.compacto #botones #b-gestos{min-height:44px;}
 body.movil #botones:not(.abierto) #b-gestos,body.compacto #botones:not(.abierto) #b-gestos{grid-row:2;grid-column:3;}
 #avisos{position:fixed;left:12px;bottom:200px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;pointer-events:none;z-index:5;max-width:min(380px,42vw);}
 body:has(.modal.on) #avisos{z-index:11;}
+/* Invitaciones de grupo, duelo y hermandad (caducan en 30-60 s): por encima de la ventana abierta, no escondidas detrás. */
+body:has(.modal.on) #invit3{z-index:13;}
 body:has(#v-clase.on) #avisos{display:none;}
 #avisos div{background:rgba(14,9,30,.72);border:1px solid var(--borde);border-left:3px solid #a78bfa;border-radius:6px;padding:5px 10px;font:600 12px var(--sans);text-align:left;animation:entra .2s ease-out;}
 #avisos div.ok{border-left-color:#4ade80;}
