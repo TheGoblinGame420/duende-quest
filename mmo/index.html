@@ -282,6 +282,10 @@ body.tactil #pie{display:none;}
 #invitacion{left:50%;transform:translateX(-50%);top:58px;display:none;background:var(--panel);border:1px solid var(--pri);border-radius:var(--radio);padding:10px 12px;text-align:center;z-index:5;box-shadow:var(--sombra);}
 #invitacion span{display:block;font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--txt);margin-bottom:8px;}
 #invitacion .btn{margin:0 3px;}
+/* Grupo, duelo o hermandad (caducan en 30-60 s): #app es fijo y sus hijos no pueden pasar de las ventanas (z 50), así que
+   mostrarInvitacion() la saca a <body> y aquí queda fija por encima de la ventana abierta, no escondida detrás. */
+body>#invitacion{position:fixed;z-index:61;pointer-events:auto;}
+body:has(#hud:not(.estrecho))>#invitacion{zoom:1.2;}
 .oacc{display:none;flex:1 0 100%;flex-wrap:wrap;gap:4px;margin:2px 0 0;}
 .oacc .bt{flex:1 1 30%;font:600 10px var(--sans);letter-spacing:0;padding:3px 2px;min-height:26px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}

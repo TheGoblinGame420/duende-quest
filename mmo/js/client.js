@@ -2148,6 +2148,7 @@ function mostrarInvitacion(m) {
     : m.herm
     ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:var(--ok)">&lt;${esc(m.nombre)}&gt;</b>`
     : `<b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
+  if ($('invitacion').parentElement !== document.body) document.body.appendChild($('invitacion'));   // encima de las ventanas (ver body>#invitacion)
   ponCss($('invitacion'), 'display', 'block');
   sfx('moneda', .4);
   clearTimeout(mostrarInvitacion.t);
