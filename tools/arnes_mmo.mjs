@@ -612,6 +612,9 @@ async function pruebas() {
   await pruebasDios();
   await pruebasFiltro();
   await pruebasSinCortes();
+  await pruebasFotoYReconciliacion();
+  await pruebasCriaturas();
+  await pruebasCaptura();
   await pruebas3d();
   await pruebasHabs3d();
   await pruebasCombate3d();
@@ -4145,6 +4148,230 @@ async function pruebasDios() {
 }
 
 // ── MUNDO ABIERTO SIN CORTES: borde, piedras de viaje y Marcha de invasores ──
+// Fase 1 (17-nov-2026): la foto 2D solo lleva los monstruos cercanos (world.js,
+// monstruosDe) y las correcciones de posicion van numeradas (corregir / mv.sq).
+async function pruebasFotoYReconciliacion() {
+  console.log('Foto 2D filtrada y reconciliacion del movimiento');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar('Mirador', 'e7');
+  ponerNivel(a, 12, 'guerrero');
+  await aMapa(a, 'noche', 300); limpiarMapa(a);
+  a.c.mis = null;
+  tick();
+  const foto = () => a.ultimos('s').pop();
+  const enFoto = (o, f = foto()) => !!f && f.m.some(r => r[0] === o.id);
+  const enNuevos = (o, f = foto()) => !!f && (f.mn || []).some(d => d.id === o.id);
+  const tipo = D.MAPAS.noche.monstruos[0];
+  const cerca = monstruo(a, tipo, 150);
+  const lejos = monstruo(a, tipo, 1900);
+  a.limpiar(); tick();
+  chequear(enFoto(cerca) && !enFoto(lejos), 'la foto lleva el monstruo cercano y no el que está a 1900 px');
+  chequear(!enNuevos(cerca), 'un monstruo que acaba de nacer ya llegó con su ms: no se repite en mn');
+  // Entra a la vista: llega completo en mn una sola vez.
+  lejos.x = a.x + 600; lejos.casaX = lejos.x;
+  a.limpiar(); tick();
+  chequear(enFoto(lejos) && enNuevos(lejos), 'el que entra a la vista llega en m y completo en mn');
+  a.limpiar(); tick();
+  chequear(enFoto(lejos) && !enNuevos(lejos), 'en la foto siguiente ya no se repite en mn');
+  // Histeresis: entre 1000 y 1250 px sigue; pasado eso sale.
+  lejos.x = a.x + 1150; lejos.casaX = lejos.x;
+  a.limpiar(); tick();
+  chequear(enFoto(lejos), 'a 1150 px sigue en la foto (histéresis)');
+  lejos.x = a.x + 1600; lejos.casaX = lejos.x;
+  a.limpiar(); tick();
+  chequear(!enFoto(lejos), 'a 1600 px sale de la foto');
+  lejos.x = a.x + 1150; lejos.casaX = lejos.x;
+  a.limpiar(); tick();
+  chequear(!enFoto(lejos), 'a 1150 px no vuelve a entrar si ya había salido (entra a 1000)');
+  // Siempre van: los especiales y el de su mision.
+  lejos.x = a.x + 2000; lejos.casaX = lejos.x;
+  const especial = monstruo(a, tipo, 2100, { ex: { raro: 1, nom: 'Raro' } });
+  a.limpiar(); tick();
+  chequear(enFoto(especial) && !enFoto(lejos), 'un especial (ex) va aunque esté lejos; uno normal lejos no');
+  const iMis = D.MISIONES.findIndex(q => q && q.tipo === tipo);
+  if (iMis >= 0) {
+    // Sin el cercano del mismo tipo: el mas cercano de ese tipo pasa a ser el lejano.
+    const w = mundo.mundoDe(a), guardado = cerca;
+    w.mons.delete(cerca.id);
+    a.c.mis = { i: iMis, p: 0 };
+    a.limpiar(); tick();
+    chequear(enFoto(lejos), 'el más cercano del tipo de su misión va aunque esté lejos (la guía lo señala)');
+    a.c.mis = null;
+    w.mons.set(guardado.id, guardado);
+  }
+  // Varios jugadores: cada uno recibe los suyos.
+  const b = await entrar('Mirador2', 'e8');
+  await aMapa(b, 'noche', lejos.x - 100);
+  a.limpiar(); b.limpiar(); tick();
+  const fb = b.ultimos('s').pop();
+  chequear(enFoto(lejos, fb) && !enFoto(lejos), 'el que está junto al monstruo lo ve; el otro, a 2000 px, no');
+  chequear(enFoto(cerca) && !enFoto(cerca, fb), 'y al revés con el monstruo del otro lado');
+  chequear(foto().p.length === 2 && fb.p.length === 2, 'con pocos jugadores la foto sigue llevando a todos los jugadores');
+  await mundo.cerrar(b);
+
+  // Reconciliacion: una correccion numerada y las posiciones viejas en camino se ignoran.
+  limpiarMapa(a);
+  avanzar(2000);
+  await a.mandar({ t: 'mv', x: a.x + 10, y: 400, f: 1, a: 1, sq: 0 });
+  const x0 = a.x;
+  a.limpiar();
+  avanzar(16);
+  await a.mandar({ t: 'mv', x: x0 + 2500, y: 400, f: 1, a: 1, sq: 0 });
+  const sn = a.ultimos('snap').pop();
+  chequear(sn && sn.n >= 1 && a.x === x0, 'un salto imposible se corrige con un snap numerado (n ' + (sn && sn.n) + ')');
+  a.limpiar();
+  avanzar(50);
+  await a.mandar({ t: 'mv', x: x0 + 2510, y: 400, f: 1, a: 1, sq: 0 });
+  chequear(a.ultimos('snap').length === 0 && a.x === x0, 'las posiciones viejas (sq anterior) se ignoran sin otro snap en cadena');
+  avanzar(100);
+  await a.mandar({ t: 'mv', x: x0 + 12, y: 400, f: 1, a: 1, sq: sn ? sn.n : 0 });
+  chequear(a.ultimos('snap').length === 0 && a.x === x0 + 12, 'con el sq de la corrección vuelve a moverse normal');
+  // Un cliente que nunca devuelve el numero no se queda congelado: a los 2 s se le vuelve a validar.
+  await a.mandar({ t: 'mv', x: x0 + 5000, y: 400, f: 1, a: 1, sq: sn ? sn.n : 0 });
+  const sn2 = a.ultimos('snap').pop();
+  avanzar(2100);
+  await a.mandar({ t: 'mv', x: x0 + 40, y: 400, f: 1, a: 1, sq: sn ? sn.n : 0 });
+  chequear(sn2 && sn2.n === sn.n + 1 && a.x === x0 + 40, 'sin devolver el número, pasados 2 s se acepta de nuevo lo que sea válido');
+  // Cliente viejo (sin sq): igual que antes.
+  avanzar(100);
+  await a.mandar({ t: 'mv', x: x0 + 52, y: 400, f: 1, a: 1 });
+  chequear(a.x === x0 + 52, 'un cliente viejo sin sq se sigue moviendo');
+  await mundo.cerrar(a);
+}
+
+// Fase 2 (17-nov-2026): modelo de criaturas en el personaje (functions/mmo/criaturas.js).
+async function pruebasCriaturas() {
+  console.log('Criaturas (modelo)');
+  const D = await import('../mmo/js/data.js');
+  const jefe = Object.keys(D.MONSTRUOS).find(k => D.MONSTRUOS[k].jefe);
+  const a = await entrar('Criador', 'e9');
+  const ini = a.ultimos('cri').pop();
+  chequear(ini && Array.isArray(ini.l) && ini.l.length === 0 && ini.max === D.CRIATURA_MAX && ini.eqMax === D.CRIATURA_EQUIPO, 'al entrar llega la lista de criaturas (vacía) con sus topes');
+  chequear(!('cri' in mundo.datosPropios(a)), "la lista no viaja en cada 'yo' (solo al entrar y al cambiar)");
+  a.sucio = false;
+  const c1 = mundo.darCriatura(a, 'goblin_normal', 5);
+  chequear(c1 && c1.k === 'goblin_normal' && c1.nv === 5 && a.c.cri.l.length === 1 && a.c.cri.eq.includes(c1.i) && a.sucio, 'darCriatura la guarda, la pone en el equipo y marca el progreso para guardar');
+  chequear(mundo.darCriatura(a, jefe, 5) === null && mundo.darCriatura(a, 'no_existe', 1) === null && mundo.darCriatura(a, '__proto__', 1) === null, 'un jefe o un tipo inventado no se dan');
+  const c2 = mundo.darCriatura(a, 'esqueleto', 999);
+  chequear(c2 && c2.nv === D.NIVEL_MAX && c2.i !== c1.i, 'el nivel se acota y cada una tiene su id');
+  // Apodo
+  await a.mandar({ t: 'cri', a: 'apodo', i: c1.i, n: 'Pepito' });
+  chequear(c1.a === 'Pepito' && a.ultimos('cri').pop().l.find(x => x.i === c1.i).a === 'Pepito', 'se le pone apodo y el cliente recibe la lista nueva');
+  a.limpiar();
+  await a.mandar({ t: 'cri', a: 'apodo', i: c1.i, n: 'mierda' });
+  chequear(c1.a === 'Pepito' && a.ultimos('no').length === 1, 'un apodo con groserías se rechaza (con aviso)');
+  await a.mandar({ t: 'cri', a: 'apodo', i: c1.i, n: '!!' });
+  chequear(c1.a === 'Pepito', 'un apodo sin letras válidas se rechaza');
+  await a.mandar({ t: 'cri', a: 'apodo', i: c1.i, n: '' });
+  chequear(c1.a === '' && D.nombreCriatura(c1) === D.MONSTRUOS.goblin_normal.nombre, 'un apodo vacío vuelve al nombre del monstruo');
+  // Equipo
+  const b = await entrar('Ajeno', 'ea');
+  const cb = mundo.darCriatura(b, 'goblin_normal', 1);
+  await a.mandar({ t: 'cri', a: 'equipo', l: [c2.i, c2.i, c1.i] });
+  chequear(a.c.cri.eq.join() === [c2.i, c1.i].join(), 'el equipo se ordena como pide el jugador y sin repetidos');
+  await a.mandar({ t: 'cri', a: 'equipo', l: [c1.i, 999999] });
+  chequear(a.c.cri.eq.join() === [c2.i, c1.i].join(), 'una criatura que no es suya no entra al equipo');
+  await a.mandar({ t: 'cri', a: 'apodo', i: cb.i === c1.i ? 999999 : cb.i, n: 'Robada' });
+  chequear(!a.c.cri.l.some(x => x.a === 'Robada') && b.c.cri.l[0].a === '', 'no se puede poner apodo a la criatura de otro');
+  await a.mandar({ t: 'cri', a: 'equipo', l: [1, 2, 3, 4] });
+  chequear(a.c.cri.eq.length === 2, 'un equipo de más de ' + D.CRIATURA_EQUIPO + ' se ignora');
+  // Soltar
+  await a.mandar({ t: 'cri', a: 'soltar', i: c2.i });
+  chequear(!a.c.cri.l.some(x => x.i === c2.i) && !a.c.cri.eq.includes(c2.i), 'soltar la quita de la lista y del equipo');
+  // Tope
+  while (a.c.cri.l.length < D.CRIATURA_MAX) mundo.darCriatura(a, 'goblin_normal', 1);
+  chequear(mundo.darCriatura(a, 'goblin_normal', 1) === null && a.c.cri.l.length === D.CRIATURA_MAX && a.c.cri.eq.length === D.CRIATURA_EQUIPO, 'con ' + D.CRIATURA_MAX + ' no cabe ninguna más y el equipo no pasa de ' + D.CRIATURA_EQUIPO);
+  // Se guarda con el personaje y se normaliza al leerlo.
+  await mundo.guardar(a);
+  const guardado = almacen.get('c:' + a.c.uid);
+  chequear(guardado && guardado.cri && guardado.cri.l.length === D.CRIATURA_MAX, 'las criaturas se guardan con el personaje (almacenamiento del DO)');
+  const roto = { cri: { sig: 'x', l: [{ k: 'goblin_normal', i: 3 }, { k: 'goblin_normal', i: 3 }, { k: jefe }, null, { k: 'esqueleto', nv: -4, a: '<b>x</b>yz' }], eq: [3, 3, 77] } };
+  const n = D.normalizarCriaturas(roto);
+  chequear(n.l.length === 3 && new Set(n.l.map(x => x.i)).size === 3 && n.eq.join() === '3' && n.l[2].nv === 1 && n.l[2].a === 'bxbyz' && n.sig > Math.max(...n.l.map(x => x.i)), 'datos rotos (ids repetidos, jefes, nulos, nivel negativo, html) se normalizan');
+  chequear(D.normalizarCriaturas({}).l.length === 0, 'un personaje viejo sin criaturas no falla');
+  await mundo.cerrar(a); await mundo.cerrar(b);
+}
+
+// Fase 3 (17-nov-2026): captura autoritativa (criaturas.js, capturar).
+async function pruebasCaptura() {
+  console.log('Captura de criaturas');
+  const D = await import('../mmo/js/data.js');
+  const rnd = Math.random;
+  const tipo = D.MAPAS.noche.monstruos[0];
+  const jefe = Object.keys(D.MONSTRUOS).find(k => D.MONSTRUOS[k].jefe && !D.MONSTRUOS[k].mundial);
+  const a = await entrar('Cazadora', 'eb');
+  ponerNivel(a, 10, 'guerrero');
+  const b = await entrar('Testigo', 'ec');
+  // Monstruo debilitado por a, a 60 px.
+  const debil = (op, dx = 60) => { const o = monstruo(a, op && op.k || tipo, dx, op && op.op); o.hp = Math.floor(o.max * 0.2); o.dano.set(a.id, o.max - o.hp); return o; };
+  const intento = async o => { avanzar(500); a.capT = 0; a.limpiar(); b.limpiar(); await a.mandar({ t: 'capturar', id: o.id }); };
+  const tiene = o => mundo.mundoDe(a).mons.has(o.id);
+  Math.random = () => 0;   // el dado siempre sale bien (salvo donde se diga)
+  try {
+    await aMapa(a, 'pueblo', 800); limpiarMapa(a);
+    const enPueblo = debil();
+    await intento(enPueblo);
+    chequear(tiene(enPueblo) && a.ultimos('no').length === 1 && !a.ultimos('capt').length, 'en el pueblo (zona segura) no se captura');
+    await aMapa(a, 'noche', 400); await aMapa(b, 'noche', 500); limpiarMapa(a);
+    const n0 = mundo.criaturasDe(a.c).l.length;
+    const lejos = debil(null, 400);
+    await intento(lejos);
+    chequear(tiene(lejos) && a.ultimos('no').length === 1, 'fuera de alcance (400 px) no se captura');
+    const sano = monstruo(a, tipo, 60); sano.dano.set(a.id, 1);
+    await intento(sano);
+    chequear(tiene(sano) && a.ultimos('no').length === 1, 'con la vida alta no se captura');
+    const ajeno = debil(); ajeno.dano.set(a.id, 5); ajeno.dano.set(b.id, 500);
+    await intento(ajeno);
+    chequear(tiene(ajeno) && a.ultimos('no').length === 1, 'no se roba un monstruo que debilitó otro');
+    const nadie = debil(); nadie.dano.clear();
+    await intento(nadie);
+    chequear(tiene(nadie) && a.ultimos('no').length === 1, 'uno que no recibió daño de nadie no se captura');
+    if (jefe) { const j = debil({ k: jefe }); await intento(j); chequear(tiene(j) && a.ultimos('no').length === 1, 'un jefe no se captura'); }
+    const esp = debil({ op: { ex: { raro: 1 } } });
+    await intento(esp);
+    chequear(tiene(esp) && a.ultimos('no').length === 1, 'un especial (raro, invasor) no se captura');
+    const fuerte = debil({ op: { nv: a.c.nivel + D.CAPTURA.nvSobre + 2 } });
+    await intento(fuerte);
+    chequear(tiene(fuerte) && a.ultimos('no').length === 1, 'uno de mucho más nivel no se captura');
+    chequear(mundo.criaturasDe(a.c).l.length === n0, 'ningún intento rechazado dio criatura');
+    await intento({ id: 'x' }); await intento({ id: 99999999 });
+    chequear(mundo.criaturasDe(a.c).l.length === n0, 'ids inventados no dan nada');
+    // Exito
+    limpiarMapa(a);
+    const presa = debil(null, 80);
+    const xp0 = a.c.xp, oro0 = a.c.oro;
+    await intento(presa);
+    const cr = mundo.criaturasDe(a.c).l.at(-1);
+    chequear(!tiene(presa) && cr && cr.k === presa.k && cr.nv === (presa.nv || D.MONSTRUOS[presa.k].nivel), 'con el dado a favor la criatura sale del mapa y pasa a la colección');
+    chequear(a.c.xp === xp0 && a.c.oro === oro0, 'capturar no da XP ni oro (no es una forma de cazar gratis)');
+    const cb = b.ultimos('capt').pop();
+    chequear(cb && cb.ok === 1 && cb.id === presa.id && cb.p === a.id && b.ultimos('md').some(x => x.id === presa.id && x.fuera), 'los demás del mapa ven la captura y el monstruo desaparece');
+    // Espera entre intentos
+    const otra = debil();
+    a.limpiar(); await a.mandar({ t: 'capturar', id: otra.id });
+    chequear(tiene(otra) && a.ultimos('no').length === 1, 'hay que esperar ' + D.CAPTURA.cdMs / 1000 + ' s entre intentos');
+    avanzar(D.CAPTURA.cdMs + 10);
+    a.limpiar(); await a.mandar({ t: 'capturar', id: otra.id });
+    chequear(!tiene(otra), 'pasada la espera se puede volver a intentar');
+    // Fallo
+    Math.random = () => 0.999;
+    const brava = debil();
+    const amen0 = brava.amen.get(a.id) || 0;
+    await intento(brava);
+    const cf = a.ultimos('capt').pop();
+    chequear(tiene(brava) && cf && cf.ok === 0 && (brava.amen.get(a.id) || 0) > amen0, 'si falla, el monstruo sigue y se enfada contigo');
+    // Coleccion llena
+    Math.random = () => 0;
+    while (mundo.criaturasDe(a.c).l.length < D.CRIATURA_MAX) mundo.darCriatura(a, 'goblin_normal', 1);
+    const sobra = debil();
+    await intento(sobra);
+    chequear(tiene(sobra) && a.ultimos('no').length === 1, 'con la colección llena no se captura');
+    // Probabilidad
+    chequear(D.probCaptura(0.35, 5, 5) === 0.25 && D.probCaptura(0, 5, 5) === 0.75 && D.probCaptura(0, 50, 1) === 0.05 && D.probCaptura(-1, 1, 60) === 0.75, 'la probabilidad sube con menos vida, baja con más nivel y queda entre 5 % y 85 %');
+  } finally { Math.random = rnd; }
+  await mundo.cerrar(a); await mundo.cerrar(b);
+}
+
 async function pruebasSinCortes() {
   console.log('Mundo abierto sin cortes');
   const D = await import('../mmo/js/data.js');

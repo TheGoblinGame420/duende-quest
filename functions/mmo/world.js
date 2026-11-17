@@ -31,6 +31,7 @@ import { Encargos } from './encargos.js';
 import { Secundarias } from './secundarias.js';
 import { Vasos } from './vasos.js';
 import { Caso } from './caso.js';
+import { Criaturas } from './criaturas.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
@@ -65,6 +66,9 @@ import { instalarGrupo } from './grupo.js';
 
 const MAX_JUGADORES = 300;
 const VISTA_2D = 1100, TOPE_2D = 40, LEJOS_2D = 450;   // px y filas: la foto 2D con mucha gente solo lleva a los cercanos
+// Monstruos en la foto 2D: los que estan a menos de VISTA_MON px (la pantalla mide 800 y la vara llega a 430),
+// y no se sueltan hasta VISTA_MON + MARGEN_MON (histeresis: sin entrar y salir en el borde). Ver monstruosDe().
+const VISTA_MON = 1000, MARGEN_MON = 250;
 // Presupuesto de escrituras al storage (cupo diario): el progreso cada 60 s,
 // solo la posicion cada 5 min (y siempre al cerrar), y en modo ahorro (salud.js) cada 3 min.
 // Un reinicio del DO puede perder hasta 60 s de botin; compras, pedidos, retiros y herencia guardan al momento.
@@ -576,6 +580,8 @@ export class MmoWorld {
       case 'visto': return this.buzonVisto(s, m);
       case 'dios': return this.dios(s, m);
       case 'viajar': return this.viajar(s, m);
+      case 'cri': return this.criatura(s, m);   // criaturas.js (Fase 2)
+      case 'capturar': return this.capturar(s, m);   // criaturas.js (Fase 3)
       case 'irGrupo': return this.irConGrupo(s, m);
     }
   }
@@ -938,6 +944,8 @@ export class MmoWorld {
 
     c.en3d = m.modo === '3d';   // las tareas que solo existen en CLASSIC (expediciones, Torre) no le tocan en ORIGINS
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline(), ver: VERSION_JUEGO });
+    // Criaturas (Fase 2): una vez al entrar y luego solo cuando cambian (no en cada 'yo': actualizarYo se llama en 100 sitios).
+    if (!s.m3) this.enviar(s, this.infoCriaturas(c));
     if (darBend) { try { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño.' + ((c.nivel || 1) >= 10 ? ' Esta vez no perdiste XP.' : '') }); } catch (e) {} }
     // Veteranos con talentos al tope viejo (5): avisa del reinicio gratis (una vez por sesion).
     if (!c.talR8 && c.nivel >= 10 && Object.values(c.tal || {}).some(v => v >= 5)) setTimeout(() => { if (!s.cerrado && s.c === c && !c.talR8) this.enviar(s, { t: 'toast', m: '🌟 Los talentos ahora llegan a 8 rangos. Tu primer reinicio es GRATIS: Libro → Talentos.', ok: true }); }, 9000);
@@ -2285,6 +2293,7 @@ export class MmoWorld {
     if (MAPAS[mapaId].jefe && !w.jefeEn) w.jefeEn = Date.now() + JEFE_PRIMERO_MS;
     const jugadores = [];
     for (const o of this.sesiones.values()) if (o.c && o !== s && o.k === k) jugadores.push(this.infoJugador(o));
+    s.mvK = null;   // el 'mapa' lleva todos los monstruos: monstruosDe vuelve a partir de ahi
     this.enviar(s, { t: 'mapa', mapa: mapaId, clave: k, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)),
       sc: s.sinCorte ? 1 : undefined,
       muros: w.muros || [], inst: w.inst ? { id: w.inst.id, nv: w.inst.nv, hechos: w.inst.hechos, k: w.inst.k || 0 } : null });
@@ -2321,11 +2330,16 @@ export class MmoWorld {
     const x = num(m.x), y = num(m.y);
     if (x === null || y === null) return;
     const ahora = Date.now();
-    // Justo despues de que el servidor lo mueve (Carga), llegan posiciones
-    // viejas que el cliente mando antes de enterarse: se ignoran.
-    if (ahora < (s.snapHasta || 0)) return;
+    // Reconciliacion: tras una correccion ('snap' n) llegan posiciones que el
+    // cliente mando antes de enterarse. El cliente nuevo devuelve en cada 'mv'
+    // el ultimo n que aplico (sq): las que no lo traen se ignoran en silencio (antes
+    // cada una se rechazaba con otro 'snap' y el duende daba tirones en cadena).
+    // Tope de 2 s por si un cliente no lo devuelve nunca. El cliente viejo (sin sq)
+    // sigue con la ventana por tiempo de la Carga (snapHasta).
+    if (m.sq !== undefined) { if ((m.sq | 0) !== (s.snapN || 0) && ahora - (s.snapT || 0) < 2000) return; }
+    else if (ahora < (s.snapHasta || 0)) return;
     // Encerrado en un Bloque de Hielo no se mueve.
-    if (this.aura(s, 'bloque') || this.aura(s, 'aturdido')) { if (Math.abs(x - s.x) > 4) this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) }); return; }
+    if (this.aura(s, 'bloque') || this.aura(s, 'aturdido')) { if (Math.abs(x - s.x) > 4) this.corregir(s, s.x, s.y); return; }
     const dt = Math.max(16, ahora - s.movT);
     const ancho = MAPAS[s.c.mapa].ancho;
     // Presupuesto de distancia que se recarga con el tiempo (correr + un dash
@@ -2341,7 +2355,7 @@ export class MmoWorld {
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + recarga * dt / 1000);
       const dx = Math.abs(x - s.x);
       if (dx > s.movBud + 20) {
-        this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) });
+        this.corregir(s, s.x, s.y);
         s.movT = ahora;
         return;
       }
@@ -2350,7 +2364,7 @@ export class MmoWorld {
     // Las barreras de las mazmorras no se cruzan hasta vencer a su jefe.
     const tope = this.topeMuros(s);
     if (x > tope) {
-      if (x > tope + 40) this.enviar(s, { t: 'snap', x: Math.round(Math.min(s.x, tope)), y: Math.round(s.y) });
+      if (x > tope + 40) this.corregir(s, Math.min(s.x, tope), s.y);
       m = { ...m, x: Math.min(s.x, tope) };
     }
     // Moverse cancela el hechizo que se esta lanzando (como en WoW).
@@ -2364,6 +2378,13 @@ export class MmoWorld {
     s.a = clamp(m.a | 0, 0, 6);
     s.movT = ahora;
     s.c.x = Math.round(s.x);
+  }
+
+  // Corrige la posicion del cliente. Cada correccion lleva su numero (n): hasta que
+  // el cliente lo devuelva en un 'mv' (sq), mover() ignora sus posiciones viejas.
+  corregir(s, x, y, extra) {
+    s.snapN = ((s.snapN || 0) + 1) % 1e9; s.snapT = Date.now();
+    this.enviar(s, { t: 'snap', x: Math.round(x), y: Math.round(y), n: s.snapN, ...(extra || {}) });
   }
 
   // y mas alta (mas pequeña) a la que se puede llegar saltando en x: el doble
@@ -3844,43 +3865,71 @@ export class MmoWorld {
       return true;
     });
 
-    const snap = {
-      t: 's',
-      p: jugadores.map(s => [s.id, Math.round(s.x), Math.round(s.y), s.f, s.a, Math.ceil(s.hp), s.st.maxHp, this.banderasJugador(s, ahora), Math.round(s.rec || 0), s.st.recMax, s.combo || 0]),
-      m: [...w.mons.values()].map(o => [o.id, Math.round(o.x), Math.round(o.y), o.f, this.codigoEstado(o), Math.max(0, Math.ceil(o.hp)), this.banderasMonstruo(o, ahora)]),
-      b: w.balas.map(b => [b.id, Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.jefe ? 1 : 0]),
-    };
+    // Foto del mapa. Cada fila (jugador o monstruo) se serializa una sola vez y
+    // a cada jugador se le arma su propia foto:
+    //  - jugadores: con pocos (<= 12) van todos; con muchos, solo los cercanos
+    //    (VISTA_2D, tope TOPE_2D, los lejanos una foto si y otra no), mas su grupo y su rival de duelo;
+    //  - monstruos: solo los que tiene cerca (monstruosDe). Antes iban todos los del
+    //    mapa: gastaba red y dejaba ver vida y posicion de lo que no esta en pantalla.
+    const filasP = new Map(jugadores.map(s => [s.id, JSON.stringify([s.id, Math.round(s.x), Math.round(s.y), s.f, s.a, Math.ceil(s.hp), s.st.maxHp, this.banderasJugador(s, ahora), Math.round(s.rec || 0), s.st.recMax, s.combo || 0])]));
+    const filasM = new Map();
+    for (const o of w.mons.values()) filasM.set(o.id, JSON.stringify([o.id, Math.round(o.x), Math.round(o.y), o.f, this.codigoEstado(o), Math.max(0, Math.ceil(o.hp)), this.banderasMonstruo(o, ahora)]));
+    const cola = { b: w.balas.map(b => [b.id, Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.jefe ? 1 : 0]) };
     // Zonas de peligro en el suelo (jefes de mazmorra): [id, x0, x1, activa, color].
-    if (w.zonas && w.zonas.length) snap.z = w.zonas.map(z => [z.id, Math.round(z.x0), Math.round(z.x1), z.act <= ahora ? 1 : 0, z.color || '', z.junta ? 1 : 0]);
-    // Pocos jugadores: la misma foto para todos. Muchos (fiesta en el pueblo):
-    // cada uno recibe solo las filas a menos de VISTA_2D px, mas su grupo y su
-    // rival de duelo, con tope de TOPE_2D; cada fila se serializa una sola vez.
-    // Los que quedan fuera de pantalla (a mas de LEJOS_2D px) llegan una foto si y otra no.
-    if (jugadores.length <= 12) {
-      const txt = JSON.stringify(snap);
-      for (const s of jugadores) this.enviar(s, txt);
-      return;
-    }
-    const filas = new Map(jugadores.map((s, i) => [s.id, JSON.stringify(snap.p[i])]));
-    snap.p = [];
-    const json = JSON.stringify(snap), corte = json.indexOf('"p":[]') + 5;   // justo dentro de los corchetes de p
-    const resto = [json.slice(0, corte), json.slice(corte)];
+    if (w.zonas && w.zonas.length) cola.z = w.zonas.map(z => [z.id, Math.round(z.x0), Math.round(z.x1), z.act <= ahora ? 1 : 0, z.color || '', z.junta ? 1 : 0]);
+    const colaTxt = JSON.stringify(cola).slice(1);   // '"b":[...],"z":[...]}'
+    const muchos = jugadores.length > 12;
+    const todosP = muchos ? null : [...filasP.values()].join(',');
     const par = (w.nSnap = (w.nSnap || 0) + 1) & 1;
     for (const s of jugadores) {
-      const fijos = new Set([s.id]);
-      const g = this.grupoDe && this.grupoDe(s);
-      if (g) for (const x of this.sesionesGrupo(g)) if (filas.has(x.id)) fijos.add(x.id);
-      const d = this.rivalDuelo && this.rivalDuelo(s);
-      if (d && filas.has(d.id)) fijos.add(d.id);
-      const cerca = [];
-      for (const x of jugadores) if (!fijos.has(x.id)) { const dx = Math.abs(x.x - s.x); if (dx <= VISTA_2D) cerca.push([x.id, dx]); }
-      const cupo = Math.max(0, TOPE_2D - fijos.size);
-      if (cerca.length > cupo) { cerca.sort((a, b) => a[1] - b[1]); cerca.length = cupo; }
-      const pj = [];
-      for (const id of fijos) pj.push(filas.get(id));
-      for (const [id, dx] of cerca) if (dx <= LEJOS_2D || ((id + par) & 1)) pj.push(filas.get(id));
-      this.enviar(s, resto[0] + pj.join(',') + resto[1]);
+      let pTxt = todosP;
+      if (muchos) {
+        const fijos = new Set([s.id]);
+        const g = this.grupoDe && this.grupoDe(s);
+        if (g) for (const x of this.sesionesGrupo(g)) if (filasP.has(x.id)) fijos.add(x.id);
+        const d = this.rivalDuelo && this.rivalDuelo(s);
+        if (d && filasP.has(d.id)) fijos.add(d.id);
+        const cerca = [];
+        for (const x of jugadores) if (!fijos.has(x.id)) { const dx = Math.abs(x.x - s.x); if (dx <= VISTA_2D) cerca.push([x.id, dx]); }
+        const cupo = Math.max(0, TOPE_2D - fijos.size);
+        if (cerca.length > cupo) { cerca.sort((a, b) => a[1] - b[1]); cerca.length = cupo; }
+        const pj = [];
+        for (const id of fijos) pj.push(filasP.get(id));
+        for (const [id, dx] of cerca) if (dx <= LEJOS_2D || ((id + par) & 1)) pj.push(filasP.get(id));
+        pTxt = pj.join(',');
+      }
+      const { ids, nuevos } = this.monstruosDe(s, w);
+      const mj = [];
+      for (const id of ids) mj.push(filasM.get(id));
+      this.enviar(s, '{"t":"s","p":[' + pTxt + '],"m":[' + mj.join(',') + ']' + (nuevos.length ? ',"mn":' + JSON.stringify(nuevos) : '') + ',' + colaTxt);
     }
+  }
+
+  // Monstruos que van en la foto de s (filtrado por distancia, con histeresis):
+  //  - entran a menos de VISTA_MON px y salen pasados VISTA_MON + MARGEN_MON (sin parpadeo en el borde);
+  //  - siempre van los jefes, los especiales (invasores, raros, elites: o.ex) y el mas
+  //    cercano del tipo de su mision (la guia lo señala). La amenaza no hace falta: pensar()
+  //    la borra a mas de 900 px, siempre dentro de VISTA_MON.
+  // s.mv es lo que el cliente ya conoce: el que entra por primera vez llega completo en 'mn'
+  // (el cliente solo actualiza ids que ya tiene) y el que deja de ir el cliente lo borra solo.
+  // Al entrar a un mapa ('mapa' trae todos) se parte de todos los vivos.
+  monstruosDe(s, w) {
+    if (s.mvK !== w.clave || !s.mv) { s.mvK = w.clave; s.mv = new Set(w.mons.keys()); }
+    const q = s.c && s.c.mis && MISIONES[s.c.mis.i];
+    const tipoMis = q && s.c.mis.p < q.n ? q.tipo : null;
+    let misMejor = null, misD = Infinity;
+    const ids = [], nuevos = [], visto = new Set();
+    for (const o of w.mons.values()) {
+      const dx = Math.abs(o.x - s.x);
+      if (tipoMis && o.k === tipoMis && !o.muere && dx < misD) { misD = dx; misMejor = o; }
+      const ya = s.mv.has(o.id);
+      if (!(dx <= (ya ? VISTA_MON + MARGEN_MON : VISTA_MON) || o.jefe || o.ex)) continue;
+      visto.add(o.id); ids.push(o.id);
+      if (!ya) nuevos.push(this.infoMonstruo(o));
+    }
+    if (misMejor && !visto.has(misMejor.id)) { visto.add(misMejor.id); ids.push(misMejor.id); if (!s.mv.has(misMejor.id)) nuevos.push(this.infoMonstruo(misMejor)); }
+    s.mv = visto;
+    return { ids, nuevos };
   }
 
   // op (mazmorras): { nv, hpX, atkX, agresivo, mazmorra, ... } se copian al monstruo.
@@ -3939,6 +3988,8 @@ export class MmoWorld {
     if (op) for (const kk of ['nv', 'agresivo', 'mazmorra', 'radioAgro', 'grupo', 'guion', 'xpX', 'sinEmbestida', 'jefeMaz', 'ex']) if (op[kk] !== undefined) o[kk] = op[kk];
     w.mons.set(o.id, o);
     this.aClave(clave, { t: 'ms', m: this.infoMonstruo(o) });
+    // Con el 'ms' todos los de la clave ya lo conocen: la foto no lo repite en 'mn' (monstruosDe).
+    for (const s of this.sesiones.values()) if (s.k === clave && s.mvK === clave && s.mv) s.mv.add(o.id);
     return o;
   }
 
@@ -4142,6 +4193,8 @@ Object.assign(MmoWorld.prototype, Encargos);
 Object.assign(MmoWorld.prototype, Secundarias);
 Object.assign(MmoWorld.prototype, Vasos);
 Object.assign(MmoWorld.prototype, Caso);
+// Criaturas (Fase 2): modelo en c.cri, ver functions/mmo/criaturas.js
+Object.assign(MmoWorld.prototype, Criaturas);
 // El bot en el grupo oficial de Telegram (bienvenida, novedades, hitos, antiespam): functions/mmo/grupo.js
 instalarGrupo(MmoWorld.prototype);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).

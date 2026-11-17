@@ -516,12 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 393;
+export const VERSION = 394;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 148, fecha: '17 nov 2026', items: [
+    '🕸 CLASSIC: ¡captura criaturas! Debilita a un monstruo (menos del 35 % de vida), acércate y pulsa C o el botón de la red. Los jefes no se dejan.',
+    '🐾 Nueva ventana Criaturas (tecla U): tu colección de hasta 24, un equipo de 3 y apodos.',
+    '✨ La red vuela, estalla en destellos y suena distinto si la atrapas o se escapa.',
+    '📶 Menos datos: solo te llegan los monstruos que tienes cerca, y el duende ya no da tirones tras una corrección del servidor.',
+  ] },
   { n: 147, fecha: '15 nov 2026', items: [
     '🌌 El Abismo estrena islas flotantes con raíces y cristales, puentes rotos y un Núcleo imponente; la Cueva tiene paredes y estalactitas nuevas.',
     '🌊 Agua con el reflejo del cielo y del atardecer, y en calidad alta, luz de fondo y halos en antorchas y faroles.',
@@ -2958,3 +2964,47 @@ export function climaDe(id, t = Date.now()) {
   return c && (Math.floor(t / 3600000) + [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0)) % 3 === 0 ? c : null;
 }
 
+// ── CRIATURAS (Fase 2, 17-nov-2026) ──
+// Monstruos que el jugador puede llevarse (la captura llega en la Fase 3; aqui
+// solo el modelo). Viven en el personaje, en el almacenamiento del Durable
+// Object (c.cri), igual que la bolsa o las mascotas: NO en Supabase.
+//   c.cri = { v: 1, sig: <proximo id>, l: [{ i, k, nv, xp, a, t }], eq: [ids] }
+//   i: id propio del personaje · k: tipo (clave de MONSTRUOS) · nv: nivel
+//   xp: experiencia de la criatura · a: apodo ('' = su nombre) · t: cuando se capturo
+// Los jefes no se capturan. Sin precios ni nada de pago: solo oro y juego.
+export const CRIATURA_VERSION = 1;
+export const CRIATURA_MAX = 24;         // criaturas guardadas por personaje
+export const CRIATURA_EQUIPO = 3;       // las que te acompañan
+export const criaturaCapturable = k => Object.hasOwn(MONSTRUOS, k) && !MONSTRUOS[k].jefe;
+// Captura (Fase 3): la decide el servidor (functions/mmo/criaturas.js, capturar).
+//   rango: px entre el jugador y el monstruo · hpMax: vida maxima (fraccion) para intentarlo
+//   cdMs: espera entre intentos · nvSobre: niveles que puede pasarte · parte: fraccion minima
+//   del daño recibido que tiene que ser tuya (no se roban las que debilito otro).
+export const CAPTURA = { rango: 150, hpMax: 0.35, cdMs: 6000, nvSobre: 3, parte: 0.5 };
+// Probabilidad de exito: 25 % al 35 % de vida, hasta 75 % casi sin vida; -8 % por
+// cada nivel que te pase. Entre 5 % y 85 %: nunca segura, nunca imposible.
+export function probCaptura(hpFrac, nvMon, nvJug) {
+  const debil = 1 - Math.min(1, Math.max(0, hpFrac) / CAPTURA.hpMax);
+  const p = 0.25 + 0.5 * debil - 0.08 * Math.max(0, (nvMon || 1) - (nvJug || 1));
+  return Math.max(0.05, Math.min(0.85, p));
+}
+// Nombre que se muestra: el apodo o el del monstruo.
+export const nombreCriatura = cr => (cr && cr.a) || (cr && MONSTRUOS[cr.k] ? MONSTRUOS[cr.k].nombre : 'Criatura');
+// Deja c.cri valido (personajes viejos sin el campo, datos rotos o de una copia
+// de seguridad): tipos que ya no existen fuera, niveles acotados, ids unicos, tope
+// de CRIATURA_MAX y un equipo que solo apunta a criaturas propias. Devuelve c.cri.
+export function normalizarCriaturas(c) {
+  const v = c.cri && typeof c.cri === 'object' ? c.cri : {};
+  const l = [], ids = new Set();
+  let sig = Number.isSafeInteger(v.sig) && v.sig > 0 ? v.sig : 1;
+  for (const cr of Array.isArray(v.l) ? v.l : []) {
+    if (!cr || !criaturaCapturable(cr.k) || l.length >= CRIATURA_MAX) continue;
+    let i = Number.isSafeInteger(cr.i) && cr.i > 0 && !ids.has(cr.i) ? cr.i : 0;
+    if (!i) { while (ids.has(sig)) sig++; i = sig; }
+    ids.add(i); if (i >= sig) sig = i + 1;
+    l.push({ i, k: cr.k, nv: Math.max(1, Math.min(NIVEL_MAX, Math.floor(Number(cr.nv) || 1))), xp: Math.max(0, Math.floor(Number(cr.xp) || 0)), a: limpiarNombre(cr.a), t: Number.isFinite(cr.t) ? cr.t : 0 });
+  }
+  const eq = [];
+  for (const i of Array.isArray(v.eq) ? v.eq : []) if (ids.has(i) && !eq.includes(i) && eq.length < CRIATURA_EQUIPO) eq.push(i);
+  return (c.cri = { v: CRIATURA_VERSION, sig, l, eq });
+}

@@ -5,6 +5,12 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v394 (17-nov-2026): criaturas en CLASSIC
+
+Mapa técnico, autoridad, RLS y vulnerabilidades en **CLAUDE.md** (raíz). Fases 1-4: foto 2D filtrada por distancia y reconciliación del movimiento; criaturas en el personaje del DO (c.cri, functions/mmo/criaturas.js); captura autoritativa (C / botón de red); ventana Criaturas (U). Siguiente: que el equipo te siga en el mapa (infoApariencia), criaturas en el 3D, Hibernation API (V2 de CLAUDE.md).
+
+---
+
 ## ⚠️ ANTES DE HACER `git push` — orden de despliegue
 
 Hay cambios de seguridad en el servidor (`functions/api/`) y en la base de

@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=393"></script>
+<script src="/js/origen.js?v=394"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,14 +71,14 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=393" defer></script>
+<script src="/js/pwa.js?v=394" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=393" defer></script>
+<script src="/js/config.js?v=394" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
    apuntan a tonos sobrios. ── */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=393) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=394) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{
   --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
   --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
@@ -775,6 +775,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
         <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)" aria-label="Social"><img class="ico-bt" src="/assets/items/equipo/I_Scroll.png" alt=""></button>
         <button class="bt extra" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)" aria-label="Piedra de Hogar"><img class="ico-bt" src="/assets/items/equipo/I_Crystal02.png" alt=""></button>
         <button class="bt" id="b-inv" title="Inventario (I)" aria-label="Inventario"><img class="ico-bt" src="/assets/items/equipo/I_Chest02.png" alt=""></button>
+        <button class="bt" id="b-cri" title="Criaturas (U)" aria-label="Criaturas">🐾</button>
         <button class="bt" id="b-tienda" title="Tienda: skins, alas y packs" aria-label="Tienda">💎<span class="bt-txt">TIENDA</span></button>
         <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
@@ -798,10 +799,11 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
       <div class="caja barra" id="bxp"><i style="transform:scaleX(0)"></i><span id="h-xp"></span></div>
     </div>
   </div>
-  <div id="pie"><div id="teclas-pc" aria-hidden="true"><kbd>←→</kbd>mover · <kbd>↑</kbd>saltar · <kbd>Z</kbd>atacar · <kbd>X</kbd>esquivar<br><kbd>E</kbd>hablar · <kbd>Tab</kbd>objetivo · <kbd>L</kbd>misiones · <kbd>Enter</kbd>chat</div><div id="barra"><div id="acciones"></div><div id="consumibles"></div></div></div>
+  <div id="pie"><div id="teclas-pc" aria-hidden="true"><kbd>←→</kbd>mover · <kbd>↑</kbd>saltar · <kbd>Z</kbd>atacar · <kbd>X</kbd>esquivar<br><kbd>E</kbd>hablar · <kbd>Tab</kbd>objetivo · <kbd>L</kbd>misiones · <kbd>C</kbd>capturar · <kbd>U</kbd>criaturas · <kbd>Enter</kbd>chat</div><div id="barra"><div id="acciones"></div><div id="consumibles"></div></div></div>
   <div id="tactil">
     <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
+      <button class="tc chico" id="t-red" aria-label="Capturar" title="Capturar" style="display:none"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/><circle cx="12" cy="12" r="4.5"/></svg></button>
       <button class="tc chico" id="t-chat" aria-label="Chat"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
       <button class="tc chico" id="t-auto" title="Atacar a mano" style="display:none;width:auto;padding:0 8px;border-radius:20px;font-size:11px" aria-label="Atacar a mano"><svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg></button>
     </div>
@@ -897,6 +899,16 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
     <h2>GUARDIA TITO</h2>
     <div id="mision-cuerpo"></div>
     <p style="margin-top:10px;font-size:13px;color:var(--txt2)">Controles y sistemas: Guía del juego (libro, arriba a la derecha).</p>
+  </div>
+</div>
+
+<!-- Criaturas (Fase 4): coleccion y equipo; los datos los manda el servidor (functions/mmo/criaturas.js) -->
+<div class="modal" id="m-cri">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>CRIATURAS</h2>
+    <p style="font-size:12px;color:var(--txt2);margin:0 0 8px">Debilita a un monstruo (menos del 35 % de vida), acércate y pulsa <b>C</b> (en el celular, el botón de la red). Los jefes y los especiales no se dejan capturar.</p>
+    <div id="cri-lista"></div>
   </div>
 </div>
 
@@ -1164,7 +1176,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=393"></script>
+<script type="module" src="/mmo/js/client.js?v=394"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

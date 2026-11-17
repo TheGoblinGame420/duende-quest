@@ -17,11 +17,12 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
-} from './data.js?v=393';
-import { iniciarRegalo } from './regalo.js?v=393';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=393';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=393';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=393';
+  CAPTURA,
+} from './data.js?v=394';
+import { iniciarRegalo } from './regalo.js?v=394';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=394';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=394';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=394';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -414,6 +415,10 @@ const TONOS = {
   esquiva: [['sine', 900, 1500, .09, .06]],
   montar:  [['triangle', 330, 330, .08, .1], ['triangle', 440, 440, .1, .1, .1]],
   cura:    [['sine', 880, 880, .25, .07], ['sine', 1320, 1320, .3, .05, .05]],
+  // Captura (Fase 4): el silbido de la red, la fanfarria si entra y el chasquido si se escapa.
+  red:     [['sine', 900, 260, .2, .06], ['triangle', 500, 180, .16, .03, .04]],
+  captura: [['triangle', 523, 523, .09, .1], ['triangle', 784, 784, .09, .1, .09], ['triangle', 1047, 1047, .09, .1, .18], ['sine', 1568, 1568, .35, .06, .27]],
+  escapa:  [['square', 330, 110, .22, .05], ['sine', 220, 90, .2, .05, .06]],
 };
 const tonoUltimo = {};
 function tono(k) {
@@ -617,7 +622,7 @@ async function conectar() {
   const og = window.dqOrigen ? window.dqOrigen() : { src: 'org', ref: '' };
   const ref = refInvitacion() || og.ref || undefined;
   // Cada manejador solo actua si su socket sigue siendo el actual.
-  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, camp: og.camp || undefined, ad: og.ad || undefined, med: og.med, fbc: og.fbc, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
+  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); snapVisto = 0; ultimoEnviado = ''; mandar({ t: 'hola', ...hola, ref, src: og.src, camp: og.camp || undefined, ad: og.ad || undefined, med: og.med, fbc: og.fbc, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
   s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   s.onclose = ev => {
     if (ws !== s) return;
@@ -759,6 +764,8 @@ function recibir(m) {
       if (objetivo && objetivo.k === 'p' && objetivo.id === m.id) objetivo = null;
       break;
     case 'ms': agregarMon(m.m); break;
+    case 'capt': efectoCaptura(m); break;
+    case 'cri': criaturas = m; if ($('m-cri').classList.contains('on')) pintarCriaturas(); break;
     case 'md': {
       const o = mons.get(m.id);
       if (m.fuera) { mons.delete(m.id); castMon.delete(m.id); aurasM.delete(m.id); if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) objetivo = null; break; }
@@ -1024,6 +1031,9 @@ function recibir(m) {
         sfx('corte2', .45); sacudir = Math.max(sacudir, 6);
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
+      // Reconciliacion: los 'mv' siguientes llevan este numero; hasta entonces el
+      // servidor ignora las posiciones viejas que ya iban de camino (world.js, mover).
+      if (m.n) { snapVisto = m.n; ultimoEnviado = ''; enviadoT = 0; }
       break;
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm, m); break;
     case 'rankNv': recibirRankNv(m); break;
@@ -1189,6 +1199,9 @@ function snapshot(m) {
     o.f = f; o.a = a; o.hp = hp; o.mx = mx; o.fl = fl; o.escudo = !!(fl & FJ.escudo); o.fuego = !!(fl & FJ.fuego); o.muerto = !!(fl & FJ.muerto);
     o.rec = rec || 0; o.rmx = rmx || 0;
   }
+  // Monstruos que entran a la vista: el servidor solo manda los cercanos y los
+  // nuevos para este cliente llegan completos en 'mn' (world.js, monstruosDe).
+  if (m.mn) for (const d of m.mn) agregarMon(d);
   const vistos = new Set();
   for (const r of m.m) {
     const [id, x, y, f, st, hp, fl] = r;
@@ -1283,6 +1296,7 @@ function efectoPoder(pid, i) {
 const teclas = {};
 let tIzq = false, tDer = false;
 let enviadoT = 0, ultimoEnviado = '', ultimoUrg = '';
+let snapVisto = 0;   // numero de la ultima correccion ('snap' n) aplicada: va en cada 'mv' (sq)
 let sacudir = 0;
 const MENOS_MOV_C = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 
@@ -1341,7 +1355,7 @@ function enviarPos(forzar) {
   const urg = P.f + ',' + est;
   const espera = forzar ? 0 : urg !== ultimoUrg ? 50 : est === 2 ? 100 : 200;
   if (ahora - enviadoT < espera) return;
-  mandar({ t: 'mv', x: Math.round(P.x), y: Math.round(P.y), f: P.f, a: est });
+  mandar({ t: 'mv', x: Math.round(P.x), y: Math.round(P.y), f: P.f, a: est, sq: snapVisto });
   enviadoT = ahora; ultimoEnviado = clave; ultimoUrg = urg;
   if (est === 1 && yo) paso('mover');   // primera vez que camina (embudo)
 }
@@ -1637,7 +1651,8 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyL' && $('m-mision').classList.contains('on')) cerrarModales();
-    if (e.code === 'KeyI' && $('m-inv').classList.contains('on')) cerrarModales();   // como P, O, M y L: la misma tecla abre y cierra
+    if (e.code === 'KeyI' && $('m-inv').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyU' && $('m-cri').classList.contains('on')) cerrarModales();   // como P, O, M y L: la misma tecla abre y cierra
     return;
   }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
@@ -1659,6 +1674,8 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyY') montar();
   if (e.code === 'KeyH') $('t-auto').onclick();
   if (e.code === 'KeyR') volverAlPueblo();
+  if (e.code === 'KeyC') capturar();
+  if (e.code === 'KeyU') abrirCriaturas();
   if (e.code === 'Escape') objetivo = null;
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
   if (/^Digit[1-8]$/.test(e.code)) usarHab(+e.code.slice(5) - 1);
@@ -1667,6 +1684,126 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { teclas[e.code] = false; if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) soltarSalto(); });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; });
+
+// Captura (Fase 3): el cliente solo elige a quien lanza la red (su objetivo, o el
+// mas cercano ya debilitado) y lo dice; el servidor valida todo y tira el dado
+// (functions/mmo/criaturas.js). El resultado llega a todo el mapa en 'capt'.
+function capturar() {
+  if (!yo || P.muerto) return;
+  const debil = o => o && !o.muereT && o.mx > 0 && o.hp <= o.mx * CAPTURA.hpMax && !(MONSTRUOS[o.k] || {}).jefe;
+  let o = objetivo && objetivo.k === 'm' ? mons.get(objetivo.id) : null;
+  if (!debil(o) || Math.abs(o.x - P.x) > CAPTURA.rango) {
+    o = null;
+    let md = CAPTURA.rango;
+    for (const x of mons.values()) if (debil(x) && Math.abs(x.x - P.x) <= md) { md = Math.abs(x.x - P.x); o = x; }
+  }
+  if (!o) return errorRojo('Debilita a un monstruo (menos del ' + Math.round(CAPTURA.hpMax * 100) + ' % de vida) y acércate para capturarlo.');
+  if (performance.now() < redLista) return errorRojo('Tu red todavía no está lista.');
+  redLista = performance.now() + CAPTURA.cdMs;   // el servidor lleva la espera de verdad; esto solo atenua el boton
+  mandar({ t: 'capturar', id: o.id });
+  tono('red');
+}
+let redLista = 0;
+// Hay a quien lanzar la red (boton tactil): un monstruo debilitado, no jefe ni especial, al alcance.
+function hayPresa() {
+  for (const o of mons.values()) if (!o.muereT && o.mx > 0 && o.hp <= o.mx * CAPTURA.hpMax && !(MONSTRUOS[o.k] || {}).jefe && !o.ex && Math.abs(o.x - P.x) <= CAPTURA.rango) return true;
+  return false;
+}
+function pintarRed() {
+  const b = $('t-red'), ver = !!yo && !P.muerto && !!(MAPAS[mapaId] || {}).zona && hayPresa();
+  ponCss(b, 'display', ver ? '' : 'none');
+  if (ver) ponCss(b, 'opacity', performance.now() < redLista ? '.45' : '1');
+}
+// Juice: la red vuela del duende al monstruo (220 ms) y al llegar estalla en
+// destellos dorados (exito) o en hilos grises (se escapa). Si es tuya, ademas una
+// pausa corta, una sacudida, vibracion y el tono; la de otro jugador solo se ve.
+function efectoCaptura(m) {
+  const o = mons.get(m.id);
+  if (!o) return;
+  const quien = m.p === miId ? P : otros.get(m.p);
+  const mia = m.p === miId, dur = 220;
+  // Una copia quieta del monstruo: la red llega aunque el 'md' ya lo haya borrado.
+  const fijo = { x: o.x, y: o.y, alto: o.alto };
+  if (quien) proyectiles.push({ x0: quien.x + (quien.f || 1) * 12, y0: quien.y - 40, o: fijo, ini: performance.now(), dur, color: '#e5e7eb', r: 7 });
+  setTimeout(() => {
+    const y = fijo.y - (fijo.alto || 40) * .5;
+    for (let i = 0; i < (m.ok ? 26 : 12); i++) particula(fijo.x, y, m.ok ? (i % 3 ? '#facc15' : '#ffffff') : '#94a3b8', m.ok ? 3.4 : 2);
+    flotante(fijo.x, fijo.y - (fijo.alto || 40) - 10, m.ok ? '¡Capturado!' : '¡Se escapó!', m.ok ? '#facc15' : '#cbd5e1', mia ? 14 : 11);
+    if (mia) {
+      tono(m.ok ? 'captura' : 'escapa');
+      if (m.ok) { pausaGolpe = Math.max(pausaGolpe, performance.now() + 70); sacudir = Math.max(sacudir || 0, 4); }
+      if (TG && TG.HapticFeedback) vibrar('golpe'); else if (vibModo() === 'normal') try { navigator.vibrate && navigator.vibrate(m.ok ? [12, 40, 18] : 10); } catch (e) {}
+    }
+  }, dur);
+}
+
+// ── VENTANA DE CRIATURAS (Fase 4) ──
+// Lista y equipo que manda el servidor ('cri'); cada boton es una intencion
+// ({ t: 'cri', a: ... }) que el servidor valida (functions/mmo/criaturas.js).
+let criaturas = null;
+const _retMon = {};
+// Retrato pequeño de un tipo de monstruo (su cuadro de andar) como data URL; '' mientras carga.
+function retratoMon(k) {
+  if (_retMon[k]) return _retMon[k];
+  const def = MONSTRUOS[k], hoja = def && HOJAS[def.hoja];
+  if (!hoja) return '';
+  pedir('sh_' + def.hoja);
+  const img = def.tinte ? tenido('sh_' + def.hoja, def.tinte) : IMG['sh_' + def.hoja];
+  if (!img || !(img.naturalWidth || img.width)) return '';
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const e = Math.min(40 / hoja.ideal, 60 / hoja.fw), dw = hoja.fw * e, dh = hoja.fh * e;
+  x.translate(24, 46); if (hoja.izq) x.scale(-1, 1);
+  x.drawImage(img, hoja.mov[1] * hoja.fw, hoja.mov[0] * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
+  return (_retMon[k] = c.toDataURL());
+}
+function abrirCriaturas() {
+  if (!yo) return;
+  abrir('m-cri');
+  if (!criaturas) mandar({ t: 'cri', a: 'ver' });
+  pintarCriaturas();
+}
+function pintarCriaturas() {
+  const L = $('cri-lista');
+  if (!criaturas) { L.innerHTML = '<p class="centro">Cargando…</p>'; return; }
+  const { l, eq, max, eqMax } = criaturas;
+  if (!l.length) { L.innerHTML = '<p class="centro" style="margin:14px 0">Aún no tienes criaturas. ¡Sal a una zona y lanza tu red!</p>'; return; }
+  let faltan = false;
+  const fila = cr => {
+    const def = MONSTRUOS[cr.k] || { nombre: cr.k };
+    const src = retratoMon(cr.k); if (!src) faltan = true;
+    const en = eq.includes(cr.i);
+    const ico = src ? '<img src="' + src + '" alt="" style="width:40px;height:40px;image-rendering:pixelated">' : '🐾';
+    const nombre = esc(cr.a || def.nombre);   // sin emoji: las ventanas los quitan (limpiarEmojis); el equipo va en su propia seccion
+    const desc = (cr.a ? esc(def.nombre) + ' · ' : '') + 'Nv ' + (cr.nv | 0);
+    const bts = '<button class="btn' + (en ? ' sec' : '') + '" data-cri-eq="' + (cr.i | 0) + '"' + (!en && eq.length >= eqMax ? ' disabled title="Equipo lleno"' : '') + '>' + (en ? 'Quitar' : 'Equipo') + '</button>'
+      + '<button class="btn sec" data-cri-apodo="' + (cr.i | 0) + '">Apodo</button>'
+      + '<button class="btn sec" data-cri-soltar="' + (cr.i | 0) + '" aria-label="Soltar">✕</button>';
+    return tarjeta(ico, nombre, desc, '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + bts + '</div>');
+  };
+  const enEq = eq.map(i => l.find(cr => cr.i === i)).filter(Boolean), resto = l.filter(cr => !eq.includes(cr.i));
+  L.innerHTML = '<p style="margin:4px 0;font-weight:800">Equipo ' + enEq.length + '/' + eqMax + '</p>' + (enEq.length ? enEq.map(fila).join('') : '<p style="font-size:12px;color:var(--txt2)">Elige hasta ' + eqMax + ' para que te acompañen.</p>')
+    + '<p style="margin:10px 0 4px;font-weight:800">Colección ' + l.length + '/' + max + '</p>' + (resto.length ? resto.map(fila).join('') : '<p style="font-size:12px;color:var(--txt2)">Todas están en tu equipo.</p>');
+  // Los retratos que aun no cargaron se vuelven a pintar en un momento.
+  if (faltan && !pintarCriaturas.t) pintarCriaturas.t = setTimeout(() => { pintarCriaturas.t = 0; if ($('m-cri').classList.contains('on')) pintarCriaturas(); }, 600);
+}
+$('cri-lista').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || !criaturas) return;
+  sfx('boton', .3);
+  if (b.dataset.criEq) {
+    const i = +b.dataset.criEq, eq = criaturas.eq.slice();
+    mandar({ t: 'cri', a: 'equipo', l: eq.includes(i) ? eq.filter(x => x !== i) : [...eq, i].slice(0, criaturas.eqMax) });
+  } else if (b.dataset.criApodo) {
+    const cr = criaturas.l.find(x => x.i === +b.dataset.criApodo);
+    const n = prompt('Apodo (3 a 16 letras o números; vacío para quitarlo):', cr && cr.a || '');
+    if (n !== null) mandar({ t: 'cri', a: 'apodo', i: +b.dataset.criApodo, n: n.slice(0, 40) });
+  } else if (b.dataset.criSoltar) {
+    const cr = criaturas.l.find(x => x.i === +b.dataset.criSoltar);
+    if (cr && confirm('¿Soltar a ' + (cr.a || (MONSTRUOS[cr.k] || {}).nombre || 'esta criatura') + '? Vuelve a la naturaleza y no se puede deshacer.')) mandar({ t: 'cri', a: 'soltar', i: cr.i });
+  }
+});
+$('b-cri').onclick = abrirCriaturas;
 
 const FRASES = ['¡Hola!', '¿Hacemos grupo?', '¿Alguien para mazmorra?', 'Gracias', 'Bien jugado', 'Necesito ayuda aquí', 'Me voy, nos vemos'];
 let altoChat = 0, tecladoVisto = false;
@@ -1743,6 +1880,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) solta
 botonTactil('t-jump', saltar, soltarSalto);
 botonTactil('t-dash', dash);
 botonTactil('t-chat', abrirChat);
+botonTactil('t-red', capturar);
 $('interactuar').onclick = interactuar;
 function volverAlPueblo() {
   if (!yo || P.muerto) return;
@@ -6477,6 +6615,8 @@ function bucle(t) {
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
+  // Por tiempo y no por frame % N: con 2 o 3 pasos de fisica por cuadro (30 o 20 FPS) el multiplo podia no caer nunca en un cuadro dibujado.
+  if (t - pintarRed.t > 100 || !(pintarRed.t <= t)) { pintarRed.t = t; pintarRed(); }
 }
 // Sin AUTO desde v344: se ataca a mano (cada golpe se ve) en PC y movil; mantener
 // pulsado ATACAR (o Z/J) sigue pegando. El boton viejo queda oculto y H solo lo explica.
@@ -6489,4 +6629,4 @@ inicio();
 requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
-if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar };
+if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };

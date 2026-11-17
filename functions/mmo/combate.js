@@ -506,7 +506,7 @@ export const Combate = {
         const lado = obj.x > s.x ? -1 : 1;
         s.x = clamp(obj.x + lado * (obj.w / 2 + 22), 10, Math.min(MAPAS[w.mapa].ancho - 10, this.topeMuros(s)));
         s.f = -lado; s.movT = ahora; s.snapHasta = ahora + 300;
-        this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y), f: s.f, carga: 1 });
+        this.corregir(s, s.x, s.y, { f: s.f, carga: 1 });
         s.rec = Math.min(100, s.rec + h.genera);
         g(pegar(obj, 0.6, 2));
         if (!obj.muere && !obj.jefe) this.ponerAuraMon(obj, 'aturdido', h.aturde);
