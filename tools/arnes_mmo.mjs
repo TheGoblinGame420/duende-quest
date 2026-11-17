@@ -613,6 +613,9 @@ async function pruebas() {
   await pruebasFiltro();
   await pruebasSinCortes();
   await pruebasFotoYReconciliacion();
+  await pruebasRankUnico();
+  await pruebasVecinos2d();
+  await pruebasCompanero();
   await pruebasCriaturas();
   await pruebasCaptura();
   await pruebas3d();
@@ -4240,6 +4243,88 @@ async function pruebasFotoYReconciliacion() {
 }
 
 // Fase 2 (17-nov-2026): modelo de criaturas en el personaje (functions/mmo/criaturas.js).
+// Ranking unico: cada fila dice si el duende juega en 2D, 3D o los dos, y si esta en linea.
+async function pruebasRankUnico() {
+  console.log('Ranking único 2D y 3D');
+  const a = await entrar('Rankdos', '7c3e');
+  chequear(((a.c.modos | 0) & 1) === 1, 'entrar al 2D apunta el modo CLASSIC en el personaje');
+  const b = await entrar3d('Ranktres', '9d1b');
+  chequear(((b.c.modos | 0) & 2) === 2, 'entrar al 3D apunta el modo ORIGINS en el personaje');
+  mundo._rkV = null;
+  a.limpiar();
+  await mundo.rankNv(a, { t: 'rankNv', d: 0, q: 'rank' });
+  const r = a.ultimos('rankNv').pop();
+  const fa = r && r.r.find(x => x.n === 'Rankdos'), fb = r && r.r.find(x => x.n === 'Ranktres');
+  chequear(fa && fb, 'los jugadores del 2D y del 3D salen en el MISMO ranking');
+  chequear(fa && fa.m === 1 && fa.on === 1 && fb && fb.m === 2 && fb.on === 2, 'cada fila lleva dónde juega (m) y si está en línea ahora (on)');
+  for (const x of [a, b]) await dejar(x);
+}
+
+// Vecinos 2D: hablar acepta, cazar en su zona avanza, volver a hablar cobra.
+async function pruebasVecinos2d() {
+  console.log('Vecinos del mundo 2D');
+  const D = await import('../mmo/js/data.js');
+  const V = await import('../mmo/js/vecinos2d.js');
+  let malos = [];
+  for (const z in V.VECINOS2D) {
+    if (!D.MAPAS[z] || !D.MAPAS[z].zona) malos.push('zona ' + z);
+    for (const v of V.VECINOS2D[z]) {
+      if (!D.HOJAS[v.hoja]) malos.push('hoja ' + v.hoja);
+      if (v.x < 100 || v.x > D.MAPAS[z].ancho - 100) malos.push('x ' + v.id);
+      for (const q of v.l) if (q.k && !(D.MAPAS[z].monstruos || []).includes(q.k)) malos.push('monstruo ' + q.k + ' en ' + z);
+    }
+  }
+  chequear(!malos.length, 'cada vecino está en una zona real, con su hoja y monstruos de esa zona' + (malos.length ? ' (' + malos.join(', ') + ')' : ''));
+  const ids = Object.values(V.VECINOS2D).flat().flatMap(v => [v.id, ...v.l.map(q => q.id)]);
+  chequear(new Set(ids).size === ids.length, 'los ids de vecinos y encargos no se repiten');
+  const a = await entrar('Vecinal', '5e7a');
+  chequear(a.ultimos('v2').length >= 1, 'al entrar al 2D llega el progreso de los vecinos');
+  mundo.entrarMapa(a, 'noche', 1500);
+  const asiri = V.VECINOS2D.noche[0];
+  a.limpiar();
+  await a.mandar({ t: 'v2', a: 'hablar', id: asiri.id });
+  chequear(a.ultimos('no').length === 1 && !(a.c.v2 && 'noc1' in a.c.v2), 'lejos del vecino no se puede hablar');
+  a.x = asiri.x; a.v2T = 0; a.limpiar();
+  await a.mandar({ t: 'v2', a: 'hablar', id: asiri.id });
+  chequear(a.c.v2.noc1 === 0, 'al hablarle se acepta su primer encargo');
+  const w = mundo.mundoDe(a);
+  const falso = k => ({ k, id: 999, jefe: !!D.MONSTRUOS[k].jefe });
+  mundo.progresoTarea(a, 'caza', falso('esqueleto'));
+  chequear(a.c.v2.noc1 === 0, 'otro monstruo no cuenta para «Espanta 5 Goblins»');
+  for (let i = 0; i < 5; i++) mundo.progresoTarea(a, 'caza', falso('goblin_normal'));
+  chequear(a.c.v2.noc1 === 5, 'los goblins de su zona sí cuentan');
+  const oro0 = a.c.oro; a.v2T = 0; a.limpiar();
+  await a.mandar({ t: 'v2', a: 'hablar', id: asiri.id });
+  chequear(a.c.v2.noc1 === true && a.c.oro > oro0 && a.ultimos('gana').length === 1, 'volver a hablarle cobra el premio (oro y XP)');
+  a.v2T = 0; a.c.nivel = 1;
+  await a.mandar({ t: 'v2', a: 'hablar', id: asiri.id });
+  chequear(!('noc2' in a.c.v2), 'el siguiente encargo pide su nivel');
+  a.v2T = 0; a.limpiar();
+  await a.mandar({ t: 'v2', a: 'hablar', id: asiri.id });
+  chequear(a.c.v2.noc1 === true && a.ultimos('gana').length === 0, 'no se cobra dos veces');
+  await dejar(a);
+}
+
+// Compañero: la primera criatura del equipo viaja en la apariencia y los demás la ven.
+async function pruebasCompanero() {
+  console.log('Criatura compañera visible');
+  const a = await entrar('Domador', '3b8f'), b = await entrar('Mirona', '4c2d');
+  mundo.entrarMapa(a, 'selva', 900); mundo.entrarMapa(b, 'selva', 950);
+  chequear(mundo.infoApariencia(a).cc === undefined, 'sin criaturas no hay compañero');
+  b.limpiar();
+  const cr = mundo.darCriatura(a, 'rana', 12);
+  const pa = b.ultimos('pa').filter(x => x.p === a.id).pop();
+  chequear(pa && Array.isArray(pa.cc) && pa.cc[0] === 'rana', 'al capturar, los del mapa ven a su criatura acompañándolo');
+  await a.mandar({ t: 'cri', a: 'apodo', i: cr.i, n: 'Croac' });
+  const pa2 = b.ultimos('pa').filter(x => x.p === a.id).pop();
+  chequear(pa2 && pa2.cc[1] === 'Croac', 'el apodo también se ve');
+  b.limpiar();
+  await a.mandar({ t: 'cri', a: 'equipo', l: [] });
+  const pa3 = b.ultimos('pa').filter(x => x.p === a.id).pop();
+  chequear(pa3 && pa3.cc === undefined, 'si la quita del equipo deja de seguirlo');
+  for (const x of [a, b]) await dejar(x);
+}
+
 async function pruebasCriaturas() {
   console.log('Criaturas (modelo)');
   const D = await import('../mmo/js/data.js');

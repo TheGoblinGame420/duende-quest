@@ -5,6 +5,25 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v396 (17-nov-2026): mundo vivo en el 2D
+
+Por los comentarios de los jugadores: el mundo vacío, faltaban NPC, el ranking no unía el 2D y el 3D, y faltaba retención. El detalle de las fases está en **CLAUDE.md**:
+
+- ranking único con marca 2D/3D y «en línea»;
+- 20 vecinos con 60 encargos (`vecinos2d.js` en el cliente y en el servidor);
+- cornisas altas;
+- vida del ambiente (`fondo2d.js`, `VIDA`);
+- la criatura compañera visible para todos.
+
+Siguiente:
+- pedido diario de los vecinos;
+- vasijas rompibles;
+- agua y escaleras;
+- criaturas en el 3D;
+- Hibernation API.
+
+---
+
 ## v394 (17-nov-2026): criaturas en CLASSIC
 
 Mapa técnico, autoridad, RLS y vulnerabilidades en **CLAUDE.md** (raíz). Fases 1-4: foto 2D filtrada por distancia y reconciliación del movimiento; criaturas en el personaje del DO (c.cri, functions/mmo/criaturas.js); captura autoritativa (C / botón de red); ventana Criaturas (U). Siguiente: que el equipo te siga en el mapa (infoApariencia), criaturas en el 3D, Hibernation API (V2 de CLAUDE.md).

@@ -249,3 +249,29 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - **Ojo, para probar:** con el panel del navegador oculto, `requestAnimationFrame` no corre y el HUD no se actualiza. `window.__dq` (solo en `localhost`) ahora expone también `capturar`, `pintarRed` y `abrirCriaturas`.
   - **Para publicar:** `node tools/version.mjs 394` (cambiaron `data.js`, `client.js` e `index.html`), luego `verificar`, commit y push, después `humo_produccion` y la fila en `HISTORIAL-DUENDE.md`.
   - **Quedan fuera:** que el equipo te siga en el mapa (visible para los demás: va en `infoApariencia` / `difundirApariencia`), las criaturas en el 3D y la Hibernation API (V2).
+- **v395 (17-nov-2026), publicada: cuenta rápida con correo.**
+  - `js/cuenta.js` (`formCuenta` / `abrirCuenta`): solo correo + contraseña; el usuario sale del correo. La usan CLASSIC (`pintarCuenta`), ORIGINS (`cuentaAqui`: pantalla de carga, avisos y tienda) y Chicha Wars (`data-dq-cuenta`).
+  - Un solo cliente Supabase por página: `window.__dqSb`. En Telegram, ORIGINS sigue con el camino viejo por `/mmo/#cuenta`.
+  - Pendiente del dueño: `/mundo/` en las Redirect URLs de Supabase y probar a crear una cuenta real.
+- **v396 (17-nov-2026): mundo vivo en el 2D, por los comentarios de los jugadores** («el mundo se ve vacío», «falta contenido, NPC y gráficos», «el ranking no refleja el 2D y el 3D»). Mismo método por fases.
+  - **Fase 0 (auditoría):** las 10 zonas abiertas del 2D tenían 0 NPC, 4-5 plataformas a una sola altura y nada que se moviera aparte de los monstruos. El ranking de niveles ya era uno solo (mismo personaje `c:<uid>`), pero no se notaba: el 3D abría en «Semana» y ninguna fila decía dónde juega cada uno.
+  - **Fase 1 (ranking único):** `c.modos` (bits: 1 = 2D, 2 = 3D) se apunta al entrar (`world.js`, junto a `entrar3d`/`entrarMapa`) y va como 5.º campo de la fila de `ranktodos.js`. `rkFila` añade `m` (dónde juega) y `on` (en línea ahora, por `porUid`). Los dos clientes lo pintan con `marcaModo` y la nota `NOTA_RANK_UNICO`; el 3D abre en la pestaña «Nivel».
+  - **Fase 2 (vecinos):** `mmo/js/vecinos2d.js` (datos compartidos) y `functions/mmo/vecinos2d.js` (autoridad). Hay 2 vecinos por zona, con cadenas de 3 encargos (caza de un monstruo de la zona, caza libre o el jefe).
+    - Flujo: hablar acepta → cazar en SU zona abierta avanza (`progresoVecinos`, desde `progresoTarea`) → volver a hablar cobra.
+    - El servidor valida la cercanía (`VECINO_DIST` + 60), el nivel y que no se cobre dos veces. El premio está en `premioVecino`.
+    - Progreso: `c.v2 = { idEncargo: numero | true }`. Mensaje: `{ t: 'v2', a: 'hablar', id }`. Respuestas: `v2` y `v2fin`.
+    - Cliente: `dibujarVecinos` (con ❗, ❔ o ⭐ encima), su campamento (`campamentoVecino`: toldo, petate y fogata, para no confundirlo con un monstruo), la ventana `m-vec` y los puntos en el minimapa.
+  - **Fase 3 (gráficos):**
+    - Cornisas: un piso alto por zona (`CORNISAS` al final de `data.js`: ~78 px sobre cada plataforma media). Se llega con doble salto. Las ven igual el cliente y el servidor (`sueloEn`, `techoEn`).
+    - Vida del ambiente en `fondo2d.js` (`VIDA`, `vidaCielo`, `vidaSuelo`, `vidaAire`): aves, murciélagos, cóndores, peces al fondo, luciérnagas, mariposas, hojas, brasas, burbujas, esporas, nieve, polvo y animalitos de suelo.
+    - No tiene estado y se calcula en función del tiempo. Con el modo ligero hay menos.
+  - **Fase 4 (retención):** la primera criatura del equipo te sigue por el mapa y los demás la ven con su apodo.
+    - Servidor: `cc = [tipo, apodo]` en `infoApariencia`, `companeroDe` y `refrescarCompanero` en `criaturas.js`.
+    - Cliente: `dibujarCompanero`.
+  - **Pruebas:** arnés con `pruebasRankUnico`, `pruebasVecinos2d` y `pruebasCompanero` (1583 bien, 0 mal). En Chrome sin ventana, con `mmo_local`, se probó todo el ciclo de los vecinos y se sacaron fotos de 8 zonas (vertical y horizontal).
+  - **Siguiente:**
+    - pedido diario repetible de los vecinos;
+    - objetos rompibles (vasijas) en las zonas;
+    - más tipos de terreno (agua, escaleras);
+    - criaturas en el 3D;
+    - Hibernation API (V2).

@@ -38,7 +38,7 @@ const NOMBRES_PRUEBA = new Set(['Bot Prueba', 'Probador', 'ClaudeTest', 'Duendec
 
 const cubo = uid => { let h = 0; for (let i = 0; i < uid.length; i++) h = (h * 31 + uid.charCodeAt(i)) >>> 0; return h % CUBOS; };
 const claveCubo = i => 'rkn:' + String(i).padStart(2, '0');
-const filaDe = c => [String(c.nombre), Math.max(1, c.nivel | 0), Math.max(0, Math.floor(c.xp || 0)), Math.max(0, c.kills | 0)];
+const filaDe = c => [String(c.nombre), Math.max(1, c.nivel | 0), Math.max(0, Math.floor(c.xp || 0)), Math.max(0, c.kills | 0), (c.modos | 0) & 3];
 
 export const RankTodos = {
   // El indice en memoria (una lectura por arranque).
@@ -64,7 +64,7 @@ export const RankTodos = {
     if (!c || typeof c.uid !== 'string' || !c.nombre || this.uidsPrueba.has(c.uid)) return;
     const m = await this.rkCargar();
     const f = m.get(c.uid), n = filaDe(c);
-    if (f && f[0] === n[0] && f[1] === n[1] && (!todo || (f[2] === n[2] && f[3] === n[3]))) return;
+    if (f && f[0] === n[0] && f[1] === n[1] && (f[4] | 0) === n[4] && (!todo || (f[2] === n[2] && f[3] === n[3]))) return;
     m.set(c.uid, n);
     this.rkSucios.add(cubo(c.uid)); this.rkVer++;
   },
@@ -82,7 +82,7 @@ export const RankTodos = {
     if (!this.uidsPrueba.has(nuevo)) {
       const g = m.get(nuevo);
       // La cuenta ya anotada con el personaje heredado (holaCuenta) manda; si no, la fila del invitado.
-      if (!g || g[1] <= f[1]) m.set(nuevo, [nombre || f[0], f[1], f[2], f[3]]);
+      if (!g || g[1] <= f[1]) m.set(nuevo, [nombre || f[0], f[1], f[2], f[3], ((f[4] | 0) | (g ? g[4] | 0 : 0)) & 3]);
       this.rkSucios.add(cubo(nuevo));
     }
     this.rkVer++;
@@ -144,6 +144,9 @@ export const RankTodos = {
     const o = { p: i + 1, n: x.f[0], lv: x.f[1], k: x.f[3] };
     if (x.u.startsWith('inv:')) o.inv = 1;
     if (x.u === uid) o.yo = 1;
+    if (x.f[4]) o.m = x.f[4] & 3;   // donde juega: 1 = 2D, 2 = 3D, 3 = los dos
+    const on = this.porUid && this.porUid.get(x.u);
+    if (on && on.c && !on.cerrado) o.on = on.m3 ? 2 : 1;   // en linea ahora y en que modo
     return o;
   },
   // Una pagina del ranking de niveles (o de una busqueda por nombre) y tu puesto.

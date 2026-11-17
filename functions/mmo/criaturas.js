@@ -55,6 +55,7 @@ export const Criaturas = {
     if (cri.eq.length < CRIATURA_EQUIPO) cri.eq.push(cr.i);
     s.sucio = true;
     this.enviar(s, this.infoCriaturas(s.c));
+    this.refrescarCompanero(s);   // la primera capturada ya te sigue
     return cr;
   },
 
@@ -118,5 +119,20 @@ export const Criaturas = {
     } else return;
     s.sucio = true;
     this.enviar(s, this.infoCriaturas(s.c));
+    this.refrescarCompanero(s);
+  },
+  // Compañero que te sigue por el mapa (lo ven todos): la primera del equipo.
+  // Va en infoApariencia como cc = [tipo, apodo] (o nada).
+  companeroDe(c) {
+    if (!c || !c.cri) return undefined;
+    const cri = this.criaturasDe(c), cr = cri.eq.length ? cri.l.find(x => x.i === cri.eq[0]) : null;
+    return cr ? [cr.k, cr.a || ''] : undefined;
+  },
+  refrescarCompanero(s) {
+    if (!s || !s.c || s.m3) return;
+    const cc = JSON.stringify(this.companeroDe(s.c) || null);
+    if (s.ccAnt === cc) return;
+    s.ccAnt = cc;
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
   },
 };

@@ -18,12 +18,13 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=395';
-import { iniciarRegalo } from './regalo.js?v=395';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=395';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=395';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=395';
-import { formCuenta } from '/js/cuenta.js?v=395';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=396';
+import { iniciarRegalo } from './regalo.js?v=396';
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=396';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=396';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=396';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=396';
+import { formCuenta } from '/js/cuenta.js?v=396';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -768,6 +769,8 @@ function recibir(m) {
       break;
     case 'ms': agregarMon(m.m); break;
     case 'capt': efectoCaptura(m); break;
+    case 'v2': vec2 = m.l || {}; if ($('m-vec').classList.contains('on') && vecAbierto) pintarVecino(); break;
+    case 'v2fin': efectoVecino(m); break;
     case 'cri': criaturas = m; if ($('m-cri').classList.contains('on')) pintarCriaturas(); break;
     case 'md': {
       const o = mons.get(m.id);
@@ -895,7 +898,7 @@ function recibir(m) {
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.hc = m.hc | 0; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; o.gm = m.gm || 0; o.gi = m.gi || 0; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.hc = m.hc | 0; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; o.gm = m.gm || 0; o.gi = m.gi || 0; o.cc = m.cc || null; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : m.id === 'pescar' ? { nombre: '🎣 Pescando' } : habPorId(m.id);
@@ -1157,7 +1160,7 @@ function aurasDeServidor(au) {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', hc: p.hc | 0, mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', gm: p.gm || 0, gi: p.gi || 0, rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', hc: p.hc | 0, mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', cc: p.cc || null, gm: p.gm || 0, gi: p.gi || 0, rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
   aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
@@ -1526,6 +1529,7 @@ function cercano() {
   }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
+  if (!instancia) for (const v of vecinosDe(mapaId)) if (Math.abs(P.x - v.x) < 90) return { tipo: 'vecino', v };
   if (tienePiedra(mapaId) && !instancia && Math.abs(P.x - PIEDRA_X) < 60) return { tipo: 'piedra' };
   if (mapaId === 'pueblo' && Math.abs(P.x - VITRINA_X) < 40) return { tipo: 'vitrina' };
   return nodoCercano() || pesqueroCercano() || cofreCercano();
@@ -1605,6 +1609,7 @@ function interactuar() {
   if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
   if (c.tipo === 'cofre') { abrirCofre(c.c); return; }
   if (c.tipo === 'piedra') { abrirViajes(); return; }
+  if (c.tipo === 'vecino') { abrirVecino(c.v); return; }
   if (c.tipo === 'vitrina') { tabTienda = 'skin'; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'skin')); abrirTienda(); return; }
   if (c.tipo === 'nodo') { if (performance.now() < c.n.listo) errorRojo('Todavía no ha vuelto a crecer.'); else mandar({ t: 'recolectar', i: c.n.i }); return; }
   if (c.tipo === 'pesca') {
@@ -1760,6 +1765,107 @@ function retratoMon(k) {
   x.drawImage(img, hoja.mov[1] * hoja.fw, hoja.mov[0] * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
   return (_retMon[k] = c.toDataURL());
 }
+// ── VECINOS DE LAS ZONAS (mmo/js/vecinos2d.js; el servidor valida todo en functions/mmo/vecinos2d.js) ──
+let vec2 = {}, vecAbierto = null;
+// nuevo = tiene un encargo para ti · curso = lo estás haciendo · listo = vuelve a cobrar
+// bloq = te falta nivel · fin = ya le ayudaste en todo
+function estadoVecino(v) {
+  const e = encargoVecino(v, vec2, yo ? yo.nivel : 1);
+  if (!e) return 'fin';
+  if (e.bloq) return 'bloq';
+  const p = vec2[e.q.id];
+  return typeof p !== 'number' ? 'nuevo' : p >= e.q.n ? 'listo' : 'curso';
+}
+function abrirVecino(v) { if (!yo) return; vecAbierto = v; abrir('m-vec'); pintarVecino(); }
+function pintarVecino() {
+  const v = vecAbierto, L = $('vec-c');
+  if (!v || !L) return;
+  const e = encargoVecino(v, vec2, yo ? yo.nivel : 1), est = estadoVecino(v);
+  const hechos = v.l.filter(q => vec2[q.id] === true).length;
+  let h = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><img alt="" src="${retratoHoja(v.hoja)}" style="width:56px;height:56px;image-rendering:pixelated;background:rgba(255,255,255,.06);border-radius:8px"><div><b style="font-size:15px">${esc(v.nombre)}</b><br><small style="color:var(--txt2)">${esc(v.oficio)} · encargos ${hechos}/${v.l.length}</small></div></div>`;
+  if (est === 'fin') h += `<p class="vec-dice">«${esc(v.l[v.l.length - 1].fin)}»</p><p style="font-size:12px;color:var(--txt2)">Ya le ayudaste en todo. Vuelve cuando quieras a saludar.</p>`;
+  else {
+    const q = e.q, p = vec2[q.id];
+    if (est === 'bloq') h += `<p class="vec-dice">«${esc(v.saludo)}»</p><p style="font-size:12px;color:var(--txt2)">Tiene un encargo para ti a partir del nivel ${q.nv}.</p>`;
+    else if (est === 'nuevo') h += `<p class="vec-dice">«${esc(q.inicio)}»</p><p style="font-size:13px"><b>Encargo:</b> ${esc(q.pide)}</p><button class="btn" id="vec-ok" style="width:100%;min-height:44px">Acepto</button>`;
+    else if (est === 'curso') h += `<p class="vec-dice">«${esc(v.saludo)}»</p><p style="font-size:13px"><b>${esc(q.pide)}</b></p><div style="height:10px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden"><div style="height:100%;width:${Math.round(100 * Math.min(1, p / q.n))}%;background:#facc15"></div></div><p style="font-size:12px;color:var(--txt2);margin-top:4px">${p} de ${q.n}. Caza en esta zona y vuelve.</p>`;
+    else h += `<p class="vec-dice">«${esc(q.fin)}»</p><button class="btn" id="vec-ok" style="width:100%;min-height:44px">Cobrar la recompensa</button>`;
+  }
+  L.innerHTML = h;
+  const b = $('vec-ok');
+  if (b) b.onclick = () => { b.disabled = true; mandar({ t: 'v2', a: 'hablar', id: v.id }); setTimeout(() => { if (b.isConnected) b.disabled = false; }, 1200); };
+}
+const _retHoja = {};
+function retratoHoja(k) {
+  if (_retHoja[k]) return _retHoja[k];
+  const hoja = HOJAS[k]; if (!hoja) return '';
+  const img = IMG['sh_' + k]; if (!img || !img.naturalWidth) { pedir('sh_' + k); return ''; }
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const e = Math.min(40 / hoja.ideal, 60 / hoja.fw), dw = hoja.fw * e, dh = hoja.fh * e;
+  x.translate(24, 46); if (hoja.izq) x.scale(-1, 1);
+  x.drawImage(img, hoja.mov[1] * hoja.fw, hoja.mov[0] * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
+  return (_retHoja[k] = c.toDataURL());
+}
+// Los vecinos se dibujan como los NPC del pueblo, con un icono de estado encima.
+function dibujarVecinos() {
+  if (instancia) return;
+  const L = vecinosDe(mapaId);
+  if (!L.length) return;
+  const cerca = cercano();
+  for (const v of L) {
+    const x = v.x - camX;
+    if (x < -80 || x > VW + 80) continue;
+    const hoja = HOJAS[v.hoja];
+    if (!hoja) continue;
+    campamentoVecino(v, x);
+    sombra(x, SUELO, 20);
+    const col = hoja.mov[1] + (Math.floor((frame + v.x) / 16) % 2);
+    dibujarHoja(v.hoja, hoja, hoja.mov[0], col, 58, x, SUELO + Math.sin(frame * .05 + v.x) * 1, P.x > v.x ? 1 : -1, 1, null, false);
+    const activo = cerca && cerca.tipo === 'vecino' && cerca.v === v;
+    etiqueta(x, SUELO - 70, v.nombre, activo ? '#ffe600' : '#fde68a', 7);
+    const est = estadoVecino(v);
+    if (est === 'nuevo') emoji('❗', 18, x, SUELO - 90 + Math.sin(frame * .2) * 3);
+    else if (est === 'listo') emoji('⭐', 18, x, SUELO - 90 + Math.sin(frame * .25) * 3);
+    else if (est === 'curso') emoji('❔', 13, x, SUELO - 88 + Math.sin(frame * .1) * 2);
+  }
+}
+// Campamento del vecino (toldo de tela, petate y fogata): así se distingue de
+// un monstruo aunque use la misma hoja. Pixel art con rectángulos, sin imágenes.
+const TELAS = ['#b4532a', '#2563eb', '#a21caf', '#0f766e', '#ca8a04', '#be123c'];
+function campamentoVecino(v, x) {
+  let h = 0; for (let i = 0; i < v.id.length; i++) h = (h * 31 + v.id.charCodeAt(i)) >>> 0;
+  const tela = TELAS[h % TELAS.length], Y = SUELO, x0 = Math.round(x);
+  // Luz cálida de la fogata en el suelo.
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = .16 + .05 * Math.sin(frame * .3 + h);
+  g.fillStyle = '#ffb45a'; g.beginPath(); g.ellipse(x0 + 34, Y - 4, 46, 12, 0, 0, Math.PI * 2); g.fill();
+  g.restore();
+  // Toldo: dos palos y una tela a franjas.
+  g.fillStyle = '#5b3a1e'; g.fillRect(x0 - 30, Y - 62, 3, 62); g.fillRect(x0 + 27, Y - 62, 3, 62);
+  for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? '#f6f2ea' : tela; g.fillRect(x0 - 32 + i * 10.5, Y - 66, 11, 9); }
+  g.fillStyle = tela; for (let i = 0; i < 6; i++) g.fillRect(x0 - 30 + i * 10.5, Y - 57, 5, 3);
+  // Petate (estera de totora).
+  g.fillStyle = '#c8a46a'; g.fillRect(x0 - 26, Y - 2, 52, 3);
+  g.fillStyle = '#a07f48'; for (let i = 0; i < 9; i++) g.fillRect(x0 - 25 + i * 6, Y - 2, 1, 3);
+  // Fogata con olla.
+  const fx = x0 + 34, fl = (frame >> 2) % 3;
+  g.fillStyle = '#6b4423'; g.fillRect(fx - 7, Y - 3, 14, 3);
+  g.fillStyle = '#f97316'; g.fillRect(fx - 3, Y - 8 - fl, 6, 5 + fl);
+  g.fillStyle = '#fde047'; g.fillRect(fx - 1, Y - 6 - fl, 2, 3 + fl);
+  g.fillStyle = '#374151'; g.fillRect(fx - 6, Y - 18, 12, 8); g.fillStyle = '#4b5563'; g.fillRect(fx - 7, Y - 19, 14, 2);
+  if ((frame >> 3) % 2) { g.fillStyle = 'rgba(226,232,240,.35)'; g.fillRect(fx - 2 + Math.sin(frame * .05) * 2, Y - 26, 3, 3); }
+}
+function efectoVecino(m) {
+  const v = vecinosDe(mapaId).find(x => x.id === m.id);
+  const x = v ? v.x : P.x;
+  for (let i = 0; i < 22; i++) particula(x, SUELO - 40, i % 3 ? '#facc15' : '#ffffff', 3);
+  flotante(x, SUELO - 96, '¡Encargo cumplido!', '#facc15', 10);
+  tono('captura');
+  if (vecAbierto) pintarVecino();
+}
+
 function abrirCriaturas() {
   if (!yo) return;
   abrir('m-cri');
@@ -4920,6 +5026,39 @@ function dibujarMascota(q, id, f, pies, montado) {
   const col = hm.mov[1] + (anda ? Math.floor(frame / 6) % hm.mov[2] : 0);
   dibujarHoja(ma.hoja, hm, hm.mov[0], col, ma.alto, p.x - camX, p.y, p.f, 1, ma.tinte || null, false);
 }
+// ── CRIATURA COMPAÑERA (mundo vivo, Fase 4) ──
+// La tuya sale de la lista de criaturas; la de los demás llega en la apariencia (cc = [tipo, apodo]).
+function companeroPropio() {
+  if (!criaturas || !criaturas.eq || !criaturas.eq.length) return null;
+  const cr = criaturas.l.find(x => x.i === criaturas.eq[0]);
+  return cr ? [cr.k, cr.a || ''] : null;
+}
+function dibujarCompanero(q, comp, f, pies, otroLado) {
+  const def = MONSTRUOS[comp[0]], hm = def && HOJAS[def.hoja];
+  if (!hm) return;
+  const vuela = !!def.vuela;
+  // Detrás del duende (o delante si ya va una mascota detrás), un poco más chica que en el campo.
+  const lado = otroLado ? 1 : -1;
+  const objX = q.x + lado * f * 46, objY = vuela ? pies - 54 + Math.sin(frame * .08) * 5 : pies;
+  const ahora = performance.now();
+  const p = q.comp || (q.comp = { x: objX, y: objY, f, t: ahora, k: comp[0] });
+  if (p.k !== comp[0] || Math.abs(p.x - objX) > 500) { p.x = objX; p.y = objY; p.k = comp[0]; }
+  const dx = objX - p.x, k = Math.min(1, (ahora - (p.t || ahora)) / 16.7);
+  p.t = ahora;
+  p.x += dx * (1 - Math.pow(.9, k)); p.y += (objY - p.y) * (1 - Math.pow(.85, k));
+  if (Math.abs(dx) > 2) p.f = dx > 0 ? 1 : -1;
+  else if (Math.abs(q.x - p.x) > 4) p.f = q.x > p.x ? 1 : -1;
+  const anda = Math.abs(dx) > 3 || vuela;
+  // Saltito de alegría de vez en cuando cuando está quieta.
+  const brinco = !anda && ((frame + (q.id | 0) * 37) % 240) < 16 ? Math.sin(((frame + (q.id | 0) * 37) % 240) / 16 * Math.PI) * 7 : 0;
+  const col = hm.mov[1] + (anda ? Math.floor(frame / 6) % hm.mov[2] : 0);
+  const alto = Math.max(26, Math.min(44, (def.alto || 56) * .6));
+  const sx = p.x - camX;
+  if (sx < -60 || sx > VW + 60) return;
+  sombra(sx, p.y, 12);
+  dibujarHoja(def.hoja, hm, hm.mov[0], col, alto, sx, p.y - brinco, p.f, 1, def.tinte || null, false);
+  if (comp[1]) etiqueta(sx, p.y - alto - 10, comp[1], '#fde68a', 6);
+}
 function accesorioClase(clase, x, top, f) {
   if (clase !== 'mago' && clase !== 'sacerdote' && clase !== 'picaro') return;
   g.save();
@@ -4975,6 +5114,9 @@ function dibujarDuende(q, esYo) {
   const piesOrig = pies;
   const masc = esYo ? (yo.exped ? '' : yo.mascota) : q.ma;   // de expedicion no se ve
   if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig, !!mo);
+  // Criatura compañera (la primera del equipo): va al otro lado, con su apodo.
+  const comp = esYo ? companeroPropio() : q.cc;
+  if (comp && !muerto && !(fl & FJ.sigilo) && !instancia) dibujarCompanero(q, comp, f, piesOrig, !!masc || !!mo);
   pies = pies - (mo ? mo.dy : 0);
   g.save();
   if (muerto) g.globalAlpha = .35;
@@ -5251,6 +5393,7 @@ function dibujar() {
   dibujarPortales(mp);
   dibujarPiedra();
   dibujarNPCs(mp);
+  dibujarVecinos();
   dibujarCofres();
   dibujarNodos();
   dibujarPesquero();
@@ -5289,7 +5432,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? (c.p.a && MAPAS[c.p.a] && MAPAS[c.p.a].zona ? 'ENTRAR · ' + MAPAS[c.p.a].nombre.split(' ')[0] : 'ENTRAR') : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (c.n.tipo === 'guia' && misionLista() ? (TACTIL ? 'ENTREGAR' : 'E · ENTREGAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? (c.p.a && MAPAS[c.p.a] && MAPAS[c.p.a].zona ? 'ENTRAR · ' + MAPAS[c.p.a].nombre.split(' ')[0] : 'ENTRAR') : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'vecino' ? (estadoVecino(c.v) === 'listo' ? (TACTIL ? 'COBRAR' : 'E · COBRAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')) : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (c.n.tipo === 'guia' && misionLista() ? (TACTIL ? 'ENTREGAR' : 'E · ENTREGAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -5614,6 +5757,7 @@ function dibujarMinimapa() {
   for (const p of mp.portales) { mg.fillStyle = '#c084fc'; mg.fillRect(4 + p.x * k - 2, y - 5, 4, 10); }
   for (const mx of muros) { mg.fillStyle = '#e9d5ff'; mg.fillRect(4 + mx * k - 1, 2, 2, H - 4); }
   for (const n of (mp.npcs || [])) { mg.fillStyle = '#00ff88'; mg.fillRect(4 + n.x * k - 1.5, y - 2, 3, 4); }
+  if (!instancia) for (const v of vecinosDe(mapaId)) { const e = estadoVecino(v); mg.fillStyle = e === 'listo' ? '#facc15' : e === 'nuevo' ? '#fde68a' : '#00ff88'; mg.fillRect(4 + v.x * k - 1.5, y - 3, 3, 6); }
   for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT) { mg.fillStyle = '#ff3cf0'; mg.beginPath(); mg.arc(4 + o.x * k, y, 4, 0, 7); mg.fill(); }
   for (const q of otros.values()) { if (fueraDeFoto(q)) continue;   // lejos: el servidor ya no lo manda
     mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
@@ -6095,7 +6239,7 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 1.º, 400 × tu nivel en oro, objeto épico y título · 2.º, ×200 · 3.º, ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
   if (m.mio) h += `<div class="fila yo" style="display:block;margin-top:4px;line-height:1.35;border:1px solid rgba(250,204,21,.55);border-radius:6px;padding:6px 8px">${esc(textoMioSem(m.mio))}</div><p style="font-size:11px;color:var(--txt2);margin-top:3px">Desde ${(m.mio.min || 2000).toLocaleString('es', { useGrouping: 'always' })} XP todos cobran su liga al entrar el lunes: Oro (top 10 %), Plata (30 %) o Bronce.</p>`;
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p><p style="font-size:11px;color:var(--txt2);margin-bottom:4px">' + NOTA_RANK_UNICO + '</p>';
   // Todos los personajes (invitados incluidos) por paginas de 50, con buscador y tu puesto: lo llena pintarRankNv.
   rkNv.top = r || []; rkNv.rtot = m.rtot | 0; rkNv.rpos = m.rpos | 0;
   h += `<div class="rk-busca"><input id="rk-q" type="search" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="Buscar por nombre" aria-label="Buscar un duende por nombre" value="${esc(rkNv.q)}"><button class="bt" id="rk-x" title="Borrar la búsqueda" aria-label="Borrar la búsqueda">✕</button></div><p id="rk-cuenta" style="font-size:11px;color:var(--txt2);margin:2px 0 4px"></p><div id="rk-l"></div><button class="btn sec" id="rk-mas" style="display:none;width:100%;margin-top:6px;min-height:44px">Ver más</button><div class="fila yo" id="rk-mio" style="display:none;margin-top:4px;line-height:1.35;border:1px solid rgba(250,204,21,.55);border-radius:6px;padding:6px 8px"></div>`;
@@ -6118,6 +6262,11 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   $('rank-lista').innerHTML = h;
   prepararRankNv();
 }
+// Ranking unico de CLASSIC y ORIGINS: donde juega cada duende y si esta en linea ahora.
+const MODO_TXT = ['', '2D', '3D', '2D y 3D'];
+const marcaModo = x => (x.on ? ` <span title="En línea ahora en ${x.on === 2 ? 'ORIGINS 3D' : 'CLASSIC 2D'}" style="color:#4ade80;font-size:11px;white-space:nowrap">● ${x.on === 2 ? '3D' : '2D'}</span>` : '')
+  + (x.m && !(x.on && x.m === x.on) ? ` <small title="Juega en ${MODO_TXT[x.m]}" style="color:#94a3b8;font-size:10px;border:1px solid rgba(148,163,184,.4);border-radius:4px;padding:0 3px;white-space:nowrap">${MODO_TXT[x.m]}</small>` : '');
+const NOTA_RANK_UNICO = 'Un solo ranking para CLASSIC (2D) y ORIGINS (3D): es el mismo duende y suma en los dos.';
 // Ranking de niveles completo: el servidor manda cada pagina con { t:'rankNv' } (50 filas, busqueda y tu puesto).
 // Mientras no llega la primera (o con un servidor viejo) se ve el top 20 del mensaje «ranking».
 const rkNv = { q: '', filas: [], tot: 0, n: 0, mas: false, mio: null, esp: false, listo: false, tm: 0, td: 0, top: [], rtot: 0, rpos: 0 };
@@ -6146,7 +6295,7 @@ function pintarRankNv() {
   const f = n => (n || 0).toLocaleString('es', { useGrouping: 'always' });
   const busca = !!rkClave(rkNv.q);
   const L = rkNv.listo ? rkNv.filas : rkNv.top.map((x, i) => ({ ...x, p: i + 1 }));
-  l.innerHTML = L.length ? L.map(x => `<div class="fila ${x.yo ? 'yo' : ''}"><span>#${x.p} ${esc(x.n)}${x.inv ? ' <small class="rk-inv" data-emoji title="Juega como invitado">👤 Invitado</small>' : ''}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : `<p class="centro">${busca && rkNv.listo ? 'Nadie se llama así. Prueba con otra parte del nombre.' : 'Todavía no hay nadie.'}</p>`;
+  l.innerHTML = L.length ? L.map(x => `<div class="fila ${x.yo ? 'yo' : ''}"><span>#${x.p} ${esc(x.n)}${x.inv ? ' <small class="rk-inv" data-emoji title="Juega como invitado">👤 Invitado</small>' : ''}${marcaModo(x)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : `<p class="centro">${busca && rkNv.listo ? 'Nadie se llama así. Prueba con otra parte del nombre.' : 'Todavía no hay nadie.'}</p>`;
   const tot = rkNv.listo ? rkNv.tot : rkNv.rtot;
   $('rk-cuenta').textContent = !tot ? '' : busca && rkNv.listo ? `${f(rkNv.n)} ${rkNv.n === 1 ? 'resultado' : 'resultados'} entre ${f(tot)} duendes` : `${f(tot)} duendes en total · mostrando ${f(L.length)}`;
   const b = $('rk-mas');
@@ -6639,5 +6788,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=395').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=396').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 395;
+export const VERSION = 396;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 150, fecha: '17 nov 2026', items: [
+    '🏕 CLASSIC: ahora en cada zona viven 2 vecinos con su campamento y 3 encargos cada uno. Háblales, caza lo que piden y vuelve a cobrar.',
+    '🧗 Nuevas cornisas altas en todas las zonas: sube con doble salto (arriba suele haber cofre).',
+    '🦋 El mundo se mueve: aves, luciérnagas, mariposas, hojas, brasas, burbujas y animalitos según la zona.',
+    '🐾 Tu primera criatura del equipo te sigue por el mapa, con su apodo, y los demás la ven.',
+    '🏆 Un solo ranking para CLASSIC y ORIGINS: cada fila dice si juega en 2D, 3D o los dos, y quién está en línea.',
+  ] },
   { n: 149, fecha: '17 nov 2026', items: [
     '✉️ Crear cuenta ahora es rápido: solo correo y contraseña, sin salir del juego en el que estés (CLASSIC, ORIGINS o Chicha Wars).',
     '🔗 Es una sola cuenta para todos los juegos del Duende: tu duende de invitado se pasa a la cuenta al entrar.',
@@ -3011,4 +3018,25 @@ export function normalizarCriaturas(c) {
   const eq = [];
   for (const i of Array.isArray(v.eq) ? v.eq : []) if (ids.has(i) && !eq.includes(i) && eq.length < CRIATURA_EQUIPO) eq.push(i);
   return (c.cri = { v: CRIATURA_VERSION, sig, l, eq });
+}
+
+// ── CORNISAS (mundo vivo, Fase 3, 17-nov-2026) ──
+// Un piso alto en cada zona abierta, al estilo de los castillos 2D clásicos: sobre
+// cada plataforma media (y <= 260) se añade una cornisa ~78 px más arriba,
+// corrida a un lado para subir saltando (las plataformas solo frenan al caer).
+// Se calcula aquí, una vez, así el cliente y el servidor (sueloEn, techoEn) ven
+// las mismas. No toca el pueblo, las mazmorras, la torre ni el coliseo.
+export const CORNISA_ALTO = 78;
+for (const m of Object.values(MAPAS)) {
+  if (!m.zona || m.instancia || m.cornisas) continue;
+  const extra = [];
+  for (const [px, py, pw] of m.plataformas) {
+    if (py > 260) continue;
+    const w = Math.max(120, Math.round(pw * .7));
+    const x = Math.min(m.ancho - 220 - w, Math.max(220, Math.round(px + pw * .45)));
+    if ((m.portales || []).some(p => p.x > x - 80 && p.x < x + w + 80)) continue;
+    extra.push([x, py - CORNISA_ALTO, w]);
+  }
+  m.cornisas = extra.length;
+  m.plataformas.push(...extra);
 }

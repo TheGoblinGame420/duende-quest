@@ -804,6 +804,7 @@ function rayos(m) {
 }
 // Niebla delante de los pies (se dibuja DESPUÉS de los personajes).
 export function fondoFrente(v) {
+  if (M && M.id === v.id) vidaAire(v);   // luciérnagas, hojas, brasas... (Fase 3; menos en modo ligero)
   if (v.ligero || !M || M.id !== v.id) return;
   const m = M, g = v.g, n = Math.max(nocheAhora(), m.e.nmin || 0), N = m.niebla;
   let x = -Math.floor((((v.camX * 1.15 - v.frame * .35) % CAPA_W) + CAPA_W) % CAPA_W);
@@ -910,6 +911,7 @@ export function fondoCielo(v) {
   x = -Math.floor((((v.camX * .5) % CAPA_W) + CAPA_W) % CAPA_W);
   const yc = v.SUELO + 4 - m.cerca.height;
   g.drawImage(m.cerca, x, yc); if (x + CAPA_W < v.VW) g.drawImage(m.cerca, x + CAPA_W, yc);
+  vidaCielo(v);   // aves, murciélagos y siluetas lejanas (Fase 3)
 }
 export function fondoMundo(v) {
   const m = mapa(v), g = v.g, n = Math.max(nocheAhora(), m.e.nmin || 0), esNoche = n >= .6;
@@ -960,6 +962,7 @@ export function fondoMundo(v) {
       g.drawImage(L[(f >> 2) % 3], sx - 6, v.SUELO - 59);
     }
   }
+  vidaSuelo(v);   // animalitos del suelo (Fase 3)
 }
 // Sombra suave bajo un personaje o monstruo: disco difuso + contacto (2 copias).
 // k (0..1) baja con la altura del salto. El llamador ya hace save/restore si lo necesita.
@@ -988,4 +991,162 @@ export function fondoEstanque(g, x, y, frame) {
   g.fillStyle = 'rgba(210,235,245,.5)';
   const d = (frame * .25) % 30;
   g.fillRect(Math.round(x - 30 + d), y - 3, 9, 1); g.fillRect(Math.round(x + 16 - d * .6), y - 1, 6, 1);
+}
+
+// ═══════════════════════════════════════════════════════
+// VIDA DEL AMBIENTE (mundo vivo, Fase 3, 17-nov-2026)
+// Bichos y partículas por bioma para que ninguna zona se vea vacía: aves y
+// murciélagos en el cielo, luciérnagas, mariposas, hojas, brasas, burbujas,
+// esporas, nieve, polvo y animalitos que corretean por el suelo.
+// Sin estado ni arreglos por cuadro: cada bicho es una función del tiempo y de
+// su índice (posición fija en el mundo + vaivén). Solo rectángulos y unas
+// pocas copias de halos en modo 'lighter'. En modo ligero, menos bichos.
+// Es solo decorado: no choca con nada ni lo ve el servidor.
+// ═══════════════════════════════════════════════════════
+const VIDA = {
+  amanecer2: { cielo: [['ave', 4]], aire: [['mari', 6, '#fbbf24']], suelo: [['gallina', 3], ['gato', 1]] },
+  noche: { cielo: [['murc', 3]], aire: [['luci', 26, '#d9f99d']], suelo: [['conejo', 2]] },
+  amanecer: { cielo: [['ave', 5]], aire: [['mari', 8, '#fb923c'], ['polen', 14, '#fde68a']], suelo: [['conejo', 3]] },
+  selva: { cielo: [['ave', 3]], aire: [['hoja', 18, '#4ade80'], ['luci', 12, '#bef264'], ['mari', 6, '#38bdf8']], suelo: [['rana', 3]] },
+  tormenta: { cielo: [['ave', 2]], aire: [['hoja', 16, '#94a3b8'], ['chispa', 6, '#bae6fd']], suelo: [['conejo', 1]] },
+  desierto: { cielo: [['buitre', 2]], aire: [['polvo', 30, '#e7c98f']], suelo: [['lagartija', 3]] },
+  tormenta2: { cielo: [['murc', 4]], aire: [['brasa', 26, '#fb923c']], suelo: [['rata', 2]] },
+  cumbres: { cielo: [['ave', 3]], aire: [['nieve', 34, '#f8fafc']], suelo: [] },
+  cavernas: { cielo: [], aire: [['espora', 24, '#67e8f9'], ['gota', 10, '#93c5fd']], suelo: [['cangrejo', 3]] },
+  abismo: { cielo: [['pez', 4]], aire: [['burbuja', 26, '#a5f3fc']], suelo: [['cangrejo', 2]] },
+  acantilados: { cielo: [['condor', 2], ['ave', 3]], aire: [['pluma', 10, '#e2e8f0'], ['polen', 10, '#fef3c7']], suelo: [['zorro', 1]] },
+};
+const fr = (i, k) => { const s = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return s - Math.floor(s); };   // azar fijo por bicho
+function vidaDe(v) {
+  if (v.mp.instancia || v.mp.coliseo) return null;
+  return VIDA[v.mp.fondo] || null;
+}
+const cuantos = (n, v) => v.ligero ? Math.ceil(n * .35) : n;   // menos en modo ligero
+
+// Cielo (detrás de las montañas cercanas): bandadas y siluetas lejanas.
+function vidaCielo(v) {
+  const V = vidaDe(v);
+  if (!V || !V.cielo.length) return;
+  const g = v.g, t = v.frame, hor = v.SUELO;
+  for (const [tipo, n0] of V.cielo) {
+    const n = cuantos(n0, v);
+    for (let i = 0; i < n; i++) {
+      const vel = tipo === 'condor' || tipo === 'buitre' ? .25 : tipo === 'pez' ? .3 : .6 + fr(i, 1) * .5;
+      const ancho = v.VW + 300, par = .12 + fr(i, 2) * .1;
+      const x = ((fr(i, 3) * ancho + t * vel - v.camX * par) % ancho + ancho) % ancho - 150;
+      const y = hor * (.12 + fr(i, 4) * .38) + Math.sin(t * .02 + i * 3) * 8;
+      const dir = fr(i, 5) < .5 ? 1 : -1, xx = dir > 0 ? x : v.VW - x;
+      if (tipo === 'ave') {   // bandada en V de 3 a 5 pajaritos
+        g.fillStyle = 'rgba(20,18,28,.55)';
+        const m = 3 + (i % 3), al = Math.sin(t * .25 + i) > 0 ? 1 : 0;
+        for (let j = 0; j < m; j++) { const ox = -j * 7 * dir, oy = (j % 2 ? 1 : -1) * Math.ceil(j / 2) * 5; g.fillRect(xx + ox - 3, y + oy - al, 3, 1); g.fillRect(xx + ox, y + oy, 1, 1); g.fillRect(xx + ox + 1, y + oy - al, 3, 1); }
+      } else if (tipo === 'murc') {
+        g.fillStyle = 'rgba(10,8,16,.75)';
+        const al = Math.sin(t * .5 + i * 2) > 0 ? -2 : 1, yy = y + Math.sin(t * .09 + i) * 14;
+        g.fillRect(xx - 1, yy, 3, 2); g.fillRect(xx - 5, yy + al, 4, 1); g.fillRect(xx + 2, yy + al, 4, 1);
+      } else if (tipo === 'buitre' || tipo === 'condor') {   // planea en círculos grandes
+        const big = tipo === 'condor' ? 1.6 : 1, cx = (fr(i, 6) * v.VW + Math.sin(t * .004 + i) * 120), cy = hor * (.18 + fr(i, 7) * .2) + Math.cos(t * .006 + i) * 18;
+        g.fillStyle = 'rgba(16,14,20,.6)';
+        const w = 9 * big, inc = Math.sin(t * .01 + i) * 2;
+        g.fillRect(cx - w, cy + inc, w, 2 * big); g.fillRect(cx, cy - inc, w, 2 * big); g.fillRect(cx - 1, cy - 1, 3 * big, 3 * big);
+        if (tipo === 'condor') { g.fillStyle = 'rgba(240,240,240,.35)'; g.fillRect(cx - 1, cy - 2, 3, 1); }
+      } else if (tipo === 'pez') {   // siluetas de peces enormes al fondo del agua
+        g.fillStyle = 'rgba(6,30,48,.45)';
+        const L = 18 + fr(i, 8) * 22;
+        g.fillRect(xx - L / 2, y - 3, L, 6); g.fillRect(xx + (dir > 0 ? -L / 2 - 6 : L / 2), y - 5, 6, 10);
+      }
+    }
+  }
+}
+
+// Suelo (detrás de los personajes): animalitos que van y vienen y saltan.
+function vidaSuelo(v) {
+  const V = vidaDe(v);
+  if (!V || !V.suelo.length) return;
+  const g = v.g, t = v.frame, cx = v.camX, Y = v.SUELO, ancho = v.mp.ancho || 2600;
+  let k = 0;
+  for (const [tipo, n0] of V.suelo) {
+    const n = cuantos(n0, v) * Math.max(1, Math.round(ancho / 1300));
+    for (let i = 0; i < n; i++, k++) {
+      const casa = 200 + fr(k, 11) * (ancho - 400), rango = 60 + fr(k, 12) * 90;
+      const fase = t * (.004 + fr(k, 13) * .004) + k * 5, vaiven = Math.sin(fase);
+      const sx = casa + vaiven * rango - cx;
+      if (sx < -30 || sx > v.VW + 30) continue;
+      const dir = Math.cos(fase) >= 0 ? 1 : -1;
+      const quieto = Math.abs(Math.cos(fase)) < .25;   // en los extremos se para un rato
+      const salta = (tipo === 'conejo' || tipo === 'rana') && !quieto ? Math.abs(Math.sin(t * .18 + k)) * 6 : 0;
+      const paso = quieto ? 0 : (t >> 3) % 2;
+      dibujarBicho(g, tipo, Math.round(sx), Y - Math.round(salta), dir, paso, t + k * 7);
+    }
+  }
+}
+function dibujarBicho(g, tipo, x, y, d, paso, t) {
+  const R = (c, a, b, w, h) => { g.fillStyle = c; g.fillRect(d > 0 ? x + a : x - a - w, y + b, w, h); };
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x - 5, y - 1, 10, 2);
+  if (tipo === 'conejo') { R('#d6cfc4', -4, -6, 8, 5); R('#d6cfc4', 3, -9, 4, 4); R('#e8e1d6', 4, -14, 1, 5); R('#e8e1d6', 6, -13, 1, 4); R('#1f1a17', 6, -8, 1, 1); R('#fff', -5, -6, 2, 2); R('#b8afa3', -2 + paso, -1, 2, 1); }
+  else if (tipo === 'rana') { R('#4d9e3a', -4, -5, 8, 4); R('#6cc04a', -2, -7, 5, 2); R('#111', 2, -8, 1, 1); R('#3c7d2d', -5, -2 + paso, 3, 2); R('#3c7d2d', 3, -2, 3, 2); }
+  else if (tipo === 'lagartija') { R('#c0843d', -6, -3, 10, 2); R('#a96e2e', 3, -4, 4, 3); R('#111', 6, -4, 1, 1); R('#c0843d', -10, -2, 4, 1); R('#8c5a24', -4 + paso, -1, 1, 1); R('#8c5a24', 1 - paso, -1, 1, 1); }
+  else if (tipo === 'cangrejo') { R('#e2553f', -4, -4, 8, 3); R('#f3866f', -6, -6, 2, 2); R('#f3866f', 4, -6, 2, 2); R('#111', -1, -5, 1, 1); R('#111', 1, -5, 1, 1); R('#b8402d', -5 + paso, -1, 1, 1); R('#b8402d', 4 - paso, -1, 1, 1); }
+  else if (tipo === 'gallina') { R('#f5f0e6', -4, -7, 7, 5); R('#f5f0e6', 2, -10, 3, 4); R('#dc2626', 3, -11, 2, 1); R('#f59e0b', 5, -8, 2, 1); R('#111', 3, -9, 1, 1); R('#d4cfc4', -6, -8, 2, 3); R('#f59e0b', -1 + paso, -2, 1, 2); R('#f59e0b', 1, -2, 1, 2); if (!paso && ((t >> 5) % 4 === 0)) R('#f5f0e6', 3, -7, 3, 3); }
+  else if (tipo === 'gato') { R('#3b3b46', -5, -6, 9, 4); R('#3b3b46', 3, -9, 4, 4); R('#3b3b46', 3, -10, 1, 1); R('#3b3b46', 6, -10, 1, 1); R('#facc15', 5, -8, 1, 1); R('#3b3b46', -8, -9 + (paso ? 1 : 0), 2, 4); R('#2a2a33', -4 + paso, -2, 1, 2); R('#2a2a33', 2 - paso, -2, 1, 2); }
+  else if (tipo === 'rata') { R('#5b5560', -4, -4, 7, 3); R('#5b5560', 3, -5, 3, 3); R('#f9a8d4', 6, -4, 1, 1); R('#c9b6c9', -8, -2, 4, 1); R('#3f3a44', -2 + paso, -1, 1, 1); }
+  else if (tipo === 'zorro') { R('#d9772b', -6, -7, 11, 5); R('#d9772b', 4, -11, 5, 5); R('#d9772b', 5, -13, 1, 2); R('#d9772b', 8, -13, 1, 2); R('#fff', 8, -8, 2, 1); R('#111', 7, -10, 1, 1); R('#d9772b', -11, -9, 5, 3); R('#fff', -12, -9, 2, 2); R('#7c3f13', -4 + paso, -2, 1, 2); R('#7c3f13', 2 - paso, -2, 1, 2); }
+}
+
+// Aire (delante de los personajes): partículas por bioma.
+function vidaAire(v) {
+  const V = vidaDe(v);
+  if (!V || !V.aire.length) return;
+  const g = v.g, t = v.frame, H = v.SUELO + v.OY, W = v.VW + 40, n0 = Math.max(nocheAhora(), (estiloDe(v.mp).nmin || 0));
+  for (const [tipo, num, col] of V.aire) {
+    const n = cuantos(num, v);
+    if (tipo === 'luci' || tipo === 'espora' || tipo === 'chispa') {
+      // Luciérnagas: de día casi no se ven, de noche brillan.
+      const fuerza = tipo === 'luci' ? .25 + .75 * n0 : 1;
+      const h = halo(col, 20); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < n; i++) {
+        const bx = fr(i, 21) * (v.mp.ancho || 2600), sx = ((bx - v.camX + Math.sin(t * .011 + i) * 40) % W + W) % W - 20;
+        const by = tipo === 'espora' ? v.SUELO - ((t * (.25 + fr(i, 22) * .3) + fr(i, 23) * H) % H) : v.SUELO - 20 - fr(i, 24) * 170 + Math.sin(t * .03 + i * 2) * 12;
+        const parp = tipo === 'chispa' ? (Math.sin(t * .6 + i * 9) > .85 ? 1 : 0) : .45 + .55 * Math.sin(t * .07 + i * 1.7);
+        if (parp <= .05) continue;
+        g.globalAlpha = parp * fuerza; g.drawImage(h, sx - 10, by - 10);
+        g.fillStyle = col; g.fillRect(sx, by, 2, 2);
+      }
+      g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+      continue;
+    }
+    g.fillStyle = col;
+    for (let i = 0; i < n; i++) {
+      const sem = fr(i, 31), vel = .4 + fr(i, 32) * .6;
+      let x, y, w = 2, hh = 2, a = .8;
+      if (tipo === 'hoja' || tipo === 'pluma') {   // caen meciéndose y el viento las lleva
+        y = ((t * vel * (tipo === 'pluma' ? .35 : .7) + sem * H) % H) - v.OY;
+        x = ((sem * W * 3 - v.camX * .9 + t * vel * .6 + Math.sin(t * .03 + i) * 22) % W + W) % W - 20;
+        w = Math.sin(t * .1 + i) > 0 ? 3 : 2; hh = tipo === 'pluma' ? 1 : 2; a = .85;
+      } else if (tipo === 'mari') {   // mariposas: vuelo errático cerca del suelo
+        x = ((fr(i, 33) * (v.mp.ancho || 2600) - v.camX + Math.sin(t * .013 + i * 3) * 60) % W + W) % W - 20;
+        y = v.SUELO - 30 - fr(i, 34) * 90 + Math.sin(t * .05 + i) * 16;
+        const al = Math.sin(t * .45 + i) > 0;
+        g.globalAlpha = .95; g.fillRect(x - (al ? 3 : 1), y - 1, al ? 3 : 1, 2); g.fillRect(x + 1, y - 1, al ? 3 : 1, 2); g.fillStyle = '#1f1a17'; g.fillRect(x, y - 1, 1, 3); g.fillStyle = col;
+        continue;
+      } else if (tipo === 'polen' || tipo === 'polvo') {   // flota de lado
+        x = ((sem * W * 4 - v.camX * .7 + t * vel * (tipo === 'polvo' ? 2.2 : .3)) % W + W) % W - 20;
+        y = v.SUELO - 10 - fr(i, 35) * (tipo === 'polvo' ? 70 : 200) + Math.sin(t * .02 + i) * 6;
+        w = tipo === 'polvo' ? 5 : 1; hh = 1; a = tipo === 'polvo' ? .35 : .7;
+      } else if (tipo === 'brasa' || tipo === 'burbuja') {   // suben
+        y = v.SUELO - ((t * vel * .8 + sem * H) % H);
+        x = ((sem * W * 5 - v.camX * .8 + Math.sin(t * .04 + i) * 10) % W + W) % W - 20;
+        a = tipo === 'brasa' ? .5 + .5 * Math.sin(t * .2 + i) : .55;
+        if (tipo === 'burbuja') { g.globalAlpha = a; g.strokeStyle = col; g.lineWidth = 1; g.strokeRect(x, y, 3, 3); continue; }
+      } else if (tipo === 'nieve') {
+        y = ((t * vel * .9 + sem * H) % H) - v.OY;
+        x = ((sem * W * 3 - v.camX * .6 + Math.sin(t * .02 + i) * 25) % W + W) % W - 20; a = .85;
+      } else if (tipo === 'gota') {
+        y = ((t * vel * 3 + sem * H) % H) - v.OY;
+        x = ((sem * W * 5 - v.camX) % W + W) % W - 20; w = 1; hh = 3; a = .5;
+      } else continue;
+      g.globalAlpha = a; g.fillRect(x, y, w, hh);
+    }
+    g.globalAlpha = 1;
+  }
 }

@@ -32,6 +32,7 @@ import { Secundarias } from './secundarias.js';
 import { Vasos } from './vasos.js';
 import { Caso } from './caso.js';
 import { Criaturas } from './criaturas.js';
+import { Vecinos2D } from './vecinos2d.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
@@ -582,6 +583,7 @@ export class MmoWorld {
       case 'viajar': return this.viajar(s, m);
       case 'cri': return this.criatura(s, m);   // criaturas.js (Fase 2)
       case 'capturar': return this.capturar(s, m);   // criaturas.js (Fase 3)
+      case 'v2': return this.vecino(s, m);   // vecinos2d.js: hablar con un vecino de la zona
       case 'irGrupo': return this.irConGrupo(s, m);
     }
   }
@@ -946,6 +948,7 @@ export class MmoWorld {
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline(), ver: VERSION_JUEGO });
     // Criaturas (Fase 2): una vez al entrar y luego solo cuando cambian (no en cada 'yo': actualizarYo se llama en 100 sitios).
     if (!s.m3) this.enviar(s, this.infoCriaturas(c));
+    if (!s.m3) this.enviar(s, this.infoVecinos(c));
     if (darBend) { try { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño.' + ((c.nivel || 1) >= 10 ? ' Esta vez no perdiste XP.' : '') }); } catch (e) {} }
     // Veteranos con talentos al tope viejo (5): avisa del reinicio gratis (una vez por sesion).
     if (!c.talR8 && c.nivel >= 10 && Object.values(c.tal || {}).some(v => v >= 5)) setTimeout(() => { if (!s.cerrado && s.c === c && !c.talR8) this.enviar(s, { t: 'toast', m: '🌟 Los talentos ahora llegan a 8 rangos. Tu primer reinicio es GRATIS: Libro → Talentos.', ok: true }); }, 9000);
@@ -1001,6 +1004,8 @@ export class MmoWorld {
     if (descansado > 0) this.enviar(s, { t: 'toast', m: `Descanso: +${c.descanso.toLocaleString('es', { useGrouping: 'always' })} XP extra en tus próximas cazas.`, ok: true });
     this.enviar(s, this.estadoMundial());
     // Duende Quest 3D (/mundo/): el mismo personaje en el mundo abierto.
+    // Ranking unico: se apunta en que modo juega cada duende (1 = CLASSIC 2D, 2 = ORIGINS 3D, 3 = los dos).
+    { const bit = m.modo === '3d' ? 2 : 1; if (((c.modos | 0) & bit) !== bit) { c.modos = (c.modos | 0) | bit; s.sucio = true; if (this.rkAnotar) this.rkAnotar(c).catch(e => console.error('[MMO rankTodos]', e)); } }
     if (m.modo === '3d') this.entrar3d(s);
     else this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
@@ -2235,7 +2240,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { cc: this.companeroDe ? this.companeroDe(s.c) : undefined, p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -4195,6 +4200,7 @@ Object.assign(MmoWorld.prototype, Vasos);
 Object.assign(MmoWorld.prototype, Caso);
 // Criaturas (Fase 2): modelo en c.cri, ver functions/mmo/criaturas.js
 Object.assign(MmoWorld.prototype, Criaturas);
+Object.assign(MmoWorld.prototype, Vecinos2D);   // vecinos y encargos de las zonas 2D (mundo vivo, Fase 2)
 // El bot en el grupo oficial de Telegram (bienvenida, novedades, hitos, antiespam): functions/mmo/grupo.js
 instalarGrupo(MmoWorld.prototype);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).
