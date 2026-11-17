@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=394';
-import { LORE_MONSTRUOS } from './lore.js?v=394';
+} from '/mmo/js/data.js?v=395';
+import { LORE_MONSTRUOS } from './lore.js?v=395';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1459,7 +1459,7 @@ const ACC = {
     setTimeout(() => { if (b.isConnected && b.disabled) { b.disabled = false; b.textContent = '¿Problema?'; } }, 5000);
   },
   cuenta: b => {
-    if (H.iniciarSesion) H.iniciarSesion();
+    if (H.iniciarSesion) H.iniciarSesion(b && b.dataset && /^[\w-]+$/.test(b.dataset.id || '') ? b.dataset.id : '');
     else {
       // La cuenta se abre en CLASSIC (#cuenta) y, al entrar, vuelve aquí con la tienda en el paquete que quería (&f=; localStorage por si el correo abre otra pestaña).
       H.aviso('Entra o crea tu cuenta gratis con tu correo: al terminar vuelves aquí a la tienda.', 'ok');

@@ -5,7 +5,7 @@
 // spr() las usa en lugar de estos dibujos sin cambiar el juego.
 // Origen de cada figura: los pies (x, y). s = escala.
 // ═══════════════════════════════════════════════════════
-import * as R from './rig.js?v=394';
+import * as R from './rig.js?v=395';
 const TINTA = '#2a1712';
 const PI = Math.PI;
 

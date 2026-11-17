@@ -18,11 +18,12 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=394';
-import { iniciarRegalo } from './regalo.js?v=394';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=394';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=394';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=394';
+} from './data.js?v=395';
+import { iniciarRegalo } from './regalo.js?v=395';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=395';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=395';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=395';
+import { formCuenta } from '/js/cuenta.js?v=395';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -573,7 +574,7 @@ let recuperando = /type=recovery/.test(location.hash);
 function sb() {
   if (_sb) return _sb;
   if (!window.supabase || !window.SUPABASE_URL) return null;
-  _sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  _sb = window.__dqSb || (window.__dqSb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY));   // uno por pagina, compartido con js/cuenta.js
   _sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recuperando = true; mostrarRecuperacion(); } });
   return _sb;
 }
@@ -6358,6 +6359,12 @@ function sesionLista(enJuego) {
   conectar();
 }
 function pintarCuenta(cont, modo, enJuego) {
+  // Entrar, crear, olvido y enlace: el formulario comun (js/cuenta.js), el mismo de ORIGINS y Chicha Wars.
+  // Aqui quedan solo la contraseña nueva (enlace de recuperacion) y cambiarla con la sesion iniciada.
+  if (['entrar', 'crear', 'olvido', 'enlace'].includes(modo)) {
+    formCuenta(cont, { modo, sb, alListo: () => sesionLista(enJuego), nota: soyInvitado && enJuego ? 'Solo correo y contraseña. Al entrar te preguntamos si le pasas este duende de invitado: no pierdes nada.' : undefined });
+    return;
+  }
   const tabs = modo === 'entrar' || modo === 'crear'
     ? `<div class="tabs"><button class="tab ${modo === 'entrar' ? 'on' : ''}" data-m="entrar">ENTRAR</button><button class="tab ${modo === 'crear' ? 'on' : ''}" data-m="crear">CREAR CUENTA</button></div>` : '';
   const campo = (id, tipo, ph, ac) => `<input class="nombre" id="${id}" type="${tipo}" placeholder="${ph}" aria-label="${ph}" autocomplete="${ac}">`;
@@ -6473,7 +6480,7 @@ async function inicio() {
   $('b-jugar').onclick = entrar; $('b-jugar2').onclick = entrar;
   $('in-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); e.stopPropagation(); });
   // Cuenta (correo y contraseña) sin salir del MMO: se abre aqui mismo.
-  $('b-abrir-cuenta').onclick = () => { $('b-abrir-cuenta').style.display = 'none'; $('inicio-auth').style.display = 'block'; pintarCuenta($('inicio-auth'), 'entrar', false); };
+  $('b-abrir-cuenta').onclick = () => { $('b-abrir-cuenta').style.display = 'none'; $('inicio-auth').style.display = 'block'; pintarCuenta($('inicio-auth'), 'crear', false); try { $('inicio-auth').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} };
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();

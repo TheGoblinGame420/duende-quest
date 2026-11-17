@@ -6,10 +6,11 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=394';
-import * as A from './arte.js?v=394';
-import { pedir } from './red.js?v=394';
-import * as R from './rig.js?v=394';
+import * as D from './datos.js?v=395';
+import * as A from './arte.js?v=395';
+import { pedir } from './red.js?v=395';
+import { abrirCuenta } from '/js/cuenta.js?v=395';   // la misma cuenta de Duende Quest, sin salir del juego
+import * as R from './rig.js?v=395';
 
 const W = 540, PISO = 360;
 let H = 640, Y_OLLA = 505, Y_CH = 590;   // la escena llena el alto libre de la pantalla: ajustar() recalcula H y baja ollas y chichera
@@ -987,7 +988,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 function htmlCuenta() {
   let h = '';
   if (!NUBE.ok) return `<div class="card proximo"><div class="ico">☁</div><div class="tx"><b>Conectando con tu cuenta…</b><small>El cambio a oro y el mercado entre jugadores necesitan conexión.</small></div></div>`;
-  if (!NUBE.cuenta) return `<a class="card enlace" href="/mmo/" target="_blank" rel="noopener"><div class="ico">👤</div><div class="tx"><b>Entra con tu cuenta de Duende Quest</b><small>Juegas como invitado. Con tu cuenta (correo o Telegram) guardas la partida en la nube, cambias monedas por oro de Duende Quest y usas el mercado entre jugadores.</small></div></a>`;
+  if (!NUBE.cuenta) return `<a class="card enlace" href="/mmo/" target="_blank" rel="noopener" data-dq-cuenta><div class="ico">👤</div><div class="tx"><b>Entra con tu cuenta de Duende Quest</b><small>Juegas como invitado. Con tu cuenta (correo o Telegram) guardas la partida en la nube, cambias monedas por oro de Duende Quest y usas el mercado entre jugadores.</small></div></a>`;
   const libre = 1000 - NUBE.cambio;
   h += `<div class="sub">Cambiar monedas por oro de Duende Quest</div><div class="card"><div class="ico">⇄</div><div class="tx"><b>10 monedas = 1 oro</b><small>Hoy puedes cambiar ${libre} oro más (máximo 1000 al día). Llega a tu duende al instante.</small></div></div>`;
   h += `<div class="elige">${[10, 100, 500].map(o => btn(`${o} oro`, 'cambiar', { o }, E.monedas < o * 10 || o > libre, 'oro')).join('')}</div>`;
@@ -1090,9 +1091,16 @@ async function accionNube(a, d) {
     }
   } finally { ocupado = false; pintarPanel(); pintarHud(); }
 }
+// Enlaces de cuenta: la ventana rapida (js/cuenta.js) en vez de abrir CLASSIC en otra pestaña; el href queda de respaldo.
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-dq-cuenta]');
+  if (!a) return;
+  e.preventDefault();
+  abrirCuenta({ modo: 'crear', alListo: () => location.reload() });
+});
 async function pedirPremium() {
   if (E.pase.premium) return;
-  if (!NUBE.cuenta) { abrirModal(`<h2>★ Pase premium · S/ 10</h2><p>Duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y Chichera dorada).</p><p>Para comprarlo necesitas entrar con tu cuenta de Duende Quest (correo o Telegram): así el pase queda guardado aunque cambies de celular.</p><p><a href="/mmo/" target="_blank" rel="noopener" style="color:#ffd166">Entrar o crear mi cuenta →</a></p>`); return; }
+  if (!NUBE.cuenta) { abrirModal(`<h2>★ Pase premium · S/ 10</h2><p>Duplica los premios de la temporada y trae skins exclusivas (Reina de la chicha, Pirata del Callao y Chichera dorada).</p><p>Para comprarlo necesitas entrar con tu cuenta de Duende Quest (correo o Telegram): así el pase queda guardado aunque cambies de celular.</p><p><a href="/mmo/" target="_blank" rel="noopener" style="color:#ffd166" data-dq-cuenta>Entrar o crear mi cuenta →</a></p>`); return; }
   const r = await pedir('pedirPase');
   if (!aplicar(r)) return;
   const txt = encodeURIComponent('Hola, quiero el pase premium de Chicha Wars (S/ 10). Mi código es ' + NUBE.cod);

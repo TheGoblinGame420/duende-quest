@@ -19,11 +19,11 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=394';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=395';
 // Trajes 3D de las skins: un solo modulo generado por tools/unir_skins.mjs desde mundo/js/skins/*.js.
-import { SKINS3D } from './skins3d.js?v=394';
+import { SKINS3D } from './skins3d.js?v=395';
 // Monstruos modelados en Blender (se activan con ponerMonstruosPaq).
-import { crearBestias } from './bestias.js?v=394';
+import { crearBestias } from './bestias.js?v=395';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;

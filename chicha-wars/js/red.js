@@ -8,7 +8,7 @@ let sb = null;
 async function tokenWeb() {
   try {
     if (!window.supabase || !window.SUPABASE_URL) return null;
-    sb = sb || window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    sb = sb || window.__dqSb || (window.__dqSb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY));   // uno por pagina, compartido con js/cuenta.js
     const { data } = await sb.auth.getSession();
     return data && data.session ? data.session.access_token : null;
   } catch (e) { return null; }

@@ -516,12 +516,16 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 394;
+export const VERSION = 395;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 149, fecha: '17 nov 2026', items: [
+    '✉️ Crear cuenta ahora es rápido: solo correo y contraseña, sin salir del juego en el que estés (CLASSIC, ORIGINS o Chicha Wars).',
+    '🔗 Es una sola cuenta para todos los juegos del Duende: tu duende de invitado se pasa a la cuenta al entrar.',
+  ] },
   { n: 148, fecha: '17 nov 2026', items: [
     '🕸 CLASSIC: ¡captura criaturas! Debilita a un monstruo (menos del 35 % de vida), acércate y pulsa C o el botón de la red. Los jefes no se dejan.',
     '🐾 Nueva ventana Criaturas (tecla U): tu colección de hasta 24, un equipo de 3 y apodos.',
