@@ -20,3 +20,6 @@ __pycache__/
 
 # Video promocional (salida de tools/promo/): no se sube ni se publica
 /promo/
+
+# Kit del trailer: la musica, las tomas y los videos no se suben (pesan)
+/_promo_kit/

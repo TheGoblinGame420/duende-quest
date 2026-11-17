@@ -258,6 +258,8 @@ const RUTAS = {};
 const DATOS_JUSTOS = /[?&]j=2d\b/i.test(location.search)
   || (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 3)
   || !!(navigator.connection && (navigator.connection.saveData || /2g|3g/.test(navigator.connection.effectiveType || '')));
+// Modo trailer para grabar videos (mmo/js/trailer.js): ?trailer=1 y SOLO en el servidor local.
+const TRAILER = /[?&]trailer=1(&|$)/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 function cargar(k, src, critico) {
   if (IMG[k]) return;
   if (critico === false) { RUTAS[k] = src; return; }
@@ -6484,7 +6486,7 @@ async function inicio() {
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();
-  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || /(^#|&)cuenta(&|$)/.test(location.hash) || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search))) entrar(); }   // #cuenta (desde ORIGINS): directo a la partida y alli se abre la cuenta
+  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || /(^#|&)cuenta(&|$)/.test(location.hash) || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search)) || TRAILER) entrar(); }   // #cuenta (desde ORIGINS): directo a la partida y alli se abre la cuenta
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
@@ -6637,3 +6639,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
+if (TRAILER) import('./trailer.js?v=395').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+  get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

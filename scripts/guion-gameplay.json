@@ -1,0 +1,26 @@
+{
+  "voz": "es-PE-AlexNeural",
+  "velocidad_voz": "+6%",
+  "tono_voz": "+2Hz",
+  "gancho": "MIRA LO QUE HICE\nDESDE CHANCAY",
+  "gancho_dur": 2.8,
+  "salida": "_promo_kit/out/gameplay_narrado.mp4",
+  "frases": [
+    { "texto": "Mira esto: estoy volando con alas en Duende Quest, un juego online que hice desde Chancay.",
+      "clip": "clip1_3d_fly", "ss": 0.3, "clave": ["volando", "alas", "Chancay"] },
+    { "texto": "Y este es el modo clásico, en 2D. Ese es el Rey Goblin... ¡crítico, crítico!",
+      "clip": "clip2_2d_boss", "ss": 0.2, "clave": ["2D", "Rey", "Goblin", "crítico"] },
+    { "texto": "En el mundo 3D me rodean los hongos gigantes. Golpe, habilidad... ¡y otra más!",
+      "clip": "clip3_3d_pvp", "ss": 0.0, "clave": ["3D", "hongos", "gigantes"] },
+    { "texto": "Y si un monstruo queda débil, le lanzas la red...",
+      "clip": "clip4_2d_capture", "ss": 0.0, "vel": 0.42, "clave": ["red"] },
+    { "texto": "¡Capturado! Ahora es parte de mi colección.",
+      "clip": "clip4_2d_capture", "ss": 1.15, "clave": ["Capturado"] },
+    { "texto": "Es gratis, sin descargar, en celular o PC.",
+      "clip": "clip1_3d_fly", "ss": 3.6, "clave": ["gratis", "descargar"] },
+    { "texto": "Entra a duendequest punto com, barra jugar.",
+      "clip": "fin", "extra": 0.9, "sin_subtitulos": true }
+  ],
+  "cta": ["JUEGA GRATIS EN", "DUENDEQUEST.COM/JUGAR"],
+  "cta_sub": "Sin descargas · Celular, PC y Telegram"
+}

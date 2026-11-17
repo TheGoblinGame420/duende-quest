@@ -10556,6 +10556,10 @@ const vFX = new THREE.Vector3();
 // Estado visible en la consola para depurar (solo lectura).
 window.__dq3 = { P, mons, otros, get cam() { return camara; }, get camYaw() { return camYaw; }, get camDist() { return camDist; }, get nCuadro() { return cuadro; }, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now(), true), recibir,
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
+// Modo trailer para grabar videos (mundo/js/trailer.js): ?trailer=1 y SOLO en el servidor local.
+if (/[?&]trailer=1(&|$)/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+  import('./trailer.js?v=395').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
+    listo: () => arteListo && $('carga').style.display === 'none' })).catch(e => console.error('[trailer]', e));
 
 // ── INICIO ──
 async function inicio() {

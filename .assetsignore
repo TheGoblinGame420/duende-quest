@@ -50,3 +50,7 @@ secrets.js
 service_role_key.txt
 mundo/ver_lugares.html
 assets/chicha-wars/originales
+
+# Kit del trailer (scripts/record-clips.mjs y render-trailer.mjs): material y videos, no se publican
+_promo_kit
+scripts
