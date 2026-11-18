@@ -89,6 +89,7 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const srv = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/mmo/ws') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, online: mundo.contarOnline() })); return; }
+  if (p === '/mmo/rank') { mundo.rankPublico().then(async r => { res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(await r.text()); }).catch(e => { res.writeHead(500); res.end(String(e)); }); return; }
   // Chicha Wars (functions/mmo/chichawars.js): el POST pasa tal cual al mundo.
   if (p === '/mmo/cw' && req.method === 'POST') {
     let cuerpo = ''; req.on('data', d => { cuerpo += d; }); req.on('end', async () => {

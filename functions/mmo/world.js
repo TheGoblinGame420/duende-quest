@@ -314,6 +314,8 @@ export class MmoWorld {
     if (url.pathname === '/mmo/ev' && request.method === 'POST') return this.evRecibir(request);
     // Chicha Wars (chichawars.js): su partida, el cambio a oro y el mercado, por HTTP (no entra al mundo).
     if (url.pathname === '/mmo/cw' && request.method === 'POST') return this.cwHttp(request);
+    // Ranking publico de la portada (ranktodos.js): niveles 2D+3D y XP de la semana.
+    if (url.pathname === '/mmo/rank' && request.method === 'GET') return this.rankPublico();
     if (request.headers.get('Upgrade') !== 'websocket') {
       // Estado publico para la portada: conectados ahora y jugadores distintos
       // de hoy (este ultimo se recalcula como mucho cada minuto).
@@ -2040,7 +2042,9 @@ export class MmoWorld {
       const des = this.topDesSem().filter(([uid]) => !fuera(uid)).slice(0, 3).map(([, x]) => ({ n: x.n, k: x.k }));
       const duel = ((await this.state.storage.get('rankDuelo')) || []).filter(x => !fuera(x.uid)).slice(0, 5).map(x => ({ n: x.n, e: x.e }));
       const herm = (await this.topHerm()).slice(0, 3).map(([, x]) => ({ n: x.n, p: x.p }));
-      return json({ ok: true, xp, torre, des, duel, herm, online: this.contarOnline() });
+      let nv = [], tot = 0;
+      try { const t = await this.rkTop(10); nv = t.l.map(x => ({ n: x.n, lv: x.lv, m: x.m || 0, on: x.on || 0 })); tot = t.tot; } catch (e) {}
+      return json({ ok: true, xp, torre, des, duel, herm, nv, tot, online: this.contarOnline() });
     }
     if (accion === 'entregar') return json(await this.entregarPedido(b));
     if (accion === 'anular') return json(await this.anularPedido(b));

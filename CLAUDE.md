@@ -275,3 +275,8 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
     - más tipos de terreno (agua, escaleras);
     - criaturas en el 3D;
     - Hibernation API (V2).
+- **v397 (17-nov-2026): ranking fuera del juego y más juegos en la portada** (el dueño: «en Telegram /ranking no sale nada», «en la web no sale ningún ranking», «no hay opción para ver más juegos»).
+  - Causa: `/ranking` del bot y el ranking de la portada leían solo `game_scores` del arcade, que está vacío. El ranking real es el del MMO (`ranktodos.js`).
+  - `rkTop(n)` y `rankPublico()` en `ranktodos.js`. Ruta pública `GET /mmo/rank` (`world.js` `_fetch`; `worker.js` la cachea 30 s en `caches.default`; añadida a `run_worker_first`; también en `mmo_local`). Devuelve `{ tot, on, nv: top 20 niveles con m/on, sem: top 10 XP de la semana }`. Nada privado: lo mismo que ya se ve dentro.
+  - `/interno/tops` añade `nv` (top 10) y `tot`. `handleRanking` del bot muestra el top 10 de niveles 2D+3D (con 🟢 si está en línea), y debajo el top 3 del arcade solo si hay partidas.
+  - Portada: pestañas Niveles 2D+3D / Esta semana / Arcade (se pide al acercarse a la sección); fila «Más juegos del duende» con Chicha Wars y Arcade; el menú dice «Juegos» (#juegos).

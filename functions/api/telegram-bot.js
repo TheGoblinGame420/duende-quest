@@ -218,16 +218,28 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
 const mdTexto = t => String(t || '').replace(/[*_\[\]`]/g, '').slice(0, 60);   // nombres de compra: sin recortar a 20 ni quitar '$'
 function mdSeguro(t) { return String(t || '').normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20) || '?'; }
 
+// /ranking: el ranking de niveles del MMO (el mismo personaje en CLASSIC 2D y
+// ORIGINS 3D, ranktodos.js) y, debajo, el top del arcade si hay partidas.
+// Antes solo leia game_scores del arcade y salia «Aún no hay puntuaciones».
 async function handleRanking(token, env, chatId, messageId) {
-  const rows = await supabaseQuery(env, 'game_scores?verified=is.true&select=username,score,wave&order=score.desc&limit=50');
+  const medals = ['🥇','🥈','🥉'];
+  const MODO = ['', ' · 2D', ' · 3D', ' · 2D+3D'];
+  let r = null;
+  try { r = await mmoInterno(env, 'tops'); } catch (e) {}
+  let text = '🏆 *Top 10 — DUENDE QUEST*\n_Niveles de CLASSIC (2D) y ORIGINS (3D): es el mismo personaje._\n\n';
+  if (r && r.ok && Array.isArray(r.nv) && r.nv.length) {
+    r.nv.forEach((x, i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(x.n)}* — Nv ${x.lv}${MODO[(x.m | 0) & 3]}${x.on ? ' 🟢' : ''}\n`; });
+    text += `\n👥 ${Number(r.tot || 0).toLocaleString('es')} duendes en el ranking · ${r.online | 0} en línea ahora`;
+  } else text += '_No se pudo leer el ranking ahora. Prueba en un momento._';
+  let rows = null;
+  try { rows = await supabaseQuery(env, 'game_scores?verified=is.true&select=username,score,wave&order=score.desc&limit=50'); } catch (e) {}
   // Una entrada por jugador: su mejor score
   const best = new Map();
   if (Array.isArray(rows)) for (const s of rows) { const k = (s.username || '?').toLowerCase(); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
-  const scores = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
-  let text = '🏆 *Top 10 — DUENDE QUEST*\n\n';
-  if (scores.length === 0) text += '_Aún no hay puntuaciones._';
-  else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(s.username)}* — ${s.score.toLocaleString()} pts (oleada ${s.wave})\n`; }); }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar (3D)', web_app: { url: MUNDO_URL } }, { text: '🕹 Arcade', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  const scores = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 3);
+  if (scores.length) { text += '\n\n🕹 *Arcade*\n'; scores.forEach((s,i) => { text += `${medals[i]} *${mdSeguro(s.username)}* — ${s.score.toLocaleString('es')} pts (oleada ${s.wave})\n`; }); }
+  text += '\n\nMás tops de la semana (Torre, duelos, hermandades): /topmmo';
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar (3D)', web_app: { url: MUNDO_URL } }, { text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }],[{ text: '🌍 Semana', callback_data: 'topmmo' }, { text: '🕹 Arcade', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 

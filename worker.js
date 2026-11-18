@@ -79,6 +79,20 @@ export default {
         return await env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/mmo/cw', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: await request.text() });
       } catch (e) { console.error('[MMO cw]', e); return new Response(JSON.stringify({ ok: false, m: 'Servidor no disponible' }), { status: 503 }); }
     }
+    // Ranking publico de la portada (functions/mmo/ranktodos.js, rankPublico):
+    // cacheado 30 s en el borde para que las visitas no despierten al Durable Object.
+    if (path === '/mmo/rank') {
+      if (request.method !== 'GET' || !env.MMO) return new Response(null, { status: 405 });
+      const clave = new Request(url.origin + '/mmo/rank');
+      try {
+        const guardada = await caches.default.match(clave);
+        if (guardada) return guardada;
+        const r0 = await env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/mmo/rank');
+        const r = new Response(r0.body, { status: r0.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30' } });
+        if (r.ok) ctx.waitUntil(caches.default.put(clave, r.clone()));
+        return r;
+      } catch (e) { console.error('[MMO rank]', e); return new Response(JSON.stringify({ ok: false }), { status: 503, headers: { 'Content-Type': 'application/json' } }); }
+    }
     // DUENDE QUEST ONLINE: todo el mundo vive en un solo Durable Object.
     if (path === '/mmo/ws') {
       if (!env.MMO) return new Response('MMO no configurado', { status: 503 });

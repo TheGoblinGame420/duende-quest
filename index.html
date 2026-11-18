@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=396"></script>
+<script src="/js/origen.js?v=397"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -36,8 +36,8 @@
 <meta name="twitter:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D">
 <meta name="theme-color" content="#090615">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=396" defer></script>
-<script src="/js/portada-orden.js?v=396" defer></script>
+<script src="/js/pwa.js?v=397" defer></script>
+<script src="/js/portada-orden.js?v=397" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -255,6 +255,17 @@ nav{
 .juego-btn{text-align:center;margin-top:auto;}
 .una-skin{width:min(760px,100%);margin:0 auto 1.1rem;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(250,204,21,.14),rgba(167,139,250,.14));border:1px solid rgba(250,204,21,.45);color:#fde68a;font-size:.95rem;line-height:1.45;}
 .una-skin b{color:#fff;}
+.mas-juegos-h{margin:1.6rem 0 .7rem;font:800 1.05rem system-ui,sans-serif;color:#fff;text-align:center}
+.mas-juegos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;width:min(760px,100%);margin:0 auto 1.2rem;text-align:left}
+.mjuego{display:flex;flex-direction:column;background:rgba(20,14,40,.85);border:1px solid rgba(167,139,250,.35);border-radius:16px;overflow:hidden;color:#fff;text-decoration:none;transition:transform .15s,border-color .15s}
+.mjuego:hover{transform:translateY(-2px);border-color:#a78bfa}
+.mjuego img{width:100%;height:auto;aspect-ratio:2/1;object-fit:cover;display:block}
+.mjuego picture{display:contents}
+.mjuego-t{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px}
+.mjuego-t b{font:800 1.05rem system-ui,sans-serif}
+.mjuego-t span{color:#cbd5e1;font-size:.88rem;line-height:1.4}
+.mjuego-t em{font-style:normal;font-weight:700;color:#fde68a;font-size:.9rem;margin-top:2px}
+@media (max-width:640px){.mas-juegos{grid-template-columns:1fr;justify-items:center}.mjuego{width:min(340px,100%)}}
 @media (max-width:640px){.juegos{grid-template-columns:1fr;justify-items:center;}.juego{width:min(340px,100%);}.juego-media{aspect-ratio:9/13;max-height:62vh;}}
 /* El boton de jugar de la primera pantalla; las tarjetas de abajo son para quien ya sabe cual quiere */
 .hero .hero-cta-movil{display:flex;align-items:center;justify-content:center;width:100%;max-width:380px;margin:0 auto 1.4rem;font-size:18px;min-height:56px}
@@ -690,10 +701,19 @@ footer{
 .nav-logo img,.f-logo img,.hero-coin{image-rendering:pixelated;}
 /* Las barras superiores quedaban tapadas por la barra fija de navegacion */
 #live-ticker,.ticker{display:none!important;}
-/* Filas del ranking (las pinta cargarRankingLanding con letra pixel diminuta) */
-#landing-leaderboard>div{font-family:var(--sans)!important;}
-#landing-leaderboard span{font-size:14px!important;}
-#landing-leaderboard span:last-child{font-size:12px!important;color:var(--txt2)!important;}
+/* Ranking de la portada (pestañas Niveles 2D+3D, Semana y Arcade) */
+.rk-tabs{display:flex;border-bottom:1px solid var(--borde)}
+.rk-tabs button{flex:1;padding:.75rem .4rem;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--txt2);font:700 14px var(--sans);cursor:pointer;min-height:44px}
+.rk-tabs button[aria-selected="true"]{color:var(--txt);border-bottom-color:var(--yellow,#ffd84a)}
+.rk-fila{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.05)}
+.rk-fila:last-child{border-bottom:0}
+.rk-pos{width:2rem;font-size:15px;text-align:center;flex:none;font-weight:700;color:var(--txt2)}
+.rk-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt);font-weight:600}
+.rk-m{flex:none;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:var(--txt2)}
+.rk-v{flex:none;color:var(--green,#4ade80);font-weight:700;font-variant-numeric:tabular-nums}
+.rk-on{width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none;box-shadow:0 0 6px #22c55e}
+.rk-vacio{padding:1.2rem;text-align:center;font-size:14px;color:var(--txt2)}
+#landing-leaderboard{font-family:var(--sans);font-size:14px}
 h3.creador-t,h3.d-title{font-weight:400;}
 h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
 /* ── CONTADOR "PRECIO ESPECIAL" ──
@@ -778,7 +798,7 @@ section[id]{scroll-margin-top:72px;}
 .faq-cta p{font-size:14px;color:var(--txt2);margin-top:.8rem;}
 </style>
 <!-- Capa de marca de la portada (nov-2026): variables, héroe, franja del token, utilidad y cómo comprar -->
-<link rel="stylesheet" href="/css/portada.css?v=396">
+<link rel="stylesheet" href="/css/portada.css?v=397">
 </head>
 <body>
 
@@ -796,7 +816,7 @@ section[id]{scroll-margin-top:72px;}
   <ul class="nav-links">
     <li class="solo-cripto"><a href="#trust">Token</a></li>
     <li class="solo-cripto"><a href="#como-comprar">Cómo comprar</a></li>
-    <li><a href="#que-es">El juego</a></li>
+    <li><a href="#juegos">Juegos</a></li>
     <li><a href="#ranking">Ranking</a></li>
     <li><a href="#community">Comunidad</a></li>
     <li><a href="#nft-store">Tienda</a></li>
@@ -893,6 +913,17 @@ section[id]{scroll-margin-top:72px;}
       <ul><li>El MMO 2D de siempre, en pixel art</li><li>6 mazmorras, la Torre y la banda del Titán</li><li>4 clases, 10 zonas hasta el nivel 60</li></ul>
       <a href="/mmo/" class="btn-tg juego-btn">⚔️ Jugar CLASSIC</a>
     </article>
+  </div>
+  <h3 class="mas-juegos-h">Más juegos del duende</h3>
+  <div class="mas-juegos" aria-label="Más juegos">
+    <a class="mjuego" href="/chicha-wars/">
+      <img src="assets/og/chicha.jpg" style="object-position:82% center" width="1200" height="630" loading="lazy" decoding="async" alt="Chicha Wars: prepara chicha morada y espanta a los duendes">
+      <span class="mjuego-t"><b>Chicha Wars</b><span>Prepara chicha morada, mejora tus ollas y espanta a los duendes ladrones. Partidas cortas en el celular.</span><em>Jugar gratis →</em></span>
+    </a>
+    <a class="mjuego" href="game.html">
+      <picture><source type="image/webp" srcset="assets/capturas/arcade-combate-640.webp"><img src="assets/capturas/arcade-combate.png" width="640" height="295" loading="lazy" decoding="async" alt="Modo arcade de Duende Quest: oleadas de enemigos en pixel art"></picture>
+      <span class="mjuego-t"><b>Arcade</b><span>El RPG de oleadas original: jefes, combos, objetos y ranking de puntos.</span><em>Jugar gratis →</em></span>
+    </a>
   </div>
   <div class="una-skin"><b>Una skin, dos juegos.</b> Todo lo que ganas o compras (skins, alas, oro, equipo y niveles) vale a la vez en $DUENDE CLASSIC y en $DUENDE ORIGINS: es el mismo personaje.</div>
   <div class="hero-btns">
@@ -1298,28 +1329,31 @@ section[id]{scroll-margin-top:72px;}
 <!-- ========== RANKING GLOBAL ========== -->
 <section class="section" id="ranking" aria-labelledby="ranking-h">
   <h2 class="px-title" id="ranking-h">Ranking global</h2>
-  <p class="px-sub">Los mejores jugadores del modo arcade, con puntajes reales de la base de datos del juego.</p>
+  <p class="px-sub">Jugadores reales de CLASSIC (2D) y ORIGINS (3D): es el mismo personaje, así que hay un solo ranking.</p>
 
   <div style="max-width:700px;margin:2rem auto 0;background:var(--panel);border:1px solid var(--borde);border-radius:10px;overflow:hidden;box-shadow:var(--sombra)">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.2rem;border-bottom:1px solid var(--borde);background:var(--panel2)">
-      <span style="font-size:14px;font-weight:600;color:var(--txt)">Top jugadores</span>
-      <span style="font-size:12px;color:var(--txt2)">● En vivo</span>
+    <div class="rk-tabs" role="tablist" aria-label="Tipo de ranking">
+      <button type="button" role="tab" data-rk="nv" aria-selected="true">Niveles 2D+3D</button>
+      <button type="button" role="tab" data-rk="sem" aria-selected="false">Esta semana</button>
+      <button type="button" role="tab" data-rk="arc" aria-selected="false">Arcade</button>
     </div>
-    <!-- Filas reales: las pinta cargarRankingLanding() mas abajo, leyendo
-         game_scores de Supabase (misma consulta que usa el ranking dentro
-         del juego, _fetchLeaderboard() en js/auth-manager.js). Antes esto
-         eran 5 nombres y puntajes inventados a mano con un badge "LIVE" que
-         nunca estuvo conectado a nada. -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.2rem;border-bottom:1px solid var(--borde);background:var(--panel2)">
+      <span id="rk-titulo" style="font-size:14px;font-weight:600;color:var(--txt)">Top 10 por nivel</span>
+      <span id="rk-vivo" style="font-size:12px;color:var(--txt2)"></span>
+    </div>
+    <!-- Filas reales: las pinta cargarRankingLanding() mas abajo (GET /mmo/rank
+         para Niveles y Semana; game_scores de Supabase para Arcade). -->
     <div id="landing-leaderboard">
       <div style="padding:1.2rem;text-align:center;font-size:14px;color:var(--txt2)">Cargando…</div>
     </div>
-    <div style="padding:1rem;text-align:center;border-top:1px solid var(--borde)">
-      <a href="game.html" style="font-size:14px;font-weight:600;color:var(--cian)">Ver el ranking completo en el juego</a>
+    <div style="padding:1rem;text-align:center;border-top:1px solid var(--borde);font-size:13px;color:var(--txt2)">
+      El ranking completo, con buscador y tu puesto, está dentro del juego (botón 🏆).
     </div>
   </div>
 
-  <div style="text-align:center;margin-top:1.8rem">
-    <a href="game.html" class="btn-sec">Crear cuenta y competir</a>
+  <div style="text-align:center;margin-top:1.8rem;display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
+    <a href="/mundo/" class="btn-sec">Jugar ORIGINS (3D)</a>
+    <a href="/mmo/" class="btn-sec">Jugar CLASSIC (2D)</a>
   </div>
 </section>
 
@@ -2322,44 +2356,67 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase: defer no frena el dibujo y corre antes de 'load', que es cuando lo usa auth-manager.js (initSupabase) -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=396"></script>
+<script src="js/config.js?v=397"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=396"></script>
+<script src="js/auth-manager.js?v=397"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
 // propio listener de 'load' (que llama a initSupabase()) ANTES que este
 // script — los listeners de 'load' corren en orden de registro, asi que
 // _sb ya esta listo cuando llega este.
-async function cargarRankingLanding(){
-  const el = document.getElementById('landing-leaderboard');
-  if (!el) return;
-  if (typeof _sb === 'undefined' || !_sb || typeof _fetchLeaderboard !== 'function') {
-    el.innerHTML = '<div style="padding:1.2rem;text-align:center;font-family:\'Press Start 2P\',monospace;font-size:.3rem;color:rgba(255,255,255,.3)">Ranking no disponible ahora mismo</div>';
-    return;
+// v397: el ranking principal es el del MMO (GET /mmo/rank, ranktodos.js
+// rankPublico: niveles de CLASSIC 2D + ORIGINS 3D y XP de la semana). La
+// pestaña Arcade sigue leyendo game_scores (_fetchLeaderboard).
+(function () {
+  const esc = s => String(s == null ? '?' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const MED = ['🥇', '🥈', '🥉'];
+  const MODO = ['', '2D', '3D', '2D+3D'];
+  const TIT = { nv: 'Top 10 por nivel', sem: 'XP de esta semana (premios el lunes)', arc: 'Arcade: mejores puntajes' };
+  let datos = null, pidiendo = null, pest = 'nv';
+  const vacio = t => '<div class="rk-vacio">' + t + '</div>';
+  const fila = (i, n, extra, v) => '<div class="rk-fila"><span class="rk-pos">' + (MED[i] || '#' + (i + 1)) + '</span><span class="rk-n">' + esc(n) + '</span>' + extra + '<span class="rk-v">' + v + '</span></div>';
+  function pedir() {
+    if (!pidiendo) pidiendo = fetch('/mmo/rank').then(r => r.ok ? r.json() : null).catch(() => null).then(d => { datos = d && d.ok ? d : null; if (!datos) pidiendo = null; return datos; });
+    return pidiendo;
   }
-  let scores = null;
-  try { scores = await _fetchLeaderboard('alltime'); } catch (e) {}
-  if (!scores || scores.length === 0) {
-    el.innerHTML = '<div style="padding:1.2rem;text-align:center;font-family:\'Press Start 2P\',monospace;font-size:.3rem;color:rgba(255,255,255,.3)">Aún no hay partidas — ¡sé el primero del ranking!</div>';
-    return;
+  async function pintar() {
+    const el = document.getElementById('landing-leaderboard');
+    if (!el) return;
+    document.getElementById('rk-titulo').textContent = TIT[pest];
+    const vivo = document.getElementById('rk-vivo');
+    if (pest === 'arc') {
+      vivo.textContent = '';
+      if (typeof _sb === 'undefined' || !_sb || typeof _fetchLeaderboard !== 'function') { el.innerHTML = vacio('Ranking del arcade no disponible ahora mismo.'); return; }
+      let s = null;
+      try { s = await _fetchLeaderboard('alltime'); } catch (e) {}
+      if (pest !== 'arc') return;
+      el.innerHTML = s && s.length ? s.slice(0, 10).map((x, i) => fila(i, x.username, '<span class="rk-m">oleada ' + (x.wave | 0) + '</span>', Number(x.score || 0).toLocaleString('es') + ' pts')).join('') : vacio('Aún no hay partidas del arcade. <a href="game.html">¡Sé el primero!</a>');
+      return;
+    }
+    const d = datos || await pedir();
+    if (pest === 'arc') return;
+    if (!d) { el.innerHTML = vacio('No se pudo leer el ranking ahora. Prueba en un momento.'); vivo.textContent = ''; return; }
+    vivo.innerHTML = '<span style="color:#22c55e">●</span> ' + (d.on | 0) + ' en línea · ' + Number(d.tot || 0).toLocaleString('es') + ' duendes';
+    if (pest === 'nv') {
+      el.innerHTML = d.nv && d.nv.length ? d.nv.slice(0, 10).map((x, i) => fila(i, x.n, (x.on ? '<span class="rk-on" title="En línea ahora" aria-label="En línea ahora"></span>' : '') + (x.m ? '<span class="rk-m">' + MODO[x.m & 3] + '</span>' : ''), 'Nv ' + (x.lv | 0))).join('') : vacio('Aún no hay duendes en el ranking.');
+    } else {
+      el.innerHTML = d.sem && d.sem.length ? d.sem.map((x, i) => fila(i, x.n, '<span class="rk-m">Nv ' + (x.lv | 0) + '</span>', Number(x.xp || 0).toLocaleString('es') + ' XP')).join('') : vacio('Nadie ha ganado XP esta semana todavía. ¡Entra y sé el primero!');
+    }
   }
-  const esc = s => String(s || '?').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const medals = ['🥇', '🥈', '🥉'];
-  el.innerHTML = scores.slice(0, 5).map((s, i) => {
-    const pos = i < 3
-      ? '<span style="font-size:.5rem;color:' + ['var(--yellow)', '#aaa', '#cd7f32'][i] + '">' + medals[i] + '</span>'
-      : '<span style="font-size:.4rem;color:rgba(255,255,255,.3)">#' + (i + 1) + '</span>';
-    const borde = i < scores.slice(0, 5).length - 1 ? 'border-bottom:1px solid rgba(255,255,255,.04);' : '';
-    return '<div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;' + borde + 'font-family:\'Press Start 2P\',monospace">' +
-      pos +
-      '<span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.username) + '</span>' +
-      '<span style="font-size:.42rem;color:var(--green)">' + Number(s.score || 0).toLocaleString() + '</span>' +
-      '<span style="font-size:.3rem;color:rgba(255,255,255,.25)">W' + (s.wave || 0) + '</span>' +
-    '</div>';
-  }).join('');
-}
-window.addEventListener('load', cargarRankingLanding);
+  document.querySelectorAll('.rk-tabs [data-rk]').forEach(b => b.addEventListener('click', () => {
+    pest = b.dataset.rk;
+    document.querySelectorAll('.rk-tabs [data-rk]').forEach(o => o.setAttribute('aria-selected', o === b ? 'true' : 'false'));
+    pintar();
+  }));
+  // Se pide al acercarse a la sección (no gasta nada a quien no baja hasta aquí).
+  const sec = document.getElementById('ranking');
+  if (sec && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(e => { if (e.some(x => x.isIntersecting)) { io.disconnect(); pintar(); } }, { rootMargin: '600px' });
+    io.observe(sec);
+  } else window.addEventListener('load', pintar);
+  window.cargarRankingLanding = pintar;
+})();
 </script>
 <script>
 // Panel "en vivo" de la portada: todo sale del servidor o del horario real.
@@ -2404,7 +2461,7 @@ window.addEventListener('load', cargarRankingLanding);
   } catch (e) {}
 })();
 </script>
-<script src="js/price-feed.js?v=396"></script>
+<script src="js/price-feed.js?v=397"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

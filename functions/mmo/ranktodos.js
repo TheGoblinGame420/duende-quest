@@ -149,6 +149,22 @@ export const RankTodos = {
     if (on && on.c && !on.cerrado) o.on = on.m3 ? 2 : 1;   // en linea ahora y en que modo
     return o;
   },
+  // Top de niveles (2D + 3D) para fuera del juego: portada (/mmo/rank) y /ranking del bot.
+  // Solo nombre, nivel, cazas, donde juega y si esta en linea: lo mismo que ya se ve dentro.
+  async rkTop(n) {
+    const v = await this.rkVista();
+    return { tot: v.l.length, l: v.l.slice(0, n).map((x, i) => { const o = this.rkFila(x, i, ''); delete o.yo; return o; }) };
+  },
+  // GET /mmo/rank (publico, worker.js lo cachea 30 s): niveles y XP de la semana.
+  async rankPublico() {
+    const ahora = Date.now();
+    if (!this._rkPub || ahora - this._rkPub.t > 30000) {
+      const top = await this.rkTop(20);
+      const sem = (this.topSemana ? this.topSemana() : []).filter(([uid]) => !this.uidsPrueba.has(uid)).slice(0, 10).map(([, x]) => ({ n: x.n, lv: x.lv, xp: x.xp }));
+      this._rkPub = { t: ahora, j: JSON.stringify({ ok: true, tot: top.tot, on: this.contarOnline(), nv: top.l, sem }) };
+    }
+    return new Response(this._rkPub.j, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30' } });
+  },
   // Una pagina del ranking de niveles (o de una busqueda por nombre) y tu puesto.
   async rankNv(s, m) {
     if (!s || !s.c) return;
