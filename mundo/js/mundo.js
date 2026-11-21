@@ -14,48 +14,48 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=397';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=397';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=397';   // meta del talento elegido a Nv 7 en la barra de XP
-import { TALA as TALA_R } from '/mmo/js/data.js?v=397';   // v379: talar cualquier arbol
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=397';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=397';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=397';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=397';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=397';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=397';
-import { abrirCuenta } from '/js/cuenta.js?v=397';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=397';
-import { crearMusica } from './musica.js?v=397';
-import { crearSonidos } from './sonidos.js?v=397';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=397';
-import { construirCueva } from './cueva.js?v=397';
-import { TAPA, transparentar } from './tapa.js?v=397';
-import { construirAbismo } from './abismo.js?v=397';
-import { crearParticulas } from './particulas.js?v=397';
-import { crearCielo } from './cielo.js?v=397';
-import { PERF } from './perf.js?v=397';
-import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=397';
-import { construirLugares, faltanPropios } from './lugares.js?v=397';
-import { cargarModelado } from './modelado.js?v=397';
-import { crearRuinas } from './ruinas.js?v=397';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=397';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=397';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=397';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=398';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=398';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=398';   // meta del talento elegido a Nv 7 en la barra de XP
+import { TALA as TALA_R } from '/mmo/js/data.js?v=398';   // v379: talar cualquier arbol
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=398';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=398';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=398';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=398';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=398';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=398';
+import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=398';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=398';
+import { crearMusica } from './musica.js?v=398';
+import { crearSonidos } from './sonidos.js?v=398';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=398';
+import { construirCueva } from './cueva.js?v=398';
+import { TAPA, transparentar } from './tapa.js?v=398';
+import { construirAbismo } from './abismo.js?v=398';
+import { crearParticulas } from './particulas.js?v=398';
+import { crearCielo } from './cielo.js?v=398';
+import { PERF } from './perf.js?v=398';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=398';
+import { construirLugares, faltanPropios } from './lugares.js?v=398';
+import { cargarModelado } from './modelado.js?v=398';
+import { crearRuinas } from './ruinas.js?v=398';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=398';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=398';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=398';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=397';
-import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=397';   // v376: lugares con nombre de la franja exterior
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=397';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=397';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=397';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=397';
-import { PISTAS } from '/mmo/js/caso.js?v=397';
-import { htmlCaso } from './caso.js?v=397';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=397';
-import { crearRituales } from './rituales.js?v=397';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=397';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=397';
-import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=397';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=398';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=398';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=398';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=398';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=398';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=398';
+import { PISTAS } from '/mmo/js/caso.js?v=398';
+import { htmlCaso } from './caso.js?v=398';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=398';
+import { crearRituales } from './rituales.js?v=398';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=398';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=398';
+import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=398';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -2759,7 +2759,7 @@ function recibir(m) {
       setTimeout(() => despuesMision1(tarjetaBautizo), 6500);   // invitado: ponle nombre a tu duende (una vez)
       setTimeout(() => { try { RIT.pedir(); } catch (e) {} }, 2500);   /* rituales.js: amanecer y ritual de la noche */
       setTimeout(() => { if (yo && yo.clase) OBJ.alEntrar(); }, 4000);   // «Donde lo dejaste» al volver tras horas (sale a los 10 s, despues de la escena del capitulo; una vez por visita)
-      if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
+      if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); if (!recInv) recInv = recordarInvitado({ esInvitado: () => soyInvitado, nivel: () => (yo && yo.nivel) || 1, abrir: irACrearCuenta, ocupado: () => hayVentana() || hayLateral() || !!(P && (P.muerto || P.vuela)) || (performance.now() - ((P && P.heridoT) || 0) < 8000) }); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       { const cg = $('carga'); cg.classList.add('sale'); setTimeout(() => { cg.style.display = 'none'; cg.classList.remove('sale'); }, 360); }   // fundido de entrada al mundo
       cerrar('v-inicio');
       pintarHud(); pintarTemp3();
@@ -2816,6 +2816,7 @@ function recibir(m) {
       if (yo.mis && yo.mis.i <= 5 && (antes ? antes.mis && yo.mis.i !== antes.mis.i : yo.mis.i === 0)) paso('mis_' + yo.mis.i);
       if (antes && antes.mis && yo.mis && yo.mis.i > antes.mis.i) OBJ.misionCumplida(antes.mis.i);
       if (antes && antes.diaria && yo.diaria && !antes.diaria.ok && yo.diaria.ok) OBJ.sugerir(DIARIA.nombre + ' cobrada');
+      if (recInv && antes && yo.nivel > antes.nivel) recInv.subio(yo.nivel);
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => { const g = granMeta(yo, soyInvitado); if (!g.rec) aviso(g.listo ? '🥤 Ya puedes reclamar tus ' + g.litros + ' litros: toca la barra morada de la chicha.' : soyInvitado ? '🥤 Para reclamar tus ' + g.litros + ' litros de chicha falta tu cuenta gratis. Tu duende pasa contigo.' : '🥤 Para reclamar tus ' + g.litros + ' litros te falta jugar ' + g.falta + '.', 'ok'); }, 5000); }
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
@@ -5592,7 +5593,7 @@ function pintarRanking(r) {
 // Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
 const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, irArtesana, telegram: () => !!TG && !forzarInvitado, probarSkin, probarMontura, vibSel,
   // Tienda → «Entrar»: la cuenta se abre aqui; al volver, la tienda en el paquete que queria. En Telegram, el camino de siempre (null).
-  iniciarSesion: TG ? null : f => cuentaAqui('crear', '#premium' + (f ? '&f=' + f : '')) });
+  iniciarSesion: f => cuentaAqui('crear', '#premium' + (f ? '&f=' + f : '')) });
 $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
@@ -6791,8 +6792,8 @@ function tarjetaBautizo(n) {
 // Invitado: la cuenta se crea aqui mismo (js/cuenta.js: correo + contraseña). Al terminar se
 // recarga: entra como 'web:' y el servidor ofrece pasarle el duende de invitado ('heredar').
 // tras: hash al volver (#premium&f=... abre la tienda en el paquete que queria).
+// Tambien dentro de Telegram (antes mandaba a CLASSIC): si Telegram no pudo verificar al jugador, el hola cae a la sesion web.
 function cuentaAqui(modo, tras) {
-  if (TG) return irACrearCuentaClassic();   // en Telegram la identidad es la de Telegram: el camino de siempre
   abrirCuenta({ modo: modo || 'crear', sb: sbCli, alListo: () => { if (tras) location.hash = tras; location.reload(); } });
 }
 function irACrearCuenta() { cuentaAqui('crear'); }
@@ -6806,12 +6807,6 @@ function irACrearCuenta() { cuentaAqui('crear'); }
   b.hidden = false;
   b.onclick = () => cuentaAqui('crear');
 })();
-// Camino viejo (solo Telegram): /mmo/ a crear cuenta con correo; al terminar vuelve a /mundo/ con su duende.
-function irACrearCuentaClassic() {
-  aviso('Crea tu cuenta gratis con tu correo: al terminar vuelves aquí con tu duende.', 'ok');
-  try { sessionStorage.setItem('dq_volver', '/mundo/'); localStorage.setItem('dq_volver', '/mundo/'); } catch (e) {}
-  setTimeout(() => { location.href = '/mmo/' + (hashTg && hashTg.length > 1 ? hashTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 700);
-}
 // Cupo global de ventanas que se abren solas (leyenda, aviso de invitado): no se apilan.
 let ventanaAutoT = 0;
 // Tope de tarjetas automaticas: tras 3, las de menos prioridad esperan a Nv 6 y a 15 min de juego (quedan para otra sesion).
@@ -6833,7 +6828,7 @@ function leyendaPrimeraVez() {
   if (COMPACTO) npcDice('Guardia Tito', ['El Rey Goblin rompió el Cántaro Eterno de la chicha. Recupera sus pedazos… y a Nv ' + CHICHA.nv60 + ' te llevas ' + CHICHA.litros60 + ' L de chicha morada de verdad (envíos solo en Perú).'], '🛡');
   else verLeyenda();
 }
-let avisoInvT = 0;
+let avisoInvT = 0, recInv = null;   // recInv: franja «Juegas como invitado» (js/cuenta.js recordarInvitado)
 function avisoInvitado() {
   // Tras entregar la mision 1 (o desde Nv 3) y como mucho una vez al dia.
   if (!soyInvitado || !yo || (yo.nivel < 3 && !(yo.mis && yo.mis.i >= 1)) || hayVentana() || hayLateral() || $('v-diario').classList.contains('on')) return;
@@ -10563,7 +10558,7 @@ window.__dq3 = { P, mons, otros, get cam() { return camara; }, get camYaw() { re
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 // Modo trailer para grabar videos (mundo/js/trailer.js): ?trailer=1 y SOLO en el servidor local.
 if (/[?&]trailer=1(&|$)/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
-  import('./trailer.js?v=397').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
+  import('./trailer.js?v=398').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
     listo: () => arteListo && $('carga').style.display === 'none' })).catch(e => console.error('[trailer]', e));
 
 // ── INICIO ──

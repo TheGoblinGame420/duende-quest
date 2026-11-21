@@ -49,6 +49,14 @@ window.addEventListener('load', async () => {
 function showAuthModal(tab) {
   tab = tab || 'login';
   if (currentProfile) { showProfileModal(); return; }
+  // La misma ventana de cuenta de todos los juegos (js/cuenta.js: correo + contraseña, sin repetirla ni
+  // inventar usuario). El formulario viejo de abajo queda solo si ese modulo no cargo.
+  if (window.__dqAbrirCuenta && _sb) {
+    const alMenu = () => { if (!document.querySelector('.ov.show')) { const m = document.getElementById('ov-menu'); if (m) m.classList.add('show'); } };
+    window.__dqAbrirCuenta({ modo: arguments[0] === 'login' ? 'entrar' : 'crear', sb: () => _sb, alCerrar: alMenu,
+      alListo: async () => { try { const { data } = await _sb.auth.getUser(); if (data && data.user) await _loadProfile(data.user); } catch (e) {} alMenu(); } });
+    return;
+  }
   document.querySelectorAll('.ov').forEach(o => o.classList.remove('show'));
   document.getElementById('ov-auth').classList.add('show');
   switchAuthTab(tab);

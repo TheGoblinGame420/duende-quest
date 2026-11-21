@@ -187,3 +187,47 @@ export function abrirCuenta(op = {}) {
   formCuenta(fondo.querySelector('.dqc-cuerpo'), { ...op, alListo: () => { fondo.remove(); removeEventListener('keydown', esc, true); if (op.alListo) op.alListo(); } });
   return cerrar;
 }
+
+// ── RECORDATORIO A INVITADOS ──
+// El duende de invitado vive solo en este navegador: si se borran los datos, se pierde.
+// Una franja pequeña (no tapa el juego ni bloquea) con «Crear cuenta» y «Luego»:
+//  - la primera a los ~3 min de juego, luego cada 10 min, como mucho 4 por visita;
+//  - también al subir a los niveles de RECORDAR_NV (si no hay otra en pantalla);
+//  - nunca con una ventana abierta, en combate o muerto (op.ocupado): se reintenta a los 20 s.
+// op: { esInvitado(), nivel(), ocupado(), abrir() }. Devuelve { subio(nv), quitar() }.
+const RECORDAR_NV = [2, 4, 6, 8, 10, 15, 20, 25, 30];
+export function recordarInvitado(op) {
+  estilos();
+  if (!document.getElementById('dqr-css')) {
+    const s = document.createElement('style'); s.id = 'dqr-css';
+    s.textContent = `#dqr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translate(-50%,-12px);opacity:0;transition:opacity .25s,transform .25s;z-index:2147482000;width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:10px 12px;border-radius:12px;background:#1c1033;border:1px solid #ffd84a;box-shadow:0 6px 24px rgba(0,0,0,.5);font:500 13px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif;color:#efe7ff}
+#dqr.on{opacity:1;transform:translate(-50%,0)}#dqr b{color:#ffd84a}#dqr .dqr-b{display:flex;gap:8px;margin-top:8px}
+#dqr button{flex:1;min-height:40px;border-radius:9px;font:700 14px system-ui,sans-serif;cursor:pointer}
+#dqr .dqr-si{border:0;background:linear-gradient(180deg,#8b5cf6,#6d28d9);color:#fff}#dqr .dqr-no{flex:0 0 auto;padding:0 14px;border:1px solid #6d3fc0;background:#24123f;color:#cbbbe8}`;
+    document.head.appendChild(s);
+  }
+  const t0 = Date.now(); let n = 0, proxima = t0 + 3 * 60000, timer = 0, oculto = 0;
+  const quitar = () => { const d = document.getElementById('dqr'); clearTimeout(oculto); if (d) { d.classList.remove('on'); setTimeout(() => d.remove(), 260); } };
+  const mostrar = forzado => {
+    if (!op.esInvitado() || n >= 4 || document.getElementById('dqr') || document.getElementById('dqc-fondo')) return false;
+    if (op.ocupado && op.ocupado()) return false;
+    n++; proxima = Date.now() + 10 * 60000;
+    const nv = op.nivel ? op.nivel() : 0;
+    const d = document.createElement('div'); d.id = 'dqr'; d.setAttribute('role', 'status');
+    d.innerHTML = '<b>Juegas como invitado.</b> Tu duende' + (nv > 1 ? ' (Nv ' + nv + ')' : '') + ' vive solo en este navegador: si se borra, lo pierdes. Crea tu cuenta gratis con tu correo y lo guardas en todos los juegos.'
+      + '<div class="dqr-b"><button type="button" class="dqr-si">Crear cuenta</button><button type="button" class="dqr-no">Luego</button></div>';
+    ['keydown', 'touchstart', 'pointerdown'].forEach(t => d.addEventListener(t, e => e.stopPropagation(), { passive: true }));
+    d.querySelector('.dqr-si').onclick = () => { quitar(); op.abrir(); };
+    d.querySelector('.dqr-no').onclick = quitar;
+    document.body.appendChild(d);
+    requestAnimationFrame(() => d.classList.add('on'));
+    oculto = setTimeout(quitar, forzado ? 15000 : 20000);
+    return true;
+  };
+  const vuelta = () => { if (!op.esInvitado()) return; if (Date.now() >= proxima) mostrar(); timer = setTimeout(vuelta, 20000); };
+  timer = setTimeout(vuelta, 20000);
+  return {
+    subio(nv) { if (RECORDAR_NV.includes(nv) && op.esInvitado()) setTimeout(() => mostrar(true), 2500); },
+    quitar() { clearTimeout(timer); quitar(); },
+  };
+}

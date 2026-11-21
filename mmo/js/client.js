@@ -18,13 +18,13 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=397';
-import { iniciarRegalo } from './regalo.js?v=397';
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=397';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=397';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=397';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=397';
-import { formCuenta } from '/js/cuenta.js?v=397';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=398';
+import { iniciarRegalo } from './regalo.js?v=398';
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=398';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=398';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=398';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=398';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=398';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -513,7 +513,7 @@ let camX = 0;
 function urlWs() { return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/mmo/ws'; }
 function mandar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
-let soyInvitado = false;
+let soyInvitado = false, recInv = null;
 async function autenticacion() {
   soyInvitado = false;
   try { localStorage.setItem('dq_ultimo_juego', '/mmo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
@@ -699,6 +699,7 @@ function recibir(m) {
       if (tiendaAlEntrar && yo && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1500);
       if (m.nuevo) aviso('Bienvenido al Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
       // El servidor puede cambiar el nombre pedido (ya era de otro o imita al equipo).
+      if (soyInvitado && !recInv) recInv = recordarInvitado({ esInvitado: () => soyInvitado, nivel: () => (yo && yo.nivel) || 1, abrir: abrirCuenta, ocupado: () => !yo || P.muerto || enCombate() || !!document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on') || chatAbierto() });   // franja «Juegas como invitado» (js/cuenta.js)
       if (soyInvitado) { try { if (localStorage.getItem('dq_mmo_nombre') !== yo.nombre) { if (m.nuevo && localStorage.getItem('dq_mmo_nombre')) aviso('Ese nombre ya estaba en uso o está reservado: te llamas ' + yo.nombre + '.'); localStorage.setItem('dq_mmo_nombre', yo.nombre); } } catch (e) {} }
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
@@ -748,7 +749,8 @@ function recibir(m) {
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
-      if (antes && yo.nivel > antes.nivel && soyInvitado && [3, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador y tus cazas no suman puntos de chicha. Si quieres guardarlo y que sumen, pulsa ' + ($('hud').classList.contains('estrecho') ? '⋯ → el botón de cuenta' : 'el botón de cuenta (arriba)') + ': es gratis con tu correo, y ahí también puedes pasarlo a Telegram.', 'ok'), 4000);
+      if (recInv && antes && yo.nivel > antes.nivel) recInv.subio(yo.nivel);
+      if (!recInv && antes && yo.nivel > antes.nivel && soyInvitado && [3, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador y tus cazas no suman puntos de chicha. Si quieres guardarlo y que sumen, pulsa ' + ($('hud').classList.contains('estrecho') ? '⋯ → el botón de cuenta' : 'el botón de cuenta (arriba)') + ': es gratis con tu correo, y ahí también puedes pasarlo a Telegram.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -6788,5 +6790,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=397').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=398').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));
