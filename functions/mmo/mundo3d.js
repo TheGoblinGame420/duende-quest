@@ -216,6 +216,7 @@ export const Mundo3D = {
       case 'cofre3': return this.abrirCofre3d(s, m);
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'llave': case 'llaveCerrar': return this.llave(s, m);   // llave.js
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
       case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid, s).catch(() => {}); return;

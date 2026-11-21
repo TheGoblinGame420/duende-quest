@@ -285,3 +285,14 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - Arcade (`game.html`): `showAuthModal` de `js/auth-manager.js` usa `window.__dqAbrirCuenta` (módulo en `game.html`); el formulario viejo solo queda si el módulo no carga.
   - `recordarInvitado(op)` en `js/cuenta.js`: franja arriba con «Crear cuenta» / «Luego». Primera a los 3 min, luego cada 10 min, máx. 4 por visita; también al subir a `RECORDAR_NV`. Se salta con ventanas abiertas, en combate o muerto. CLASSIC y ORIGINS la crean una vez (`recInv`).
   - Modo Dios: no hay código secreto, a propósito. Dueño = `ADMIN_TG_ID` y las cuentas vinculadas a ese duende (`c.vinc`); moderador = uids `web:<uuid>` o `tg:<id>` en el secreto `MMO_ADMINS`.
+- **v399 (21-nov-2026): una sola cuenta en Telegram y Chrome, y Modo Dios en el 3D** (el dueño: «entro desde Telegram y en Chrome es como una cuenta nueva», «no tengo cómo activar el modo dios»).
+  - **Causa:** fuera de Telegram no hay `initData`, así que el navegador entraba como invitado. Además ORIGINS (lo que abre el bot) no tenía panel de dios: solo CLASSIC (F2).
+  - **Llave** (`functions/mmo/llave.js` + `js/llave.js`):
+    - En Telegram, `{ t: 'llave' }` (solo con `s.authK === 'tg'`) da un código de 32 hex de un uso, válido 15 min y guardado solo en memoria.
+    - El navegador abre `/mundo/#llave=...`, el `hola` lleva `{ k: 'llave', cod }` y recibe `llaveOk { tok }`, que se guarda en `localStorage dq_dt`.
+    - Después el `hola` lleva `{ k: 'dt', tok }`.
+    - En el storage solo va `dt:<sha256>` → `{ uid, t }` y `dtl:<uid>` (máx. 5). Caduca a los 120 días sin uso. `llaveCerrar` borra todos y expulsa esas sesiones.
+    - **Riesgo:** el mismo que el token de invitado (V7).
+  - **Modo Dios en ORIGINS** (`mundo/js/dios3.js`): F2 o Ajustes → «Modo Dios». Tiene poderes, jefe mundial, anuncio, jugadores, pedidos y moderación, y usa los mismos mensajes `dios`. Al entrar sale un aviso si eres dios.
+  - **Pruebas:** `pruebasLlave` en el arnés.
+

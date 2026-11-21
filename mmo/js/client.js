@@ -18,13 +18,14 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=398';
-import { iniciarRegalo } from './regalo.js?v=398';
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=398';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=398';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=398';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=398';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=398';   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=399';
+import { iniciarRegalo } from './regalo.js?v=399';
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=399';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=399';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=399';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=399';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=399';
+import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=399';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -528,6 +529,9 @@ async function autenticacion() {
     if (ad && Date.now() / 1000 - ad > 23 * 3600 && !autenticacion.avisoTg) { autenticacion.avisoTg = 1; setTimeout(() => aviso('Tu sesión de Telegram caduca pronto. Cierra el juego y vuelve a abrirlo desde el bot para seguir con tu duende.'), 3000); }
     return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   }
+  // Cuenta de Telegram abierta en este navegador (enlace «Jugar en Chrome», js/llave.js).
+  const ap = forzarInvitado ? null : authAparato();
+  if (ap) return { auth: ap, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   const tok = forzarInvitado ? null : await tokenWeb();
   if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   let inv = LS.getItem('dq_mmo_tok');
@@ -1046,8 +1050,12 @@ function recibir(m) {
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm, m); break;
     case 'rankNv': recibirRankNv(m); break;
     case 'heredar': preguntarHeredar(m); break;
+    case 'llave': ventanaLlave(m, { TG, mandar, pagina: '/mmo/' }); break;
+    case 'llaveOk': guardarAparato(m.tok); aviso('🔗 Entraste con tu cuenta de Telegram. Este navegador la recordará.', 'ok', 5000); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de Nv 1 (la sesion de mas de 24 h caduca): se pide reabrir.
+      // Enlace de Telegram usado o caducado: se olvida y se reconecta con lo que haya (correo o invitado).
+      if (m.auth === 'llave' || m.auth === 'dt') { aviso(falloAparato(m.auth)); reintentos = 0; break; }
       if (m.auth && m.auth !== 'inv' && TG) { fatal = true; mostrarError('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', { tg: true }); break; }
       // Duende abierto en otra pestaña o dispositivo: se ofrece 'Jugar aquí' o 'Cerrar'; nunca se reconecta solo.
       if (m.dup) { fatal = true; dormido = false; mostrarError(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', { dup: true }); break; }
@@ -6485,8 +6493,20 @@ function pintarVinc() {
   const bc = C.querySelector('[data-v="cod"]'); if (bc) bc.onclick = () => mandar({ t: 'vincCodigo' });
   C.querySelectorAll('[data-vq]').forEach(a => a.onclick = () => { if (confirm('¿Desvincular esa cuenta? Si entras con ella empezarás un duende nuevo.')) mandar({ t: 'vincQuitar', k: a.dataset.vq }); });
 }
+// «Jugar en Chrome o PC» (en Telegram) o «Cerrar sesión de Telegram aquí» (en el navegador): js/llave.js.
+function botonLlave() {
+  let b = $('b-llave');
+  const enTg = !!TG && !forzarInvitado && !soyInvitado, aqui = !TG && tieneAparato();
+  if (!enTg && !aqui) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement('div'); b.id = 'b-llave'; b.style.cssText = 'margin:0 0 12px'; $('cuenta-cuerpo').before(b); }
+  b.innerHTML = enTg
+    ? '<button class="btn btn-grande" style="width:100%">💻 Jugar en Chrome o PC con este duende</button><p class="nota" style="margin:6px 0 0">Te damos un enlace de un solo uso: en el navegador entras con tu misma cuenta de Telegram.</p>'
+    : '<p class="nota" style="margin:0 0 6px">Entraste con tu <b>cuenta de Telegram</b> en este navegador.</p><button class="btn sec" style="width:100%">Cerrar sesión de Telegram aquí</button>';
+  b.querySelector('button').onclick = () => { if (enTg) mandar({ t: 'llave' }); else if (confirm('¿Cerrar la sesión de tu cuenta de Telegram en este navegador?')) { olvidarAparato(); location.reload(); } };
+}
 function abrirCuenta() {
   abrir('m-cuenta');
+  botonLlave();
   if (!soyInvitado && yo) mandar({ t: 'vincInfo' });
   pintarVinc();
   tokenWeb().then(t => pintarCuenta($('cuenta-cuerpo'), t ? 'cambiar' : (soyInvitado ? 'crear' : 'entrar'), true));
@@ -6583,7 +6603,7 @@ function pintarCuenta(cont, modo, enJuego) {
         msg('Contraseña guardada.', true);
         if (acc === 'nueva') { recuperando = false; history.replaceState(null, '', location.pathname); setTimeout(() => sesionLista(false), 700); }
       } else if (acc === 'salir') {
-        await cli.auth.signOut(); location.reload();
+        olvidarAparato(); await cli.auth.signOut(); location.reload();
       }
     } catch (e) { msg('Sin conexión. Vuelve a intentarlo.'); }
     finally { b.disabled = false; }
@@ -6602,19 +6622,21 @@ async function inicio() {
   cargarResto();
   paso('arte_ok');
   $('carga-s').textContent = 'Conectando…';
-  const tokWeb = TG ? null : await tokenWeb();
+  // Cuenta de Telegram abierta en este navegador (js/llave.js) o sesion de correo.
+  const tgAqui = !TG && !!authAparato();
+  const tokWeb = TG || tgAqui ? null : await tokenWeb();
   $('carga').style.display = 'none';
-  if (TG || tokWeb) {
+  if (TG || tgAqui || tokWeb) {
     $('inicio-invitado').style.display = 'none';
     $('inicio-cuenta').style.display = 'block';
-    $('inicio-quien').textContent = TG ? 'Entrarás con tu cuenta de Telegram.' : 'Entrarás con tu cuenta de DUENDE QUEST.';
+    $('inicio-quien').textContent = TG || tgAqui ? 'Entrarás con tu cuenta de Telegram.' : 'Entrarás con tu cuenta de DUENDE QUEST.';
   } else {
     $('in-nombre').value = LS.getItem('dq_mmo_nombre') || '';
   }
   // Visitante nuevo (sin cuenta, sin duende ni nombre en este navegador): entrada en un
   // toque, sin pedir nombre (el servidor le pone 'DuendeNNNN'; se cambia luego).
   // Desde el anuncio con ?j=2d (la landing /jugar/ ya eligio CLASSIC) entra solo.
-  const nuevoVisitante = !TG && !tokWeb && !LS.getItem('dq_mmo_tok') && !LS.getItem('dq_mmo_nombre');
+  const nuevoVisitante = !TG && !tgAqui && !tokWeb && !LS.getItem('dq_mmo_tok') && !LS.getItem('dq_mmo_nombre');
   if (nuevoVisitante) { $('in-nombre').style.display = 'none'; $('b-jugar').textContent = '▶ JUGAR GRATIS'; }
   $('m-inicio').classList.add('on');
   paso('form_visto');
@@ -6640,7 +6662,7 @@ async function inicio() {
   else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || /(^#|&)cuenta(&|$)/.test(location.hash) || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search)) || TRAILER) entrar(); }   // #cuenta (desde ORIGINS): directo a la partida y alli se abre la cuenta
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
-    try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
+    olvidarAparato(); try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
     location.reload();
   };
 }
@@ -6790,5 +6812,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=398').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=399').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

@@ -38,6 +38,7 @@ import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
 import { VERSION as VERSION_JUEGO, ENTREGA, VASO } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
 import { Vincular } from './vincular.js';
+import { Llave } from './llave.js';   // «Jugar en Chrome»: la cuenta de Telegram fuera de Telegram
 import { rangoDe, enAbismo, islaEn } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -557,6 +558,7 @@ export class MmoWorld {
       case 'revivir': return this.revivir(s);
       case 'mision': return this.mision(s, m);
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'llave': case 'llaveCerrar': return this.llave(s, m);   // llave.js
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
       case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid, s).catch(() => {}); return;
@@ -630,7 +632,16 @@ export class MmoWorld {
           uid = 'tg:' + u.id;
           nombre = limpiarNombre(u.username || u.first_name) || 'Duende' + String(u.id).slice(-4);
           pagadas = { tgId: String(u.id) };
+          s.authK = 'tg';
         }
+      } else if ((a.k === 'llave' && /^[a-f0-9]{32}$/.test(a.cod || '')) || (a.k === 'dt' && /^[a-f0-9]{32}$/.test(a.tok || ''))) {
+        // La cuenta de Telegram en el navegador (llave.js): enlace de un uso o token de aparato.
+        uid = a.k === 'llave' ? await this.holaLlave(s, a.cod) : await this.holaDt(a.tok);
+        if (uid && uid.startsWith('tg:')) {
+          nombre = 'Duende' + uid.slice(-4);
+          pagadas = { tgId: uid.slice(3) };
+          s.authK = 'dt';
+        } else uid = null;
       } else if (a.k === 'web' && typeof a.tok === 'string') {
         const u = await verifySupabaseUser(env, a.tok);
         if (u?.id) {
@@ -705,6 +716,8 @@ export class MmoWorld {
     let listo; s.entrandoP = new Promise(r => { listo = r; });
     try { await this.holaCuenta(s, m, env, uid, nombre, pagadas); }
     finally { if (this.entrando.get(uid) === s) this.entrando.delete(uid); listo(); }
+    // Primera entrada con el enlace de Telegram: el navegador guarda su token de aparato (llave.js).
+    if (s.dtNuevo && s.c && !s.cerrado) { this.enviar(s, { t: 'llaveOk', tok: s.dtNuevo }); s.dtNuevo = null; }
   }
 
   async holaCuenta(s, m, env, uid, nombre, pagadas) {
@@ -4156,6 +4169,7 @@ Object.assign(MmoWorld.prototype, Temporada);
 Object.assign(MmoWorld.prototype, Copias);
 // Vincular Telegram y correo al mismo duende: functions/mmo/vincular.js
 Object.assign(MmoWorld.prototype, Vincular);
+Object.assign(MmoWorld.prototype, Llave);
 // Grupos y chat por canales: functions/mmo/social.js
 Object.assign(MmoWorld.prototype, Social);
 // Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js

@@ -616,6 +616,7 @@ async function pruebas() {
   await pruebasRankUnico();
   await pruebasVecinos2d();
   await pruebasCompanero();
+  await pruebasLlave();
   await pruebasCriaturas();
   await pruebasCaptura();
   await pruebas3d();
@@ -4306,6 +4307,55 @@ async function pruebasVecinos2d() {
 }
 
 // Compañero: la primera criatura del equipo viaja en la apariencia y los demás la ven.
+// ── JUGAR EN CHROME (llave.js): la cuenta de Telegram fuera de Telegram ──
+async function pruebasLlave() {
+  console.log('Jugar en Chrome con la cuenta de Telegram');
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT;
+  const adminAntes = mundo.env.ADMIN_TG_ID;
+  mundo.env.ADMIN_TG_ID = '88123';
+  const entrarAuth = async auth => {
+    const ws = new WsFalso(); mundo.abrir(ws);
+    const s = [...mundo.sesiones.values()].pop();
+    ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth }) });
+    for (let i = 0; i < 300 && !s.c && !ws.rec.some(m => m.t === 'err'); i++) await new Promise(r => setTimeout(r, 5));
+    if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+    s.ws = ws; s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
+    s.ultimos = t => ws.rec.filter(m => m.t === t);
+    return s;
+  };
+  try {
+    const inv = await entrar('SinTg', 'aa11');
+    await inv.mandar({ t: 'llave' });
+    chequear(!inv.ultimos('llave').length, 'un invitado no puede pedir el enlace');
+    await dejar(inv);
+    const t = await entrarTg('Creador', 88123); t.ultimos = x => t.ws.rec.filter(m => m.t === x);
+    chequear(t.dios === 'dueno', 'la cuenta ADMIN_TG_ID es dueño en Telegram');
+    t.c.oro = 4321; t.sucio = true; await mundo.guardar(t);
+    await t.mandar({ t: 'llave' });
+    const cod = (t.ultimos('llave')[0] || {}).cod;
+    chequear(/^[a-f0-9]{32}$/.test(cod || ''), 'en Telegram se pide un enlace de un solo uso');
+    const c1 = await entrarAuth({ k: 'llave', cod });
+    chequear(c1.c && c1.c.uid === 'tg:88123' && c1.c.oro === 4321, 'el enlace abre en el navegador el mismo duende de Telegram');
+    chequear(c1.dios === 'dueno', 'y con el Modo Dios del dueño');
+    const tok = (c1.ultimos('llaveOk')[0] || {}).tok;
+    chequear(/^[a-f0-9]{32}$/.test(tok || ''), 'el navegador recibe su token de aparato');
+    chequear(![...almacen.keys()].some(k => k.startsWith('dt:') && k.includes(tok)), 'en el storage solo queda el hash del token');
+    await dejar(c1);
+    const c2 = await entrarAuth({ k: 'llave', cod });
+    chequear(!c2.c && c2.ultimos('err').some(m => m.auth === 'llave'), 'el enlace no sirve dos veces');
+    const c3 = await entrarAuth({ k: 'dt', tok });
+    chequear(c3.c && c3.c.uid === 'tg:88123', 'con el token de aparato vuelve a entrar sin enlace');
+    await dejar(c3);
+    const c4 = await entrarAuth({ k: 'dt', tok: 'f'.repeat(32) });
+    chequear(!c4.c, 'un token inventado no entra');
+    const t2 = await entrarTg('Creador', 88123); t2.ultimos = x => t2.ws.rec.filter(m => m.t === x);
+    await t2.mandar({ t: 'llaveCerrar' });
+    const c5 = await entrarAuth({ k: 'dt', tok });
+    chequear(!c5.c, 'desde Telegram se cierran todos los navegadores');
+    await dejar(t2);
+  } finally { if (adminAntes === undefined) delete mundo.env.ADMIN_TG_ID; else mundo.env.ADMIN_TG_ID = adminAntes; }
+}
+
 async function pruebasCompanero() {
   console.log('Criatura compañera visible');
   const a = await entrar('Domador', '3b8f'), b = await entrar('Mirona', '4c2d');
