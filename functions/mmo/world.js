@@ -1984,7 +1984,7 @@ export class MmoWorld {
     if (accion === 'chichas' || accion === 'chichasSin' || accion === 'chichaCoord' || accion === 'chichaLibera' || accion === 'chichaOk' || accion === 'chichaNo' || accion === 'chichaTel') return json(await this.internoChicha(accion, b));
     // Handoff Telegram -> navegador por HTTP (functions/api/auth.js; llave.js).
     if (accion === 'ott') { const r = this.ottCrear(String(b.uid || ''), !!b.largo, String(b.nombre || '')); return json(r ? { ok: true, ...r } : { ok: false }); }
-    if (accion === 'canje') return json(await this.ottCanjear(String(b.cod || ''), String(b.ip || ''), String(b.viejo || '')));
+    if (accion === 'canje') return json(await this.ottCanjear(String(b.cod || ''), String(b.ip || ''), String(b.viejo || ''), { antes: String(b.antes || ''), hayWeb: !!b.hayWeb, confirmar: !!b.confirmar }));
     if (accion === 'salir') { let n = 0; for (const t of Array.isArray(b.toks) ? b.toks.slice(0, 4) : []) if (await this.dtCerrar(String(t))) n++; return json({ ok: true, n }); }
     if (accion === 'mantenimiento') return json(await this.mantenimiento(b));   // antes de publicar (copias.js, tools/deploy.mjs)
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });

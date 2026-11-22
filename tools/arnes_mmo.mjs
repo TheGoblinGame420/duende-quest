@@ -4433,15 +4433,38 @@ async function pruebasHandoff() {
     chequear(c3.st === 200 && tok3 && tok3 !== tok1 && n1.ws.rec.some(m => m.t === 'err' && m.fatal), 'al canjear otra llave, el token anterior se anula y su sesión abierta se cierra');
     chequear(!(await entrarAuth({ k: 'ck' }, tok1)).c, 'y el token viejo ya no entra');
 
+    // ── Un enlace no te cambia de cuenta sin preguntar (login CSRF) ──
+    const idata2 = await initDataTg(70555, 'OtraCuenta');
+    const hX = await pedir('/api/auth/telegram-handoff', { initData: idata2 });
+    const cX = await pedir('/api/auth/canje', { ott: hX.j.ott }, { Cookie: 'dq_s=' + tok3 });
+    chequear(cX.st === 409 && cX.j.cambiar === true && cX.j.a === 'OtraCuenta' && !cX.ck && mundo.llaves.has(hX.j.ott), 'si el navegador ya tiene OTRA cuenta de Telegram, el enlace no entra solo: pide confirmar (y no se gasta)');
+    chequear((await entrarAuth({ k: 'ck' }, tok3)).c.uid === 'tg:70501', 'mientras no confirme, sigue con su cuenta de siempre');
+    const hW = await pedir('/api/auth/telegram-handoff', { initData: idata });
+    chequear((await pedir('/api/auth/canje', { ott: hW.j.ott, hayWeb: true })).st === 409, 'lo mismo si tiene abierta una cuenta de correo');
+    chequear((await pedir('/api/auth/canje', { ott: hW.j.ott, hayWeb: true, confirmar: 1 })).st === 200, 'al confirmar, entra');
+    const cX2 = await pedir('/api/auth/canje', { ott: hX.j.ott, confirmar: 1 }, { Cookie: 'dq_s=' + tok3 });
+    const tokX = tokDe(cX2.ck);
+    await calma();
+    const nX = await entrarAuth({ k: 'ck' }, tokX);
+    chequear(cX2.st === 200 && nX.c && nX.c.uid === 'tg:70555' && nX.c.nombre === 'OtraCuenta', 'confirmando entra la cuenta del enlace; si aún no tenía duende, nace con su nombre de Telegram');
+    chequear(!(await entrarAuth({ k: 'ck' }, tok3)).c, 'y la sesión anterior de ese navegador queda cerrada en el servidor');
+    await dejar(nX);
+    await pedir('/api/auth/salir', {}, { Cookie: 'dq_s=' + tokX });
+    for (const k of (await mundo.state.storage.get('dtl:tg:70501')) || []) await mundo.state.storage.delete('dt:' + k);
+    await mundo.state.storage.delete('dtl:tg:70501');
+    const hN = await pedir('/api/auth/telegram-handoff', { initData: idata });
+    const tokN = tokDe((await pedir('/api/auth/canje', { ott: hN.j.ott })).ck);
+
     // ── Cerrar sesion ──
-    const n3 = await entrarAuth({ k: 'ck' }, tok3);
+    const tok3b = tokN;
+    const n3 = await entrarAuth({ k: 'ck' }, tok3b);
     chequear(n3.c && n3.c.uid === 'tg:70501', 'la cookie nueva entra');
-    chequear((await pedir('/api/auth/salir', {}, { Origin: 'https://malo.example', Cookie: 'dq_s=' + tok3 })).st === 403, 'otra web no puede cerrarte la sesión');
-    const sal = await pedir('/api/auth/salir', {}, { Cookie: 'dq_s=' + tok3 });
+    chequear((await pedir('/api/auth/salir', {}, { Origin: 'https://malo.example', Cookie: 'dq_s=' + tok3b })).st === 403, 'otra web no puede cerrarte la sesión');
+    const sal = await pedir('/api/auth/salir', {}, { Cookie: 'dq_s=' + tok3b });
     await calma();
     chequear(sal.st === 200 && sal.j.n === 1 && /dq_s=;/.test(sal.ck) && /Max-Age=0/.test(sal.ck), 'cerrar sesión borra la cookie');
     chequear(/"cookies"/.test(sal.limpia) && /"storage"/.test(sal.limpia), 'y pide al navegador vaciar cookies y almacenamiento (Clear-Site-Data)');
-    chequear(n3.ws.rec.some(m => m.t === 'err' && m.fatal) && !(await entrarAuth({ k: 'ck' }, tok3)).c, 'el token deja de existir en el servidor: la sesión abierta se cierra y no vuelve a entrar');
+    chequear(n3.ws.rec.some(m => m.t === 'err' && m.fatal) && !(await entrarAuth({ k: 'ck' }, tok3b)).c, 'el token deja de existir en el servidor: la sesión abierta se cierra y no vuelve a entrar');
     chequear(!(await mundo.state.storage.get('dtl:tg:70501')), 'no queda ningún aparato apuntado a la cuenta');
     // El token viejo de localStorage (dq_dt, v399) tambien se cierra por aqui.
     const tv = await entrarTg('Viajero', 70501); tv.ultimos = x => tv.ws.rec.filter(m => m.t === x);

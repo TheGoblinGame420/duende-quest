@@ -134,14 +134,28 @@ export const Llave = {
     return { ott: cod, seg: ms / 1000 };
   },
   // Canje: gasta el OTT y devuelve el token de aparato (va a la cookie) y a quien pertenece.
-  async ottCanjear(cod, ip, viejo) {
+  // op: { antes: token de la cookie que ya traia el navegador, hayWeb: tiene abierta una cuenta de correo, confirmar }
+  async ottCanjear(cod, ip, viejo, op = {}) {
     // Contra el tanteo: 20 fallos por IP cada 10 min (los codigos son de 128 bits; esto solo ahorra trabajo).
     const ahora = Date.now();
     this.ottFallos = (this.ottFallos || []).filter(x => ahora - x.t < 600000);
     if (ip && this.ottFallos.filter(x => x.ip === ip).length >= 20) return { ok: false, m: 'espera' };
-    const v = /^[a-f0-9]{32}$/.test(cod || '') ? this.gastarLlave(cod, true) : null;
+    const HEXK = /^[a-f0-9]{32}$/;
+    // Antes de gastar nada: si ese navegador ya tiene OTRA cuenta abierta, se pregunta (el OTT sigue vivo hasta que confirme o caduque).
+    const mirado = HEXK.test(cod || '') && this.llaves ? this.llaves.get(cod) : null;
+    if (mirado && mirado.exp >= ahora && !op.confirmar) {
+      let otra = !!op.hayWeb;
+      for (const tk of [op.antes, viejo]) {
+        if (otra || !HEXK.test(tk || '')) continue;
+        const r0 = await this.state.storage.get('dt:' + (await sha(tk)));
+        if (r0 && typeof r0.uid === 'string' && r0.uid !== mirado.uid) otra = true;
+      }
+      if (otra) return { ok: false, cambiar: true, a: limpiarNombre(mirado.n) || '' };
+    }
+    const v = HEXK.test(cod || '') ? this.gastarLlave(cod, true) : null;
     if (!v) { if (this.ottFallos.length < 2000) this.ottFallos.push({ ip: ip || '', t: ahora }); return { ok: false }; }
     const uid = v.uid;
+    if (HEXK.test(op.antes || '')) await this.dtCerrar(op.antes);   // la sesion que tenia la cookie deja de valer
     // El token de aparato que ese navegador tuviera de antes (otra cuenta o la misma) deja de valer.
     if (/^[a-f0-9]{32}$/.test(viejo || '')) await this.dtCerrar(viejo);
     const tok = await this.crearAparato(uid, v.n);

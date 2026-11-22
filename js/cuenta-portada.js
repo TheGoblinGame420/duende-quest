@@ -49,6 +49,8 @@ if (TG) {
     entTg.addEventListener('click', e => { e.preventDefault(); abrirNavegador({ TG, pagina: '/' }); });
   }
   if (nota) nota.textContent = 'Estás en Telegram: juegas con tu cuenta de Telegram, sin registrarte.';
+  // Botón del bot «Jugar en navegador / Instalar app» (?tg=nav): la ventana del enlace se abre sola.
+  if (/[?&]tg=nav(&|$)/.test(location.search)) abrirNavegador({ TG, pagina: '/mundo/' });
 } else {
   // ── Navegador ──
   const sb = () => window._sb || null;

@@ -35,6 +35,9 @@ const esperarUid = async (re, ms = 45000) => { const fin = Date.now() + ms; whil
 
 const nav = await abrirNavegador({ ancho: 1100, alto: 720 });
 try {
+  // Los confirm() de la página se aceptan (y se apuntan).
+  const dialogos = [];
+  nav.escuchar(m => { if (m.method === 'Page.javascriptDialogOpening') { dialogos.push(m.params.message); nav.cmd('Page.handleJavaScriptDialog', { accept: true }).catch(() => {}); } });
   await nav.cmd('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('dq_mmo_sonido', '0'); localStorage.setItem('dq_mudo', '1'); } catch (e) {}` });
   // Estado previo del navegador: un invitado, una sesión de correo vieja y un token de aparato viejo (el «cruce de sesiones»).
   await nav.ir(BASE + '/offline.html');
@@ -46,6 +49,7 @@ try {
   await nav.ir(BASE + '/mundo/?ott=' + ott1);
   await nav.esperar(1500);
   chequear(!/ott=/.test(await nav.js('location.href')), 'el enlace sale de la barra de direcciones al cargar');
+  chequear(dialogos.some(d => /ya tiene una cuenta abierta/.test(d)), 'como el navegador tenía otra cuenta abierta, pregunta antes de cambiarla');
   const l1 = await esperarUid(new RegExp('^tg:' + TG_ID + '$'));
   chequear(l1.includes('tg:' + TG_ID), 'el navegador entra al mundo como tg:' + TG_ID + ' (no como invitado ni con la sesión vieja)');
   const st = await nav.js(`JSON.stringify({ ck: localStorage.getItem('dq_ck'), sb: localStorage.getItem('sb-prueba-auth-token'), dt: localStorage.getItem('dq_dt'), inv: localStorage.getItem('dq_mmo_tok'), cookie: document.cookie })`).then(JSON.parse);

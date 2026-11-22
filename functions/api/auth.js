@@ -5,7 +5,7 @@
 //      Solo dentro de Telegram. Verifica el initData (HMAC-SHA256 con el token
 //      del bot) y devuelve un OTT: 32 hex, un solo uso, 60 s (10 min con largo,
 //      para copiar el enlace a la PC). El OTT vive en la memoria del mundo.
-//  POST /api/auth/canje             { ott, viejo? }
+//  POST /api/auth/canje             { ott, viejo?, hayWeb?, confirmar? }   (409 { cambiar } si ya hay OTRA cuenta abierta: se pregunta antes)
 //      En el navegador (https://duendequest.com/?ott=...). Gasta el OTT y pone
 //      la cookie de sesion: dq_s; HttpOnly; Secure; SameSite=Lax. El WebSocket
 //      del juego la trae sola y el hola dice { k: 'ck' } (functions/mmo/llave.js).
@@ -64,10 +64,10 @@ export async function authApi(request, env, path) {
     if (path === '/api/auth/canje') {
       if (!HEX.test(b.ott || '')) return responder({ ok: false, m: 'Ese enlace no vale.' }, 400);
       // Lo que ese navegador tuviera de antes (cookie o token viejo en localStorage) deja de valer al entrar con otra llave.
-      const antes = cookieDe(request);
-      const r = await interno('canje', { cod: b.ott, ip: request.headers.get('CF-Connecting-IP') || '', viejo: HEX.test(b.viejo || '') ? b.viejo : '' });
+      const r = await interno('canje', { cod: b.ott, ip: request.headers.get('CF-Connecting-IP') || '', viejo: HEX.test(b.viejo || '') ? b.viejo : '', antes: cookieDe(request), hayWeb: !!b.hayWeb, confirmar: !!b.confirmar });
+      // Ese navegador ya tiene OTRA cuenta abierta: el cliente pregunta y repite con confirmar (el OTT no se ha gastado).
+      if (r.cambiar) return responder({ ok: false, cambiar: true, a: r.a || '' }, 409);
       if (!r.ok) return responder({ ok: false, m: r.m === 'espera' ? 'Demasiados intentos. Espera unos minutos.' : 'Ese enlace ya se usó o caducó. Pide otro en Telegram.' }, r.m === 'espera' ? 429 : 410);
-      if (antes && antes !== r.tok) await interno('salir', { toks: [antes] });
       return responder({ ok: true, nombre: r.nombre || '', nivel: r.nivel || 0 }, 200, [['Set-Cookie', ponerCookie(r.tok)]]);
     }
     if (path === '/api/auth/salir') {

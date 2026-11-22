@@ -26,6 +26,7 @@
 <meta name="theme-color" content="#070c0b">
 <link rel="manifest" href="/inicio/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<script>/* Enlace de un solo uso de Telegram (?ott=): sale de la barra antes de que ningún otro script lea la dirección (js/llave.js lo canjea). */(function(){try{var m=/[?&]ott=([^&#]*)/.exec(location.search);if(!m)return;var i=/[?&]ir=(mundo|mmo)(&|$)/.exec(location.search);sessionStorage.setItem('dq_ott',m[1]);if(i)sessionStorage.setItem('dq_ott_ir',i[1]);var q=location.search.replace(/([?&])(ott|ir)=[^&#]*/g,'$1').replace(/[?&]+$/,'').replace(/\?&+/,'?').replace(/&&+/g,'&');history.replaceState(history.state,'',location.pathname+(q.length>1?q:'')+location.hash);}catch(e){}})();</script>
 <script src="/js/pwa.js?v=402" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

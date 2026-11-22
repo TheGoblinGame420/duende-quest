@@ -15,6 +15,8 @@ const SITE_URL = SITIO;
 export const MMO_URL = SITIO + '/mmo/';
 // El mundo abierto en 3D (el mismo personaje y servidor que el MMO).
 export const MUNDO_URL = SITIO + '/mundo/';
+// «Jugar en navegador / Instalar app»: la portada dentro de Telegram, que ofrece el enlace de un solo uso (js/llave.js).
+export const NAVEGADOR_URL = SITIO + '/?tg=nav';
 // El creador del juego y sus canales oficiales: se muestran en /start y
 // /creador para que cualquiera pueda comprobar quién está detrás del juego.
 const CREADOR_TG = 'https://t.me/ElDuendeOficial';
@@ -203,6 +205,7 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
       [{ text: '🎮 Jugar gratis (3D)', web_app: { url: MUNDO_URL } }],
       [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }],
       [{ text: '🕹 Arcade', web_app: { url: WEBAPP_URL } }],
+      [{ text: '🌐 Jugar en navegador / Instalar app', web_app: { url: NAVEGADOR_URL } }],
       [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '📊 Mis estadísticas', callback_data: 'stats' }],
       [{ text: '🎁 Invitar amigos', callback_data: 'referral' }, { text: '💹 Precio', callback_data: 'price' }],
       [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🪙 Pump.fun', url: PUMP_FUN_URL }],

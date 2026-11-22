@@ -48,6 +48,9 @@ function cerrarCuentasLocales() {
 // ?ott=: se quita de la barra ANTES de nada y se canjea. Quien importe este módulo puede esperar a ottListo.
 // Resuelve a null (no había enlace), { ok: true, nombre, nivel } o { ok: false, m }.
 function leerOtt() {
+  // Las páginas lo sacan de la barra con un script en línea al principio del <head> (antes de cualquier otro script): llega por sessionStorage.
+  const guardado = get(SS, 'dq_ott');
+  if (guardado != null) { set(SS, 'dq_ott', null); const ir0 = get(SS, 'dq_ott_ir'); set(SS, 'dq_ott_ir', null); return { ott: HEX.test(guardado) ? guardado : '', ir: ir0 === 'mundo' || ir0 === 'mmo' ? ir0 : '' }; }
   let p;
   try { p = new URLSearchParams(location.search); } catch (e) { return null; }
   const ott = p.get('ott');
@@ -64,7 +67,15 @@ export const ottListo = (async () => {
   if (!o.ott) return { ok: false, m: 'Ese enlace no vale. Pide otro en Telegram.' };
   try {
     const viejo = get(LS, 'dq_dt');
-    const r = await post('/api/auth/canje', { ott: o.ott, viejo: HEX.test(viejo || '') ? viejo : undefined });
+    let hayWeb = false;
+    try { hayWeb = Object.keys(localStorage).some(k => /^sb-.*-auth-token/.test(k)); } catch (e) {}
+    const cuerpo = { ott: o.ott, viejo: HEX.test(viejo || '') ? viejo : undefined, hayWeb: hayWeb || undefined };
+    let r = await post('/api/auth/canje', cuerpo);
+    if (r.st === 409 && r.j.cambiar) {
+      // Este navegador ya tiene otra cuenta abierta: nadie te cambia de cuenta con un enlace sin que lo veas.
+      if (!confirm('Este navegador ya tiene una cuenta abierta.\n\n¿Cerrarla y entrar con la cuenta de Telegram de este enlace' + (r.j.a ? ' (' + r.j.a + ')' : '') + '?\n\nSi no pediste tú este enlace desde Telegram, elige Cancelar.')) return { ok: false, m: 'Sigues con la cuenta que ya tenías en este navegador.' };
+      r = await post('/api/auth/canje', { ...cuerpo, confirmar: 1 });
+    }
     if (!r.ok) return { ok: false, m: r.j.m || 'Ese enlace ya se usó o caducó. Pide otro en Telegram.' };
     cerrarCuentasLocales();
     set(LS, 'dq_ck', '1');
