@@ -3,14 +3,14 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=401"></script>
+<script src="/js/origen.js?v=402"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
 <meta name="description" content="Juego RPG online gratis en el navegador o en Telegram, sin descargas: 4 clases, grupos, mazmorras con jefes y 10 zonas hasta el nivel 60. Hecho en Perú.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://duendequest.com/mmo/">
-<meta name="theme-color" content="#0b0f17">
+<meta name="theme-color" content="#070c0b">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_PE">
 <meta property="og:site_name" content="Duende Quest">
@@ -63,7 +63,7 @@
   if (!tg) return;
   window.__tgListo = new Promise(function (ok) {
     var s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js';
-    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#0b0f17'); w.setHeaderColor('#0b0f17'); } } } catch (e) {} ok(); };
+    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#070c0b'); w.setHeaderColor('#070c0b'); } } } catch (e) {} ok(); };
     s.onerror = function () { ok(); };
     setTimeout(ok, 15000);   // telegram.org caido: el juego no se queda esperando para siempre
     document.head.appendChild(s);
@@ -71,19 +71,19 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=401" defer></script>
+<script src="/js/pwa.js?v=402" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=401" defer></script>
+<script src="/js/config.js?v=402" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
    apuntan a tonos sobrios. ── */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=401) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=402) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{
-  --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
-  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
-  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
+  --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
+  --txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#7f958a;
+  --pri:#0a8457;--pri2:#086b47;--pri-txt:#6df5bd;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#6df5bd;--rojo:#ef4444;
   --sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:"DQ Iconos",'Press Start 2P',monospace;
   --sombra:0 4px 16px rgba(0,0,0,.35);
@@ -103,7 +103,7 @@ a{color:var(--cian);}
 
 /* marcos de unidad (jugador, objetivo, grupo) al estilo WoW */
 .uf{display:flex;gap:6px;align-items:flex-start;background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);padding:5px 8px 5px 5px;box-shadow:var(--sombra);}
-.uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid rgba(242,193,78,.75);background:radial-gradient(circle at 50% 35%,#1f2a42,#0b0f17);}
+.uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid rgba(242,193,78,.75);background:radial-gradient(circle at 50% 35%,#214037,#070c0b);}
 .uf .ret img,.uf .ret canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;image-rendering:pixelated;border-radius:50%;}
 .uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel2);border:1px solid var(--oro);font:700 10px/15px var(--sans);text-align:center;color:var(--oro);}
 .uf .cu{flex:1;min-width:0;}
@@ -127,7 +127,7 @@ a{color:var(--cian);}
 .barra.hp.bajo>i{background:linear-gradient(90deg,#b91c1c,#f87171);}
 .barra.rc{height:9px;}
 .barra.rc>span{font:700 8px/9px var(--sans);}
-.barra.rc>i{background:var(--pri);}
+.barra.rc>i{background:linear-gradient(#60a5fa,#2563eb);}
 .cps{display:flex;gap:3px;height:7px;margin-top:1px;}
 .cps:empty{display:none;}
 .cps i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(0,0,0,.6);}
@@ -215,20 +215,20 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 #monedero{cursor:pointer;pointer-events:auto;}
 #hud.estrecho #botones:not(.abierto) .extra{display:none;}
 /* .bt: botones pequenos del HUD (iconos y etiquetas cortas en pixel) */
-.bt3d{background:linear-gradient(135deg,#7c3aed,#2563eb)!important;border-color:#c4b5fd!important;color:#fff!important;box-shadow:0 0 12px rgba(124,58,237,.8);animation:pulso3d 1.6s ease-in-out infinite;}
+.bt3d{background:linear-gradient(135deg,#7c3aed,#5b21b6)!important;border-color:#c4b5fd!important;color:#fff!important;box-shadow:0 0 12px rgba(124,58,237,.8);animation:pulso3d 1.6s ease-in-out infinite;}
 @keyframes pulso3d{50%{box-shadow:0 0 24px rgba(167,139,250,1);}}
-.bt3d-grande{background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb)!important;background-size:200% 100%!important;animation:brillo3d 3s linear infinite;border:1px solid #e9d5ff!important;}
+.bt3d-grande{background:linear-gradient(90deg,#7c3aed,#db2777,#7c3aed)!important;background-size:200% 100%!important;animation:brillo3d 3s linear infinite;border:1px solid #e9d5ff!important;}
 @keyframes brillo3d{to{background-position:200% 0;}}
-#nuevo3d{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:40;display:none;width:min(420px,94vw);background:rgba(14,9,30,.96);border:1px solid #a78bfa;border-radius:14px;box-shadow:0 10px 40px rgba(124,58,237,.55);overflow:hidden;font-family:var(--sans);}
+#nuevo3d{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:40;display:none;width:min(420px,94vw);background:rgba(12,27,23,.96);border:1px solid #a78bfa;border-radius:14px;box-shadow:0 10px 40px rgba(124,58,237,.45);overflow:hidden;font-family:var(--sans);}
 #nuevo3d video{display:block;width:100%;height:150px;object-fit:cover;object-position:center 40%;}
 #nuevo3d .t{padding:10px 12px 4px;font:800 15px var(--sans);color:#fff;}
 #nuevo3d .d{padding:0 12px 8px;font:500 12px/1.4 var(--sans);color:#d8d0f0;}
 #nuevo3d .b{display:flex;gap:8px;padding:0 12px 12px;}
 #nuevo3d .b a,#nuevo3d .b button{flex:1;padding:9px;border-radius:9px;font:700 13px var(--sans);text-align:center;text-decoration:none;cursor:pointer;}
-#nuevo3d .b a{background:linear-gradient(90deg,#7c3aed,#2563eb);color:#fff;border:0;}
-#nuevo3d .b button{flex:0 0 auto;background:transparent;color:#b8b0d8;border:1px solid rgba(160,140,255,.3);}
+#nuevo3d .b a{background:linear-gradient(90deg,#7c3aed,#5b21b6);color:#fff;border:0;}
+#nuevo3d .b button{flex:0 0 auto;background:transparent;color:#a9bdb3;border:1px solid rgba(109,245,189,.3);}
 .bt{font-family:inherit;font-size:9px;line-height:1.2;background:var(--panel);color:var(--txt);border:1px solid var(--borde);border-radius:8px;padding:7px 8px;cursor:pointer;transition:background .15s,border-color .15s;}
-.bt:hover{background:var(--panel2);border-color:#34405e;}
+.bt:hover{background:var(--panel2);border-color:#365c4e;}
 .bt:active{transform:scale(.96);}
 #jefe-bar{left:50%;transform:translateX(-50%);top:40px;width:min(420px,50%);display:none;text-align:center;}
 #jefe-bar .n{font-size:8px;color:#f1d4ff;text-shadow:1px 1px 0 #000,0 0 3px #000;margin-bottom:4px;}
@@ -293,7 +293,7 @@ body:has(#hud:not(.estrecho))>#invitacion{zoom:1.2;}
 #hud.estrecho #emotes div{font-size:7px;}
 /* Consejo del tutorial: legible, quieto (sin parpadeo). */
 /* Debajo de los avisos (hasta 4 desde top:86px): antes tapaba el cartel de la zona. */
-#consejo{left:50%;transform:translateX(-50%);top:236px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(18,24,38,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
+#consejo{left:50%;transform:translateX(-50%);top:236px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(13,22,20,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
 /* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:61;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
@@ -337,10 +337,10 @@ html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anunci
 #hud.estrecho #errores{top:61%;width:92%;}
 #hud.estrecho #errores div{white-space:normal;}
 #hud.estrecho #emotes{top:43%;}
-#hud.estrecho #chat-log{max-height:34px;background:rgba(10,14,22,.55);border-radius:6px;padding:2px 6px;}
+#hud.estrecho #chat-log{max-height:34px;background:rgba(11,21,18,.55);border-radius:6px;padding:2px 6px;}
 #hud.estrecho #chat-log:empty{background:none;padding:0;}
 /* Con el chat abierto (💬) se despliega el historial (con fondo para leerlo). */
-#hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(10,14,22,.88);border-radius:8px;padding:4px 6px;}
+#hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(11,21,18,.88);border-radius:8px;padding:4px 6px;}
 #errores div{font:700 13px/1.35 var(--sans);color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:normal;max-width:min(92vw,520px);}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
@@ -396,8 +396,8 @@ html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anunci
 #chat-log b{color:var(--cian);font-weight:600;}
 #chat-log .sis{color:var(--amarillo);}
 #chat-log .ok{color:var(--verde);}
-#frases{display:none;flex-wrap:wrap;gap:5px;margin-bottom:6px;padding:8px;background:rgba(10,14,24,.92);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:auto;}
-#frases .rotulo{flex-basis:100%;font:600 10px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--txt3,#94a3b8);margin:2px 0 0;}
+#frases{display:none;flex-wrap:wrap;gap:5px;margin-bottom:6px;padding:8px;background:rgba(11,23,20,.92);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:auto;}
+#frases .rotulo{flex-basis:100%;font:600 10px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--txt3,#94b8a6);margin:2px 0 0;}
 #frases .rotulo:not(:first-child){margin-top:6px;}
 #frases .bt{font-family:var(--sans);font-size:13px;padding:7px 10px;}
 #chat-in{width:100%;font-family:var(--sans);font-size:14px;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);border-radius:8px;padding:7px 9px;outline:none;display:none;}
@@ -405,7 +405,7 @@ html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anunci
 
 /* avisos (aviso.ok / aviso.jefe: variantes de color para client.js) */
 #avisos{z-index:60;left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
-.aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(14,18,28,.95);border:1px solid var(--borde);border-left:3px solid #64748b;padding:7px 12px;border-radius:6px;animation:av 3.6s forwards;text-align:left;max-width:min(90vw,520px);box-shadow:var(--sombra);}
+.aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(15,27,24,.95);border:1px solid var(--borde);border-left:3px solid #66897c;padding:7px 12px;border-radius:6px;animation:av 3.6s forwards;text-align:left;max-width:min(90vw,520px);box-shadow:var(--sombra);}
 .aviso.ok{border-color:rgba(34,197,94,.6);}
 .aviso.jefe{border-color:rgba(167,139,250,.6);color:#ddd6fe;}
 @keyframes av{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
@@ -417,8 +417,8 @@ html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anunci
 #tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--borde);}
 .tf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .tc{font-family:inherit;width:56px;height:56px;border-radius:50%;border:1px solid var(--borde);background:var(--panel2);color:var(--txt);font-size:17px;touch-action:none;flex:0 0 auto;}
-.tc:active{background:#22304d;}
-.tc.on{background:rgba(59,130,246,.28);border-color:var(--pri-txt);}
+.tc:active{background:#244b3f;}
+.tc.on{background:rgba(34,227,154,.28);border-color:var(--pri-txt);}
 .tc.grande{width:74px;height:74px;font-size:25px;background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.55);}
 .tc.chico{width:40px;height:40px;font-size:14px;}
 #t-izq,#t-der{display:flex;gap:8px;align-items:center;}
@@ -439,11 +439,11 @@ body.tactil #chat{width:70%;bottom:12px;}
 body.tactil #lanzar{bottom:16px;}
 
 /* modales: opacos, radio 10px, borde sutil y sombra suave */
-.modal{position:fixed;inset:0;background:rgba(5,8,14,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
+.modal{position:fixed;inset:0;background:rgba(6,13,11,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
 .modal.on{display:flex;}
 .ventana{background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;box-shadow:0 12px 32px rgba(0,0,0,.5);}
 .ventana h2{font-size:12px;color:var(--txt);margin-bottom:14px;text-align:center;line-height:1.6;}
-.ventana p,.ventana li{font-family:var(--sans);font-size:14px;line-height:1.5;color:#c9cfdb;}
+.ventana p,.ventana li{font-family:var(--sans);font-size:14px;line-height:1.5;color:#c9dbd2;}
 .ventana li{margin-bottom:6px;}
 .ventana li b,.ventana p b{color:var(--txt);}
 .ventana{position:relative;}
@@ -456,7 +456,7 @@ body.tactil #lanzar{bottom:16px;}
 .ventana::-webkit-scrollbar{width:8px;height:8px;}
 .ventana::-webkit-scrollbar-track{background:transparent;}
 .ventana::-webkit-scrollbar-thumb{background:var(--borde);border-radius:4px;}
-.ventana::-webkit-scrollbar-thumb:hover{background:#34405e;}
+.ventana::-webkit-scrollbar-thumb:hover{background:#365c4e;}
 /* Titulos con tildes: Press Start 2P no tiene esas letras y las mezcla con otra fuente. */
 .ventana h2.sans,.sans{font-family:var(--sans);font-weight:700;}
 .ventana h2.sans{font-size:17px;letter-spacing:.02em;}
@@ -478,14 +478,14 @@ body.tactil #lanzar{bottom:16px;}
 .item .acc{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
 .precio{font-size:9px;color:var(--oro);white-space:nowrap;}
 /* .btn primario (uno por vista), .btn.sec secundario, .btn.peligro para borrar/rechazar */
-.btn{font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.2;letter-spacing:.01em;min-height:40px;padding:9px 14px;border-radius:8px;border:1px solid var(--pri);cursor:pointer;background:var(--pri);color:#fff;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
+.btn{font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.2;letter-spacing:.01em;min-height:40px;padding:9px 14px;border-radius:8px;border:1px solid rgba(109,245,189,.55);cursor:pointer;background:var(--pri);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
 @media (max-width:520px){.item{flex-wrap:wrap;}.item .acc{flex-basis:100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;}.item .acc .btn{white-space:normal;text-align:center;}.item .acc:empty{display:none;}}
 .btn small{white-space:normal;}   /* la letra pequeña de un boton salta de linea (antes desbordaba en el movil) */
-.btn:hover{background:var(--pri2);border-color:var(--pri2);}
+.btn:hover{background:var(--pri2);border-color:var(--primary);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 14px rgba(34,227,154,.28);}
 .btn:active{transform:scale(.98);}
 .btn:focus-visible,.bt:focus-visible,.tab:focus-visible{outline:2px solid var(--cian);outline-offset:2px;}
 .btn.sec{background:transparent;color:var(--txt);border-color:var(--borde);}
-.btn.sec:hover{background:var(--panel2);border-color:#34405e;}
+.btn.sec:hover{background:var(--panel2);border-color:#365c4e;}
 .btn.peligro{background:transparent;color:#f87171;border-color:rgba(239,68,68,.6);}
 .btn.peligro:hover{background:rgba(239,68,68,.1);}
 .btn:disabled,button:disabled,.btn:disabled:hover,button:disabled:hover{background:var(--panel2);color:var(--txt3);border-color:var(--borde);cursor:not-allowed;transform:none;}
@@ -552,7 +552,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 @keyframes latidoTuto{0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,.5);transform:scale(1)}50%{box-shadow:0 0 0 8px rgba(74,222,128,.25);transform:scale(1.08)}}
 @media (prefers-reduced-motion:reduce){#t-atk.tuto-pulso,#acciones .tuto-pulso{animation:none;box-shadow:0 0 0 4px rgba(74,222,128,.7);}}
 /* Aviso para pasar el duende de invitado a la cuenta (client.js, preguntarHeredar) */
-.heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,8,14,.85);touch-action:auto;}
+.heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,13,11,.85);touch-action:auto;}
 .heredar-caja{width:100%;max-width:400px;max-height:100%;overflow:auto;padding:18px 16px;border:1px solid var(--borde);border-radius:14px;background:var(--panel);color:var(--txt);font:500 14px/1.45 var(--sans);text-align:center;}
 .heredar-caja h3{margin:0 0 10px;font:700 17px var(--sans);color:var(--oro);}
 .heredar-caja p{margin:0 0 14px;color:var(--txt2);overflow-wrap:anywhere;}
@@ -573,7 +573,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
  body.tactil #t-fila0 #acciones{flex-wrap:wrap;justify-content:center;}   /* 8 habilidades (348 px) no caben en ~300 px a 640: 2 filas en vez de cortarlas */
  body.tactil #t-izq{grid-area:izq;} body.tactil #t-der{grid-area:der;}
  body.tactil #tactil button,body.tactil #tactil .pw,body.tactil #tactil a{pointer-events:auto;}
- body.tactil #tactil .tc{width:52px;height:52px;background:rgba(22,30,48,.78);}
+ body.tactil #tactil .tc{width:52px;height:52px;background:rgba(23,47,40,.78);}
  body.tactil #tactil .tc.grande{width:64px;height:64px;background:rgba(239,68,68,.28);}
  body.tactil #tactil .tc.chico{width:40px;height:40px;}
  body.tactil #chat{bottom:144px;width:min(260px,40%);}
@@ -589,7 +589,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 /* Telefono: avisos legibles en franja ancha (client.js colocarAvisoMovil fija el alto) y misiones de NPC con letra comoda */
 html #hud.estrecho #avisos{display:flex;flex-direction:column;align-items:center;width:min(92vw,460px);background:none;border:none;box-shadow:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none;}
 html body.tactil #hud.estrecho #avisos{width:min(92vw,460px);}
-#hud.estrecho #avisos .aviso,body.tactil #avisos-modal .aviso{font-size:14px;line-height:1.35;background:rgba(10,14,22,.95);color:#fff;box-sizing:border-box;width:fit-content;align-self:center;max-width:100%;overflow-wrap:anywhere;}
+#hud.estrecho #avisos .aviso,body.tactil #avisos-modal .aviso{font-size:14px;line-height:1.35;background:rgba(11,21,18,.95);color:#fff;box-sizing:border-box;width:fit-content;align-self:center;max-width:100%;overflow-wrap:anywhere;}
 #hud.estrecho #avisos .aviso.jefe{color:#e9e3ff;}
 @media (orientation:landscape) and (max-height:500px){html body.tactil #hud.estrecho #avisos{width:min(52vw,420px);}}
 @media (max-width:600px){#m-mision .ventana{font-size:15px;line-height:1.4;}#m-mision .ventana p{font-size:15px;line-height:1.4;}}
@@ -622,7 +622,7 @@ body.tactil #hud.estrecho #botones:not(.abierto)>.bt:not(#b-mapa):not(#b-inv):no
 /* Invitado: el punto en ⋯ recuerda que Mi cuenta guarda el progreso */
 body.tactil #hud.estrecho #botones:not(.abierto):has(#b-cuenta.invitado) #b-mas::after{content:'';position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px #4ade80;}
 /* Menú ⋯ abierto: los cuatro de arriba no se mueven; debajo, el resto con icono y nombre */
-body.tactil #hud.estrecho #botones.abierto{z-index:70;top:0;right:2px;width:min(286px,calc(100vw - 8px));gap:6px 10px;padding:5px;background:rgba(14,18,28,.98);border:1px solid var(--borde);border-radius:10px;box-shadow:var(--sombra);}
+body.tactil #hud.estrecho #botones.abierto{z-index:70;top:0;right:2px;width:min(286px,calc(100vw - 8px));gap:6px 10px;padding:5px;background:rgba(15,27,24,.98);border:1px solid var(--borde);border-radius:10px;box-shadow:var(--sombra);}
 body.tactil #hud.estrecho #botones.abierto::before{content:'';order:1;flex:0 0 100%;height:0;}
 body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas){order:2;flex:1 1 calc(50% - 5px);width:auto;height:42px;min-width:0;justify-content:flex-start;gap:8px;padding:0 8px;box-sizing:border-box;}
 body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas)::before{inset:0;}
@@ -635,17 +635,17 @@ body.tactil #hud.estrecho #minimapa::before{content:'';position:absolute;inset:-
 body.tactil #hud.estrecho #seguimiento{top:78px;right:8px;max-width:calc(100% - 184px);}   /* no pisa el marco del objetivo (termina en x=172) */
 @media (max-width:340px){body.tactil #hud.estrecho #uf-yo,body.tactil #hud.estrecho #uf-obj{width:146px;}body.tactil #hud.estrecho #seguimiento{max-width:calc(100% - 166px);}}
 body.tactil #hud.estrecho #h-tareas,body.tactil #hud.estrecho #h-chicha{display:none;}
-body.tactil #hud.estrecho #h-mision{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;width:fit-content;max-width:100%;margin-left:auto;font:600 12px/1.25 var(--sans);padding:1px 6px;border-radius:5px;background:rgba(10,14,22,.62);}
+body.tactil #hud.estrecho #h-mision{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;width:fit-content;max-width:100%;margin-left:auto;font:600 12px/1.25 var(--sans);padding:1px 6px;border-radius:5px;background:rgba(11,21,18,.62);}
 body.tactil #hud.estrecho #h-mundial{font:600 11px/1.3 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Avisos: franja opaca, letra de 14 px, a lo ancho bajo el HUD; se ven los 2 últimos */
 body.tactil #hud.estrecho #avisos{top:116px;width:calc(100% - 16px);align-items:stretch;gap:4px;}
 body.tactil #hud.estrecho #avisos .aviso{padding:6px 10px;max-width:none;}
 body.tactil #hud.estrecho #avisos .aviso:nth-last-child(n+3){display:none;}
-body.tactil #hud.estrecho #errores div{font-size:14px;background:rgba(14,18,28,.98);padding:5px 10px;border-radius:6px;text-shadow:none;}
+body.tactil #hud.estrecho #errores div{font-size:14px;background:rgba(15,27,24,.98);padding:5px 10px;border-radius:6px;text-shadow:none;}
 body.tactil #hud.estrecho #consejo{top:114px;font-size:14px;}
-body.tactil #hud.estrecho #chat-log{font-size:12px;line-height:1.35;background:rgba(10,14,22,.74);}
+body.tactil #hud.estrecho #chat-log{font-size:12px;line-height:1.35;background:rgba(11,21,18,.74);}
 body.tactil #hud.estrecho #chat-log:empty{background:none;}
-body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
+body.tactil #hud.estrecho #chat-log.abierto{background:rgba(11,21,18,.92);}
 /* Vertical: controles más bajos (≤ 28 % del alto), siguen en zona de pulgar */
 @media (orientation:portrait) and (max-width:600px){
  body.tactil #tactil{gap:5px;padding:5px 8px calc(6px + env(safe-area-inset-bottom,0px));}
@@ -686,34 +686,34 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
  /* Menu ⋯ en 3 columnas: en 2 llegaba a y=288 y bajaba hasta HABLAR y el chat, que van encima */
  body.tactil #hud.estrecho #botones.abierto{width:min(440px,calc(100vw - 8px));}
  body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas){flex:1 1 calc(33% - 8px);}
- body.tactil #tactil .pw{background:rgba(22,30,48,.72);}
+ body.tactil #tactil .pw{background:rgba(23,47,40,.72);}
  body.tactil #hud.estrecho #chat{bottom:104px;}
  body.tactil #hud.estrecho #lanzar{bottom:108px;}
 }
 /* Visibilidad en PC: seguimiento legible sobre cualquier fondo, teclas a la vista y HUD que no se queda diminuto en 1080p. */
 #hud:not(.estrecho) #uf-yo{width:226px;}
-#hud:not(.estrecho) #seguimiento{background:rgba(8,12,22,.6);border-radius:8px;padding:6px 8px;max-width:244px;}
+#hud:not(.estrecho) #seguimiento{background:rgba(9,21,17,.6);border-radius:8px;padding:6px 8px;max-width:244px;}
 #hud:not(.estrecho) #h-mision{font-size:13px;}
-#hud:not(.estrecho) #h-tareas{font-size:12.5px;color:#e2e6f0;}
+#hud:not(.estrecho) #h-tareas{font-size:12.5px;color:#e3efe9;}
 #hud:not(.estrecho) #h-chicha,#hud:not(.estrecho) #h-mundial{font-size:9px;}
 #teclas-pc{display:none;}
 @media (min-width:1140px){
  body:not(.tactil) #pie{position:relative;}
- body:not(.tactil) #teclas-pc{display:block;position:absolute;left:12px;top:50%;transform:translateY(-50%);width:calc(50vw - 170px);pointer-events:none;font:600 12px/19px var(--sans);color:#d7dcea;}
+ body:not(.tactil) #teclas-pc{display:block;position:absolute;left:12px;top:50%;transform:translateY(-50%);width:calc(50vw - 170px);pointer-events:none;font:600 12px/19px var(--sans);color:#d9e8e1;}
 }
 /* PC: el error rojo se lee tambien sobre zonas rojas y sobre los avisos. */
-body:not(.tactil) #errores div{background:rgba(8,12,22,.86);padding:3px 10px;border-radius:6px;}
+body:not(.tactil) #errores div{background:rgba(9,21,17,.86);padding:3px 10px;border-radius:6px;}
 #teclas-pc kbd{font:700 11px/14px var(--sans);color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 4px;margin-right:3px;}
 @media (hover:hover) and (pointer:fine){
  #hud:not(.estrecho) #botones .bt{position:relative;}
- #hud:not(.estrecho) #b-libro::after,#hud:not(.estrecho) #b-mapa::after,#hud:not(.estrecho) #b-social::after,#hud:not(.estrecho) #b-regreso::after,#hud:not(.estrecho) #b-inv::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,12,22,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
+ #hud:not(.estrecho) #b-libro::after,#hud:not(.estrecho) #b-mapa::after,#hud:not(.estrecho) #b-social::after,#hud:not(.estrecho) #b-regreso::after,#hud:not(.estrecho) #b-inv::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(9,21,17,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
  #hud:not(.estrecho) #b-libro::after{content:'P';}
  #hud:not(.estrecho) #b-mapa::after{content:'M';}
  #hud:not(.estrecho) #b-social::after{content:'O';}
  #hud:not(.estrecho) #b-regreso::after{content:'R';}
  #hud:not(.estrecho) #b-inv::after{content:'I';}
 }
-body:not(.tactil) .pw .k{left:2px;top:2px;font:700 11px/13px var(--sans);color:#fff;background:rgba(8,12,22,.72);border-radius:3px;padding:0 3px;}
+body:not(.tactil) .pw .k{left:2px;top:2px;font:700 11px/13px var(--sans);color:#fff;background:rgba(9,21,17,.72);border-radius:3px;padding:0 3px;}
 body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuera de alcance (client.js) */
 /* 860: Chrome maximizado en un monitor 1080p deja unos 910-945 px de alto util. */
 @media (min-width:1700px) and (min-height:860px){
@@ -726,6 +726,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
 @media (max-width:520px){.modal .btn{white-space:normal;}}
 @media (max-height:500px){#login-ok{position:sticky;bottom:0;z-index:1;}}
 </style>
+<!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}:root{--bg:var(--bg-dark);--panel:var(--surface);--panel2:var(--surface-2);--borde:var(--border);--txt:var(--text);--txt2:var(--text-2);--txt3:var(--text-3);--pri:var(--primary-strong);--pri2:var(--primary-deep);--pri-txt:var(--primary-soft);--ok:var(--success);--warn:var(--warning);--err:var(--danger);--oro:var(--accent);--oro2:var(--accent-strong);--oro-tinta:var(--accent-ink);--verde:var(--success);--green:var(--success);--amarillo:var(--accent);--yellow:var(--accent);--rosa:var(--secondary);--purple:var(--secondary);--pink:var(--secondary);--cian:var(--primary-soft);--cyan:var(--primary-soft);--rojo:var(--danger);--red:var(--danger);--dark:var(--bg-dark);--card:var(--surface);--sombra:var(--shadow)}</style><!-- tema:fin -->
 </head>
 <body>
 <script>(function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}if(v!=='n'&&v!=='g'){try{v=Math.min(screen.width,screen.height)<=430?'g':'n';}catch(e){v='n';}}document.body.classList.toggle('texto-grande',v==='g');})();</script>
@@ -952,7 +953,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2 id="ayuda-t">GUIA DEL JUEGO</h2>
     <button class="btn sec" id="b-novedades" style="width:100%;margin-bottom:10px">Notas del parche y calendario</button>
-    <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><span>Vibración</span><select id="sel-vib2" style="background:#22164a;color:#fff;border:1px solid #5a4a9a;border-radius:6px;padding:4px 8px;font-size:14px"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></label>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><span>Vibración</span><select id="sel-vib2" style="background:#1d4338;color:#fff;border:1px solid #5a4a9a;border-radius:6px;padding:4px 8px;font-size:14px"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></label>
     <div id="ayuda-lista" class="guia">
       <h3>Controles</h3>
       <dl class="solo-pc">
@@ -1185,7 +1186,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=401"></script>
+<script type="module" src="/mmo/js/client.js?v=402"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

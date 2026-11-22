@@ -40,7 +40,7 @@ export function iniciarDios3(H) {
           .map(([k, t]) => `<button class="btn ${M[k] ? '' : 'sec'}" data-m="${k}">${t}${M[k] ? ' ✓' : ''}</button>`).join('')
         + '<button class="btn sec" data-a="curar">✨ Curarme</button>'
         + (dueno ? '<button class="btn sec" data-a="mundial3" style="grid-column:1/-1">👹 Invocar jefe mundial</button>' : '') + '</div>';
-      h += '<p class="vv-p" style="margin:10px 0 4px">📢 Anuncio a todo el servidor:</p><div style="display:flex;gap:6px"><input id="dios3-an" maxlength="200" placeholder="Mensaje" style="flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid #6d3fc0;background:#120a24;color:#fff;font-size:14px"><button class="btn" data-a="anuncio">Enviar</button></div>';
+      h += '<p class="vv-p" style="margin:10px 0 4px">📢 Anuncio a todo el servidor:</p><div style="display:flex;gap:6px"><input id="dios3-an" maxlength="200" placeholder="Mensaje" style="flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid #0a8457;background:#070c0b;color:#fff;font-size:14px"><button class="btn" data-a="anuncio">Enviar</button></div>';
       h += '<p class="vv-p" style="font-size:11px;margin-top:10px;opacity:.8">Las copias de seguridad y los viajes entre mapas 2D están en CLASSIC (F2).</p>';
     } else if (tab === 'jugadores') {
       h += `<p class="vv-p" style="font-size:12px">${X.jugadores.length} conectados</p>`;

@@ -8,7 +8,7 @@
 // Con sesión, el botón abre un menú: jugar, tienda y cerrar sesión.
 // En Telegram no aparece: allí la cuenta es la de Telegram.
 // ═══════════════════════════════════════════════════════
-import { abrirCuenta } from '/js/cuenta.js?v=401';
+import { abrirCuenta } from '/js/cuenta.js?v=402';
 
 const b = document.getElementById('nav-cuenta');
 const menu = document.getElementById('nav-cuenta-menu');

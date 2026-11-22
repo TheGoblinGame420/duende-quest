@@ -23,15 +23,15 @@
 <meta name="twitter:title" content="Duende Quest 3D: mundo abierto gratis desde tu celular">
 <meta name="twitter:description" content="Vuela con tus alas, caza jefes y juega con amigos, sin descargar nada. Gratis en el navegador y en Telegram.">
 <meta name="twitter:image" content="https://duendequest.com/assets/og/mundo3d.jpg">
-<meta name="theme-color" content="#0a0418">
+<meta name="theme-color" content="#070c0b">
 <link rel="manifest" href="/inicio/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=401" defer></script>
+<script src="/js/pwa.js?v=402" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=401"></script>
+<script src="/js/origen.js?v=402"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -111,40 +111,40 @@
   if (!tg) return;
   window.__tgListo = new Promise(function (ok) {
     var s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js';
-    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#0a0418'); w.setHeaderColor('#0a0418'); } } } catch (e) {} ok(); };
+    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#070c0b'); w.setHeaderColor('#070c0b'); } } } catch (e) {} ok(); };
     s.onerror = function () { ok(); };
     setTimeout(ok, 15000);   // telegram.org caido: el juego no se queda esperando para siempre
     document.head.appendChild(s);
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=401" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=402" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=401">
-<link rel="modulepreload" href="/mmo/js/data.js?v=401">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=401">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=401">
-<link rel="modulepreload" href="/mundo/js/objetivos.js?v=401">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=401">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=401">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=401">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=401">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=401">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=401">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=401">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=401">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=401">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=401">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=401">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=401">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=401">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=401">
-<link rel="modulepreload" href="/mmo/js/caso.js?v=401">
-<link rel="modulepreload" href="/mundo/js/caso.js?v=401">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=401">
-<link rel="modulepreload" href="/mundo/js/vecinos.js?v=401">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=402">
+<link rel="modulepreload" href="/mmo/js/data.js?v=402">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=402">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=402">
+<link rel="modulepreload" href="/mundo/js/objetivos.js?v=402">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=402">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=402">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=402">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=402">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=402">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=402">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=402">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=402">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=402">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=402">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=402">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=402">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=402">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=402">
+<link rel="modulepreload" href="/mmo/js/caso.js?v=402">
+<link rel="modulepreload" href="/mundo/js/caso.js?v=402">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=402">
+<link rel="modulepreload" href="/mundo/js/vecinos.js?v=402">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -156,14 +156,14 @@
 window.__dqIndice=fetch('/assets/3d/dq_indice.json'+v).then(function(r){return r.ok?r.json():null;}).then(function(ind){if(ind&&ind.paquetes)for(var f in ind.paquetes){var h='?h='+ind.paquetes[f].h;p('/assets/3d/dq_'+f+'.json'+h);p('/assets/3d/dq_'+f+(gz?'.bin.gz':'.bin')+h);}return ind;}).catch(function(){return null;});}catch(e){}})();</script>
 <style>
 /* Iconos propios del juego (tools/iconos/): la fuente "DQ Iconos" dibuja los simbolos y emojis del texto como glifos serios de un solo color. Va primera en --sans y --px; unicode-range la limita a simbolos, asi las letras siguen en la fuente de siempre. */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=401) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
-:root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"DQ Iconos","Press Start 2P",monospace;--sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;--oro2:#c9a227;--marco:rgba(201,162,39,.42);}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=402) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+:root{--bg:#070c0b;--panel:rgba(12,27,23,.86);--borde:rgba(109,245,189,.22);--txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#7f958a;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#0a8457;--cian:#7dd3fc;--px:"DQ Iconos","Press Start 2P",monospace;--sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;--oro2:#c9a227;--marco:rgba(201,162,39,.42);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);touch-action:none;user-select:none;-webkit-user-select:none;}
 #lienzo{position:fixed;inset:0;display:block;width:100%;height:100%;}
 #capa{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
 /* Viñeta barata cuando no hay post-proceso (baja, media o caida por rendimiento): la pone/quita mundo.js */
-#vineta{position:fixed;inset:0;pointer-events:none;display:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,6,20,.38) 100%);}
+#vineta{position:fixed;inset:0;pointer-events:none;display:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(8,18,15,.38) 100%);}
 body.sin-post #vineta{display:block;}
 #herida{position:fixed;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 22px rgba(255,30,50,.75);}
 #herida.bajo{animation:latido 1.1s ease-in-out infinite;}
@@ -187,7 +187,7 @@ body.movil .lbl .b{height:6px;border-radius:3px;}
 /* Combate (cb-): estados del objetivo con su duración, arquetipo y a quién mira */
 .cb-estados{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
 .cb-estados:empty,.cb-mira:empty{display:none;}
-.cb-est{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border:1px solid var(--c,#fff);border-radius:6px;background:rgba(8,6,20,.72);color:var(--c,#fff);font:600 12px/1.25 var(--sans);}
+.cb-est{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border:1px solid var(--c,#fff);border-radius:6px;background:rgba(8,18,15,.72);color:var(--c,#fff);font:600 12px/1.25 var(--sans);}
 .cb-est b{color:#fff;font-weight:700;font-size:11px;font-variant-numeric:tabular-nums;}
 .cb-mira{margin-top:4px;font:600 11px/1.3 var(--sans);color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cb-mira .cb-yo{color:#fca5a5;}
@@ -221,7 +221,7 @@ body.movil .cb-mira,body.compacto .cb-mira{font-size:9.5px;margin-top:2px;}
 #misiones .q{margin-bottom:6px;}
 #misiones .q:last-child{margin-bottom:0;}
 #misiones .tarea,#misiones .q .ok{display:block;font-size:10.5px;line-height:1.35;}
-#misiones .cambiar{background:rgba(255,255,255,.1);border:1px solid rgba(160,140,255,.35);border-radius:6px;color:#fff;font-size:12px;min-width:28px;min-height:24px;padding:2px 6px;cursor:pointer;margin-left:2px;}
+#misiones .cambiar{background:rgba(255,255,255,.1);border:1px solid rgba(109,245,189,.35);border-radius:6px;color:#fff;font-size:12px;min-width:28px;min-height:24px;padding:2px 6px;cursor:pointer;margin-left:2px;}
 #misiones .ok{color:#4ade80;}
 #misiones small{color:var(--txt2);}
 body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-size:10px;padding:5px 7px;}
@@ -250,7 +250,7 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 /* XP de descanso: tramo azul detras de la barra (mundo.js pintarXpProx) y chip con el proximo desbloqueo */
 #xp i:not(.xd){z-index:1;}
 #xp i.xd{z-index:0;background:#60a5fa;opacity:.55;transform:scaleX(0);}
-#xp-prox{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);max-width:min(460px,calc(100vw - 32px));display:none;pointer-events:none;z-index:2;font:600 11px/13px var(--sans);color:#fde68a;background:rgba(10,4,24,.72);padding:0 8px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#xp-prox{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);max-width:min(460px,calc(100vw - 32px));display:none;pointer-events:none;z-index:2;font:600 11px/13px var(--sans);color:#fde68a;background:rgba(7,12,11,.72);padding:0 8px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #xp-prox b{color:#93c5fd;font-weight:700;}
 #xp-prox span:not([style*="none"])+b::before{content:' · ';color:#fde68a;}
 body.movil #xp-prox,body.compacto #xp-prox{left:50%;right:auto;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));max-width:54vw;}   /* encima de la pildora de la chicha (no la tapa) */
@@ -262,13 +262,13 @@ body.tgfs #xp-prox{margin-bottom:var(--tg-bot,0px);}
 #chat{left:12px;bottom:22px;width:min(380px,42vw);padding:6px 8px;}
 #chat-log{max-height:150px;overflow:hidden;font:500 12px/1.45 var(--sans);display:flex;flex-direction:column;justify-content:flex-end;}
 #chat-log div b{font-weight:700;}
-#chat-env{display:none;flex:0 0 auto;min-width:40px;margin-top:4px;border:1px solid var(--borde);border-radius:6px;background:#2563eb;color:#fff;font:700 15px var(--sans);pointer-events:auto;}
+#chat-env{display:none;flex:0 0 auto;min-width:40px;margin-top:4px;border:1px solid var(--borde);border-radius:6px;background:#0a8457;color:#fff;font:700 15px var(--sans);pointer-events:auto;}
 #chat-in[style*="block"]+#chat-env{display:block;}
 #chat-in{display:none;width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:1px solid var(--borde);background:rgba(0,0,0,.5);color:var(--txt);font:500 13px var(--sans);user-select:text;-webkit-user-select:text;}
 /* Avisos a la izquierda, encima del chat (no en medio de la pantalla) */
 /* 😀 Gestos y frases rapidas (mundo.js coloca la fila bajo el boton) */
 .gesto3{font-size:34px;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.6);}
-#gestos3{position:fixed;display:none;z-index:12;box-sizing:border-box;padding:8px;border-radius:14px;border:1px solid var(--borde);background:rgba(16,10,30,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.5);overflow-y:auto;pointer-events:auto;}
+#gestos3{position:fixed;display:none;z-index:12;box-sizing:border-box;padding:8px;border-radius:14px;border:1px solid var(--borde);background:rgba(12,28,23,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.5);overflow-y:auto;pointer-events:auto;}
 #gestos3.on{display:block;}
 #gestos3 .g3-e{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
 #gestos3 .g3-f{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
@@ -284,7 +284,7 @@ body:has(.modal.on) #avisos{z-index:11;}
 /* Invitaciones de grupo, duelo y hermandad (caducan en 30-60 s): por encima de la ventana abierta, no escondidas detrás. */
 body:has(.modal.on) #invit3{z-index:13;}
 body:has(#v-clase.on) #avisos{display:none;}
-#avisos div{background:rgba(14,9,30,.72);border:1px solid var(--borde);border-left:3px solid #a78bfa;border-radius:6px;padding:5px 10px;font:600 12px var(--sans);text-align:left;animation:entra .2s ease-out;}
+#avisos div{background:rgba(12,27,23,.72);border:1px solid var(--borde);border-left:3px solid #a78bfa;border-radius:6px;padding:5px 10px;font:600 12px var(--sans);text-align:left;animation:entra .2s ease-out;}
 #avisos div.ok{border-left-color:#4ade80;}
 #avisos div.err{border-left-color:#ff5a6a;color:#ffd4d9;}
 /* El error no solo por el color de la barra (daltonicos) */
@@ -295,7 +295,7 @@ body:has(#v-clase.on) #avisos{display:none;}
 /* Pantalla completa de Telegram: el HUD se aparta de sus botones */
 body.tgfs #marco,body.tgfs #obj,body.tgfs #objp,body.tgfs #grupo3,body.tgfs #mini,body.tgfs #misiones,body.tgfs #botones,body.tgfs #alas,body.tgfs #titulo-zona,body.tgfs.movil #chat{margin-top:var(--tg-top,0px);}
 body.tgfs #barra,body.tgfs #tactil,body.tgfs #hablar,body.tgfs #lanzar,body.tgfs #invit3,body.tgfs #joy{margin-bottom:var(--tg-bot,0px);}
-#presumir3{position:fixed;left:50%;bottom:190px;transform:translateX(-50%);display:none;z-index:6;pointer-events:auto;cursor:pointer;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,216,74,.6);background:linear-gradient(90deg,#7c3aed,#db2777);color:#fff;font:700 14px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);animation:latir 1.2s ease-in-out infinite;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;white-space:normal;}
+#presumir3{position:fixed;left:50%;bottom:190px;transform:translateX(-50%);display:none;z-index:6;pointer-events:auto;cursor:pointer;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,216,74,.6);background:linear-gradient(90deg,#10b981,#db2777);color:#fff;font:700 14px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);animation:latir 1.2s ease-in-out infinite;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;white-space:normal;}
 @keyframes latir{50%{transform:translateX(-50%) scale(1.06);}}
 body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13px;padding:8px 14px;line-height:1.25;border-radius:18px;}
 #b-pase,#b-mas{position:relative;}
@@ -305,7 +305,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .dias7{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;}
 #v-diario .ventana,#v-pase .ventana{overflow-x:hidden;}
 /* Movil: tira de la racha arriba (7 bolitas + "Mañana"); al tocarla abre el panel diario. */
-#tira-diario{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translate(-50%,-140%);z-index:8;display:flex;align-items:center;gap:10px;min-height:44px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:6px 12px;border-radius:14px;border:1px solid rgba(255,216,74,.55);background:rgba(20,14,34,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;font:600 12px/1.25 var(--sans);cursor:pointer;pointer-events:none;opacity:0;transition:transform .35s ease,opacity .35s ease;}
+#tira-diario{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translate(-50%,-140%);z-index:8;display:flex;align-items:center;gap:10px;min-height:44px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:6px 12px;border-radius:14px;border:1px solid rgba(255,216,74,.55);background:rgba(15,33,28,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;font:600 12px/1.25 var(--sans);cursor:pointer;pointer-events:none;opacity:0;transition:transform .35s ease,opacity .35s ease;}
 #tira-diario.on{transform:translate(-50%,0);opacity:1;pointer-events:auto;}
 #tira-diario .tx{display:flex;flex-direction:column;min-width:0;}
 #tira-diario .tx b,#tira-diario .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -335,7 +335,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .hm .acc button{background:rgba(255,255,255,.08);border:1px solid var(--borde);color:#fff;border-radius:6px;padding:1px 6px;margin-left:3px;cursor:pointer;font-size:11px;}
 .rank-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
 .rank-tabs button{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--borde);background:rgba(255,255,255,.04);color:var(--txt2);font:600 11px var(--sans);cursor:pointer;}
-.rank-tabs button.on{background:linear-gradient(90deg,#7c3aed,#2563eb);color:#fff;border-color:#a78bfa;}
+.rank-tabs button.on{background:linear-gradient(90deg,#10b981,#0a8457);color:#fff;border-color:#a78bfa;}
 .rank-lista{display:flex;flex-direction:column;gap:3px;}
 .rk{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.04);font:500 12.5px var(--sans);color:var(--txt2);}
 .rk b{flex:1;color:var(--txt);}
@@ -366,7 +366,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 #titulo-zona b{display:block;font:400 18px var(--px);color:#fff7d6;text-shadow:0 3px 0 #000,0 0 18px rgba(255,216,74,.45);}
 #titulo-zona small{display:block;margin-top:6px;font:600 12px var(--sans);color:var(--txt2);text-shadow:0 1px 2px #000;}
 #hablar{left:50%;bottom:96px;transform:translateX(-50%);padding:8px 16px;font:700 14px var(--sans);display:none;cursor:pointer;color:var(--txt);}
-.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,11,9,.55);pointer-events:auto;z-index:10;}
 .modal.on{display:flex;}
 /* Paneles laterales: a la izquierda, sin velo ni bloquear el mundo */
 #v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal,#v-herm.modal,#v-rank.modal,#v-amigos.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
@@ -374,19 +374,19 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:96px 0 0 6px;}
 body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);max-height:calc(100dvh - 330px);}/* dvh: en Chrome movil 100vh cuenta la barra de direcciones y el panel tapaba VOLAR */
 #v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
-#v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
+#v-look .ventana{width:min(300px,86vw);background:rgba(17,39,33,.93);}
 #v-look .op{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font:600 12px var(--sans);}
 #v-look .op .sel{display:flex;align-items:center;gap:6px;}
 #v-look .op .sel span{min-width:96px;text-align:center;color:#fff;}
-#v-look .flecha{width:30px;height:30px;border-radius:8px;border:1px solid var(--borde);background:#22164a;color:#fff;font-size:14px;cursor:pointer;}
+#v-look .flecha{width:30px;height:30px;border-radius:8px;border:1px solid var(--borde);background:#1d4338;color:#fff;font-size:14px;cursor:pointer;}
 #v-look .colores{display:flex;flex-wrap:wrap;gap:6px;}
 #v-look .colores button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
-#v-look .colores button.on{border-color:#fff;box-shadow:0 0 0 2px #7c3aed;}
+#v-look .colores button.on{border-color:#fff;box-shadow:0 0 0 2px #10b981;}
 #v-look input[type=range]{width:150px;}
 body.movil #v-look.modal{align-items:flex-end;padding:0 0 8px 8px;}
 body.movil #v-look .flecha{width:36px;height:36px;}
 body.movil #v-look .colores button{width:30px;height:30px;}
-.ventana{position:relative;background:#140c2c;border:1px solid var(--borde);border-radius:14px;padding:18px;width:min(460px,92vw);max-height:86vh;max-height:86dvh;overflow:auto;}
+.ventana{position:relative;background:#112721;border:1px solid var(--borde);border-radius:14px;padding:18px;width:min(460px,92vw);max-height:86vh;max-height:86dvh;overflow:auto;}
 .ventana h2{font:400 14px var(--px);text-align:center;margin-bottom:12px;}
 /* «HAS CAÍDO»: la fuente pixel dibuja la Í mayúscula como «í» minúscula; solo este título va en la fuente de títulos (con su Í). */
 #v-muerte .ventana h2{font-family:var(--titulo);font-weight:800;font-size:20px!important;letter-spacing:.06em;}
@@ -397,11 +397,11 @@ body.movil #v-look .colores button{width:30px;height:30px;}
 body.movil .cerrar{right:8px;top:8px;width:38px;height:38px;}
 /* La X de 38 px se ve igual, pero recibe el toque en 46 px (mínimo táctil 44). */
 body.movil .cerrar::after{content:'';position:absolute;inset:-4px;border-radius:50%;}
-.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--pri);color:#fff;font:700 14px var(--sans);cursor:pointer;}
+.btn{border:1px solid rgba(109,245,189,.55);border-radius:8px;padding:10px 14px;background:var(--pri);color:#fff;font:700 14px var(--sans);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
 .btn.sec{background:rgba(255,255,255,.08);border:1px solid var(--borde);}
 .btn:disabled{opacity:.45;cursor:default;}
 .fila{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font:500 14px var(--sans);}
-input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--borde);background:#0a0418;color:var(--txt);font:500 16px var(--sans);text-align:center;margin:10px 0;user-select:text;-webkit-user-select:text;}
+input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--borde);background:#070c0b;color:var(--txt);font:500 16px var(--sans);text-align:center;margin:10px 0;user-select:text;-webkit-user-select:text;}
 #carga{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:20;}
 #carga{transition:opacity .35s ease-out}#carga.sale{opacity:0;pointer-events:none}
 #carga .t{font:400 18px/1.5 var(--px);text-align:center;color:#fff7d6;}
@@ -418,25 +418,25 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 .clases button{padding:12px 8px;border-radius:10px;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--txt);font:700 14px var(--sans);cursor:pointer;}
 .clases button small{display:block;font-weight:500;color:var(--txt2);margin-top:4px;font-size:12px;}
 /* Mapa grande: ventana en PC y pantalla completa en movil. Todo flota sobre el lienzo y nada le quita sitio */
-#mapa-grande{width:min(760px,94vw);height:min(760px,90vh);height:min(760px,90dvh);max-height:none;padding:0;overflow:hidden;background:#0d1730;-webkit-backdrop-filter:none;backdrop-filter:none;--mapa-sup:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px));--mapa-inf:calc(10px + env(safe-area-inset-bottom) + var(--tg-bot,0px));}
+#mapa-grande{width:min(760px,94vw);height:min(760px,90vh);height:min(760px,90dvh);max-height:none;padding:0;overflow:hidden;background:#122b23;-webkit-backdrop-filter:none;backdrop-filter:none;--mapa-sup:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px));--mapa-inf:calc(10px + env(safe-area-inset-bottom) + var(--tg-bot,0px));}
 #v-mapa.modal.on #mapa-grande{animation:none;}
 #mapa-grande canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 #mapa-grande canvas:active{cursor:grabbing;}
 #mapa-cab{position:absolute;left:calc(8px + env(safe-area-inset-left));right:calc(66px + env(safe-area-inset-right));top:var(--mapa-sup);display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;}
-.mapa-chip{max-width:100%;display:flex;align-items:center;gap:8px;padding:4px 10px;min-height:28px;border-radius:9px;background:rgba(10,8,24,.82);color:#fff;font:600 13px/1.25 var(--sans);}
+.mapa-chip{max-width:100%;display:flex;align-items:center;gap:8px;padding:4px 10px;min-height:28px;border-radius:9px;background:rgba(10,22,19,.82);color:#fff;font:600 13px/1.25 var(--sans);}
 #mapa-pc{font-weight:700;}
 #mapa-info{color:var(--cian);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}#mapa-pc{flex:none;}
 #mapa-dest-q{pointer-events:auto;flex:none;position:relative;min-height:28px;padding:2px 10px;border:1px solid rgba(255,255,255,.35);border-radius:7px;background:rgba(255,92,122,.3);color:#fff;font:700 13px var(--sans);cursor:pointer;touch-action:manipulation;}
 #mapa-dest-q::after{content:"";position:absolute;inset:-9px -6px;}
-#mapa-grande .cerrar{width:48px;height:48px;top:var(--mapa-sup);right:calc(8px + env(safe-area-inset-right));font-size:22px;font-weight:700;background:rgba(10,8,24,.85)!important;color:#fff;touch-action:manipulation;}
+#mapa-grande .cerrar{width:48px;height:48px;top:var(--mapa-sup);right:calc(8px + env(safe-area-inset-right));font-size:22px;font-weight:700;background:rgba(10,22,19,.85)!important;color:#fff;touch-action:manipulation;}
 #mapa-ctrl{position:absolute;right:calc(8px + env(safe-area-inset-right));bottom:var(--mapa-inf);display:flex;flex-direction:column;gap:8px;}
-#mapa-ctrl .bt{width:48px;height:48px;border-radius:12px;background:rgba(10,8,24,.95);color:#fff;font:700 24px var(--sans);touch-action:manipulation;}
+#mapa-ctrl .bt{width:48px;height:48px;border-radius:12px;background:rgba(10,22,19,.95);color:#fff;font:700 24px var(--sans);touch-action:manipulation;}
 #mapa-ley{position:absolute;left:calc(8px + env(safe-area-inset-left));bottom:var(--mapa-inf);max-width:min(300px,calc(100% - 76px));}
-#mapa-ley summary{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;background:rgba(10,8,24,.85);color:#fff;font:700 14px var(--sans);cursor:pointer;list-style:none;touch-action:manipulation;}
+#mapa-ley summary{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;background:rgba(10,22,19,.85);color:#fff;font:700 14px var(--sans);cursor:pointer;list-style:none;touch-action:manipulation;}
 #mapa-ley summary::-webkit-details-marker{display:none;}
 #mapa-ley summary::after{content:"▴";margin-left:7px;}
 #mapa-ley[open] summary::after{content:"▾";}
-#mapa-ley ul{list-style:none;margin:6px 0 0;padding:8px 10px 2px;border-radius:12px 12px 0 0;background:rgba(10,8,24,.92);color:#fff;font:500 13px/1.3 var(--sans);}
+#mapa-ley ul{list-style:none;margin:6px 0 0;padding:8px 10px 2px;border-radius:12px 12px 0 0;background:rgba(10,22,19,.92);color:#fff;font:500 13px/1.3 var(--sans);}
 #mapa-ley li{margin-bottom:5px;}
 #mapa-ley li i{display:inline-block;width:22px;text-align:center;font-style:normal;font-weight:700;}
 #mapa-ley label{display:flex;align-items:center;gap:6px;min-height:34px;cursor:pointer;touch-action:manipulation;}
@@ -445,7 +445,7 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 #mapa-ley li:has(input:not(:checked)) span,#mapa-ley li:has(input:not(:checked)) i{opacity:.45;}
 #mapa-ley li.fijo{padding-left:26px;color:#d6d0f2;}
 #mapa-ley-n{color:#ffd84a;font-weight:600;}
-#mapa-ley p{margin:0;padding:2px 10px 8px;border-radius:0 0 12px 12px;background:rgba(10,8,24,.92);color:#cbd5e1;font:500 12px/1.3 var(--sans);}
+#mapa-ley p{margin:0;padding:2px 10px 8px;border-radius:0 0 12px 12px;background:rgba(10,22,19,.92);color:#cce0d6;font:500 12px/1.3 var(--sans);}
 #mapa-ley[open]{max-height:calc(100% - var(--mapa-sup) - var(--mapa-inf) - 72px);overflow-y:auto;}
 body.movil #v-mapa.modal,body.compacto #v-mapa.modal{padding:0!important;}
 body.movil .modal #mapa-grande,body.compacto .modal #mapa-grande{width:100vw!important;max-width:none!important;height:100vh;height:100dvh;max-height:none!important;padding:0!important;border:0;border-radius:0;overflow:hidden;}
@@ -462,7 +462,7 @@ body.movil .modal #mapa-grande,body.compacto .modal #mapa-grande{width:100vw!imp
 #temp3{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:9px;border:1px solid currentColor;background:rgba(0,0,0,.4);font:700 10px/14px var(--sans);white-space:nowrap;pointer-events:auto;cursor:pointer;}
 #temp3:empty{display:none;}
 #temp3{position:relative;} #temp3::before{content:'';position:absolute;inset:-12px -6px;}   /* zona de toque de 40 px sin agrandar la pildora */
-#auras span{padding:2px 5px;border-radius:5px;background:rgba(124,58,237,.35);border:1px solid rgba(192,132,252,.4);}
+#auras span{padding:2px 5px;border-radius:5px;background:rgba(16,185,129,.35);border:1px solid rgba(192,132,252,.4);}
 .acc.bloq{opacity:.35;}
 .acc .lv{position:absolute;left:0;right:0;bottom:2px;font:700 9px var(--sans);color:var(--warn);text-align:center;}
 /* Movil: joystick a la izquierda, botones a la derecha */
@@ -483,7 +483,7 @@ body.movil.mano-der #joy .pista-joy.grande{transform-origin:right bottom;}
 body.movil .acc .t{display:none;}
 #joy .pomo{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.35);left:26px;top:26px;}
 #tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(2,58px) 74px;gap:8px;pointer-events:auto;align-items:center;justify-items:center;}
-#tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .12s,filter .12s;}
+#tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(17,39,33,.75);color:var(--txt);font:700 12px var(--sans);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .12s,filter .12s;}
 #tactil button:active{transform:scale(.9);filter:brightness(1.35);transition:transform .06s;}
 /* ATACAR mas grande y en la esquina inferior derecha: el pulgar lo encuentra sin mirar */
 #tactil #t-atk{width:74px;height:74px;font-size:13px;grid-column:3;grid-row:2;}
@@ -495,7 +495,7 @@ body.movil #tactil #t-atk{width:68px;height:68px;}
 .acc.no{animation:accNo .28s;border-color:#ef4444;}
 @keyframes accNo{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 @media (prefers-reduced-motion:reduce){.acc.listo,.acc.no{animation:none;}#tactil button:active,.acc:active{transform:none;}}
-#tactil button.grande{background:rgba(37,99,235,.8);}
+#tactil button.grande{background:rgba(10,132,87,.8);}
 #tactil button.grande.on{background:rgba(220,38,38,.9);box-shadow:0 0 12px #f87171;}
 /* Anillo de recarga de ATACAR (v344): se llena al ritmo del arma; lleno y tenue = listo para el siguiente golpe */
 #tactil #t-atk{position:relative;}
@@ -628,15 +628,15 @@ body.tgfs #grupo3,body.tgfs #alas,body.tgfs.movil #objp,body.tgfs.compacto #objp
 body.tgfs.movil #mini{top:8px;}
 /* Movil vertical: los avisos arriba al centro, pequeños y como mucho 2 (antes tapaban al duende) (v315) */
 body.movil #avisos,body.compacto #avisos{left:50%;right:auto;transform:translateX(-50%);top:calc(188px + env(safe-area-inset-top) + var(--tg-top,0px));bottom:auto;width:min(250px,66vw);max-width:none;align-items:stretch;}
-body.movil #avisos div,body.compacto #avisos div{font-size:10.5px;line-height:1.3;padding:3px 7px;background:rgba(14,9,30,.62);}
+body.movil #avisos div,body.compacto #avisos div{font-size:10.5px;line-height:1.3;padding:3px 7px;background:rgba(12,27,23,.62);}
 /* Premio de chicha siempre a la vista (v296) */
 #chicha3{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:3;pointer-events:auto;cursor:pointer;background:rgba(74,20,110,.82);border:1px solid #c084fc;border-radius:999px;color:#fde68a;font:700 11px var(--sans);padding:3px 10px;white-space:nowrap;max-width:calc(100vw - 16px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,.35);}
-#chicha3.listo{background:#7c3aed;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
+#chicha3.listo{background:#10b981;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
 @keyframes chichaPulso{50%{box-shadow:0 0 14px #c084fc;}}
 body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inset-bottom));font-size:9.5px;padding:2px 8px;}
 /* Interfaz tipo vidrio (v321): paneles translucidos con desenfoque, botones mas pequeños con
    respuesta de muelle al tocar y ventanas que aparecen con un rebote suave. */
-:root{--muelle:cubic-bezier(.34,1.56,.64,1);--suave:cubic-bezier(.2,.8,.2,1);--vidrio:rgba(22,14,44,.62);}
+:root{--muelle:cubic-bezier(.34,1.56,.64,1);--suave:cubic-bezier(.2,.8,.2,1);--vidrio:rgba(17,41,34,.62);}
 .caja{background:var(--vidrio);border-color:rgba(255,255,255,.1);border-radius:14px;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08);}
 #botones{gap:3px;padding:3px;border-radius:16px;}
 .bt{width:34px;height:34px;border-radius:10px;border-color:transparent;background:rgba(255,255,255,.06);font-size:14px;transition:transform .35s var(--muelle),background .2s;-webkit-tap-highlight-color:transparent;}
@@ -645,24 +645,24 @@ body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inse
 #b-mas{transition:transform .4s var(--muelle),background .2s;}
 #botones.abierto #b-mas{transform:rotate(90deg);background:rgba(125,211,252,.22);}
 #botones.abierto .extra{animation:btAparece .38s var(--muelle) both;}
-body.movil #botones.abierto .bt[data-l],body.compacto #botones.abierto .bt[data-l]{height:46px;flex-direction:column;justify-content:center;line-height:1}body.movil #botones.abierto .bt[data-l]::after,body.compacto #botones.abierto .bt[data-l]::after{content:attr(data-l);font:600 9px var(--sans);color:var(--txt2,#cbd5e1);margin-top:2px;position:static;width:auto;height:auto;min-width:0;padding:0;background:none;box-shadow:none;border-radius:0;white-space:nowrap}   /* etiquetas al abrir ⋯ en tactil (v361); anula el punto/contador del ::after cerrado */
+body.movil #botones.abierto .bt[data-l],body.compacto #botones.abierto .bt[data-l]{height:46px;flex-direction:column;justify-content:center;line-height:1}body.movil #botones.abierto .bt[data-l]::after,body.compacto #botones.abierto .bt[data-l]::after{content:attr(data-l);font:600 9px var(--sans);color:var(--txt2,#cce0d6);margin-top:2px;position:static;width:auto;height:auto;min-width:0;padding:0;background:none;box-shadow:none;border-radius:0;white-space:nowrap}   /* etiquetas al abrir ⋯ en tactil (v361); anula el punto/contador del ::after cerrado */
 body.texto-grande #botones.abierto .bt[data-l]::after{font-size:10px;letter-spacing:-.2px}
 body.movil #botones.abierto #b-compartir,body.movil #botones.abierto #b-mas,body.compacto #botones.abierto #b-compartir,body.compacto #botones.abierto #b-mas{height:46px}   /* misma altura que los rotulados: cuadricula alineada */
 body.movil #botones:not(.abierto),body.compacto #botones:not(.abierto){background:transparent;box-shadow:none;border-color:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;}
 body.movil #botones:not(.abierto) .bt,body.compacto #botones:not(.abierto) .bt{pointer-events:auto;box-shadow:0 2px 6px rgba(0,0,0,.35);}   /* cerrado: el hueco entre botones deja pasar el toque al mundo */
 #botones.abierto .extra:nth-child(3n+1){animation-delay:.03s;} #botones.abierto .extra:nth-child(3n+2){animation-delay:.06s;} #botones.abierto .extra:nth-child(3n){animation-delay:.09s;}
 @keyframes btAparece{from{opacity:0;transform:scale(.5) translateY(-6px);}}
-.modal{background:rgba(5,2,14,.35);}
+.modal{background:rgba(5,11,9,.35);}
 .modal.on{animation:modalFondo .25s ease both;}
 .modal.on .ventana{animation:ventanaSube .42s var(--muelle) both;}
-@keyframes modalFondo{from{background:rgba(5,2,14,0);}}
+@keyframes modalFondo{from{background:rgba(5,11,9,0);}}
 @keyframes ventanaSube{from{opacity:0;transform:translateY(14px) scale(.94);}}
-.ventana{background:rgba(24,15,48,.78);border-color:rgba(255,255,255,.12);border-radius:20px;-webkit-backdrop-filter:blur(24px) saturate(1.7);backdrop-filter:blur(24px) saturate(1.7);box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1);scrollbar-width:thin;}
+.ventana{background:rgba(19,44,37,.78);border-color:rgba(255,255,255,.12);border-radius:20px;-webkit-backdrop-filter:blur(24px) saturate(1.7);backdrop-filter:blur(24px) saturate(1.7);box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1);scrollbar-width:thin;}
 /* Sin vidrio (movil o calidad no alta, lo pone mundo.js): el desenfoque obliga a
    recomponer el 3D bajo cada panel en cada cuadro; paneles casi opacos en su lugar. */
-body.sin-vidrio{--vidrio:rgba(22,14,44,.88);}
+body.sin-vidrio{--vidrio:rgba(17,41,34,.88);}
 body.sin-vidrio *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
-body.sin-vidrio .ventana{background:rgba(24,15,48,.95);}
+body.sin-vidrio .ventana{background:rgba(19,44,37,.95);}
 .cerrar{border-radius:50%!important;background:rgba(255,255,255,.1)!important;border:0!important;transition:transform .3s var(--muelle),background .2s;}
 .cerrar:active{transform:scale(.85);}
 .vv-tab{border-radius:999px!important;transition:background .2s,transform .3s var(--muelle);}
@@ -670,8 +670,8 @@ body.sin-vidrio .ventana{background:rgba(24,15,48,.95);}
 button{-webkit-tap-highlight-color:transparent;}
 @media (prefers-reduced-motion:reduce){.bt,.modal.on,.modal.on .ventana,#botones.abierto .extra{animation:none!important;transition:none!important;}#carga{transition:none;}}
 /* Aviso para pasar el duende de invitado a la cuenta (mundo.js, preguntarHeredar) */
-.heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,14,.82);}
-.heredar-caja{width:100%;max-width:400px;max-height:100%;overflow:auto;box-sizing:border-box;padding:18px 16px;border:1px solid var(--borde);border-radius:18px;background:rgba(24,15,48,.96);color:var(--txt);font:500 14px/1.45 var(--sans);text-align:center;}
+.heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,11,9,.82);}
+.heredar-caja{width:100%;max-width:400px;max-height:100%;overflow:auto;box-sizing:border-box;padding:18px 16px;border:1px solid var(--borde);border-radius:18px;background:rgba(19,44,37,.96);color:var(--txt);font:500 14px/1.45 var(--sans);text-align:center;}
 .heredar-caja h3{margin:0 0 10px;font:700 17px var(--sans);color:var(--oro);}
 .heredar-caja p{margin:0 0 14px;color:var(--txt2);overflow-wrap:anywhere;}
 .heredar-caja button{display:block;width:100%;min-height:52px;margin-top:10px;padding:10px 12px;border-radius:12px;font:700 15px var(--sans);cursor:pointer;overflow-wrap:anywhere;}
@@ -709,7 +709,7 @@ button{-webkit-tap-highlight-color:transparent;}
  body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));-webkit-backdrop-filter:none;backdrop-filter:none;}   /* sin desenfoque: si no, el arco (position:fixed) quedaria atado a la barra */
  /* Arco: centro de ATACAR a 40 px de la esquina (ver "Controles en arco" abajo).
     mundo.js (pintarBarra) pone --dx/--dy, la casilla de cada habilidad respecto a ATACAR; sin transform para que tiemble y destelle igual */
- body.movil #barra .acc.arco{position:fixed;width:46px;height:46px;max-width:none;max-height:none;min-width:0;aspect-ratio:auto;flex:none;border-radius:50%;left:auto;right:calc(40px + env(safe-area-inset-right) - 23px - var(--dx,0px));bottom:calc(40px + env(safe-area-inset-bottom) - 23px - var(--dy,0px));background:rgba(20,12,44,.8);z-index:2;touch-action:manipulation;}
+ body.movil #barra .acc.arco{position:fixed;width:46px;height:46px;max-width:none;max-height:none;min-width:0;aspect-ratio:auto;flex:none;border-radius:50%;left:auto;right:calc(40px + env(safe-area-inset-right) - 23px - var(--dx,0px));bottom:calc(40px + env(safe-area-inset-bottom) - 23px - var(--dy,0px));background:rgba(17,39,33,.8);z-index:2;touch-action:manipulation;}
  body.movil #barra .acc.arco img{width:26px;height:26px;}
  body.movil #barra .acc.arco .cd{border-radius:50%;}
  body.movil #barra .acc.arco .cs{font-size:13px;}
@@ -783,13 +783,13 @@ body.texto-grande .d7 em{font-size:10.5px;overflow-wrap:anywhere;}
 body.texto-grande .lbl{font-size:13px;}
 body.texto-grande .num{font-size:19px;}
 /* La gente del bosque te cuenta (mundo.js npcDice): tarjeta tocable con la historia en burbujas */
-#npc-dice{position:fixed;left:50%;bottom:calc(var(--tg-bottom,0px) + 150px);transform:translateX(-50%);width:min(440px,calc(100vw - 32px));box-sizing:border-box;z-index:6;display:none;pointer-events:auto;cursor:pointer;background:rgba(20,10,40,.94);border:1px solid #f0abfc;border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.55);color:#fff;font:600 14px var(--sans);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+#npc-dice{position:fixed;left:50%;bottom:calc(var(--tg-bottom,0px) + 150px);transform:translateX(-50%);width:min(440px,calc(100vw - 32px));box-sizing:border-box;z-index:6;display:none;pointer-events:auto;cursor:pointer;background:rgba(15,35,29,.94);border:1px solid #f0abfc;border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.55);color:#fff;font:600 14px var(--sans);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
 #npc-dice.on{display:block;animation:ndEntra .25s ease-out;}
 @keyframes ndEntra{from{opacity:0}to{opacity:1}}
 #npc-dice .nd-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
 #npc-dice .nd-cara{font-size:26px;line-height:1;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(240,171,252,.18);flex:none;}
 #npc-dice .nd-quien{color:#f0abfc;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#npc-dice .nd-pag{color:#c4b5fd;font-size:11px;flex:none;}
+#npc-dice .nd-pag{color:#6df5bd;font-size:11px;flex:none;}
 #npc-dice .nd-txt{margin:0 0 8px;line-height:1.4;min-height:2.8em;}
 #npc-dice .nd-txt.sigue{color:#fde68a;font-style:italic;}
 #npc-dice .nd-bot{display:flex;gap:8px;justify-content:flex-end;}
@@ -797,13 +797,13 @@ body.texto-grande .num{font-size:19px;}
 body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(safe-area-inset-top) + var(--tg-top,0px));font-size:13px;}
 @media (orientation:landscape) and (max-height:500px){body.movil #npc-dice,body.compacto #npc-dice{top:calc(56px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(400px,46vw);}}
 /* Tira "¿Probar otra clase?" tras la mision 1 (abajo al centro, sobre la barra y sin tapar el joystick) */
-#probar-clase{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(520px,92vw);max-width:92vw;box-sizing:border-box;z-index:9;pointer-events:auto;padding:10px;border-radius:14px;background:rgba(20,10,40,.93);border:1px solid rgba(196,181,253,.45);box-shadow:0 6px 24px rgba(0,0,0,.5);color:#f3eaff;font:500 13px var(--sans,system-ui,sans-serif);}
+#probar-clase{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(520px,92vw);max-width:92vw;box-sizing:border-box;z-index:9;pointer-events:auto;padding:10px;border-radius:14px;background:rgba(15,35,29,.93);border:1px solid rgba(109,245,189,.45);box-shadow:0 6px 24px rgba(0,0,0,.5);color:#f3eaff;font:500 13px var(--sans,system-ui,sans-serif);}
 #probar-clase .pc-t{margin:0 0 8px;font-weight:700;font-size:14px;color:#fde68a;text-align:center;}
 #probar-clase .pc-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 #probar-clase .pc-g button{min-height:44px;margin:0;padding:6px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff;font:600 13px var(--sans,system-ui,sans-serif);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;line-height:1.15;}
-#probar-clase .pc-g button small{font-weight:400;font-size:11px;color:#c4b5fd;}
+#probar-clase .pc-g button small{font-weight:400;font-size:11px;color:#6df5bd;}
 #probar-clase .pc-g button.act{border-color:#4ade80;background:rgba(74,222,128,.14);}
-#probar-clase .pc-no{display:block;width:100%;min-height:40px;margin:8px 0 0;border:0;border-radius:10px;background:transparent;color:#c4b5fd;font:500 13px var(--sans,system-ui,sans-serif);cursor:pointer;}
+#probar-clase .pc-no{display:block;width:100%;min-height:40px;margin:8px 0 0;border:0;border-radius:10px;background:transparent;color:#6df5bd;font:500 13px var(--sans,system-ui,sans-serif);cursor:pointer;}
 body.movil #probar-clase{bottom:auto;top:calc(190px + env(safe-area-inset-top) + var(--tg-top,0px));}   /* en movil va arriba del joystick (que ocupa la mitad de abajo) */
 #probar-clase .pc-g button.conf{outline:2px solid #ffd84a;outline-offset:1px;background:rgba(255,216,74,.14);}
 #probar-clase .conf{outline:2px solid #ffd84a;}
@@ -819,13 +819,13 @@ body.movil:has(#probar-clase) #avisos,body.movil:has(#npc-dice.on) #avisos,body.
 /* HUD movil prolijo (v363): los avisos no se montan sobre el chat, nombre y nivel en una linea, misiones con fundido y chicha fuera del joystick */
 body.movil #chat,body.compacto #chat{transition:opacity .2s;}
 @media (orientation:portrait){body.movil:has(#avisos>div) #chat:not(:focus-within):not(:has(#chat-in[style*="block"])),body.compacto:has(#avisos>div) #chat:not(:focus-within):not(:has(#chat-in[style*="block"])){opacity:.18;}}   /* escribiendo, el chat no se apaga */
-body.movil #avisos div,body.compacto #avisos div{background:rgba(14,9,30,.86);}
+body.movil #avisos div,body.compacto #avisos div{background:rgba(12,27,23,.86);}
 body.movil .nm,body.compacto .nm{flex-wrap:nowrap;white-space:nowrap;}
 body.movil .nm>span,body.compacto .nm>span{min-width:0;overflow:hidden;text-overflow:ellipsis;}
 body.movil .nm small,body.compacto .nm small{flex:none;max-width:58%;overflow:hidden;text-overflow:ellipsis;}
 body.movil.texto-grande #o-hp span,body.compacto.texto-grande #o-hp span{font-size:10px!important;}
 body.movil #misiones:not(.abierto),body.compacto #misiones:not(.abierto){-webkit-mask-image:linear-gradient(#000 calc(100% - 12px),rgba(0,0,0,.3));mask-image:linear-gradient(#000 calc(100% - 12px),rgba(0,0,0,.3));}   /* fundido suave: si todo cabe, la ultima linea se sigue leyendo (recortada a 28 px no desaparece media caja) */
-body.movil #chicha3:not(.listo){background:rgba(20,12,44,.7);border-color:rgba(192,132,252,.45);}
+body.movil #chicha3:not(.listo){background:rgba(17,39,33,.7);border-color:rgba(192,132,252,.45);}
 /* La chicha va del lado de los botones (el joystick ocupa el 45 % del otro lado y empieza a 66 px del borde) */
 body.movil #chicha3{left:auto;right:calc(8px + env(safe-area-inset-right));transform:none;max-width:min(56vw,260px);}
 body.movil.mano-der #chicha3{right:auto;left:calc(8px + env(safe-area-inset-left));}
@@ -836,13 +836,13 @@ body.tgfs.movil #chicha3{margin-bottom:var(--tg-bot,0px);}   /* Telegram a panta
    #tactil no recibe toques (solo sus botones): lo vacío deja pasar el dedo al mundo.
    --cx/--cy = centro de cada botón medido desde la esquina de #tactil; 44 px mínimo y 8 px entre botones. */
 body.movil #tactil{display:block;grid-template-columns:none;gap:0;pointer-events:none;left:auto;right:calc(8px + env(safe-area-inset-right));bottom:calc(63px + env(safe-area-inset-bottom));width:208px;height:116px;direction:ltr;}
-body.movil #tactil button,body.movil #tactil #t-atk,body.movil #tactil #t-esq{position:absolute;left:auto;top:auto;right:calc(var(--cx) - 22px);bottom:calc(var(--cy) - 22px);width:44px;height:44px;padding:0;pointer-events:auto;opacity:.75;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:700 9px/1 var(--sans);letter-spacing:-.2px;text-shadow:0 1px 2px #000;background:rgba(20,12,44,.8);}
+body.movil #tactil button,body.movil #tactil #t-atk,body.movil #tactil #t-esq{position:absolute;left:auto;top:auto;right:calc(var(--cx) - 22px);bottom:calc(var(--cy) - 22px);width:44px;height:44px;padding:0;pointer-events:auto;opacity:.75;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:700 9px/1 var(--sans);letter-spacing:-.2px;text-shadow:0 1px 2px #000;background:rgba(17,39,33,.8);}
 body.movil #tactil button::before{font-size:17px;line-height:1;}
 /* .pulsado la pone mundo.js: los toques hacen preventDefault y en el celular :active no se activa. Con los #id para ganar a ATACAR y ESQUIVAR. */
 body.movil #tactil button.pulsado,body.movil #tactil #t-atk.pulsado,body.movil #tactil #t-esq.pulsado,body.movil #tactil button.tuto-pulso,body.movil #tactil #t-atk.tuto-pulso,body.movil #tactil #t-esq.tuto-pulso{opacity:1;}
 body.movil #tactil button.pulsado{transform:scale(.9);filter:brightness(1.35);transition:transform .06s;}
 @media (prefers-reduced-motion:reduce){body.movil #tactil button.pulsado{transform:none;}}
-body.movil #tactil #t-atk{--cx:32px;--cy:32px;right:0;bottom:0;width:64px;height:64px;font-size:10px;opacity:.92;background:rgba(37,99,235,.85);}
+body.movil #tactil #t-atk{--cx:32px;--cy:32px;right:0;bottom:0;width:64px;height:64px;font-size:10px;opacity:.92;background:rgba(10,132,87,.85);}
 body.movil #tactil #t-atk.on{background:rgba(220,38,38,.9);}
 body.movil #tactil #t-atk::before{content:'⚔️';font-size:22px;}
 body.movil #tactil #t-esq{--cx:82px;--cy:78px;font-size:20px;background:rgba(14,116,144,.8);}
@@ -884,12 +884,12 @@ body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco
 </style>
 <style>
 /* 📦 Cofre del dia / semanal: tarjeta que se abre con un toque y mini barra del medidor semanal */
-#cofre-sem{position:fixed;left:50%;top:calc(30% + var(--tg-top,0px));transform:translateX(-50%);z-index:7;pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 22px 12px;min-width:180px;max-width:86vw;border-radius:14px;background:rgba(14,9,30,.94);border:2px solid var(--oro);color:var(--txt);font:700 14px var(--sans);text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(255,216,74,.25);-webkit-tap-highlight-color:transparent;}
+#cofre-sem{position:fixed;left:50%;top:calc(30% + var(--tg-top,0px));transform:translateX(-50%);z-index:7;pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 22px 12px;min-width:180px;max-width:86vw;border-radius:14px;background:rgba(12,27,23,.94);border:2px solid var(--oro);color:var(--txt);font:700 14px var(--sans);text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(255,216,74,.25);-webkit-tap-highlight-color:transparent;}
 #cofre-sem .cs-ico{font-size:56px;line-height:1;}
 #cofre-sem .cs-sub{font:600 12px var(--sans);color:var(--txt2);}
 #cofre-sem.tiembla .cs-ico{animation:cofreTiembla .4s linear;}
 @keyframes cofreTiembla{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg) scale(1.08)}40%{transform:rotate(10deg) scale(1.12)}60%{transform:rotate(-8deg) scale(1.15)}80%{transform:rotate(6deg) scale(1.2)}}
-#cofre-meta{position:fixed;left:50%;top:calc(64px + var(--tg-top,0px));transform:translateX(-50%) translateY(-6px);z-index:6;pointer-events:none;padding:5px 12px;border-radius:10px;background:rgba(14,9,30,.9);border:1px solid var(--borde);color:var(--oro);font:700 12px var(--sans);white-space:nowrap;opacity:0;transition:opacity .4s,transform .4s;}
+#cofre-meta{position:fixed;left:50%;top:calc(64px + var(--tg-top,0px));transform:translateX(-50%) translateY(-6px);z-index:6;pointer-events:none;padding:5px 12px;border-radius:10px;background:rgba(12,27,23,.9);border:1px solid var(--borde);color:var(--oro);font:700 12px var(--sans);white-space:nowrap;opacity:0;transition:opacity .4s,transform .4s;}
 #cofre-meta.on{opacity:1;transform:translateX(-50%) translateY(0);}
 #cofre-meta .cm-b{display:block;height:4px;margin-top:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;}
 #cofre-meta .cm-b i{display:block;height:100%;background:var(--oro);transition:width .4s;}
@@ -897,7 +897,7 @@ body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco
 body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
 /* HUD compacto en el telefono: marco fino, misiones plegadas y solo mochila, tienda y ⋯ a la vista (lo demas va dentro de ⋯). Icono de 22 px en zona tactil de 40 px. Texto grande solo cambia letras, no cajas. */
 #b-chicha{display:none;}   /* en PC no existe: en tactil lo muestra la regla .extra de ⋯ abierto */
-body:is(.movil,.compacto) #marco{left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(124px,34vw);min-width:0;box-sizing:border-box;padding:3px 6px;display:grid;grid-template-columns:minmax(38px,1fr) minmax(0,auto);column-gap:5px;align-items:center;border-radius:10px;background:rgba(14,9,30,.62);box-shadow:none;}
+body:is(.movil,.compacto) #marco{left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(124px,34vw);min-width:0;box-sizing:border-box;padding:3px 6px;display:grid;grid-template-columns:minmax(38px,1fr) minmax(0,auto);column-gap:5px;align-items:center;border-radius:10px;background:rgba(12,27,23,.62);box-shadow:none;}
 body:is(.movil,.compacto) #marco>*{grid-column:1/-1;min-width:0;}
 body:is(.movil,.compacto) #marco .nm{font-size:11px;line-height:14px;margin:0;}
 body:is(.movil,.compacto) #marco .nm small{font-size:10.5px;}
@@ -907,12 +907,12 @@ body:is(.movil,.compacto) #m-hp span,body:is(.movil,.compacto).texto-grande #m-h
 body:is(.movil,.compacto) #m-rec{grid-column:1;margin-top:1px;}
 body:is(.movil,.compacto) #m-rec,body:is(.movil,.compacto).texto-grande #m-rec{height:4px!important;}
 body:is(.movil,.compacto) #m-rec span{display:none;}
-body:is(.movil,.compacto) #oro{grid-column:2;position:relative;z-index:1;margin:1px 0 0;padding-left:2px;font-size:10.5px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(14,9,30,.92);border-radius:3px;}   /* mucho oro: tapa el final de la pildora en vez de montarse sobre ella */
+body:is(.movil,.compacto) #oro{grid-column:2;position:relative;z-index:1;margin:1px 0 0;padding-left:2px;font-size:10.5px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(12,27,23,.92);border-radius:3px;}   /* mucho oro: tapa el final de la pildora en vez de montarse sobre ella */
 body:is(.movil,.compacto) #temp3{grid-column:1;grid-row:4;justify-self:start;margin-top:1px;padding:0 3px;font-size:9.5px;line-height:12px;}
 body:is(.movil,.compacto) #marco:has(#temp3:not(:empty)) #m-rec{grid-column:1/-1;}   /* con evento: recurso a todo el ancho y pildora + oro en una sola fila */
 body:is(.movil,.compacto) #marco:has(#temp3:not(:empty)) #oro{grid-row:4;}
 body:is(.movil,.compacto) #misiones{left:calc(8px + env(safe-area-inset-left));width:min(180px,50vw);box-sizing:border-box;padding:3px 6px;font-size:11px;line-height:1.2;}
-body:is(.movil,.compacto) #misiones:not(.abierto){max-height:36px;background:rgba(14,9,30,.5);border-color:transparent;box-shadow:none;text-shadow:0 1px 2px #000;}
+body:is(.movil,.compacto) #misiones:not(.abierto){max-height:36px;background:rgba(12,27,23,.5);border-color:transparent;box-shadow:none;text-shadow:0 1px 2px #000;}
 body:is(.movil,.compacto).texto-grande #misiones:not(.abierto){max-height:36px;}
 body:is(.movil,.compacto) #misiones:not(.abierto) .q{margin-bottom:0;}
 body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q,body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}   /* el avance es texto suelto dentro de .q: se recorta en la fila */
@@ -932,21 +932,21 @@ body:is(.movil,.compacto):has(#obj[style*="block"]) :is(#grupo3,#objp,#alas){wid
 /* Chat en el telefono: la caja sale unos segundos con cada mensaje (mundo.js) y cede ante los avisos; ⋯ > Chat la deja abierta para leer y escribir */
 body:is(.movil,.compacto) #chat:not(.vivo):not(:has(#chat-in[style*="block"])){visibility:hidden;}
 body:is(.movil,.compacto):has(#avisos>div) #chat:not(:has(#chat-in[style*="block"])){visibility:hidden;}
-body:is(.movil,.compacto) #misiones.abierto{width:min(240px,66vw);background:rgba(14,9,30,.92);}
+body:is(.movil,.compacto) #misiones.abierto{width:min(240px,66vw);background:rgba(12,27,23,.92);}
 body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones:not(.abierto){width:min(124px,34vw);}   /* con objetivo fijado, su ficha va a la derecha de las misiones */
 body:is(.movil,.compacto) #obj{left:calc(136px + env(safe-area-inset-left));transform:none;top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(120px,33vw);max-width:none;padding:3px 6px;box-sizing:border-box;}
 body:is(.movil,.compacto) #botones:not(.abierto){top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(clamp(96px,27vw,104px) + 9px + env(safe-area-inset-right));display:grid;grid-template-columns:repeat(3,40px);gap:0;padding:0;}
 body:is(.movil,.compacto) #botones:not(.abierto) #b-chat,body:is(.movil,.compacto) #botones:not(.abierto) #b-gestos,body:is(.movil,.compacto) #botones:not(.abierto) #b-compartir{display:none;}
 body:is(.movil,.compacto) #botones:not(.abierto) .bt{width:40px;height:40px;padding:0;font-size:22px;line-height:1;background:none;border-color:transparent;box-shadow:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.9));touch-action:manipulation;}
 body:is(.movil,.compacto) #botones:not(.abierto) #b-mas{font-weight:800;color:#fff;}
-body:is(.movil,.compacto) #botones.abierto{top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));grid-template-columns:repeat(5,44px);background:rgba(14,9,30,.94);}
+body:is(.movil,.compacto) #botones.abierto{top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));grid-template-columns:repeat(5,44px);background:rgba(12,27,23,.94);}
 body:is(.movil,.compacto) #botones.abierto .bt{width:44px;}
 body:is(.movil,.compacto):not(:has(#botones.abierto)) #xp-prox{display:none!important;}   /* lo proximo a desbloquear se lee al abrir ⋯ */
 body:is(.movil,.compacto) #xp-prox{bottom:calc(58px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);font-size:12px;line-height:16px;}
 body:is(.movil,.compacto) #chicha3:not(.listo){display:none;}   /* sigue en ⋯ > Chicha; la pildora solo sale cuando ya se puede reclamar */
 body:is(.movil,.compacto) #chicha3{bottom:calc(58px + env(safe-area-inset-bottom));}
 body:is(.movil,.compacto) #barra{bottom:calc(10px + env(safe-area-inset-bottom));padding:0;gap:4px;justify-content:center;background:transparent;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;}
-body:is(.movil,.compacto) #barra .acc{flex:0 0 40px;width:40px;height:40px;max-width:40px;max-height:40px;aspect-ratio:auto;background:rgba(14,9,30,.45);border-color:rgba(255,255,255,.18);pointer-events:auto;touch-action:manipulation;}
+body:is(.movil,.compacto) #barra .acc{flex:0 0 40px;width:40px;height:40px;max-width:40px;max-height:40px;aspect-ratio:auto;background:rgba(12,27,23,.45);border-color:rgba(255,255,255,.18);pointer-events:auto;touch-action:manipulation;}
 body:is(.movil,.compacto) #barra .acc img{width:22px;height:22px;}
 /* Con muchas casillas se estrechan en vez de salirse de la pantalla: siguen midiendo 40 de alto y todas se pueden tocar. */
 body:is(.movil,.compacto) #barra{gap:3px;}
@@ -983,13 +983,13 @@ body.movil #joy .pista-joy.grande{transform:scale(1.15);}
 body.movil #barra{gap:4px;}
 body.movil #barra .acc{flex:0 0 44px;width:44px;height:44px;max-width:44px;max-height:44px;}
 body.movil #barra .acc img{width:24px;height:24px;}
-body.movil #barra #hb-mas.on,body.movil #barra #hb-editar{display:flex;flex:0 0 44px;width:44px;height:44px;box-sizing:border-box;align-items:center;justify-content:center;padding:0;margin:0;border-radius:8px;border:1px solid var(--marco,rgba(255,255,255,.3));background:rgba(14,9,30,.72);color:var(--oro,#ffd84a);font:700 20px/1 var(--sans);pointer-events:auto;touch-action:manipulation;cursor:pointer;}
+body.movil #barra #hb-mas.on,body.movil #barra #hb-editar{display:flex;flex:0 0 44px;width:44px;height:44px;box-sizing:border-box;align-items:center;justify-content:center;padding:0;margin:0;border-radius:8px;border:1px solid var(--marco,rgba(255,255,255,.3));background:rgba(12,27,23,.72);color:var(--oro,#ffd84a);font:700 20px/1 var(--sans);pointer-events:auto;touch-action:manipulation;cursor:pointer;}
 body.movil #barra #hb-mas.on{order:-1;}
 body.movil.mano-der #barra #hb-mas.on{order:0;}
 body.movil #barra #hb-editar{font-size:10px;letter-spacing:.04em;}
 body.movil #barra.hb-abierta #hb-bandeja{display:flex;flex-wrap:wrap-reverse;gap:4px;position:absolute;left:-6px;bottom:calc(100% + 6px);width:188px;pointer-events:none;z-index:3;}
 body.movil.mano-der #barra.hb-abierta #hb-bandeja{left:auto;right:-6px;flex-direction:row-reverse;}
-body.movil #barra #hb-bandeja .acc{background:rgba(14,9,30,.88);border-color:var(--marco,rgba(255,255,255,.3));}
+body.movil #barra #hb-bandeja .acc{background:rgba(12,27,23,.88);border-color:var(--marco,rgba(255,255,255,.3));}
 @media (max-width:359px){body.movil #barra.hb-abierta #hb-bandeja{width:92px;}}   /* pantallas muy angostas: dos columnas, sin llegar a FIJAR */
 body.movil #barra.hb-edit .acc:not(.arco){outline:1px dashed var(--oro,#ffd84a);outline-offset:-3px;}
 body.movil #barra.hb-edit .acc.hb-sel{outline:2px solid #4ade80;}
@@ -1038,14 +1038,14 @@ body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) :is(#b-inv,#b-premiu
 body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(2,40px);}
 body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) #b-menu{position:static;}
 body.hud-limpio:is(.movil,.compacto) #marco{background:transparent;border-color:transparent;}
-body.hud-limpio:is(.movil,.compacto) #barra .acc{background:rgba(14,9,30,.28);border-color:rgba(255,255,255,.1);}
+body.hud-limpio:is(.movil,.compacto) #barra .acc{background:rgba(12,27,23,.28);border-color:rgba(255,255,255,.1);}
 body.hud-limpio:not(.movil):not(.compacto) #chat:not(:focus-within){opacity:.35;}
 @media (prefers-reduced-motion:reduce){body.hud-limpio #misiones,body:is(.movil,.compacto) #mini #mini-r,body:is(.movil,.compacto) #joy .pista-joy{transition:none;}}
 </style>
 <style id="css-avisos-movil">
 /* Movil: avisos en franja legible bajo el HUD (--av-top lo mide mundo.js colocarAvisos), por encima de etiquetas y botones */
 html body.movil #avisos,html body.compacto #avisos{left:50%;right:auto;transform:translateX(-50%);top:var(--av-top,calc(120px + env(safe-area-inset-top) + var(--tg-top,0px)))!important;bottom:auto;width:min(92vw,460px);max-width:none;align-items:center;gap:4px;z-index:7;}
-html body.movil #avisos div,html body.compacto #avisos div{box-sizing:border-box;max-width:100%;background:rgba(10,6,22,.94);color:#fff;font:600 14px/1.3 var(--sans);padding:6px 10px;border-radius:8px;overflow-wrap:anywhere;box-shadow:0 2px 10px rgba(0,0,0,.5);}
+html body.movil #avisos div,html body.compacto #avisos div{box-sizing:border-box;max-width:100%;background:rgba(8,20,16,.94);color:#fff;font:600 14px/1.3 var(--sans);padding:6px 10px;border-radius:8px;overflow-wrap:anywhere;box-shadow:0 2px 10px rgba(0,0,0,.5);}
 html body.movil #avisos div.err,html body.compacto #avisos div.err{color:#ffd4d9;}
 html body.movil.texto-grande #avisos div,html body.compacto.texto-grande #avisos div{font-size:15px;}
 body.movil:has(.modal.on) #avisos,body.compacto:has(.modal.on) #avisos{z-index:11;}
@@ -1059,7 +1059,7 @@ html body.movil .lbl,html body.compacto .lbl{font-size:10px;line-height:1.15;}
 html body.movil .lbl small,html body.compacto .lbl small{font-size:9px!important;}
 html body.movil .lbl .b,html body.compacto .lbl .b{width:32px;height:4px;margin-top:1px;}
 /* Dialogos de historia (#npc-dice): panel ancho abajo, sobre los controles, opaco y con boton claro */
-html body.movil #npc-dice,html body.compacto #npc-dice{top:auto;bottom:calc(8px + env(safe-area-inset-bottom) + var(--tg-bot,0px));width:min(560px,calc(100vw - 16px));background:#160c2c;padding:8px 12px 10px;font-size:15px;z-index:6;}
+html body.movil #npc-dice,html body.compacto #npc-dice{top:auto;bottom:calc(8px + env(safe-area-inset-bottom) + var(--tg-bot,0px));width:min(560px,calc(100vw - 16px));background:#112721;padding:8px 12px 10px;font-size:15px;z-index:6;}
 html body.movil #npc-dice .nd-cab,html body.compacto #npc-dice .nd-cab{margin-bottom:4px;}
 html body.movil #npc-dice .nd-cara,html body.compacto #npc-dice .nd-cara{width:30px;height:30px;font-size:20px;}
 html body.movil #npc-dice .nd-quien,html body.compacto #npc-dice .nd-quien{font-size:14px;}
@@ -1070,7 +1070,7 @@ html body.movil #npc-dice .nd-seguir,html body.compacto #npc-dice .nd-seguir{fle
 @media (orientation:landscape) and (max-height:500px){html body.movil #npc-dice,html body.compacto #npc-dice{top:auto;width:min(560px,68vw);}html body.movil #npc-dice .nd-txt,html body.compacto #npc-dice .nd-txt{min-height:0;}}
 /* Ventana al hablar con un NPC: hoja inferior ancha y opaca (ya no tapa el HUD ni el centro) */
 html body.movil #v-npc.modal,html body.compacto #v-npc.modal{justify-content:center;align-items:flex-end;padding:0 6px calc(6px + env(safe-area-inset-bottom) + var(--tg-bot,0px))!important;}
-html body.movil #v-npc .ventana,html body.compacto #v-npc .ventana{width:min(560px,calc(100vw - 12px))!important;max-width:none!important;max-height:68vh!important;max-height:68dvh!important;background:#160c2c;font-size:15px;}
+html body.movil #v-npc .ventana,html body.compacto #v-npc .ventana{width:min(560px,calc(100vw - 12px))!important;max-width:none!important;max-height:68vh!important;max-height:68dvh!important;background:#112721;font-size:15px;}
 html body.movil #v-npc .ventana p,html body.compacto #v-npc .ventana p{font-size:15px;line-height:1.4;}
 html body.movil #v-npc .cerrar,html body.compacto #v-npc .cerrar{width:44px;height:44px;}
 @media (orientation:landscape) and (max-height:500px){html body.movil #v-npc .ventana,html body.compacto #v-npc .ventana{width:min(600px,74vw)!important;max-height:88vh!important;max-height:88dvh!important;}}
@@ -1078,11 +1078,11 @@ html body.movil #v-npc .cerrar,html body.compacto #v-npc .cerrar{width:44px;heig
 body.movil #cofre-sem,body.compacto #cofre-sem{padding:10px 18px 10px;font-size:15px;}
 body.movil #cofre-sem .cs-ico,body.compacto #cofre-sem .cs-ico{font-size:40px;}
 body.movil #cofre-sem .cs-sub,body.compacto #cofre-sem .cs-sub{font-size:13px;}
-body.movil #tira-diario,body.compacto #tira-diario{font-size:13px;background:rgba(20,14,34,.95);}
+body.movil #tira-diario,body.compacto #tira-diario{font-size:13px;background:rgba(15,33,28,.95);}
 body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size:12px;}
 /* Visibilidad (PC y movil): textos del mundo con contorno y pildora: se leen sobre pasto de dia, nieve y de noche. */
 .lbl{text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 4px rgba(0,0,0,.9);}
-.lbl>span:not(.b){display:inline-block;padding:0 5px;border-radius:6px;background:rgba(8,5,22,.58);}
+.lbl>span:not(.b){display:inline-block;padding:0 5px;border-radius:6px;background:rgba(8,19,16,.58);}
 .num{font-weight:800;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 2px 4px rgba(0,0,0,.9);}
 html body.movil .lbl,html body.compacto .lbl{font-size:12px;font-weight:700;line-height:1.2;}
 html body.movil .lbl small,html body.compacto .lbl small{font-size:10.5px!important;}
@@ -1093,12 +1093,12 @@ html body.movil.texto-grande .num,html body.compacto.texto-grande .num{font-size
 /* PC: las misiones empiezan bajo el minimapa, no se salen de la pantalla (--mini-b y --mis-max, mundo.js) y se leen mejor. */
 :root{--hz:1;--wz:1;}
 html body:not(.movil):not(.compacto) #botones{right:184px;}
-html body:not(.movil):not(.compacto) #misiones{top:calc((var(--mini-b,226px) + 8px)/var(--hz));width:204px;max-height:calc(var(--mis-max,460px)/var(--hz));overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(160,140,255,.5) transparent;font-size:12px;line-height:1.35;}
+html body:not(.movil):not(.compacto) #misiones{top:calc((var(--mini-b,226px) + 8px)/var(--hz));width:204px;max-height:calc(var(--mis-max,460px)/var(--hz));overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(109,245,189,.5) transparent;font-size:12px;line-height:1.35;}
 html body:not(.movil):not(.compacto) #misiones b{font-size:12.5px;}
 html body:not(.movil):not(.compacto) #misiones .tarea,html body:not(.movil):not(.compacto) #misiones .q .ok{font-size:12px;}
 html body:not(.movil):not(.compacto) #misiones small{font-size:11px;color:#d6d0f2;}
 html body:not(.movil):not(.compacto) #misiones:not(.pc-abierto) .q:nth-of-type(n+3){display:none;}   /* plegada: 2 filas y «Ver más» (of-type: el boton 🎯 no cuenta) */
-#misiones .mis-ver{display:block;width:100%;margin-top:4px;padding:3px 0;min-height:24px;background:none;border:0;border-top:1px solid rgba(160,140,255,.3);color:#ffd84a;font:600 11px var(--sans);text-align:left;cursor:pointer;}
+#misiones .mis-ver{display:block;width:100%;margin-top:4px;padding:3px 0;min-height:24px;background:none;border:0;border-top:1px solid rgba(109,245,189,.3);color:#ffd84a;font:600 11px var(--sans);text-align:left;cursor:pointer;}
 #misiones .mis-ver:hover{color:#fff;}
 /* PC: las ventanas laterales abren bajo el marco del jugador (crece con avisos y a 1080p), sin taparlo. */
 html body:not(.movil):not(.compacto) #v-obj.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding-left:12px;padding-right:0;z-index:9;}   /* PC: Mis Objetivos es lateral, se sigue jugando */
@@ -1110,20 +1110,20 @@ html body:not(.movil):not(.compacto) #chat:has(#chat-log:empty):not(:focus-withi
 /* PC: teclas a la vista, en los botones, en la barra de acciones y en una linea bajo el chat. */
 #teclas-pc{display:none;}
 html body:not(.movil):not(.compacto) #teclas-pc{display:block;position:fixed;left:12px;bottom:9px;max-width:calc(50vw - 250px);z-index:1;pointer-events:none;font:600 11px/13px var(--sans);color:#efeaff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#teclas-pc kbd{font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.8);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 3px;margin-right:2px;}
+#teclas-pc kbd{font:700 10px/12px var(--sans);color:#fff;background:rgba(8,19,16,.8);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 3px;margin-right:2px;}
 html body.cine #teclas-pc,html body.teclas-sabidas #teclas-pc{display:none!important;}   /* !important: la regla de arriba, con sus :not(), pesa mas */
 @media (max-width:1500px){#teclas-pc .tp-x{display:none;}}   /* no pisa la barra de lo proximo (#xp-prox, centrada y de hasta 460px): quedan las que mas se usan */
 @media (max-width:1130px){#teclas-pc .tp-y{display:none;}}   /* ventana estrecha: la linea no corta «O metas» con puntos suspensivos */
 @media (hover:hover) and (pointer:fine){
  html body:not(.movil):not(.compacto) #botones .bt{position:relative;}
- html body:not(.movil):not(.compacto) #b-inv::after,html body:not(.movil):not(.compacto) #b-libro::after,html body:not(.movil):not(.compacto) #b-logros::after,html body:not(.movil):not(.compacto) #b-mapa::after,html body:not(.movil):not(.compacto) #b-chat::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,5,22,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
+ html body:not(.movil):not(.compacto) #b-inv::after,html body:not(.movil):not(.compacto) #b-libro::after,html body:not(.movil):not(.compacto) #b-logros::after,html body:not(.movil):not(.compacto) #b-mapa::after,html body:not(.movil):not(.compacto) #b-chat::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,19,16,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
  html body:not(.movil):not(.compacto) #b-inv::after{content:'I';}
  html body:not(.movil):not(.compacto) #b-libro::after{content:'P';}
  html body:not(.movil):not(.compacto) #b-logros::after{content:'L';}
  html body:not(.movil):not(.compacto) #b-mapa::after{content:'M';}
  html body:not(.movil):not(.compacto) #b-chat::after{content:'\21B5';}
 }
-html body:not(.movil):not(.compacto) .acc .t{left:3px;top:2px;font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.75);border-radius:3px;padding:0 3px;}
+html body:not(.movil):not(.compacto) .acc .t{left:3px;top:2px;font:700 10px/12px var(--sans);color:#fff;background:rgba(8,19,16,.75);border-radius:3px;padding:0 3px;}
 /* PC: los avisos empiezan sobre el chat con el historial lleno (a 200 px lo pisaban). */
 html body:not(.movil):not(.compacto) #avisos{bottom:calc(232px*var(--hz));}
 /* PC: con una ventana lateral abierta los avisos salen a su lado, no encima de su contenido. */
@@ -1166,6 +1166,7 @@ html body:not(.movil):not(.compacto) .vv-item{padding:7px 9px;}
 html body:not(.movil):not(.compacto) .vv-item{flex-wrap:wrap;}
 html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
 </style>
+<!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}:root{--bg:var(--bg-dark);--panel:var(--glass);--borde:var(--border-soft);--txt:var(--text);--txt2:var(--text-2);--txt3:var(--text-3);--ok:var(--success);--err:var(--danger);--warn:var(--warning);--oro:var(--accent);--oro2:var(--accent-strong);--pri:var(--primary-strong);--cian:var(--info);--marco:var(--border-gold);--vidrio:var(--glass-soft)}</style><!-- tema:fin -->
 </head>
 <body>
 <canvas id="lienzo"></canvas>
@@ -1179,7 +1180,7 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
   <div class="barra"><i id="carga-i"></i></div>
   <div class="s" id="carga-s">Preparando el mundo…</div>
   <button id="b-sin-son" type="button" style="margin-top:10px;background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;pointer-events:auto">🔇 Jugar sin sonido</button>
-  <button id="b-cuenta-carga" type="button" hidden style="margin-top:10px;background:linear-gradient(180deg,#8b5cf6,#6d28d9);border:0;color:#fff;border-radius:10px;padding:10px 16px;min-height:44px;font:700 14px system-ui,sans-serif;cursor:pointer">Entrar o crear cuenta con correo</button>
+  <button id="b-cuenta-carga" type="button" hidden style="margin-top:10px;background:linear-gradient(180deg,#8b5cf6,#086b47);border:0;color:#fff;border-radius:10px;padding:10px 16px;min-height:44px;font:700 14px system-ui,sans-serif;cursor:pointer">Entrar o crear cuenta con correo</button>
   <p class="consejo-carga" id="carga-c"></p>
 </div>
 <script>
@@ -1319,13 +1320,13 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
       <li><label><input type="checkbox" data-mf="zonas" checked><i>🗺</i><span>Zonas y su nivel: <b style="color:#86efac">a tu alcance</b>, <b style="color:#ffd84a">difícil</b>, <b style="color:#ff9a9a">peligro</b> · ⭐ la de tu nivel</span></label></li>
       <li><label><input type="checkbox" data-mf="jefes" checked><i>💀</i><span>Jefes y ⚔ arena del jefe mundial</span></label></li>
       <li><label><input type="checkbox" data-mf="vecinos" checked><i>👤</i><span>Vecinos y encargos</span></label></li>
-      <li><label><input type="checkbox" data-mf="cofres" checked><i style="color:#d6a35c">■</i><span>Cofres: <span style="color:#c084fc">■</span> épico <span style="color:#ffd84a">■</span> legendario <span style="color:#9ca3af">■</span> abierto</span></label></li>
+      <li><label><input type="checkbox" data-mf="cofres" checked><i style="color:#d6a35c">■</i><span>Cofres: <span style="color:#c084fc">■</span> épico <span style="color:#ffd84a">■</span> legendario <span style="color:#9cafa6">■</span> abierto</span></label></li>
       <li><label><input type="checkbox" data-mf="miradores" checked><i>🔭</i><span>Miradores descubiertos</span></label></li>
       <li><label><input type="checkbox" data-mf="grupo" checked><i style="color:#7dd3fc">●</i><span>Tu grupo</span></label></li>
       <li class="fijo"><i>⌂</i> Pueblo · <i>🌀</i> Portal: mazmorras, cueva y Abismo</li>
       <li class="fijo"><i style="color:#ffd84a">!</i> Misión, con su ruta punteada · <span style="color:#4ade80">?</span> guía</li>
       <li class="fijo"><i style="color:#4ade80">▲</i> Tú · <i>📍</i> tu destino (tócalo para quitarlo)</li>
-      <li class="fijo"><i style="color:#8b7fc7">▒</i> Por descubrir: camina por ahí para despejarlo</li>
+      <li class="fijo"><i style="color:#8cbaa3">▒</i> Por descubrir: camina por ahí para despejarlo</li>
     </ul>
     <p>Desmarca lo que no quieras ver. Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes.</p>
   </details>
@@ -1359,13 +1360,13 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
 <div class="modal" id="v-ayuda"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
   <h2>AJUSTES Y CONTROLES</h2>
-  <div class="fila"><span>Calidad gráfica</span><b><select id="sel-calidad" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="baja">Baja (móviles lentos)</option><option value="media">Media</option><option value="alta">Alta (sombras)</option></select></b></div>
-  <div class="fila"><span>Brillo de noche</span><b><select id="sel-brillo" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="claro">Claro</option></select></b></div>
-  <div class="fila" id="fila-mano" style="display:none"><span>Mando</span><b><select id="sel-mano" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="izq">Joystick a la izquierda</option><option value="der">Joystick a la derecha</option></select></b></div>
-  <div class="fila" id="fila-vib"><span>Vibración</span><b><select id="sel-vib" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
-  <div class="fila" id="fila-sacudida" title="Temblor y zoom de la cámara al pegar y al recibir golpes fuertes"><span>Sacudida de cámara</span><b><select id="sel-sacudida" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
-  <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
-  <div class="fila" id="fila-hud"><span>Pantalla</span><b><select id="sel-hud" title="Limpia: solo vida, minimapa, menú y controles; la misión asoma cuando avanza" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="l">Limpia (solo lo esencial)</option></select></b></div>
+  <div class="fila"><span>Calidad gráfica</span><b><select id="sel-calidad" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="baja">Baja (móviles lentos)</option><option value="media">Media</option><option value="alta">Alta (sombras)</option></select></b></div>
+  <div class="fila"><span>Brillo de noche</span><b><select id="sel-brillo" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="claro">Claro</option></select></b></div>
+  <div class="fila" id="fila-mano" style="display:none"><span>Mando</span><b><select id="sel-mano" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="izq">Joystick a la izquierda</option><option value="der">Joystick a la derecha</option></select></b></div>
+  <div class="fila" id="fila-vib"><span>Vibración</span><b><select id="sel-vib" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
+  <div class="fila" id="fila-sacudida" title="Temblor y zoom de la cámara al pegar y al recibir golpes fuertes"><span>Sacudida de cámara</span><b><select id="sel-sacudida" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
+  <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
+  <div class="fila" id="fila-hud"><span>Pantalla</span><b><select id="sel-hud" title="Limpia: solo vida, minimapa, menú y controles; la misión asoma cuando avanza" style="background:#1d4338;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="l">Limpia (solo lo esencial)</option></select></b></div>
   <script>
   /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 430 px: Android de gama media de 393-412 px). */
   (function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}
@@ -1414,8 +1415,8 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=401" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=401"></script>
+<script src="/js/config.js?v=402" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=402"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

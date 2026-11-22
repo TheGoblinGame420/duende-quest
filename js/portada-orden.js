@@ -14,7 +14,7 @@
 
   var css = [
     '.pliegue{max-width:1100px;margin:1.2rem auto;padding:0 1rem}',
-    '.pliegue>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.9rem;padding:1.1rem 1.2rem;background:var(--panel);border:1px solid var(--borde);border-radius:16px;box-shadow:0 10px 30px rgba(3,1,12,.45);transition:transform .15s,border-color .15s}',
+    '.pliegue>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.9rem;padding:1.1rem 1.2rem;background:var(--panel);border:1px solid var(--borde);border-radius:16px;box-shadow:0 10px 30px rgba(4,9,8,.45);transition:transform .15s,border-color .15s}',
     '.pliegue>summary::-webkit-details-marker{display:none}',
     '.pliegue>summary:hover{transform:translateY(-2px);border-color:var(--oro)}',
     '.pliegue>summary:active{transform:translateY(1px)}',
@@ -31,7 +31,7 @@
     '.pliegue-cerrar{display:block;margin:0 auto 1rem;font:600 14px var(--sans);min-height:44px;background:none;border:1px solid var(--borde);color:var(--txt2);border-radius:10px;padding:.6rem 1.1rem;cursor:pointer}',
     // Barra de secciones (solo celular)
     '.secciones{display:none}',
-    '@media(max-width:1180px){.secciones{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;top:var(--alto-nav,56px);z-index:90;transform:translateY(-120%);transition:transform .25s ease;padding:.55rem .8rem;background:rgba(12,11,15,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--borde)}',
+    '@media(max-width:1180px){.secciones{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;top:var(--alto-nav,56px);z-index:90;transform:translateY(-120%);transition:transform .25s ease;padding:.55rem .8rem;background:rgba(7,12,11,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--borde)}',
     '.secciones.ver{transform:none}',
     '.secciones::-webkit-scrollbar{display:none}',
     '.secciones a{flex:none;display:inline-flex;align-items:center;min-height:40px;font-size:.85rem;font-weight:700;color:var(--txt2);text-decoration:none;padding:.4rem .85rem;border:1px solid var(--borde);border-radius:999px;transition:color .15s,border-color .15s}',

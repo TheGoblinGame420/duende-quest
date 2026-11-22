@@ -14,50 +14,50 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=401';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=401';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=401';   // meta del talento elegido a Nv 7 en la barra de XP
-import { TALA as TALA_R } from '/mmo/js/data.js?v=401';   // v379: talar cualquier arbol
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=401';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=401';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=401';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=401';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=401';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=401';
-import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=401';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=401';
-import { crearMusica } from './musica.js?v=401';
-import { crearSonidos } from './sonidos.js?v=401';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=401';
-import { construirCueva } from './cueva.js?v=401';
-import { TAPA, transparentar } from './tapa.js?v=401';
-import { construirAbismo } from './abismo.js?v=401';
-import { crearParticulas } from './particulas.js?v=401';
-import { crearCielo } from './cielo.js?v=401';
-import { PERF } from './perf.js?v=401';
-import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=401';
-import { construirLugares, faltanPropios } from './lugares.js?v=401';
-import { cargarModelado } from './modelado.js?v=401';
-import { crearRuinas } from './ruinas.js?v=401';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=401';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=401';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=401';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=402';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=402';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=402';   // meta del talento elegido a Nv 7 en la barra de XP
+import { TALA as TALA_R } from '/mmo/js/data.js?v=402';   // v379: talar cualquier arbol
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=402';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=402';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=402';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=402';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=402';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=402';
+import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=402';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=402';
+import { crearMusica } from './musica.js?v=402';
+import { crearSonidos } from './sonidos.js?v=402';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=402';
+import { construirCueva } from './cueva.js?v=402';
+import { TAPA, transparentar } from './tapa.js?v=402';
+import { construirAbismo } from './abismo.js?v=402';
+import { crearParticulas } from './particulas.js?v=402';
+import { crearCielo } from './cielo.js?v=402';
+import { PERF } from './perf.js?v=402';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=402';
+import { construirLugares, faltanPropios } from './lugares.js?v=402';
+import { cargarModelado } from './modelado.js?v=402';
+import { crearRuinas } from './ruinas.js?v=402';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=402';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=402';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=402';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=401';
-import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=401';   // v376: lugares con nombre de la franja exterior
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=401';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=401';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=401';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=401';
-import { PISTAS } from '/mmo/js/caso.js?v=401';
-import { htmlCaso } from './caso.js?v=401';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=401';
-import { crearRituales } from './rituales.js?v=401';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=401';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=401';
-import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=401';
-import { iniciarDios3 } from './dios3.js?v=401';   // panel del Modo Dios en el 3D
-import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=401';   // tu cuenta de Telegram en Chrome
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=402';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=402';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=402';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=402';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=402';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=402';
+import { PISTAS } from '/mmo/js/caso.js?v=402';
+import { htmlCaso } from './caso.js?v=402';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=402';
+import { crearRituales } from './rituales.js?v=402';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=402';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=402';
+import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=402';
+import { iniciarDios3 } from './dios3.js?v=402';   // panel del Modo Dios en el 3D
+import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=402';   // tu cuenta de Telegram en Chrome
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -160,7 +160,7 @@ const TGV = v => !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v));
 try { localStorage.setItem('dq_visto3d', '1'); } catch (e) {}
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); } catch (e) {}
-  try { if (TGV('6.1')) { TG.setHeaderColor('#0a0418'); TG.setBackgroundColor('#0a0418'); } if (TGV('7.10') && TG.setBottomBarColor) TG.setBottomBarColor('#0a0418'); } catch (e) {}
+  try { if (TGV('6.1')) { TG.setHeaderColor('#070c0b'); TG.setBackgroundColor('#070c0b'); } if (TGV('7.10') && TG.setBottomBarColor) TG.setBottomBarColor('#070c0b'); } catch (e) {}
   // Pantalla completa en el movil (Bot API 8.0): el HUD se aparta de los
   // botones de Telegram (zona segura del sistema + la de Telegram).
   const zonas = () => {
@@ -5768,7 +5768,7 @@ function probadorEl() {
   let el = $('probador3');
   if (!el) {
     el = document.createElement('div'); el.id = 'probador3';
-    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px) + var(--tg-bot,0px));z-index:9;width:min(520px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(14,9,30,.93);border:1px solid #a855f7;color:#f3eaff;font:600 14px system-ui,sans-serif;pointer-events:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.55)';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px) + var(--tg-bot,0px));z-index:9;width:min(520px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(8,16,14,.93);border:1px solid #a855f7;color:#f3eaff;font:600 14px system-ui,sans-serif;pointer-events:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.55)';
     document.body.appendChild(el);
     V.delegarCompra(el);   /* Comprar / Stars / Yape / Equipar: los mismos botones y mensajes que la tarjeta */
     el.addEventListener('click', e => {
@@ -6360,7 +6360,7 @@ function mapaDibujar() {
     // Si pisa otra placa ya dibujada, baja lo justo para que ambas se lean.
     for (let n = 0; n < 2; n++) { const o = placas.find(r => bx < r[0] + r[2] && bx + aw > r[0] && by < r[1] + r[3] && by + ah > r[1]); if (!o) break; by = o[1] + o[3] + 2; }
     placas.push([bx, by, aw, ah]);
-    x.fillStyle = 'rgba(10,8,24,.74)'; x.beginPath(); x.moveTo(bx + 5, by); x.arcTo(bx + aw, by, bx + aw, by + ah, 5); x.arcTo(bx + aw, by + ah, bx, by + ah, 5); x.arcTo(bx, by + ah, bx, by, 5); x.arcTo(bx, by, bx + aw, by, 5); x.closePath(); x.fill();
+    x.fillStyle = 'rgba(6,12,11,.74)'; x.beginPath(); x.moveTo(bx + 5, by); x.arcTo(bx + aw, by, bx + aw, by + ah, 5); x.arcTo(bx + aw, by + ah, bx, by + ah, 5); x.arcTo(bx, by + ah, bx, by, 5); x.arcTo(bx, by, bx + aw, by, 5); x.closePath(); x.fill();
     lineas.forEach(([t, c, f], i) => { x.font = f; x.fillStyle = c; x.fillText(t, bx + aw / 2, by + 2 + AL * (i + 0.5)); });
   };
   const ah = Date.now();
@@ -6754,7 +6754,7 @@ function tarjetaBautizo(n) {
   };
   const d = document.createElement('div');
   d.id = 'tarjeta-bautizo'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Ponle nombre a tu duende');
-  d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px) + var(--tg-top,0px));z-index:9;width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(14,9,30,.95);border:1px solid rgba(255,216,74,.6);color:#f3eaff;font:600 14px/1.35 system-ui,sans-serif;pointer-events:auto;box-shadow:0 8px 24px rgba(0,0,0,.55)';
+  d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px) + var(--tg-top,0px));z-index:9;width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(8,16,14,.95);border:1px solid rgba(255,216,74,.6);color:#f3eaff;font:600 14px/1.35 system-ui,sans-serif;pointer-events:auto;box-shadow:0 8px 24px rgba(0,0,0,.55)';
   d.innerHTML = '<div style="font-size:16px;margin-bottom:4px">🎉 ¡Tu duende merece un nombre!</div>'
     + '<div class="tb-txt" style="font-weight:400;font-size:12px;color:#c9bfe8;margin-bottom:8px">Toca uno o escribe el tuyo. Es gratis y solo se elige una vez.</div>'
     + '<div class="tb-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>'
@@ -6906,8 +6906,8 @@ function ofrecerInstalar(n) {
   const f = document.createElement('div');
   f.id = 'franja-inst';
   f.setAttribute('role', 'status');
-  f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(20,12,44,.94);border:1px solid rgba(255,216,74,.5);color:#f2efff;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
-  f.innerHTML = '<span style="flex:1;min-width:0">📲 Ten Duende Quest en tu pantalla de inicio: vuelve en un toque y no pierdas tu racha</span><button type="button" class="btn" style="min-height:40px;padding:7px 12px;font-size:12px;white-space:nowrap">Añadir</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
+  f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(12,24,20,.94);border:1px solid rgba(255,216,74,.5);color:#ecf7f1;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
+  f.innerHTML = '<span style="flex:1;min-width:0">📲 Ten Duende Quest en tu pantalla de inicio: vuelve en un toque y no pierdas tu racha</span><button type="button" class="btn" style="min-height:40px;padding:7px 12px;font-size:12px;white-space:nowrap">Añadir</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#a9bdb3;font-size:20px;padding:0;cursor:pointer">×</button>';
   const [si, x] = f.querySelectorAll('button');
   si.onclick = () => { f.remove(); if (window.dqInstalar) window.dqInstalar(); };
   x.onclick = () => f.remove();
@@ -6947,8 +6947,8 @@ function franjaIAB() {
   const f = document.createElement('div');
   f.id = 'franja-iab';
   f.setAttribute('role', 'status');
-  f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(20,12,44,.94);border:1px solid rgba(125,211,252,.5);color:#f2efff;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
-  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera misión! Para no perder tu duende, juega en ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ': es más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
+  f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(12,24,20,.94);border:1px solid rgba(125,211,252,.5);color:#ecf7f1;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
+  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera misión! Para no perder tu duende, juega en ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ': es más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#a9bdb3;font-size:20px;padding:0;cursor:pointer">×</button>';
   const [ir, x] = f.querySelectorAll('button');
   ir.onclick = () => irANavegador();
   x.onclick = () => { f.remove(); try { localStorage.setItem('dq_iab_no', String(Date.now())); } catch (e) {} };
@@ -7157,7 +7157,7 @@ function botinFuerte(it) {
   let t = $('mejor3');
   if (!t) {
     t = document.createElement('button'); t.id = 'mejor3';
-    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);z-index:6;pointer-events:auto;cursor:pointer;padding:9px 16px;border-radius:10px;background:rgba(14,9,30,.92);color:#fff;font:700 13px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:88vw;white-space:normal;';
+    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);z-index:6;pointer-events:auto;cursor:pointer;padding:9px 16px;border-radius:10px;background:rgba(8,16,14,.92);color:#fff;font:700 13px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:88vw;white-space:normal;';
     t.style.top = COMPACTO ? 'calc(22% + var(--tg-top,0px))' : 'auto'; if (!COMPACTO) t.style.bottom = '250px';
     document.body.appendChild(t);
   }
@@ -10594,7 +10594,7 @@ window.__dq3 = { P, mons, otros, get cam() { return camara; }, get camYaw() { re
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 // Modo trailer para grabar videos (mundo/js/trailer.js): ?trailer=1 y SOLO en el servidor local.
 if (/[?&]trailer=1(&|$)/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
-  import('./trailer.js?v=401').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
+  import('./trailer.js?v=402').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
     listo: () => arteListo && $('carga').style.display === 'none' })).catch(e => console.error('[trailer]', e));
 
 // ── INICIO ──

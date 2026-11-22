@@ -23,7 +23,7 @@
 <meta property="og:image:alt" content="Duende Quest 3D: un duende con alas vuela sobre el bosque y pelea contra un jefe">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://duendequest.com/assets/og/mundo3d.jpg">
-<meta name="theme-color" content="#0b0f17">
+<meta name="theme-color" content="#070c0b">
 <meta name="color-scheme" content="dark">
 <link rel="icon" type="image/png" href="/assets/ui/coin.png">
 <!-- La fuente pixel ya no bloquea el primer pintado: se carga aparte
@@ -34,7 +34,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=401"></script>
+<script src="/js/origen.js?v=402"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -47,9 +47,9 @@
   try{w.expand();}catch(e){}
   // Colores propios (el diseño es oscuro siempre; no se adopta el tema claro
   // del usuario para no romper el contraste). Hex directos desde la 6.9.
-  try{ if(v('6.9')) w.setHeaderColor('#0b0f17'); else if(v('6.1')) w.setHeaderColor('bg_color'); }catch(e){}
-  try{ if(v('6.1')) w.setBackgroundColor('#0b0f17'); }catch(e){}
-  try{ if(v('7.10')&&w.setBottomBarColor) w.setBottomBarColor('#121826'); }catch(e){}
+  try{ if(v('6.9')) w.setHeaderColor('#070c0b'); else if(v('6.1')) w.setHeaderColor('bg_color'); }catch(e){}
+  try{ if(v('6.1')) w.setBackgroundColor('#070c0b'); }catch(e){}
+  try{ if(v('7.10')&&w.setBottomBarColor) w.setBottomBarColor('#0d1614'); }catch(e){}
   // Un gesto hacia arriba durante la partida minimizaba la Mini App.
   try{ if(v('7.7')&&w.disableVerticalSwipes) w.disableVerticalSwipes(); }catch(e){}
 })();
@@ -63,10 +63,10 @@ try{ window._dqPrimeraVez=!localStorage.getItem('dq_tg_bienvenida')&&!localStora
    Ahora: azul noche, un solo azul de acción y oro solo para monedas. Las
    variables viejas se quedan remapeadas a tonos sobrios por compatibilidad. */
 :root{
-  --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
-  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
-  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
+  --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
+  --txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#7f958a;
+  --pri:#0a8457;--pri2:#086b47;--pri-txt:#6df5bd;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#6df5bd;--rojo:#ef4444;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:"Press Start 2P",monospace;
   --sombra:0 4px 16px rgba(0,0,0,.35);
@@ -99,7 +99,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
    crecer sin recortar los lados, asi que el espacio libre se reparte: fondo
    tematico arriba, canvas centrado, y controles anclados abajo al pulgar. */
 #game-area{position:relative;width:100%;flex:1;display:flex;flex-direction:column;overflow:hidden;
-  background:radial-gradient(ellipse at 50% 35%,#111829 0%,var(--bg) 62%);}
+  background:radial-gradient(ellipse at 50% 35%,#122821 0%,var(--bg) 62%);}
 #game-area::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
   background:repeating-linear-gradient(0deg,transparent 0 38px,rgba(255,255,255,.018) 38px 39px),
              repeating-linear-gradient(90deg,transparent 0 38px,rgba(255,255,255,.018) 38px 39px);}
@@ -123,7 +123,7 @@ body.ctl3 #play-panel{margin-bottom:calc(270px + env(safe-area-inset-bottom,0px)
 #canvas-container{position:relative;width:100%;flex-shrink:0;z-index:2;
   border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);
   box-shadow:var(--sombra);}
-#gc{display:block;width:100%;height:auto;border:none;image-rendering:pixelated;background:#0a0e18;}
+#gc{display:block;width:100%;height:auto;border:none;image-rendering:pixelated;background:#0b1714;}
 
 #hud{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--panel);border-top:1px solid var(--borde);gap:4px;flex-wrap:nowrap;flex-shrink:0;overflow-x:auto;}
 .hb{display:flex;flex-direction:column;gap:1px;min-width:0;}
@@ -140,7 +140,7 @@ body.ctl3 #play-panel{margin-bottom:calc(270px + env(safe-area-inset-bottom,0px)
 #combo-wrap{width:40px;height:4px;background:rgba(255,255,255,.06);border:1px solid var(--borde);border-radius:2px;overflow:hidden;}
 #combo-fill{height:100%;background:var(--oro);width:0%;transition:width .1s;}
 #slots{display:flex;gap:3px;}
-.slot{width:32px;height:32px;background:#0a0e18;border:1px solid var(--borde);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:pointer;user-select:none;}
+.slot{width:32px;height:32px;background:#0b1714;border:1px solid var(--borde);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:pointer;user-select:none;}
 .slot.ready{border-color:rgba(34,197,94,.45);}.slot.on-cd{border-color:var(--err);opacity:.55;}
 .slot img{width:22px;height:22px;image-rendering:pixelated;mix-blend-mode:screen;}
 .slot .hk{position:absolute;top:1px;left:2px;font-family:var(--sans);font-size:11px;font-weight:600;line-height:1;color:var(--txt3);}
@@ -158,8 +158,8 @@ body.ctl3 #play-panel{margin-bottom:calc(270px + env(safe-area-inset-bottom,0px)
 
 #mbtns{display:grid;grid-template-columns:1fr 1.8fr 1fr 1fr 1fr;padding:6px 4px;background:var(--panel);border-top:1px solid var(--borde);gap:4px;width:100%;flex-shrink:0;}
 .mb{background:var(--panel2);border:1px solid var(--borde);color:var(--txt2);font-family:var(--pixel);font-size:15px;padding:0;border-radius:8px;cursor:pointer;text-align:center;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent;min-height:68px;display:flex;align-items:center;justify-content:center;transition:transform .06s,background .12s;}
-.mb:active{transform:scale(.94);background:#1f2940;}
-.mb.j{border-color:rgba(59,130,246,.55);color:#cfe0ff;font-size:16px;}
+.mb:active{transform:scale(.94);background:#213e35;}
+.mb.j{border-color:rgba(34,227,154,.55);color:#cfe0ff;font-size:16px;}
 .mb.att{border-color:rgba(242,193,78,.5);color:var(--oro);font-size:19px;}
 
 /* ── Botones ──
@@ -187,7 +187,7 @@ body.ctl3 #play-panel{margin-bottom:calc(270px + env(safe-area-inset-bottom,0px)
    falsos: el bloque se oculta (la función sigue existiendo). */
 .fomo-msg,#fomo-death-msg{display:none!important;}
 .rank-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--borde);font-family:var(--sans);font-size:14px;}
-.rank-pos{width:28px;color:var(--txt3);}.rank-pos.gold{color:var(--oro);}.rank-pos.silver{color:#c0c6d4;}.rank-pos.bronze{color:#cd7f32;}
+.rank-pos{width:28px;color:var(--txt3);}.rank-pos.gold{color:var(--oro);}.rank-pos.silver{color:#c0d4ca;}.rank-pos.bronze{color:#cd7f32;}
 .rank-name{flex:1;color:var(--txt);}.rank-score{color:var(--txt);font-weight:600;}.rank-wave{color:var(--txt3);font-size:12px;}
 #rank-list{width:100%;max-width:340px;margin:8px 0 16px;font-family:var(--sans);}
 
@@ -195,7 +195,7 @@ body.ctl3 #play-panel{margin-bottom:calc(270px + env(safe-area-inset-bottom,0px)
 .stake-lock-row{display:flex;gap:8px;margin-bottom:16px;justify-content:center;flex-wrap:wrap;}
 .stake-lock-btn{background:transparent;border:1px solid var(--borde);border-radius:8px;padding:10px 12px;min-height:44px;cursor:pointer;text-align:center;font-family:var(--sans);font-weight:600;color:var(--txt);font-size:13px;min-width:75px;}
 .stake-lock-btn:active{transform:scale(.98);}
-.stake-lock-btn.active{border-color:var(--pri-txt);background:rgba(59,130,246,.12);}
+.stake-lock-btn.active{border-color:var(--pri-txt);background:rgba(34,227,154,.12);}
 .donate-input{width:100%;max-width:250px;padding:12px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:18px;text-align:center;outline:none;}
 .donate-input:focus{border-color:var(--pri-txt);}
 
@@ -298,7 +298,7 @@ html{font-size:24px;}
 /* Skins */
 #skins-grid{display:flex;flex-direction:column;gap:10px;}
 .skin{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:10px;}
-.skin img{width:72px;height:72px;image-rendering:pixelated;object-fit:contain;border-radius:6px;background:#0a0e18;flex-shrink:0;}
+.skin img{width:72px;height:72px;image-rendering:pixelated;object-fit:contain;border-radius:6px;background:#0b1714;flex-shrink:0;}
 /* Nombre en texto normal (los neones de cada skin bajaban el contraste hasta
    3,3:1 y las tildes salían mal en pixel); el color de la skin queda solo en
    un punto pequeño junto al nombre. */
@@ -321,7 +321,7 @@ html{font-size:24px;}
 /* Ranking */
 #rank-hub{display:flex;flex-direction:column;gap:6px;}
 .rk{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border-radius:10px;background:var(--panel);border:1px solid var(--borde);font-size:14px;}
-.rk.yo{background:rgba(59,130,246,.12);border-color:rgba(96,165,250,.5);}
+.rk.yo{background:rgba(34,227,154,.12);border-color:rgba(109,245,189,.5);}
 .rk .pos{width:34px;color:var(--txt3);font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;}
 .rk .nom{flex:1;min-width:0;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .rk .sc{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums;min-width:72px;text-align:right;}
@@ -350,25 +350,25 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
 @media (min-width:481px){#tabbar{max-width:480px;left:50%;right:auto;width:100%;transform:translateX(-50%);border-left:1px solid var(--borde);border-right:1px solid var(--borde);}}
 
 /* Foco visible para teclado (y sin anillo al tocar con el dedo) */
-:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}
+:focus-visible{outline:2px solid #6df5bd;outline-offset:2px;}
 :focus:not(:focus-visible){outline:none;}
 
 /* ── INICIO: jerarquía ──
    1º el MMO (tarjeta destacada con el único botón primario), 2º el arcade,
    3º el progreso (racha, misiones, logros) y 4º comunidad. */
-.hero-mmo{background:var(--panel);border:1px solid rgba(59,130,246,.45);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sombra);}
+.hero-mmo{background:var(--panel);border:1px solid rgba(34,227,154,.45);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sombra);}
 .hero-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .hero-t{font-size:16px;font-weight:700;color:var(--txt);}
-.hero-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--pri-txt);border:1px solid rgba(96,165,250,.4);border-radius:999px;padding:3px 8px;white-space:nowrap;}
+.hero-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--pri-txt);border:1px solid rgba(109,245,189,.4);border-radius:999px;padding:3px 8px;white-space:nowrap;}
 .hero-d{font-size:13px;color:var(--txt2);line-height:1.45;}
 .hero-mmo .ob.big{min-height:56px;font-size:17px;}
 /* Resalte de UNA sola vez (no animación infinita) al saltar la bienvenida */
 .hero-mmo.resalta{animation:resalta 1.4s ease-out 1;}
-@keyframes resalta{0%{box-shadow:0 0 0 0 rgba(96,165,250,.7);}100%{box-shadow:0 0 0 14px rgba(96,165,250,0);}}
+@keyframes resalta{0%{box-shadow:0 0 0 0 rgba(109,245,189,.7);}100%{box-shadow:0 0 0 14px rgba(109,245,189,0);}}
 
 /* ── BIENVENIDA (primera vez) ── hoja inferior, cerca del pulgar */
 #bienvenida{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
-  background:rgba(4,7,12,.72);padding:calc(16px + var(--sa-top)) calc(12px + var(--sa-der)) calc(12px + var(--sa-bot)) calc(12px + var(--sa-izq));font-family:var(--sans);}
+  background:rgba(5,11,9,.72);padding:calc(16px + var(--sa-top)) calc(12px + var(--sa-der)) calc(12px + var(--sa-bot)) calc(12px + var(--sa-izq));font-family:var(--sans);}
 #bienvenida[hidden]{display:none;}
 .bv-hoja{width:100%;max-width:440px;max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--borde);border-radius:14px;
   padding:20px 16px 14px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:10px;animation:bvSube .22s ease-out;}
@@ -412,6 +412,7 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
 #ov-pause .pz-item div:first-child{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px;}
 #ov-pause .pz-item div:last-child{font-size:13px;color:var(--oro);}
 </style>
+<!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}:root{--bg:var(--bg-dark);--panel:var(--surface);--panel2:var(--surface-2);--borde:var(--border);--txt:var(--text);--txt2:var(--text-2);--txt3:var(--text-3);--pri:var(--primary-strong);--pri2:var(--primary-deep);--pri-txt:var(--primary-soft);--ok:var(--success);--warn:var(--warning);--err:var(--danger);--oro:var(--accent);--oro2:var(--accent-strong);--oro-tinta:var(--accent-ink);--verde:var(--success);--green:var(--success);--amarillo:var(--accent);--yellow:var(--accent);--rosa:var(--secondary);--purple:var(--secondary);--pink:var(--secondary);--cian:var(--primary-soft);--cyan:var(--primary-soft);--rojo:var(--danger);--red:var(--danger);--dark:var(--bg-dark);--card:var(--surface);--sombra:var(--shadow)}</style><!-- tema:fin -->
 </head>
 <body>
 <div id="ov-girar"><div>📱<br>GIRA EL MÓVIL<br><span>Este juego se juega en vertical</span></div></div>
@@ -454,10 +455,10 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
         <!-- 1) Acción principal: el MMO. El hash lleva tgWebAppData: pasarlo
              asegura que /mmo/ reciba la identidad de Telegram aunque el SDK no
              la recupere de sessionStorage (ver irMMO). -->
-        <div class="hero-mmo" id="hero-3d" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(37,99,235,.3));border-color:#a78bfa">
+        <div class="hero-mmo" id="hero-3d" style="background:linear-gradient(135deg,rgba(16,185,129,.35),rgba(10,132,87,.3));border-color:#a78bfa">
           <div class="hero-cab"><span class="hero-t">Mundo abierto 3D</span><span class="hero-tag" style="background:#db2777;color:#fff;border-color:#db2777">NUEVO</span></div>
           <div class="hero-d">Tu mismo duende en 3D: vuela con alas, PvP de facciones en el Abismo y asedios. A pantalla completa.</div>
-          <button class="ob big" type="button" onclick="irMundo()" style="width:100%;background:linear-gradient(90deg,#7c3aed,#2563eb)">🌌 Entrar al mundo 3D</button>
+          <button class="ob big" type="button" onclick="irMundo()" style="width:100%;background:linear-gradient(90deg,#10b981,#0a8457)">🌌 Entrar al mundo 3D</button>
         </div>
         <div class="hero-mmo" id="hero-mmo">
           <div class="hero-cab"><span class="hero-t">Mundo online</span><span class="hero-tag">MMO</span></div>
@@ -703,8 +704,8 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
   <div class="ov" id="ov-exchange">
     <div class="ov-title">EXCHANGE</div>
     <div class="vj-seg">
-      <button id="ex-tab-buy" onclick="switchExTab('buy')" style="border-color:#60a5fa;background:rgba(59,130,246,.12);color:#e6e9f0">💎→🪙 Comprar</button>
-      <button id="ex-tab-sell" onclick="switchExTab('sell')" style="border-color:#263049;background:transparent;color:#9aa3b5">🪙→💎 Vender</button>
+      <button id="ex-tab-buy" onclick="switchExTab('buy')" style="border-color:#6df5bd;background:rgba(34,227,154,.12);color:#ecf7f1">💎→🪙 Comprar</button>
+      <button id="ex-tab-sell" onclick="switchExTab('sell')" style="border-color:#213832;background:transparent;color:#a9bdb3">🪙→💎 Vender</button>
     </div>
     <div class="vj-card" style="max-width:320px;text-align:center">
       <div class="vj-small" style="margin-bottom:4px">Tasa actual</div>
@@ -815,10 +816,10 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js?v=401"></script>
-<script src="../js/missions.js?v=401"></script>
-<script src="../js/streak.js?v=401"></script>
-<script src="../js/achievements.js?v=401"></script>
+<script src="../js/dom-utils.js?v=402"></script>
+<script src="../js/missions.js?v=402"></script>
+<script src="../js/streak.js?v=402"></script>
+<script src="../js/achievements.js?v=402"></script>
 <script>
 // TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
 // tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
@@ -835,7 +836,7 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="../js/config.js?v=401"></script>
+<script src="../js/config.js?v=402"></script>
 <script>
 'use strict';
 
@@ -1048,7 +1049,7 @@ function initTonConnect(){
     // "JUGAR AHORA" vuelve al juego, donde TON Connect recupera la sesion ya
     // aprobada (queda guardada del lado de la wallet, no depende de este
     // link para completarse — el link solo trae de vuelta el foco al chat).
-    tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST,
+    tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST,uiPreferences:{theme:'DARK',colorsSet:{DARK:{accent:'#22e39a',connectButton:{background:'#0a8457',foreground:'#ffffff'},background:{primary:'#0d1614',secondary:'#13201c',segment:'#0d1614',tint:'#1a2b26',qr:'#ffffff'},text:{primary:'#ecf7f1',secondary:'#a9bdb3'}}}},
       actionsConfiguration:{twaReturnUrl:'https://t.me/duendequest_bot'}});
     tonUI.onStatusChange(w=>{
       if(w){
@@ -1654,7 +1655,7 @@ window.DQE={
   },
 };
 </script>
-<script src="../js/engine.js?v=401"></script>
+<script src="../js/engine.js?v=402"></script>
 <script>
 
 // ══ MENU EN PESTAÑAS ══
@@ -1737,7 +1738,7 @@ function pintarPerfil(){
   // Un solo botón principal por vista: al invitado se le destaca "Abrir en Telegram"
   const bInv=document.getElementById('perfil-invitar'); if(bInv) bInv.classList.toggle('sec',!TG_USER.id);
   const skin=SKINS.find(s=>s.id===equippedSkin);
-  document.getElementById('perfil-skin').innerHTML=skin?('<div class="fila-dato"><div style="display:flex;align-items:center;gap:10px;min-width:0"><img src="'+skin.preview+'" alt="" width="44" height="44" decoding="async" style="width:44px;height:44px;image-rendering:pixelated;border-radius:6px;background:#0a0e18;flex-shrink:0"><div style="min-width:0"><div class="card-t" style="margin-bottom:2px">Skin equipada</div><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div></div><button class="ob sec" type="button" onclick="irTab(\'skins\')">Cambiar</button></div>'):'';
+  document.getElementById('perfil-skin').innerHTML=skin?('<div class="fila-dato"><div style="display:flex;align-items:center;gap:10px;min-width:0"><img src="'+skin.preview+'" alt="" width="44" height="44" decoding="async" style="width:44px;height:44px;image-rendering:pixelated;border-radius:6px;background:#0b1714;flex-shrink:0"><div style="min-width:0"><div class="card-t" style="margin-bottom:2px">Skin equipada</div><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div></div><button class="ob sec" type="button" onclick="irTab(\'skins\')">Cambiar</button></div>'):'';
   const w=window._tonAddr||tonWalletAddr;
   document.getElementById('perfil-wallet').innerHTML='<div class="fila-dato"><div style="min-width:0"><div class="card-t" style="margin-bottom:2px">Wallet TON</div>'+(w?('<span class="addr">'+w.slice(0,8)+'…'+w.slice(-6)+'</span>'):'<span style="font-size:13px;color:var(--txt2)">No conectada · opcional</span>')+'</div>'+(w?'':'<button class="ob sec" type="button" onclick="irTab(\'wallet\')">Conectar</button>')+'</div>';
   document.getElementById('perfil-sync').textContent=!TG_USER.id?'💾 Progreso guardado solo en este dispositivo':(tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…');
@@ -2004,7 +2005,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=401';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=402';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

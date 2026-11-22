@@ -18,14 +18,14 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=401';
-import { iniciarRegalo } from './regalo.js?v=401';
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=401';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=401';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=401';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=401';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=401';
-import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=401';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=402';
+import { iniciarRegalo } from './regalo.js?v=402';
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=402';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=402';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=402';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=402';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=402';
+import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=402';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -86,7 +86,7 @@ function cuentaAlEntrar() {
 }
 let viaTienda = 'npc';   // de donde se abrio la tienda: va en el pedido (hud, oro, npc o bot), solo informativo para el dueño
 if (TG) {
-  try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
+  try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#070c0b'); } catch (e) {}
   // Dentro de Telegram, "volver" cierra primero la ventana abierta (tienda,
   // equipo...) y, si no hay ninguna, lleva al hub de la Mini App.
   let atrasT = 0;   // sin ventanas: el primer toque de Atrás solo avisa, el segundo sale al menú
@@ -3967,7 +3967,7 @@ async function conectarWallet() {
   try {
     await cargarTonConnect();
     if (!tonUI) {
-      tonUI = new window.TON_CONNECT_UI.TonConnectUI({ manifestUrl: 'https://duendequest.com/tonconnect-manifest.json' });
+      tonUI = new window.TON_CONNECT_UI.TonConnectUI({ manifestUrl: 'https://duendequest.com/tonconnect-manifest.json', uiPreferences: { theme: 'DARK', colorsSet: { DARK: { accent: '#22e39a', connectButton: { background: '#0a8457', foreground: '#ffffff' }, background: { primary: '#0d1614', secondary: '#13201c', segment: '#0d1614', tint: '#1a2b26', qr: '#ffffff' }, text: { primary: '#ecf7f1', secondary: '#a9bdb3' } } } } });
       // Dentro de Telegram, al aprobar en la wallet hay que volver al bot.
       if (TG) tonUI.uiOptions = { actionsConfiguration: { twaReturnUrl: 'https://t.me/duendequest_bot' } };
       tonUI.onStatusChange(w => { if (w && w.account && w.account.address) mandar({ t: 'wallet', a: w.account.address }); });
@@ -6812,5 +6812,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=401').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=402').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

@@ -61,26 +61,26 @@ function estilos() {
   const s = document.createElement('style');
   s.id = 'dqc-css';
   s.textContent = `
-.dqc{font:500 15px system-ui,-apple-system,'Segoe UI',sans-serif;color:#efe7ff;text-align:left}
+.dqc{font:500 15px system-ui,-apple-system,'Segoe UI',sans-serif;color:#ecf7f1;text-align:left}
 .dqc h3{margin:0 0 4px;font-size:19px;color:#ffd84a;text-align:center}
-.dqc .dqc-sub{margin:0 0 12px;font-size:13px;line-height:1.4;color:#cbbbe8;text-align:center}
-.dqc label{display:block;font-size:12px;color:#cbbbe8;margin:8px 0 4px}
+.dqc .dqc-sub{margin:0 0 12px;font-size:13px;line-height:1.4;color:#a9bdb3;text-align:center}
+.dqc label{display:block;font-size:12px;color:#a9bdb3;margin:8px 0 4px}
 .dqc .dqc-campo{position:relative}
-.dqc input{box-sizing:border-box;width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid #6d3fc0;background:#120a24;color:#fff;font:inherit;font-size:16px}
+.dqc input{box-sizing:border-box;width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid #0a8457;background:#070c0b;color:#fff;font:inherit;font-size:16px}
 .dqc input:focus{outline:2px solid #ffd84a;outline-offset:1px}
-.dqc .dqc-ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:34px;padding:0 10px;border-radius:8px;border:1px solid #6d3fc0;background:#24123f;color:#e9d5ff;font:600 13px system-ui,sans-serif;cursor:pointer}
+.dqc .dqc-ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:34px;padding:0 10px;border-radius:8px;border:1px solid #0a8457;background:#13201c;color:#d6efe3;font:600 13px system-ui,sans-serif;cursor:pointer}
 .dqc .dqc-con-ver input{padding-right:64px}
-.dqc .dqc-btn{display:block;width:100%;min-height:48px;margin-top:14px;border:0;border-radius:10px;background:linear-gradient(180deg,#8b5cf6,#6d28d9);color:#fff;font:800 16px system-ui,sans-serif;cursor:pointer}
+.dqc .dqc-btn{display:block;width:100%;min-height:48px;margin-top:14px;border:0;border-radius:10px;background:linear-gradient(180deg,#6ff8c0,#1ad68a);color:#03150d;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(34,227,154,.4),0 8px 22px rgba(16,185,129,.28);font:800 16px system-ui,sans-serif;cursor:pointer}
 .dqc .dqc-btn:disabled{opacity:.6;cursor:wait}
 .dqc .dqc-ligas{margin:12px 0 0;font-size:13px;text-align:center;line-height:1.8}
-.dqc .dqc-ligas button{background:none;border:0;padding:4px 2px;color:#c4b5fd;text-decoration:underline;font:inherit;cursor:pointer}
+.dqc .dqc-ligas button{background:none;border:0;padding:4px 2px;color:#6df5bd;text-decoration:underline;font:inherit;cursor:pointer}
 .dqc .dqc-msg{min-height:1.2em;margin:10px 0 0;font-size:13px;line-height:1.4;text-align:center}
 .dqc .dqc-msg.err{color:#fca5a5}.dqc .dqc-msg.ok{color:#86efac}
 .dqc .dqc-juegos{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:0 0 10px}
-.dqc .dqc-juegos span{font-size:11px;padding:3px 8px;border-radius:999px;background:#24123f;border:1px solid #4c2a85;color:#e9d5ff}
-#dqc-fondo{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,24,.82)}
-#dqc-fondo .dqc-caja{position:relative;max-width:380px;width:100%;max-height:calc(100% - 16px);overflow:auto;background:#1c1033;border:1px solid #6d3fc0;border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-#dqc-fondo .dqc-x{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:1px solid #6d3fc0;background:#24123f;color:#fff;font:700 16px system-ui;cursor:pointer}
+.dqc .dqc-juegos span{font-size:11px;padding:3px 8px;border-radius:999px;background:#13201c;border:1px solid #213832;color:#d6efe3}
+#dqc-fondo{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,12,11,.82)}
+#dqc-fondo .dqc-caja{position:relative;max-width:380px;width:100%;max-height:calc(100% - 16px);overflow:auto;background:#0d1614;border:1px solid #0a8457;border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#dqc-fondo .dqc-x{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:1px solid #0a8457;background:#13201c;color:#fff;font:700 16px system-ui;cursor:pointer}
 `;
   document.head.appendChild(s);
 }
@@ -200,10 +200,10 @@ export function recordarInvitado(op) {
   estilos();
   if (!document.getElementById('dqr-css')) {
     const s = document.createElement('style'); s.id = 'dqr-css';
-    s.textContent = `#dqr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translate(-50%,-12px);opacity:0;transition:opacity .25s,transform .25s;z-index:2147482000;width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:10px 12px;border-radius:12px;background:#1c1033;border:1px solid #ffd84a;box-shadow:0 6px 24px rgba(0,0,0,.5);font:500 13px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif;color:#efe7ff}
+    s.textContent = `#dqr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translate(-50%,-12px);opacity:0;transition:opacity .25s,transform .25s;z-index:2147482000;width:min(360px,calc(100% - 24px));box-sizing:border-box;padding:10px 12px;border-radius:12px;background:#0d1614;border:1px solid #ffd84a;box-shadow:0 6px 24px rgba(0,0,0,.5);font:500 13px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif;color:#ecf7f1}
 #dqr.on{opacity:1;transform:translate(-50%,0)}#dqr b{color:#ffd84a}#dqr .dqr-b{display:flex;gap:8px;margin-top:8px}
 #dqr button{flex:1;min-height:40px;border-radius:9px;font:700 14px system-ui,sans-serif;cursor:pointer}
-#dqr .dqr-si{border:0;background:linear-gradient(180deg,#8b5cf6,#6d28d9);color:#fff}#dqr .dqr-no{flex:0 0 auto;padding:0 14px;border:1px solid #6d3fc0;background:#24123f;color:#cbbbe8}`;
+#dqr .dqr-si{border:0;background:linear-gradient(180deg,#8b5cf6,#086b47);color:#fff}#dqr .dqr-no{flex:0 0 auto;padding:0 14px;border:1px solid #0a8457;background:#13201c;color:#a9bdb3}`;
     document.head.appendChild(s);
   }
   const t0 = Date.now(); let n = 0, proxima = t0 + 3 * 60000, timer = 0, oculto = 0;

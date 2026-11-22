@@ -125,6 +125,12 @@ console.log(`Versión: ${versiones()}`);
 console.log(`Métodos de MmoWorld: ${await repetidos()}`);
 console.log(`Mensajes del cliente: ${mensajes()} tipos`);
 if (!args.has('--sin-arnes')) console.log(`Arnés: ${arnes() || '?'}`);
+// Tema global (css/tema.css): cada pagina lleva su copia; si alguna quedo vieja, falla.
+{
+  const r = spawnSync(process.execPath, ['tools/tema.mjs', '--comprobar'], { cwd: RAIZ, encoding: 'utf8' });
+  if (r.status !== 0) mal('tema', (r.stdout || '').trim().split('\n').slice(-6).join('\n') + (r.stderr ? '\n' + r.stderr.split('\n').slice(-3).join('\n') : ''));
+  console.log('Tema: ' + ((r.stdout || '').trim().split('\n').pop() || '?'));
+}
 // Mudanza del dominio viejo (rapido, sin azar): tambien revisa que toda pagina este en run_worker_first.
 {
   const r = spawnSync(process.execPath, ['tools/arnes_mudanza.mjs'], { cwd: RAIZ, encoding: 'utf8' });

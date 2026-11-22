@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════
+   DUENDE QUEST — TEMA GLOBAL «Esmeralda y oro místico» (22-nov-2026)
+
+   Fuente ÚNICA de los colores de todo el sitio: portada, CLASSIC (2D),
+   ORIGINS (3D), Mini App, arcade y páginas sueltas. No se enlaza: lo copia
+   tools/tema.mjs dentro de cada página (bloque <style id="dq-tema">), para no
+   sumar una petición más antes de jugar. Después de tocar algo aquí:
+       node tools/tema.mjs
+   (tools/verificar.mjs avisa si alguna página quedó con una copia vieja.)
+
+   Idea: el verde del duende y el oro de la moneda sobre un negro con fondo
+   esmeralda. El violeta queda de segundo color (rarezas, experiencia): es el
+   guiño a Solana, que va de violeta a menta.
+   Jerarquía de botones:
+     1. Acción principal (jugar, comprar, confirmar): esmeralda.
+     2. Dinero, premios y premium ($DUENDE, oro, skins de pago): oro.
+     3. Secundarios: contorno sobre el panel.
+   ═══════════════════════════════════════════════════════ */
+:root{
+  /* ── Marca ── */
+  --primary:#22e39a;          /* esmeralda neón: marca, brillos, foco, barras */
+  --primary-strong:#0a8457;   /* jade: relleno de botones con texto blanco (4.7:1) */
+  --primary-deep:#086b47;     /* jade oscuro: botón pulsado o con el cursor encima */
+  --primary-soft:#6df5bd;     /* menta: enlaces y texto de color sobre fondo oscuro */
+  --primary-ink:#03150d;      /* tinta sobre esmeralda neón */
+  --secondary:#a78bfa;        /* violeta arcano: rarezas, experiencia, detalles */
+  --secondary-strong:#7c4dff;
+  --accent:#f5c84c;           /* oro místico: moneda, premios, premium */
+  --accent-strong:#c9962a;    /* oro viejo: filetes y degradados */
+  --accent-ink:#1b1305;       /* tinta sobre oro */
+
+  /* ── Fondos (de más hondo a más alto) ── */
+  --bg-deep:#040706;          /* pie, barras fijas */
+  --bg-dark:#070c0b;          /* fondo de página */
+  --surface:#0d1614;          /* paneles y tarjetas */
+  --surface-2:#13201c;        /* panel sobre panel, casillas */
+  --surface-3:#1a2b26;        /* cursor encima, seleccionado */
+  --glass:rgba(8,16,14,.86);  /* panel sobre el juego en marcha */
+  --glass-soft:rgba(10,22,19,.62);
+
+  /* ── Bordes ── */
+  --border:#213832;
+  --border-soft:rgba(109,245,189,.18);
+  --border-gold:rgba(245,200,76,.38);
+
+  /* ── Texto ── */
+  --text:#ecf7f1;
+  --text-2:#a9bdb3;
+  --text-3:#7f958a;
+
+  /* ── Estados ── */
+  --success:#34d399;
+  --warning:#fbbf24;
+  --danger:#ff5d6c;
+  --info:#7dd3fc;
+
+  /* ── Efectos ── */
+  --grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);
+  --grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);
+  --grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);
+  --glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);
+  --glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);
+  --shadow:0 10px 30px rgba(0,0,0,.5);
+}

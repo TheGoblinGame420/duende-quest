@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=401"></script>
+<script src="/js/origen.js?v=402"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -34,10 +34,10 @@
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
 <meta name="twitter:image" content="https://duendequest.com/assets/og/portada.jpg">
 <meta name="twitter:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D">
-<meta name="theme-color" content="#090615">
+<meta name="theme-color" content="#070c0b">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=401" defer></script>
-<script src="/js/portada-orden.js?v=401" defer></script>
+<script src="/js/pwa.js?v=402" defer></script>
+<script src="/js/portada-orden.js?v=402" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -175,13 +175,13 @@
    esta pagina (--green, --yellow, ...) se mantienen porque los usan estilos
    en linea, pero apuntan a tonos apagados. */
 :root{
-  --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
-  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
-  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
+  --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
+  --txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#7f958a;
+  --pri:#0a8457;--pri2:#086b47;--pri-txt:#6df5bd;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#6df5bd;--rojo:#ef4444;
   --green:#22c55e;--purple:#a78bfa;--pink:#a78bfa;
-  --yellow:#f2c14e;--cyan:#60a5fa;--red:#ef4444;
-  --dark:#0b0f17;--card:#121826;
+  --yellow:#f2c14e;--cyan:#6df5bd;--red:#ef4444;
+  --dark:#070c0b;--card:#0d1614;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --px:'Press Start 2P',monospace;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -216,7 +216,7 @@ nav{
   position:fixed;top:0;left:0;right:0;z-index:100;
   padding:.7rem 1.5rem;gap:1rem;
   display:flex;justify-content:space-between;align-items:center;
-  background:rgba(11,15,23,.96);backdrop-filter:blur(10px);
+  background:rgba(7,12,11,.96);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--borde);
 }
 .nav-logo{
@@ -240,9 +240,9 @@ nav{
 /* ============ HERO ============ */
 /* Elige tu juego: $DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D) */
 .juegos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;width:min(760px,100%);margin:0 auto 1rem;text-align:left;}
-.juego{background:rgba(20,14,40,.85);border:1px solid rgba(167,139,250,.35);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.juego{background:rgba(16,38,31,.85);border:1px solid rgba(167,139,250,.35);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
 .juego.origins{border-color:#a78bfa;box-shadow:0 12px 40px rgba(124,58,237,.35);}
-.juego-media{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/12;background:#0b0718;}
+.juego-media{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/12;background:#091612;}
 .juego-media video,.juego-media img{width:100%;height:100%;object-fit:cover;display:block;}
 .juego-media picture{display:contents;}
 .juego.classic .juego-media img{object-position:30% center;image-rendering:pixelated;}
@@ -251,19 +251,19 @@ nav{
 .juego-son{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 10px;font:700 12px system-ui,sans-serif;cursor:pointer;}
 .juego h3{margin:2px 0 0;font:800 1.25rem system-ui,sans-serif;letter-spacing:.02em;color:#fff;}
 .juego.origins h3{background:linear-gradient(90deg,#c4b5fd,#f9a8d4,#93c5fd);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.juego ul{margin:0;padding-left:1.1rem;color:#cbd5e1;font-size:.92rem;line-height:1.45;}
+.juego ul{margin:0;padding-left:1.1rem;color:#cce0d6;font-size:.92rem;line-height:1.45;}
 .juego-btn{text-align:center;margin-top:auto;}
 .una-skin{width:min(760px,100%);margin:0 auto 1.1rem;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(250,204,21,.14),rgba(167,139,250,.14));border:1px solid rgba(250,204,21,.45);color:#fde68a;font-size:.95rem;line-height:1.45;}
 .una-skin b{color:#fff;}
 .mas-juegos-h{margin:1.6rem 0 .7rem;font:800 1.05rem system-ui,sans-serif;color:#fff;text-align:center}
 .mas-juegos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;width:min(760px,100%);margin:0 auto 1.2rem;text-align:left}
-.mjuego{display:flex;flex-direction:column;background:rgba(20,14,40,.85);border:1px solid rgba(167,139,250,.35);border-radius:16px;overflow:hidden;color:#fff;text-decoration:none;transition:transform .15s,border-color .15s}
+.mjuego{display:flex;flex-direction:column;background:rgba(16,38,31,.85);border:1px solid rgba(167,139,250,.35);border-radius:16px;overflow:hidden;color:#fff;text-decoration:none;transition:transform .15s,border-color .15s}
 .mjuego:hover{transform:translateY(-2px);border-color:#a78bfa}
 .mjuego img{width:100%;height:auto;aspect-ratio:2/1;object-fit:cover;display:block}
 .mjuego picture{display:contents}
 .mjuego-t{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px}
 .mjuego-t b{font:800 1.05rem system-ui,sans-serif}
-.mjuego-t span{color:#cbd5e1;font-size:.88rem;line-height:1.4}
+.mjuego-t span{color:#cce0d6;font-size:.88rem;line-height:1.4}
 .mjuego-t em{font-style:normal;font-weight:700;color:#fde68a;font-size:.9rem;margin-top:2px}
 @media (max-width:640px){.mas-juegos{grid-template-columns:1fr;justify-items:center}.mjuego{width:min(340px,100%)}}
 @media (max-width:640px){.juegos{grid-template-columns:1fr;justify-items:center;}.juego{width:min(340px,100%);}.juego-media{aspect-ratio:9/13;max-height:62vh;}}
@@ -277,7 +277,7 @@ nav{
   align-items:center;justify-content:center;
   text-align:center;padding:6.5rem 1rem 3.5rem;
   position:relative;z-index:1;
-  background:radial-gradient(ellipse at 50% 30%,rgba(59,130,246,.10),transparent 60%);
+  background:radial-gradient(ellipse at 50% 30%,rgba(34,227,154,.10),transparent 60%);
 }
 .hero-coin{
   width:88px;height:88px;image-rendering:pixelated;
@@ -324,7 +324,7 @@ nav{
   border:1px solid var(--borde);text-decoration:none;cursor:pointer;
   transition:border-color .15s,background .15s,transform .1s;
 }
-.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--pri-txt);background:rgba(59,130,246,.08);}
+.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--pri-txt);background:rgba(34,227,154,.08);}
 .btn-tg:active,.btn-sec:active,.btn-buy:active,.btn-game:active,.btn-pink:active{transform:scale(.98);}
 .hero-more{font-size:14px;color:var(--txt2);line-height:1.8;}
 .hero-more a,.hero-more button{color:var(--txt);background:none;border:none;font:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);cursor:pointer;display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;vertical-align:middle;}
@@ -448,7 +448,7 @@ nav{
 .game-bg{background:none;}
 .game-layout{display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:1100px;margin:0 auto;align-items:start;}
 .game-screen{
-  background:#05070c;border:1px solid var(--borde);border-radius:10px;
+  background:#050c0a;border:1px solid var(--borde);border-radius:10px;
   padding:1.4rem;box-shadow:var(--sombra);
   position:relative;overflow:hidden;
 }
@@ -503,7 +503,7 @@ nav{
 .skin-name{font-family:var(--sans);font-weight:700;font-size:19px;margin-bottom:.35rem;}
 .skin-rarity{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.06em;padding:.2rem .55rem;border-radius:6px;margin-bottom:.7rem;display:inline-block;}
 .king-r{color:var(--oro);border:1px solid rgba(242,193,78,.45);}
-.tactico-r{color:var(--cyan);border:1px solid rgba(96,165,250,.4);}
+.tactico-r{color:var(--cyan);border:1px solid rgba(109,245,189,.4);}
 .berserker-r{color:var(--red);border:1px solid rgba(239,68,68,.4);}
 .skin-desc{font-size:14px;color:var(--txt2);line-height:1.5;margin-bottom:.8rem;}
 .skin-price{font-family:var(--sans);font-size:15px;font-weight:700;padding:.5rem;background:var(--panel2);border:1px solid var(--borde);border-radius:8px;color:var(--txt);}
@@ -563,7 +563,7 @@ nav{
 
 /* ============ FOOTER ============ */
 footer{
-  background:#080b12;border-top:1px solid var(--borde);
+  background:#09120f;border-top:1px solid var(--borde);
   padding:2.5rem 1rem;text-align:center;position:relative;z-index:1;
 }
 .f-logo{font-family:var(--px);font-size:13px;color:var(--txt);margin-bottom:1rem;}
@@ -580,7 +580,7 @@ footer{
 .store-tabs{display:flex;gap:.5rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap;}
 .store-tab{font-family:var(--sans);font-size:14px;font-weight:600;padding:.5rem 1rem;min-height:40px;border:1px solid var(--borde);border-radius:8px;cursor:pointer;color:var(--txt2);background:transparent;}
 .store-tab:hover{color:var(--txt);}
-.store-tab.active{border-color:var(--pri-txt);color:var(--txt);background:rgba(59,130,246,.12);}
+.store-tab.active{border-color:var(--pri-txt);color:var(--txt);background:rgba(34,227,154,.12);}
 .nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:1rem;max-width:1100px;margin:0 auto;}
 .nft-card{
   background:var(--panel);border:1px solid var(--borde);border-radius:10px;
@@ -600,7 +600,7 @@ footer{
   width:100%;font-family:var(--sans);font-size:14px;font-weight:600;padding:.6rem;min-height:40px;border-radius:8px;
   border:1px solid var(--borde);background:transparent;color:var(--txt);cursor:pointer;margin-top:.3rem;
 }
-.nft-buy-btn:hover{border-color:var(--pri-txt);background:rgba(59,130,246,.08);}
+.nft-buy-btn:hover{border-color:var(--pri-txt);background:rgba(34,227,154,.08);}
 .nft-buy-btn.free{background:var(--pri);border-color:var(--pri-txt);color:#fff;}
 .nft-buy-btn.free:hover{background:var(--pri2);}
 .nft-buy-btn.pump,.nft-buy-btn.sol{background:transparent;color:var(--txt);}
@@ -642,10 +642,10 @@ footer{
 .nav-right{position:relative}
 .nav-cuenta{min-height:44px;padding:.4rem .9rem;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--txt);font:600 14px var(--sans);cursor:pointer;white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
 .nav-cuenta:hover,.nav-cuenta[aria-expanded="true"]{border-color:var(--pri-txt)}
-.nav-cuenta-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;display:flex;flex-direction:column;min-width:210px;padding:.35rem;border-radius:10px;background:var(--panel,#121826);border:1px solid var(--borde);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.nav-cuenta-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;display:flex;flex-direction:column;min-width:210px;padding:.35rem;border-radius:10px;background:var(--panel,#0d1614);border:1px solid var(--borde);box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .nav-cuenta-menu[hidden]{display:none}
 .nav-cuenta-menu a,.nav-cuenta-menu button{display:block;text-align:left;min-height:44px;padding:.65rem .8rem;border-radius:7px;border:0;background:none;color:var(--txt);font:500 14px var(--sans);text-decoration:none;cursor:pointer}
-.nav-cuenta-menu a:hover,.nav-cuenta-menu button:hover{background:var(--panel2,#182033)}
+.nav-cuenta-menu a:hover,.nav-cuenta-menu button:hover{background:var(--panel2,#13201c)}
 /* La barra se salía por la derecha en 1280 px (precio + wallet): por debajo de 1500 px sin la píldora de precio
    (sigue en la sección del token) y por debajo de 1380 px la wallet solo con su icono (aria-label con el texto). */
 @media (max-width:1500px){.nav-right .live-price-pill{display:none!important}}
@@ -749,7 +749,7 @@ section[id]{scroll-margin-top:72px;}
 .cap{margin:0;display:flex;flex-direction:column;gap:.45rem;min-width:0;}
 .cap-grande{grid-column:span 2;grid-row:span 2;}
 .cap-doble{grid-column:span 2;}
-.cap-abrir{display:block;width:100%;padding:0;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:#05070c;cursor:zoom-in;box-shadow:var(--sombra);transition:border-color .15s;}
+.cap-abrir{display:block;width:100%;padding:0;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:#050c0a;cursor:zoom-in;box-shadow:var(--sombra);transition:border-color .15s;}
 .cap-abrir:hover{border-color:var(--pri-txt);}
 .cap-abrir img{display:block;width:100%;height:auto;aspect-ratio:1160/720;object-fit:cover;}
 .cap-abrir img.cap-ancha{object-fit:contain;}
@@ -765,8 +765,8 @@ section[id]{scroll-margin-top:72px;}
   .cap-desliza{display:block;}
 }
 .cap-visor{border:1px solid var(--borde);border-radius:10px;background:var(--panel);color:var(--txt);padding:0;width:min(1180px,96vw);max-height:94vh;margin:auto;}
-.cap-visor::backdrop{background:rgba(5,7,12,.88);}
-.cap-visor img{display:block;width:100%;height:auto;max-height:calc(94vh - 4.5rem);object-fit:contain;background:#05070c;image-rendering:pixelated;}
+.cap-visor::backdrop{background:rgba(5,12,10,.88);}
+.cap-visor img{display:block;width:100%;height:auto;max-height:calc(94vh - 4.5rem);object-fit:contain;background:#050c0a;image-rendering:pixelated;}
 .cap-visor-pie{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;}
 .cap-visor-pie p{flex:1;font-size:14px;line-height:1.4;color:var(--txt2);min-width:0;}
 .cap-visor-pie button{min-width:44px;min-height:44px;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--txt);font:600 16px var(--sans);cursor:pointer;}
@@ -780,7 +780,7 @@ section[id]{scroll-margin-top:72px;}
 .pasos h3{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--txt);margin-bottom:.25rem;}
 .pasos p{font-size:14px;color:var(--txt2);line-height:1.5;}
 .pasos-movil{margin:0;text-align:center;}
-.pasos-movil .cap-abrir{border-radius:22px;border:6px solid #1c2438;max-width:250px;margin:0 auto;}
+.pasos-movil .cap-abrir{border-radius:22px;border:6px solid #1d372f;max-width:250px;margin:0 auto;}
 .pasos-movil .cap-abrir img{aspect-ratio:390/844;object-fit:cover;}
 .pasos-movil figcaption{font-size:13px;color:var(--txt2);margin-top:.6rem;line-height:1.45;}
 .pasos-cta{text-align:center;margin-top:2rem;}
@@ -794,7 +794,7 @@ section[id]{scroll-margin-top:72px;}
 /* ============ PREGUNTAS FRECUENTES ============ */
 .faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:.6rem;}
 .faq details{background:var(--panel);border:1px solid var(--borde);border-radius:10px;}
-.faq details[open]{border-color:#33405f;}
+.faq details[open]{border-color:#355d4e;}
 .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.95rem 1.2rem;min-height:48px;font-family:var(--sans);font-size:15px;font-weight:600;color:var(--txt);}
 .faq summary::-webkit-details-marker{display:none;}
 .faq summary::after{content:'+';flex-shrink:0;font-size:20px;line-height:1;color:var(--txt3);}
@@ -810,7 +810,8 @@ section[id]{scroll-margin-top:72px;}
 .faq-cta p{font-size:14px;color:var(--txt2);margin-top:.8rem;}
 </style>
 <!-- Capa de marca de la portada (nov-2026): variables, héroe, franja del token, utilidad y cómo comprar -->
-<link rel="stylesheet" href="/css/portada.css?v=401">
+<link rel="stylesheet" href="/css/portada.css?v=402">
+<!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}:root{--bg:var(--bg-dark);--panel:var(--surface);--panel2:var(--surface-2);--borde:var(--border);--txt:var(--text);--txt2:var(--text-2);--txt3:var(--text-3);--pri:var(--primary-strong);--pri2:var(--primary-deep);--pri-txt:var(--primary-soft);--ok:var(--success);--warn:var(--warning);--err:var(--danger);--oro:var(--accent);--oro2:var(--accent-strong);--oro-tinta:var(--accent-ink);--verde:var(--success);--green:var(--success);--amarillo:var(--accent);--yellow:var(--accent);--rosa:var(--secondary);--purple:var(--secondary);--pink:var(--secondary);--cian:var(--primary-soft);--cyan:var(--primary-soft);--rojo:var(--danger);--red:var(--danger);--dark:var(--bg-dark);--card:var(--surface);--sombra:var(--shadow);--marco:var(--border-gold)}</style><!-- tema:fin -->
 </head>
 <body>
 
@@ -1665,7 +1666,7 @@ section[id]{scroll-margin-top:72px;}
         <img src="assets/cofres/cofrelegendario.png" alt="Cofre legendario" width="60" height="60" loading="lazy">
       </div>
       <h3 style="color:var(--cyan)">Cofres de loot</h3>
-      <span class="nft-badge" style="color:var(--cian);border:1px solid rgba(96,165,250,.4)">COMÚN · ÉPICO · LEGENDARIO</span>
+      <span class="nft-badge" style="color:var(--cian);border:1px solid rgba(109,245,189,.4)">COMÚN · ÉPICO · LEGENDARIO</span>
       <p>Caen durante la partida y sueltan monedas y objetos del juego. No se venden.</p>
     </div>
   </div>
@@ -1723,7 +1724,7 @@ section[id]{scroll-margin-top:72px;}
 
     <div class="nft-card c-legendary reveal" data-cat="weapon">
       <img class="nft-img" src="assets/armas/katana_spark_item.png" alt="Katana Spark" loading="lazy" width="96" height="96" decoding="async">
-      <span class="nft-badge" style="color:var(--cian);border:1px solid rgba(96,165,250,.4)">LEGENDARY</span>
+      <span class="nft-badge" style="color:var(--cian);border:1px solid rgba(109,245,189,.4)">LEGENDARY</span>
       <h3 class="nft-name" style="color:var(--cyan)">Katana Spark</h3>
       <div class="nft-desc">Forjada con rayos del Monte Lunar. Activa el modo fuego 8 s · Rayo en cadena · +50% daño.</div>
       <button class="nft-buy-btn pump" type="button" onclick="location.href='/inicio/'">Conseguir en el juego</button>
@@ -2370,9 +2371,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase: defer no frena el dibujo y corre antes de 'load', que es cuando lo usa auth-manager.js (initSupabase) -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=401"></script>
+<script src="js/config.js?v=402"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=401"></script>
+<script src="js/auth-manager.js?v=402"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2475,9 +2476,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
   } catch (e) {}
 })();
 </script>
-<script src="js/price-feed.js?v=401"></script>
-<script type="module" src="js/tienda-portada.js?v=401"></script>
-<script type="module" src="js/cuenta-portada.js?v=401"></script>
+<script src="js/price-feed.js?v=402"></script>
+<script type="module" src="js/tienda-portada.js?v=402"></script>
+<script type="module" src="js/cuenta-portada.js?v=402"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

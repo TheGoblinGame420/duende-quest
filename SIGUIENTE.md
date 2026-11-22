@@ -5,6 +5,15 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v402 (22-nov-2026): paleta «Esmeralda y oro místico»
+
+- **Un solo sitio para los colores:** `css/tema.css`. No se enlaza: `node tools/tema.mjs` lo copia en cada página (`<style id="dq-tema">` antes de `</head>`) con el puente de los nombres viejos de esa página. `verificar` falla si una copia quedó vieja.
+- Página nueva: añadirla a `PUENTES` en `tools/tema.mjs` (y a `RETINTE` si trae colores fríos a mano: `node tools/tema.mjs --retinte --probar --detalle`).
+- Jerarquía: esmeralda = acción principal (jade `--primary-strong` con texto blanco; neón `--grad-primary` con tinta oscura en portada, /jugar/, cuenta y menú 3D); oro = token/premium; violeta = ORIGINS y rarezas.
+- No se retiñó a propósito: el lienzo del 2D/3D, colores de rareza/clase/daño en `client.js` y `mundo.js`, maná y XP de descanso (azul), /chicha/ y Chicha Wars (morado de la chicha).
+- Para comparar un cambio de colores: `node tools/mmo_local.mjs` y `node tools/fotos_paleta.mjs <carpeta>` (42 fotos; en local las páginas sueltas van con `.html`).
+- Sin probar en un teléfono real ni dentro de Telegram (solo Chrome sin ventana, PC y 390 px).
+
 ## v401 (22-nov-2026): todo en duendequest.com
 
 - TON pasó al dominio oficial (manifiesto + manifestUrl). Quien tenía la wallet conectada la conecta una vez más (la sesión de TON Connect es por origen).

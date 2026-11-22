@@ -16,8 +16,8 @@
 // ═══════════════════════════════════════════════════════
 const V = (document.querySelector('script[src*="tienda-portada.js"]') || {}).src?.match(/v=(\d+)/)?.[1] || '';
 const RAREZAS = [
-  ['comun', 'Común', '#9aa3b5'],
-  ['rara', 'Rara', '#60a5fa'],
+  ['comun', 'Común', '#a9bdb3'],
+  ['rara', 'Rara', '#6df5bd'],
   ['epica', 'Épica', '#a78bfa'],
   ['legendaria', 'Legendaria', '#f2c14e'],
   ['mitica', 'Mítica', '#f472b6'],
@@ -49,21 +49,21 @@ function estilos() {
   s.textContent = `
 .tp-filtros{display:flex;flex-direction:column;gap:.55rem;align-items:center;margin:-1rem auto 1.4rem;max-width:860px}
 .tp-fila{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
-.tp-chip{font:600 13px/1 var(--sans,system-ui);min-height:36px;padding:0 .85rem;border-radius:999px;border:1px solid var(--borde,#263049);background:transparent;color:var(--txt2,#9aa3b5);cursor:pointer}
-.tp-chip[aria-pressed="true"]{color:var(--txt,#e6e9f0);border-color:var(--c,#60a5fa);background:color-mix(in srgb,var(--c,#60a5fa) 14%,transparent)}
-.tp-chip:focus-visible{outline:2px solid var(--pri-txt,#60a5fa);outline-offset:2px}
-.tp-vista{display:inline-flex;border:1px solid var(--borde,#263049);border-radius:999px;overflow:hidden}
+.tp-chip{font:600 13px/1 var(--sans,system-ui);min-height:36px;padding:0 .85rem;border-radius:999px;border:1px solid var(--borde,#213832);background:transparent;color:var(--txt2,#a9bdb3);cursor:pointer}
+.tp-chip[aria-pressed="true"]{color:var(--txt,#ecf7f1);border-color:var(--c,#6df5bd);background:color-mix(in srgb,var(--c,#6df5bd) 14%,transparent)}
+.tp-chip:focus-visible{outline:2px solid var(--pri-txt,#6df5bd);outline-offset:2px}
+.tp-vista{display:inline-flex;border:1px solid var(--borde,#213832);border-radius:999px;overflow:hidden}
 .tp-vista .tp-chip{border:0;border-radius:0}
-.tp-cuenta{font-size:12px;color:var(--txt3,#8a93a6);text-align:center}
-.nft-card.tp-skin{position:relative;--c:#9aa3b5;border-color:color-mix(in srgb,var(--c) 40%,transparent)}
+.tp-cuenta{font-size:12px;color:var(--txt3,#7f958a);text-align:center}
+.nft-card.tp-skin{position:relative;--c:#a9bdb3;border-color:color-mix(in srgb,var(--c) 40%,transparent)}
 .tp-img{width:96px;height:132px;object-fit:contain;image-rendering:auto;border-radius:12px}
 .tp-img.v2d{border-radius:0}
 .tp-img.v2d{width:96px;height:96px;margin:18px 0;image-rendering:pixelated}
 .tp-skin .nft-badge{color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
 .tp-skin .nft-name{color:var(--c)}
 .tp-tiene{position:absolute;top:.6rem;right:.6rem;font:700 11px var(--sans,system-ui);padding:.2rem .5rem;border-radius:999px;background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.4)}
-.tp-precio small{display:block;font-weight:500;font-size:12px;color:var(--txt3,#8a93a6);margin-top:.15rem}
-.tp-vacio{grid-column:1/-1;text-align:center;color:var(--txt2,#9aa3b5);padding:1.5rem}
+.tp-precio small{display:block;font-weight:500;font-size:12px;color:var(--txt3,#7f958a);margin-top:.15rem}
+.tp-vacio{grid-column:1/-1;text-align:center;color:var(--txt2,#a9bdb3);padding:1.5rem}
 @media (max-width:560px){
   #nft-store-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
   #nft-store-grid .nft-card{padding:.75rem .55rem;gap:.35rem}

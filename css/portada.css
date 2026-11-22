@@ -9,24 +9,24 @@
    ═══════════════════════════════════════════════════════ */
 
 /* Iconos del juego: los símbolos y emojis del texto salen de un solo color, como en ORIGINS */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=401) format("woff2");font-display:swap;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=402) format("woff2");font-display:swap;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 
 /* ── 1. Variables ── */
 :root{
   /* Noche andina: fondo morado casi negro, paneles índigo, filete dorado */
-  --bg:#090615;--panel:#120e24;--panel2:#1a1533;--borde:#2c2550;
-  --txt:#f1eefb;--txt2:#b6b0cf;--txt3:#958fb3;
+  --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
+  --txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#8fb3a1;
   /* Un solo acento: el oro de la moneda. El violeta queda para enlaces y botones secundarios */
   --oro:#f2c14e;--oro2:#c9962a;--oro-tinta:#1b1305;
-  --pri:#7c3aed;--pri2:#6d28d9;--pri-txt:#c4b5fd;--cian:#c4b5fd;
-  --yellow:#f2c14e;--amarillo:#f2c14e;--cyan:#c4b5fd;
-  --dark:#090615;--card:#120e24;
+  --pri:#10b981;--pri2:#086b47;--pri-txt:#6df5bd;--cian:#6df5bd;
+  --yellow:#f2c14e;--amarillo:#f2c14e;--cyan:#6df5bd;
+  --dark:#070c0b;--card:#0d1614;
   --titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;
   --sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   /* La fuente pixel ya no se usa: lo que la pedía hereda la de títulos */
   --px:var(--titulo);
   --radio:14px;--ancho:1120px;
-  --sombra:0 10px 30px rgba(3,1,12,.45);
+  --sombra:0 10px 30px rgba(4,9,8,.45);
   --brillo:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 42%);
 }
 
@@ -37,14 +37,14 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,[
 section[id]{scroll-margin-top:84px;}
 
 /* ── 3. Cabecera ── */
-nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom-color:rgba(196,181,253,.14);}
+nav{padding:.6rem 1.25rem;background:rgba(7,12,11,.82);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom-color:rgba(109,245,189,.14);}
 .nav-logo{font-family:var(--titulo);font-weight:800;font-size:18px;letter-spacing:.04em;color:var(--txt);white-space:nowrap;}
 .nav-logo{min-height:44px;}
 .nav-logo img{width:32px;height:32px;}
 .nav-links{gap:.15rem;}
 .nav-links a{padding:10px 9px;border-radius:8px;color:var(--txt2);}
-.nav-links a:hover{color:var(--txt);background:rgba(196,181,253,.08);}
-#wallet-connect-btn{border-radius:10px;border-color:rgba(196,181,253,.3);color:var(--txt);}
+.nav-links a:hover{color:var(--txt);background:rgba(109,245,189,.08);}
+#wallet-connect-btn{border-radius:10px;border-color:rgba(109,245,189,.3);color:var(--txt);}
 .live-price-pill{border-radius:10px;}
 @media(max-width:1180px){.nav-links{display:none;}}
 /* Barra sin desbordes (15-nov-2026): enlaces y botones en una sola línea; «Instalar» queda en icono
@@ -59,15 +59,18 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 
 /* ── 4. Botones ── */
 .btn-main,.btn-play-big,.nav-play{
-  background:linear-gradient(180deg,#f9d877,#e8b03a);color:var(--oro-tinta);
+  background:var(--grad-primary);color:var(--primary-ink);
   font-weight:800;border-radius:12px;letter-spacing:.01em;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 8px 24px rgba(242,193,78,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),var(--glow-primary);
   transition:filter .15s,transform .1s,box-shadow .15s;
 }
-.btn-main:hover,.btn-play-big:hover,.nav-play:hover{background:linear-gradient(180deg,#fbe08d,#eeb945);filter:brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 10px 30px rgba(242,193,78,.32);}
+.btn-main:hover,.btn-play-big:hover,.nav-play:hover{background:linear-gradient(180deg,#92fbd2,#2be39a);filter:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(34,227,154,.55),0 12px 34px rgba(16,185,129,.4);}
 .nav-play{min-height:44px;padding:.4rem 1.1rem;font-weight:800;}
-.btn-tg,.btn-sec,.btn-buy,.btn-game,.btn-pink{border-radius:12px;border-color:rgba(196,181,253,.34);background:rgba(196,181,253,.04);}
-.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--oro);background:rgba(242,193,78,.08);}
+.btn-tg,.btn-sec,.btn-buy,.btn-game,.btn-pink{border-radius:12px;border-color:rgba(109,245,189,.34);background:rgba(109,245,189,.04);}
+.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--primary);background:rgba(34,227,154,.08);}
+/* Lo que es del token va en oro */
+.hero-cta-token,.btn-buy{border-color:rgba(245,200,76,.5);background:rgba(245,200,76,.06);color:var(--accent);}
+.hero-cta-token:hover,.btn-buy:hover{border-color:var(--accent);background:rgba(245,200,76,.14);}
 /* Las tarjetas de los dos juegos conservan su botón de contorno (el dorado es solo para «Jugar gratis») */
 .juego .juego-btn{background:rgba(255,255,255,.04);color:#fff;box-shadow:none;font-weight:700;border:1px solid rgba(255,255,255,.38);}
 .juego .juego-btn:hover{background:rgba(255,255,255,.1);filter:none;box-shadow:none;}
@@ -77,16 +80,16 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 .hero{
   display:block;min-height:0;text-align:left;padding:6.4rem 1.25rem 2rem;overflow:hidden;
   background:
-    radial-gradient(58rem 34rem at 80% 6%,rgba(124,58,237,.30),transparent 62%),
+    radial-gradient(58rem 34rem at 80% 6%,rgba(16,185,129,.30),transparent 62%),
     radial-gradient(40rem 26rem at 4% 0%,rgba(176,58,140,.18),transparent 60%),
-    linear-gradient(180deg,#0e0822 0%,var(--bg) 100%);
-  border-bottom:1px solid rgba(196,181,253,.12);
+    linear-gradient(180deg,#0c1e18 0%,var(--bg) 100%);
+  border-bottom:1px solid rgba(109,245,189,.12);
 }
 .hero-top{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:2.5rem;align-items:center;min-height:min(600px,72vh);}
 .hero-txt{min-width:0;}
-.hero-nuevo{margin:0 0 1rem;background:rgba(18,14,36,.7);border-color:rgba(196,181,253,.25);}
+.hero-nuevo{margin:0 0 1rem;background:rgba(13,22,20,.7);border-color:rgba(109,245,189,.25);}
 .hero-nuevo:hover{border-color:var(--oro);color:var(--oro);}
-.hero-blink{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--oro);margin-bottom:.8rem;}
+.hero-blink{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary-soft);margin-bottom:.8rem;}
 .hero-title{
   font-family:var(--titulo);font-weight:800;font-size:clamp(42px,6.6vw,88px);line-height:.98;letter-spacing:.01em;
   max-width:none;color:var(--oro);
@@ -100,29 +103,29 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 .hero .hero-cta-movil{width:auto;max-width:none;margin:0;min-height:58px;padding:.8rem 2rem;font-size:18px;}
 .hero-cta-token{min-height:58px;padding:.8rem 1.4rem;font-size:16px;}
 /* Contrato a la vista, con copiar y verificar */
-.hero-ca{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.35rem .7rem;max-width:100%;margin-top:1.1rem;padding:.4rem .45rem .4rem .9rem;border:1px solid rgba(196,181,253,.25);border-radius:12px;background:rgba(18,14,36,.72);font-size:13px;color:var(--txt2);}
+.hero-ca{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.35rem .7rem;max-width:100%;margin-top:1.1rem;padding:.4rem .45rem .4rem .9rem;border:1px solid rgba(109,245,189,.25);border-radius:12px;background:rgba(13,22,20,.72);font-size:13px;color:var(--txt2);}
 .hero-ca-l{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--txt3);}
 .hero-ca-addr{font-family:var(--mono);font-size:14px;color:var(--txt);}
 .hero-ca-copiar{min-height:40px;padding:.3rem .9rem;border-radius:9px;border:1px solid rgba(242,193,78,.55);background:rgba(242,193,78,.1);color:var(--oro);font:700 13px var(--sans);cursor:pointer;}
 .hero-ca-copiar:hover{background:rgba(242,193,78,.2);}
 .hero-ca-copiar.ok,.compra-ca-copiar.ok{border-color:var(--ok);color:var(--ok);background:rgba(34,197,94,.1);box-shadow:none;}
-.hero-ca-ver{display:inline-flex;align-items:center;min-height:40px;padding:0 .5rem;color:var(--pri-txt);font-weight:600;}
+.hero-ca-ver{display:inline-flex;align-items:center;min-height:40px;padding:0 .5rem;color:var(--primary-soft);font-weight:600;}
 .hero-benef{justify-content:flex-start;gap:.4rem 1.2rem;margin:1.3rem 0 0;font-size:14px;color:var(--txt2);}
-.hero-benef li::before{color:var(--oro);}
+.hero-benef li::before{color:var(--primary);}
 /* Arte: la botella con la etiqueta, la mascota delante y la moneda */
 .hero-arte{position:relative;min-height:520px;}
 .hero-arte::before{content:'';position:absolute;left:50%;top:50%;width:min(520px,112%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(closest-side,rgba(242,193,78,.24),rgba(124,58,237,.16) 58%,transparent 72%);}
+  background:radial-gradient(closest-side,rgba(242,193,78,.24),rgba(16,185,129,.16) 58%,transparent 72%);}
 .hero-arte::after{content:'';position:absolute;left:50%;top:50%;width:min(430px,94%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(242,193,78,.28);}
-.arte-foto{position:absolute;right:4%;top:50%;width:min(330px,66%);height:auto;transform:translateY(-50%) rotate(3deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(3,1,12,.6),0 0 0 6px rgba(9,6,21,.55);z-index:1;}
-.arte-duende{position:absolute;left:2%;bottom:3%;width:min(236px,46%);height:auto;z-index:2;filter:drop-shadow(0 18px 22px rgba(3,1,12,.65));}
-.arte-juego{position:absolute;left:50%;top:50%;width:min(300px,70%);height:auto;transform:translate(-50%,-50%) rotate(2deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(3,1,12,.6);z-index:1;}
+.arte-foto{position:absolute;right:4%;top:50%;width:min(330px,66%);height:auto;transform:translateY(-50%) rotate(3deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(4,9,8,.6),0 0 0 6px rgba(7,12,11,.55);z-index:1;}
+.arte-duende{position:absolute;left:2%;bottom:3%;width:min(236px,46%);height:auto;z-index:2;filter:drop-shadow(0 18px 22px rgba(4,9,8,.65));}
+.arte-juego{position:absolute;left:50%;top:50%;width:min(300px,70%);height:auto;transform:translate(-50%,-50%) rotate(2deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(4,9,8,.6);z-index:1;}
 .arte-juego{aspect-ratio:3/4;object-fit:cover;object-position:50% 18%;}   /* captura vertical del pueblo: sin tanto suelo */
-.hero-arte .hero-coin{position:absolute;right:1%;top:5%;width:76px;height:76px;margin:0;z-index:3;filter:drop-shadow(0 8px 14px rgba(3,1,12,.6));animation:moneda-flota 5s ease-in-out infinite;}
+.hero-arte .hero-coin{position:absolute;right:1%;top:5%;width:76px;height:76px;margin:0;z-index:3;filter:drop-shadow(0 8px 14px rgba(4,9,8,.6));animation:moneda-flota 5s ease-in-out infinite;}
 @keyframes moneda-flota{0%,100%{translate:0 0;}50%{translate:0 -10px;}}
 /* Pie del héroe: en vivo y quién lo hace */
 .hero .vivo{max-width:var(--ancho);margin:1.8rem auto 0;justify-content:flex-start;}
-.vivo-item{background:rgba(18,14,36,.72);border-color:rgba(196,181,253,.22);}
+.vivo-item{background:rgba(13,22,20,.72);border-color:rgba(109,245,189,.22);}
 .hero-creador{max-width:var(--ancho);margin:.6rem auto 0;font-size:13px;}
 
 /* ── 6. Franja del token ── */
@@ -172,10 +175,10 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 /* ── 8. Utilidad ── */
 .util-grid{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem;}
 .util-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--borde);border-radius:18px;background:var(--panel);box-shadow:var(--sombra);}
-.util-card>picture,.util-card>img,.util-skins{display:block;width:100%;aspect-ratio:16/10;background:#0c0820;}
+.util-card>picture,.util-card>img,.util-skins{display:block;width:100%;aspect-ratio:16/10;background:#0c1c17;}
 .util-card>picture img,.util-card>img{display:block;width:100%;height:100%;object-fit:cover;aspect-ratio:16/10;}
-.util-skins{display:flex;align-items:flex-end;justify-content:center;gap:3%;padding:5% 5% 0;overflow:hidden;background:radial-gradient(closest-side at 50% 85%,rgba(124,58,237,.4),transparent),#0c0820;}
-.util-skins img{width:28%;height:auto;filter:drop-shadow(0 8px 10px rgba(3,1,12,.6));}
+.util-skins{display:flex;align-items:flex-end;justify-content:center;gap:3%;padding:5% 5% 0;overflow:hidden;background:radial-gradient(closest-side at 50% 85%,rgba(16,185,129,.4),transparent),#0c1c17;}
+.util-skins img{width:28%;height:auto;filter:drop-shadow(0 8px 10px rgba(4,9,8,.6));}
 .util-skins img:nth-child(2){width:36%;}
 .util-txt{display:flex;flex-direction:column;gap:.5rem;padding:1.3rem 1.3rem 1.4rem;flex:1;}
 .util-txt h3{font-family:var(--titulo);font-weight:800;font-size:20px;line-height:1.2;letter-spacing:.02em;color:var(--txt);}
@@ -199,7 +202,7 @@ nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:bl
 .compra-ca-riesgo{font-size:13px;line-height:1.5;color:var(--txt2);padding-top:.7rem;border-top:1px solid var(--borde);}
 
 /* ── 10. Pie ── */
-footer{background:#06040f;border-top-color:rgba(196,181,253,.14);padding:3rem 1.25rem;}
+footer{background:#060d0b;border-top-color:rgba(109,245,189,.14);padding:3rem 1.25rem;}
 .f-note{font-size:13px;}
 
 /* ── 11. Celular y tableta ── */
@@ -264,11 +267,11 @@ footer{background:#06040f;border-top-color:rgba(196,181,253,.14);padding:3rem 1.
    Piedra oscura, pergamino, filete dorado envejecido y niebla baja. Solo CSS: redefine
    las variables de arriba, así que lo demás cambia solo. La mascota y las skins no se tocan. */
 :root{
-  --bg:#0c0b0f;--panel:#16141a;--panel2:#1f1c25;--borde:#39323c;
+  --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
   --txt:#efe7d6;--txt2:#beb4a2;--txt3:#9c9382;
   --oro:#e0b85a;--oro2:#a57c2c;--yellow:#e0b85a;--amarillo:#e0b85a;
-  --pri:#6a3fc0;--pri2:#59329f;--pri-txt:#cbbdf3;--cian:#cbbdf3;--cyan:#cbbdf3;
-  --dark:#0c0b0f;--card:#16141a;
+  --pri:#10b981;--pri2:#59329f;--pri-txt:#6df5bd;--cian:#6df5bd;--cyan:#6df5bd;
+  --dark:#070c0b;--card:#0d1614;
   --marco:rgba(190,150,72,.36);--pergamino:#e6d8b8;--tinta:#2a1f12;
   --sombra:0 10px 30px rgba(0,0,0,.5);
   --brillo:linear-gradient(180deg,rgba(255,240,205,.045),rgba(255,240,205,0) 42%);
@@ -278,21 +281,22 @@ body{background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg 
 /* Niebla baja, muy tenue, detrás de todo */
 body::before{content:'';position:fixed;inset:-8% -20%;z-index:-1;pointer-events:none;
   background:
-    radial-gradient(42% 30% at 18% 82%,rgba(176,186,204,.075),transparent 70%),
-    radial-gradient(46% 28% at 82% 58%,rgba(150,138,196,.06),transparent 70%),
+    radial-gradient(42% 30% at 18% 82%,rgba(176,204,190,.075),transparent 70%),
+    radial-gradient(46% 28% at 82% 58%,rgba(145,189,167,.06),transparent 70%),
     radial-gradient(62% 30% at 50% 104%,rgba(206,196,172,.085),transparent 70%);
   animation:niebla 40s ease-in-out infinite alternate;}
 @keyframes niebla{to{transform:translate3d(5%,-2%,0);}}
-nav{background:rgba(12,11,15,.88);border-bottom-color:var(--marco);}
-/* Héroe: luz cálida de antorcha a un lado, violeta arcano al otro, y el muro detrás */
+nav{background:rgba(7,12,11,.88);border-bottom-color:var(--marco);}
+/* Héroe: resplandor esmeralda (el duende) a un lado, oro (la moneda) al otro, y el muro detrás */
 .hero{background:
-    radial-gradient(46rem 30rem at 84% 10%,rgba(226,150,60,.17),transparent 62%),
-    radial-gradient(40rem 26rem at 0% 0%,rgba(106,63,192,.17),transparent 60%),
-    linear-gradient(180deg,rgba(12,11,15,.25) 0%,var(--bg) 100%);
+    radial-gradient(46rem 30rem at 86% 8%,rgba(245,200,76,.15),transparent 62%),
+    radial-gradient(48rem 32rem at 0% 0%,rgba(34,227,154,.17),transparent 60%),
+    radial-gradient(40rem 22rem at 58% 108%,rgba(16,185,129,.12),transparent 66%),
+    linear-gradient(180deg,rgba(7,12,11,.25) 0%,var(--bg) 100%);
   border-bottom-color:var(--marco);}
-.hero-arte::before{background:radial-gradient(closest-side,rgba(224,184,90,.22),rgba(106,63,192,.12) 58%,transparent 72%);}
+.hero-arte::before{background:radial-gradient(closest-side,rgba(34,227,154,.22),rgba(245,200,76,.1) 58%,transparent 72%);}
 .hero-arte::after{border-color:var(--marco);}
-.hero-nuevo,.hero-ca,.vivo-item{background:rgba(22,20,26,.8);border-color:var(--marco);}
+.hero-nuevo,.hero-ca,.vivo-item{background:rgba(13,22,20,.8);border-color:var(--marco);}
 /* Marcos: filete dorado envejecido con un segundo filete interior */
 .about-card,.tcard,.trust-card,.nuevo-card,.booster-card,.skin-card,.tier-card,.arsenal-card,.nft-card,.game-feat,.ls-card,.creador-box,.donate-card,.apoyo-card,.exc-wrap,.pasos li,.faq details,.util-card,.compra-ca,.franja,.juego{
   border-color:var(--marco);
@@ -301,10 +305,10 @@ nav{background:rgba(12,11,15,.88);border-bottom-color:var(--marco);}
 .juego{background:var(--brillo),var(--panel);}
 .franja{background:rgba(190,150,72,.3);}
 .faq details[open]{border-color:rgba(224,184,90,.6);}
-.util-card>picture,.util-card>img{background:#121016;}
-.util-skins{background:radial-gradient(closest-side at 50% 85%,rgba(226,150,60,.3),transparent),#121016;}
-.sec-line{border-color:var(--marco);background:rgba(22,20,26,.86);}
-footer{background:#08070a;border-top-color:var(--marco);}
+.util-card>picture,.util-card>img{background:#101614;}
+.util-skins{background:radial-gradient(closest-side at 50% 85%,rgba(226,150,60,.3),transparent),#101614;}
+.sec-line{border-color:var(--marco);background:rgba(13,22,20,.86);}
+footer{background:#070a09;border-top-color:var(--marco);}
 /* Filete de los títulos: dos trazos y un rombo */
 .px-title::after,.pestanas .pestanas-t::after{content:'◆';display:flex;align-items:center;justify-content:center;width:150px;height:12px;border-radius:0;margin:.7rem auto 0;font:400 9px/1 Georgia,serif;color:var(--oro);
   background:linear-gradient(90deg,transparent,var(--oro2) 34%,transparent 44%,transparent 56%,var(--oro2) 66%,transparent) center/100% 1px no-repeat;}
@@ -318,7 +322,7 @@ footer{background:#08070a;border-top-color:var(--marco);}
 .ruta-estado{display:inline-block;margin-bottom:.6rem;padding:.25rem .6rem;border:1px solid currentColor;border-radius:6px;font:800 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;}
 .ruta-col.hecho .ruta-estado{color:#1d5631;}
 .ruta-col.curso .ruta-estado{color:#6b3a00;}
-.ruta-col.despues .ruta-estado{color:#463f58;}
+.ruta-col.despues .ruta-estado{color:#40574e;}
 .ruta-col h3{margin:0 0 .7rem;font-family:var(--titulo);font-weight:800;font-size:18px;line-height:1.25;letter-spacing:.02em;color:#3a2810;}
 .ruta-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
 .ruta-col li{position:relative;padding-left:1.3rem;font-size:15px;line-height:1.45;color:var(--tinta);}

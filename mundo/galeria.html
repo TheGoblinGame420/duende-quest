@@ -24,6 +24,7 @@ h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 .compacta .rejilla{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:3px}.compacta .vista{height:130px}.compacta .info small{display:none}.compacta .info b{font-size:10px}.compacta body{padding:2px}.compacta h1,.compacta .barra,.compacta #qa{display:none}
 #lienzo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 </style>
+<!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}</style><!-- tema:fin -->
 </head>
 <body>
 <h1>Duende Quest 3D: galería de modelos</h1>
@@ -38,9 +39,9 @@ h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 <canvas id="lienzo"></canvas>
 <script type="module">
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=401';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, ponerMonstruosPaq } from './js/modelos.js?v=401';
-import { cargarModelado } from './js/modelado.js?v=401';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=402';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, ponerMonstruosPaq } from './js/modelos.js?v=402';
+import { cargarModelado } from './js/modelado.js?v=402';
 
 // Parametros: ?filtro=texto|otro&estado=quieto&gira=0&ry=1.57&compacta=1&paq=1&lod=2 (paq=1: monstruos modelados en Blender, como en el juego; lod: su nivel de detalle fijo)
 const Q = new URLSearchParams(location.search);
