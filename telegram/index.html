@@ -465,6 +465,8 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
           <div class="hero-d">Explora y lucha junto a otros jugadores en tiempo real, sin salir de Telegram.</div>
           <button class="ob big" id="btn-mmo" type="button" onclick="irMMO()" style="width:100%">▶ Jugar online gratis</button>
         </div>
+        <!-- Tu cuenta de Telegram en Chrome o Safari (enlace de un solo uso, js/llave.js): solo dentro de Telegram. -->
+        <button class="ob" id="btn-navegador" type="button" hidden style="width:100%;margin-top:10px;background:transparent;border:1px solid rgba(109,245,189,.35);color:#ecf7f1">🌐 Jugar en navegador / Instalar app</button>
 
         <!-- Premio fisico: chicha morada (se juntan puntos en el MMO, ver functions/mmo/chicha.js) -->
         <div class="card" id="hub-chicha" style="display:flex;gap:12px;align-items:center;text-align:left">
@@ -1999,6 +2001,14 @@ function shareScore(){
 
 
 
+</script>
+<script type="module">
+// «Jugar en navegador / Instalar app»: la misma ventana que en CLASSIC y ORIGINS.
+import { abrirNavegador } from '/js/llave.js?v=402';
+try {
+  const bn = document.getElementById('btn-navegador'), W = window.Telegram && window.Telegram.WebApp;
+  if (bn && W && W.initData) { bn.hidden = false; bn.onclick = () => abrirNavegador({ TG: W, pagina: '/mundo/' }); }
+} catch (e) {}
 </script>
 <script type="module">
 // Catalogo unico: nombres, dolares y Stars de las skins salen de mmo/js/data.js
