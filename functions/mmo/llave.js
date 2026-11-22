@@ -30,6 +30,7 @@
 //  - POST /api/auth/salir: dtCerrar borra ESE token y echa a sus sesiones.
 // ═══════════════════════════════════════════════════════
 import { ORIGENES_OFICIALES } from '../api/dominio.js';
+import { limpiarNombre } from '../../mmo/js/data.js';
 
 const LLAVE_MS = 15 * 60 * 1000;
 const OTT_MS = 60 * 1000;            // «abrir en el navegador de este celular»
@@ -81,16 +82,16 @@ export const Llave = {
   },
 
   // Gasta una llave u OTT: de un solo uso, aunque haya caducado. Devuelve el uid o null.
-  gastarLlave(cod) {
+  gastarLlave(cod, entera) {
     const v = this.llaves && this.llaves.get(cod);
     if (!v) return null;
     this.llaves.delete(cod);
-    return v.exp < Date.now() ? null : v.uid;
+    return v.exp < Date.now() ? null : entera ? v : v.uid;
   },
   // Token de aparato nuevo para esa cuenta (en el storage solo va su hash).
-  async crearAparato(uid) {
+  async crearAparato(uid, nombre) {
     const tok = hex(16), h = await sha(tok);
-    await this.state.storage.put('dt:' + h, { uid, t: Date.now() });
+    await this.state.storage.put('dt:' + h, { uid, t: Date.now(), ...(nombre ? { n: String(nombre).slice(0, 24) } : {}) });
     let l = (await this.state.storage.get('dtl:' + uid)) || [];
     l.push(h);
     while (l.length > DT_MAX) await this.state.storage.delete('dt:' + l.shift());
@@ -114,13 +115,13 @@ export const Llave = {
     if (ahora - (r.t || 0) > DT_DIAS * 86400000) { await this.state.storage.delete('dt:' + h); return null; }
     // Usado: se renueva el plazo (como mucho una escritura al dia).
     if (ahora - (r.t || 0) > 86400000) await this.state.storage.put('dt:' + h, { ...r, t: ahora });
-    if (s) s.dtH = h;   // dtCerrar echa a las sesiones de ESTE token
+    if (s) { s.dtH = h; s.dtN = typeof r.n === 'string' ? r.n : ''; }   // dtCerrar echa a las sesiones de ESTE token; dtN: su nombre de Telegram
     return r.uid;
   },
 
   // ── Por HTTP (functions/api/auth.js, solo con x-interno) ──
   // OTT para una cuenta de Telegram que el Worker ya verifico con initData.
-  ottCrear(uid, largo) {
+  ottCrear(uid, largo, nombre) {
     if (typeof uid !== 'string' || !/^tg:\d{1,20}$/.test(uid)) return null;
     this.llaves = this.llaves || new Map();
     const ahora = Date.now();
@@ -129,7 +130,7 @@ export const Llave = {
     let vivos = 0; for (const v of this.llaves.values()) if (v.uid === uid) vivos++;
     if (vivos >= 8) return null;
     const cod = hex(16), ms = largo ? OTT_LARGO_MS : OTT_MS;
-    this.llaves.set(cod, { uid, exp: ahora + ms });
+    this.llaves.set(cod, { uid, exp: ahora + ms, n: typeof nombre === 'string' ? nombre.slice(0, 24) : '' });
     return { ott: cod, seg: ms / 1000 };
   },
   // Canje: gasta el OTT y devuelve el token de aparato (va a la cookie) y a quien pertenece.
@@ -138,17 +139,19 @@ export const Llave = {
     const ahora = Date.now();
     this.ottFallos = (this.ottFallos || []).filter(x => ahora - x.t < 600000);
     if (ip && this.ottFallos.filter(x => x.ip === ip).length >= 20) return { ok: false, m: 'espera' };
-    const uid = /^[a-f0-9]{32}$/.test(cod || '') ? this.gastarLlave(cod) : null;
-    if (!uid) { if (this.ottFallos.length < 2000) this.ottFallos.push({ ip: ip || '', t: ahora }); return { ok: false }; }
+    const v = /^[a-f0-9]{32}$/.test(cod || '') ? this.gastarLlave(cod, true) : null;
+    if (!v) { if (this.ottFallos.length < 2000) this.ottFallos.push({ ip: ip || '', t: ahora }); return { ok: false }; }
+    const uid = v.uid;
     // El token de aparato que ese navegador tuviera de antes (otra cuenta o la misma) deja de valer.
     if (/^[a-f0-9]{32}$/.test(viejo || '')) await this.dtCerrar(viejo);
-    const tok = await this.crearAparato(uid);
+    const tok = await this.crearAparato(uid, v.n);
     let nombre = '', nivel = 0;
     try {
       const prin = await this.uidPrincipal(uid);
       const s = this.porUid.get(prin), c = s ? s.c : await this.state.storage.get('c:' + prin);
       if (c) { nombre = c.nombre || ''; nivel = c.nivel || 1; }
     } catch (e) {}
+    if (!nombre) nombre = limpiarNombre(v.n) || '';   // cuenta sin duende todavia: su nombre de Telegram
     return { ok: true, tok, nombre, nivel };
   },
   // Cerrar sesion de verdad: ESE token deja de existir en el servidor y sus sesiones abiertas se cierran.

@@ -36,6 +36,21 @@
 <meta name="twitter:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D">
 <meta name="theme-color" content="#070c0b">
 <link rel="manifest" href="/inicio/manifest.json">
+<!-- SDK de Telegram solo dentro de Telegram (mismo criterio que mmo/ y mundo/): js/cuenta-portada.js y pwa.js miran window.__tgListo. -->
+<script>
+(function () {
+  var tg = false;
+  try { tg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external)) || /tgWebApp/.test(location.hash + location.search) || /tgWebAppData/.test(sessionStorage.getItem('__telegram__initParams') || ''); } catch (e) {}
+  if (!tg) return;
+  window.__tgListo = new Promise(function (ok) {
+    var s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js';
+    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#070c0b'); w.setHeaderColor('#070c0b'); } } } catch (e) {} ok(); };
+    s.onerror = function () { ok(); };
+    setTimeout(ok, 8000);
+    document.head.appendChild(s);
+  });
+})();
+</script>
 <script src="/js/pwa.js?v=402" defer></script>
 <script src="/js/portada-orden.js?v=402" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
@@ -779,6 +794,24 @@ section[id]{scroll-margin-top:72px;}
 .paso-n{flex-shrink:0;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--borde);color:var(--pri-txt);font:700 16px var(--sans);}
 .pasos h3{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--txt);margin-bottom:.25rem;}
 .pasos p{font-size:14px;color:var(--txt2);line-height:1.5;}
+.pasos li{cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .35s cubic-bezier(.34,1.56,.64,1);-webkit-tap-highlight-color:transparent;}
+.pasos li:focus-visible{outline:2px solid var(--primary,#22e39a);outline-offset:2px;}
+.pasos li.activo{border-color:var(--primary,#22e39a);box-shadow:0 0 0 1px rgba(34,227,154,.25),0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(34,227,154,.12);transform:translateX(4px);}
+.pasos li.activo .paso-n{background:var(--grad-primary,linear-gradient(180deg,#6ff8c0,#1ad68a));border-color:transparent;color:var(--primary-ink,#03150d);}
+.paso-mas{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease;}
+.paso-mas>div{overflow:hidden;display:flex;flex-wrap:wrap;gap:.4rem;}
+.pasos li.activo .paso-mas{grid-template-rows:1fr;margin-top:.6rem;}
+.paso-mas span{font-size:12.5px;font-weight:600;padding:.3rem .6rem;border-radius:999px;background:rgba(34,227,154,.1);border:1px solid var(--border-soft,rgba(109,245,189,.22));color:var(--primary-soft,#6df5bd);white-space:nowrap;}
+@media (prefers-reduced-motion:reduce){.pasos li,.paso-mas{transition:none;}.pasos li.activo{transform:none;}}
+.hero-entradas{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.7rem;}
+.hero-ent{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:.55rem 1.1rem;border-radius:12px;border:1px solid var(--border,#213832);background:var(--glass-soft,rgba(10,22,19,.62));color:var(--text,#ecf7f1);font:600 15px var(--sans);text-decoration:none;transition:border-color .2s,background .2s,transform .2s;}
+.hero-ent:hover{border-color:var(--primary,#22e39a);background:rgba(34,227,154,.08);}
+.hero-ent:active{transform:scale(.97);}
+.hero-ent[hidden]{display:none;}
+#hero-ent-inv{border-style:dashed;color:var(--text-2,#a9bdb3);}
+.hero-sin-tg{margin-top:.55rem;font-size:13.5px;color:var(--text-2,#a9bdb3);}
+.hero-sin-tg[hidden]{display:none;}
+@media (max-width:640px){.hero-entradas{max-width:380px;margin:.7rem auto 0;}.hero-ent{flex:1 1 150px;font-size:14px;padding:.5rem .7rem;}.hero-sin-tg{text-align:center;}}
 .pasos-movil{margin:0;text-align:center;}
 .pasos-movil .cap-abrir{border-radius:22px;border:6px solid #1d372f;max-width:250px;margin:0 auto;}
 .pasos-movil .cap-abrir img{aspect-ratio:390/844;object-fit:cover;}
@@ -863,9 +896,15 @@ section[id]{scroll-margin-top:72px;}
       <!-- El unico boton de jugar de la primera pantalla: /jugar/ elige el juego que mejor corre en este equipo.
            ?web=1: quien viene de aqui no pasa a modo anuncio (js/origen.js). -->
       <div class="hero-acciones">
-        <a href="/jugar/?web=1" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
+        <a href="/jugar/?web=1" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar ahora en el navegador</a>
         <a href="#como-comprar" class="btn-sec hero-cta-token solo-cripto">Cómo comprar $DUENDE</a>
       </div>
+      <!-- Los otros dos caminos (js/cuenta-portada.js los adapta: con cuenta, dentro de Telegram...). -->
+      <div class="hero-entradas">
+        <a class="hero-ent" id="hero-ent-tg" href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener">Entrar con Telegram</a>
+        <a class="hero-ent" id="hero-ent-inv" href="/jugar/?web=1">Continuar como invitado</a>
+      </div>
+      <p class="hero-sin-tg" id="hero-sin-tg">No necesitas Telegram ni registrarte: en el navegador entras al instante.</p>
       <div class="hero-ca solo-cripto">
         <span class="hero-ca-l">Contrato en Solana</span>
         <code class="hero-ca-addr" title="HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump">HtkZy2a4…XrFTpump</code>
@@ -1203,9 +1242,9 @@ section[id]{scroll-margin-top:72px;}
   <p class="px-sub">Para probarlo no necesitas descargar nada, ni tarjeta, ni crear una cuenta.</p>
   <div class="pasos-wrap">
     <ol class="pasos">
-      <li><span class="paso-n" aria-hidden="true">1</span><div><h3>Entra gratis</h3><p>Abre el juego en el navegador del celular o del PC, o dentro de Telegram con el bot oficial @duendequest_bot. Puedes empezar como invitado.</p></div></li>
-      <li><span class="paso-n" aria-hidden="true">2</span><div><h3>Elige tu clase</h3><p>Guerrero (tanque), Mago (daño a distancia), Sacerdote (sanador) o Pícaro (cuerpo a cuerpo). Cada clase tiene sus propias habilidades.</p></div></li>
-      <li><span class="paso-n" aria-hidden="true">3</span><div><h3>Juega con otros</h3><p>Forma grupo, entra a mazmorras, únete a una hermandad y enfrenta jefes con otros jugadores conectados en tiempo real.</p></div></li>
+      <li><span class="paso-n" aria-hidden="true">1</span><div><h3>Entra gratis</h3><p>Abre el juego en el navegador del celular o del PC, o dentro de Telegram con el bot oficial @duendequest_bot. Puedes empezar como invitado.</p><div class="paso-mas"><div><span>Navegador</span><span>Telegram</span><span>Invitado, sin registro</span></div></div></div></li>
+      <li><span class="paso-n" aria-hidden="true">2</span><div><h3>Elige tu clase</h3><p>Guerrero (tanque), Mago (daño a distancia), Sacerdote (sanador) o Pícaro (cuerpo a cuerpo). Cada clase tiene sus propias habilidades.</p><div class="paso-mas"><div><span>Guerrero · aguanta</span><span>Mago · daño de lejos</span><span>Sacerdote · cura</span><span>Pícaro · golpes rápidos</span></div></div></div></li>
+      <li><span class="paso-n" aria-hidden="true">3</span><div><h3>Juega con otros</h3><p>Forma grupo, entra a mazmorras, únete a una hermandad y enfrenta jefes con otros jugadores conectados en tiempo real.</p><div class="paso-mas"><div><span>Caza y sube de nivel</span><span>Captura criaturas</span><span>Jefes en grupo</span><span>Mismo duende en 2D y 3D</span></div></div></div></li>
     </ol>
     <figure class="pasos-movil">
       <button type="button" class="cap-abrir" data-full="assets/capturas/mmo-movil" aria-label="Ampliar captura: el juego en el celular">
@@ -2456,7 +2495,6 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
     }).catch(function () {});
   }
   // Quien ya jugo como invitado ve su nombre en el boton del movil
-  try { var n = localStorage.getItem('dq_mmo_nombre'), b = document.getElementById('hero-cta-movil'); if (n && b) b.textContent = '▶ Continuar con ' + n.replace(/[<>&"]/g, '').slice(0, 16); } catch (e) {}
   jefe(); setInterval(jefe, 1000);
   estado(); setInterval(estado, 60000);
   // Embudo (js/origen.js): visita a la portada y clic en cualquier boton que lleve a un juego.

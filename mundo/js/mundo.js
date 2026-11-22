@@ -57,7 +57,8 @@ import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMP
 import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=402';
 import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=402';
 import { iniciarDios3 } from './dios3.js?v=402';   // panel del Modo Dios en el 3D
-import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=402';   // tu cuenta de Telegram en Chrome
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=402';
+import { franjaInstalar } from '/js/instalar.js?v=402';   // «Añadir a pantalla de inicio» al llegar con el enlace de Telegram   // tu cuenta de Telegram en Chrome
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -76,6 +77,8 @@ const K = (pc, tactil) => MOVIL ? tactil : pc;
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
 // El SDK se baja solo dentro de Telegram (index.html, window.__tgListo): se espera aqui, antes de leerlo.
 if (window.__tgListo) await window.__tgListo;
+// Enlace «Jugar en el navegador» (?ott=): se canjea ANTES de identificarse, para entrar ya con la cuenta de Telegram (js/llave.js).
+const ottRes = await ottListo;
 const enTg =!!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // Modo anuncio (js/origen.js): quien llega de Meta no ve avisos de mTON ni nada cripto (solo se ocultan).
@@ -2746,6 +2749,11 @@ function recibir(m) {
     }
     case 'bienvenido':
       paso('bienvenido');
+      // Enlace de Telegram recién canjeado: su aviso, una vez. Y dentro de Telegram, la cuenta de correo abierta aquí se une a este duende (js/llave.js).
+      if (!window.__dqOttAv) { window.__dqOttAv = 1; const txO = ottRes && !ottRes.ok ? ottRes.m : avisoOtt(); if (txO) setTimeout(() => aviso(txO, ottRes && !ottRes.ok ? 'err' : 'ok', 1), 1500); }
+      unirCuentaWeb({ TG, mandar, tokenWeb, invitado: soyInvitado });
+      if (!TG && !soyInvitado && m.yo) nombrarAparato(m.yo.nombre);   // la portada dirá «Continuar con <tu duende>»
+      if (!TG && ottRes && ottRes.ok && !window.__dqInstT) window.__dqInstT = setTimeout(() => franjaInstalar({ ocupado: () => { try { return hayVentana() || document.hidden; } catch (e) { return true; } }, forzar: true, texto: 'Instala Duende Quest: queda en tu pantalla de inicio con tu cuenta de Telegram' }), 8000);
       try { sessionStorage.removeItem('dq_vcod'); } catch (e) {}   // llevar mi duende: el codigo ya se uso (o no valia)
       miId = m.id; yo = m.yo; anotarMisSkins(yo); reintentos = 0; if (ws) ws._listo = true;
       migrarClavesViejas(yo);
@@ -3271,14 +3279,15 @@ function recibir(m) {
     case 'invTraer': try { sessionStorage.setItem('dq_vcod', m.cod); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', 1); setTimeout(() => location.reload(), 900); break;
     case 'vincConfirmar': if (confirm(`Esta cuenta ya tiene a ${m.nombre} (Nv ${m.nivel}). Si sigues, jugarás con ${m.destino} (Nv ${m.nivelDestino}) y ${m.nombre} quedará archivado (el equipo puede recuperarlo). ¿Seguir?`)) mandar({ t: 'vincUsar', cod: m.cod, forzar: true }); break;
     case 'vincOk': aviso('🔗 ¡Listo! Entrando con ' + m.nombre + '…', 'ok', 1); setTimeout(() => location.reload(), 1500); break;
-    case 'llave': ventanaLlave(m, { TG, mandar, pagina: '/mundo/' }); break;
+    case 'llave': abrirNavegador({ TG, mandar, pagina: '/mundo/' }); break;
+    case 'vincProbar': { const tx = respuestaUnir(m); if (tx) aviso(tx, m.ok ? 'ok' : 'err', 1); break; }
     case 'llaveOk': guardarAparato(m.tok); aviso('🔗 Entraste con tu cuenta de Telegram. Este navegador la recordará.', 'ok', 1); break;
     case 'diosPanel': DIOS3.panel(m); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; DIOS3.modo(); } break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de nivel 1 (la sesion de mas de 24 h caduca): se pide reabrir.
       // Enlace de Telegram usado o caducado: se olvida y se reconecta con lo que haya (correo o invitado).
-      if (m.auth === 'llave' || m.auth === 'dt') { aviso(falloAparato(m.auth), 'err', 1); return; }
+      if (m.auth === 'llave' || m.auth === 'dt' || m.auth === 'ck') { aviso(falloAparato(m.auth), 'err', 1); return; }
       if (m.auth && m.auth !== 'inv' && TG) { error('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', false, { tg: true }); return; }
       if (m.dup) { error(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', false, { dup: true }); return; }
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
@@ -6696,8 +6705,8 @@ function pintarLlevar(m) {
   const bl = document.createElement('button');
   bl.id = 'ay-llave'; bl.className = 'btn sec'; bl.style.cssText = 'width:100%;margin-bottom:8px;display:none';
   bl.onclick = () => {
-    if (TG) { mandar({ t: 'llave' }); return; }
-    if (confirm('¿Cerrar la sesión de tu cuenta de Telegram en este navegador?')) { olvidarAparato(); location.reload(); }
+    if (TG) { abrirNavegador({ TG, mandar, pagina: '/mundo/' }); return; }
+    cerrarSesionTotal({ sb: sbCli });
   };
   pb.insertBefore(bl, bc);
   // Invitado 'DuendeNNNN': ponerle nombre a su duende (gratis, una vez). Campo en la misma ventana (prompt() falla en algunos WebView).
@@ -6827,9 +6836,10 @@ function pintarAjustesCuenta() {
   const bd = $('ay-dios'), bl = $('ay-llave');
   if (bd) bd.style.display = yo && yo.dios ? '' : 'none';
   if (!bl) return;
-  const enTg = !!TG && !forzarInvitado && !soyInvitado, aqui = !TG && tieneAparato();
+  // Fuera de Telegram, cualquier cuenta (la de Telegram traída con el enlace o la de correo) puede cerrar sesión aquí.
+  const enTg = !!TG && !forzarInvitado && !soyInvitado, aqui = !TG && !soyInvitado && !!yo;
   bl.style.display = enTg || aqui ? '' : 'none';
-  bl.textContent = enTg ? '💻 Jugar en Chrome o PC con este duende' : '🔒 Cerrar sesión de Telegram en este navegador';
+  bl.textContent = enTg ? '💻 Jugar en el navegador o instalar la app' : '🔒 Cerrar sesión en este navegador';
 }
 const DIOS3 = iniciarDios3({ mandar: o => mandar(o), yo: () => yo, abrir, cerrar, aviso: (t, k) => aviso(t, k, 1) });
 // Pantalla de carga: «Entrar o crear cuenta con correo» desde el primer segundo, solo

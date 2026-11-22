@@ -57,7 +57,7 @@ export async function authApi(request, env, path) {
       // 24 h, igual que el hola del juego: Telegram entrega el initData del momento en que se abrio la Mini App.
       const u = await verifyInitData(typeof b.initData === 'string' ? b.initData : '', e.BOT_TOKEN, 24 * 3600);
       if (!u || !u.id || !/^\d{1,20}$/.test(String(u.id))) return responder({ ok: false, m: 'Telegram no verificó tu sesión. Cierra el juego y ábrelo otra vez desde el bot.' }, 401);
-      const r = await interno('ott', { uid: 'tg:' + u.id, largo: !!b.largo });
+      const r = await interno('ott', { uid: 'tg:' + u.id, largo: !!b.largo, nombre: String(u.username || u.first_name || '').slice(0, 24) });
       if (!r.ok) return responder({ ok: false, m: 'Ya pediste varios enlaces. Usa uno de ellos o espera un minuto.' }, 429);
       return responder({ ok: true, ott: r.ott, seg: r.seg });
     }

@@ -639,7 +639,7 @@ export class MmoWorld {
         // o la cookie HttpOnly que llego con la subida del WebSocket (el cliente no la ve: solo dice 'ck').
         uid = a.k === 'llave' ? await this.holaLlave(s, a.cod) : await this.holaDt(a.k === 'ck' ? s.ck : a.tok, s);
         if (uid && uid.startsWith('tg:')) {
-          nombre = 'Duende' + uid.slice(-4);
+          nombre = limpiarNombre(s.dtN) || 'Duende' + uid.slice(-4);
           pagadas = { tgId: uid.slice(3) };
           s.authK = 'dt';
         } else uid = null;
@@ -1983,7 +1983,7 @@ export class MmoWorld {
     }
     if (accion === 'chichas' || accion === 'chichasSin' || accion === 'chichaCoord' || accion === 'chichaLibera' || accion === 'chichaOk' || accion === 'chichaNo' || accion === 'chichaTel') return json(await this.internoChicha(accion, b));
     // Handoff Telegram -> navegador por HTTP (functions/api/auth.js; llave.js).
-    if (accion === 'ott') { const r = this.ottCrear(String(b.uid || ''), !!b.largo); return json(r ? { ok: true, ...r } : { ok: false }); }
+    if (accion === 'ott') { const r = this.ottCrear(String(b.uid || ''), !!b.largo, String(b.nombre || '')); return json(r ? { ok: true, ...r } : { ok: false }); }
     if (accion === 'canje') return json(await this.ottCanjear(String(b.cod || ''), String(b.ip || ''), String(b.viejo || '')));
     if (accion === 'salir') { let n = 0; for (const t of Array.isArray(b.toks) ? b.toks.slice(0, 4) : []) if (await this.dtCerrar(String(t))) n++; return json({ ok: true, n }); }
     if (accion === 'mantenimiento') return json(await this.mantenimiento(b));   // antes de publicar (copias.js, tools/deploy.mjs)

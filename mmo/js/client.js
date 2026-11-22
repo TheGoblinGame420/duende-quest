@@ -25,7 +25,8 @@ import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=402';
 import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=402';
 import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=402';
 import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=402';
-import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=402';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=402';
+import { franjaInstalar } from '/js/instalar.js?v=402';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -48,6 +49,8 @@ function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] =
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
 // El SDK se baja solo dentro de Telegram (index.html, window.__tgListo): se espera aqui, antes de leerlo.
 if (window.__tgListo) await window.__tgListo;
+// Enlace «Jugar en el navegador» (?ott=): se canjea ANTES de identificarse, para entrar ya con la cuenta de Telegram (js/llave.js).
+const ottRes = await ottListo;
 const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // Modo anuncio (js/origen.js pone <html class="anuncio">): quien llega de Meta no ve
@@ -679,6 +682,16 @@ function recibir(m) {
     }
     case 'bienvenido':
       paso('bienvenido');
+      // Enlace de Telegram recién canjeado: su aviso, una vez. Y dentro de Telegram, la cuenta de correo abierta aquí se une a este duende (js/llave.js).
+      if (!window.__dqOttAv) { window.__dqOttAv = 1; const txO = ottRes && !ottRes.ok ? ottRes.m : avisoOtt(); if (txO) setTimeout(() => aviso(txO, ottRes && !ottRes.ok ? undefined : 'ok', 6000), 1500); }
+      unirCuentaWeb({ TG, mandar, tokenWeb, invitado: soyInvitado });
+      if (!TG && !soyInvitado && m.yo) nombrarAparato(m.yo.nombre);   // la portada dirá «Continuar con <tu duende>»
+      // App instalable: se ofrece una vez al día, sin tapar ventanas ni combates; quien llega con el enlace de Telegram la ve enseguida.
+      if (!TG && !window.__dqInstT) {
+        const ocupadoI = () => { try { return !yo || P.muerto || enCombate() || document.hidden || !!document.querySelector('.modal.on, #dq-regalo.on'); } catch (e) { return true; } };
+        const vinoTg = !!(ottRes && ottRes.ok);
+        window.__dqInstT = setTimeout(() => franjaInstalar({ ocupado: ocupadoI, invitado: soyInvitado, forzar: vinoTg, top: 96, texto: vinoTg ? 'Instala Duende Quest: queda en tu pantalla de inicio con tu cuenta de Telegram' : undefined }), vinoTg ? 6000 : 180000);
+      }
       try { sessionStorage.removeItem('dq_vcod'); } catch (e) {}   // llevar mi duende: el codigo ya se uso (o no valia)
       // Sesion nueva en el servidor: lanzamientos, recargas e invitaciones de la
       // anterior ya no existen (su castFin no llegara nunca y bloquearia todo).
@@ -1050,12 +1063,13 @@ function recibir(m) {
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm, m); break;
     case 'rankNv': recibirRankNv(m); break;
     case 'heredar': preguntarHeredar(m); break;
-    case 'llave': ventanaLlave(m, { TG, mandar, pagina: '/mmo/' }); break;
+    case 'llave': abrirNavegador({ TG, mandar, pagina: '/mmo/' }); break;
+    case 'vincProbar': { const tx = respuestaUnir(m); if (tx) aviso(tx, m.ok ? 'ok' : undefined, 7000); break; }
     case 'llaveOk': guardarAparato(m.tok); aviso('🔗 Entraste con tu cuenta de Telegram. Este navegador la recordará.', 'ok', 5000); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de Nv 1 (la sesion de mas de 24 h caduca): se pide reabrir.
       // Enlace de Telegram usado o caducado: se olvida y se reconecta con lo que haya (correo o invitado).
-      if (m.auth === 'llave' || m.auth === 'dt') { aviso(falloAparato(m.auth)); reintentos = 0; break; }
+      if (m.auth === 'llave' || m.auth === 'dt' || m.auth === 'ck') { aviso(falloAparato(m.auth)); reintentos = 0; break; }
       if (m.auth && m.auth !== 'inv' && TG) { fatal = true; mostrarError('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', { tg: true }); break; }
       // Duende abierto en otra pestaña o dispositivo: se ofrece 'Jugar aquí' o 'Cerrar'; nunca se reconecta solo.
       if (m.dup) { fatal = true; dormido = false; mostrarError(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', { dup: true }); break; }
@@ -6500,9 +6514,9 @@ function botonLlave() {
   if (!enTg && !aqui) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('div'); b.id = 'b-llave'; b.style.cssText = 'margin:0 0 12px'; $('cuenta-cuerpo').before(b); }
   b.innerHTML = enTg
-    ? '<button class="btn btn-grande" style="width:100%">💻 Jugar en Chrome o PC con este duende</button><p class="nota" style="margin:6px 0 0">Te damos un enlace de un solo uso: en el navegador entras con tu misma cuenta de Telegram.</p>'
-    : '<p class="nota" style="margin:0 0 6px">Entraste con tu <b>cuenta de Telegram</b> en este navegador.</p><button class="btn sec" style="width:100%">Cerrar sesión de Telegram aquí</button>';
-  b.querySelector('button').onclick = () => { if (enTg) mandar({ t: 'llave' }); else if (confirm('¿Cerrar la sesión de tu cuenta de Telegram en este navegador?')) { olvidarAparato(); location.reload(); } };
+    ? '<button class="btn btn-grande" style="width:100%">💻 Jugar en el navegador o instalar la app</button><p class="nota" style="margin:6px 0 0">Te damos un enlace de un solo uso: en Chrome o Safari entras con tu misma cuenta de Telegram y puedes añadir el juego a tu pantalla de inicio.</p>'
+    : '<p class="nota" style="margin:0 0 6px">Entraste con tu <b>cuenta de Telegram</b> en este navegador.</p><button class="btn sec" style="width:100%">Cerrar sesión en este navegador</button>';
+  b.querySelector('button').onclick = () => { if (enTg) abrirNavegador({ TG, mandar, pagina: '/mmo/' }); else cerrarSesionTotal({ sb: () => _sb }); };
 }
 function abrirCuenta() {
   abrir('m-cuenta');
@@ -6603,7 +6617,7 @@ function pintarCuenta(cont, modo, enJuego) {
         msg('Contraseña guardada.', true);
         if (acc === 'nueva') { recuperando = false; history.replaceState(null, '', location.pathname); setTimeout(() => sesionLista(false), 700); }
       } else if (acc === 'salir') {
-        olvidarAparato(); await cli.auth.signOut(); location.reload();
+        await cerrarSesionTotal({ sb: cli });
       }
     } catch (e) { msg('Sin conexión. Vuelve a intentarlo.'); }
     finally { b.disabled = false; }
@@ -6662,8 +6676,7 @@ async function inicio() {
   else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || /(^#|&)cuenta(&|$)/.test(location.hash) || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search)) || TRAILER) entrar(); }   // #cuenta (desde ORIGINS): directo a la partida y alli se abre la cuenta
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
-    olvidarAparato(); try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
-    location.reload();
+    await cerrarSesionTotal({ sb: () => _sb });
   };
 }
 
