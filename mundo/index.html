@@ -1232,6 +1232,7 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
   <button class="bt" id="b-inv" title="Inventario (I)" data-l="Mochila">🎒</button>
   <button class="bt" id="b-premium" title="Tienda: skins, alas y packs" aria-label="Tienda" data-l="Tienda">💎</button>
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)" data-l="Libro">📖</button>
+  <button class="bt" id="b-mm" title="Mascotas místicas y Huevo Místico (N)" aria-label="Mascotas místicas" data-l="Místicas"></button>
   <button class="bt extra" id="b-logros" title="Logros (L)" data-l="Logros">🏆</button>
   <button class="bt extra" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)" data-l="Look">👤</button>
   <button class="bt extra" id="b-mapa" title="Mapa del mundo (M)" data-l="Mapa">🗺️</button>
@@ -1297,6 +1298,12 @@ html body:not(.movil):not(.compacto) .vv-txt{flex:1 1 220px;}
   <button class="btn sec" id="b-revivir-pociones" style="width:100%;margin-top:8px">🧪 Revivir en el pueblo y comprar pociones</button>
 </div></div>
 
+<style>#b-mm svg{width:18px;height:22px;display:block;margin:auto}</style>
+<div class="modal" id="v-mm"><div class="ventana" style="width:min(700px,100%)">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>MASCOTAS MÍSTICAS</h2>
+  <div id="mm-cuerpo"></div>
+</div></div>
 <div class="modal" id="v-npc"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
   <h2 id="npc-t"></h2>

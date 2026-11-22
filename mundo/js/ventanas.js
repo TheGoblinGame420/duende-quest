@@ -12,7 +12,7 @@
 //   en cada 'yo' del servidor: V.actualizar();
 //   en 'pedidoSol' y 'factura': V.alPedido(m)  (o alPedido(m) importado)
 import {
-  RANURAS, RAREZAS, BOLSA_MAX, NIVEL_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos,
+  RANURAS, RAREZAS, BOLSA_MAX, mascotaViaja, NIVEL_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos,
   CONJUNTOS, piezasConjunto, textoConjunto,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talentosSugeridos,
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
@@ -397,7 +397,7 @@ function htmlStats(y) {
 function pintarInventario() {
   const y = H.yo(); if (!y) return;
   const id = IDS.inv;
-  parte(id, 'sub').innerHTML = `<span><b>${esc(y.nombre)}</b> · Nv ${y.nivel}</span><span>${oro(y.oro)}</span><span>Bolsa <b>${(y.bolsa || []).length}/${BOLSA_MAX}</b></span>`;
+  parte(id, 'sub').innerHTML = `<span><b>${esc(y.nombre)}</b> · Nv ${y.nivel}</span><span>${oro(y.oro)}</span><span>Bolsa <b>${(y.bolsa || []).length}/${y.bmax || BOLSA_MAX}</b></span>`;
   const nMat = Object.values(y.mat || {}).reduce((a, n) => a + (n | 0), 0);
   pintarTabs(id, [['equipo', 'EQUIPO'], ['mat', 'MATERIALES', nMat ? String(nMat) : ''], ['skin', 'SKINS'], ['arma', 'ARMAS']], est.inv, 'itab');
   const c = parte(id, 'cuerpo');
@@ -477,7 +477,7 @@ function htmlEquipo(y) {
   }
   // (Los atajos «Equipar lo mejor» / «Vender comunes» van arriba del todo: ver htmlFilaMejor.)
   // Filtro por ranura.
-  h += `<div class="vv-sec">Bolsa <small>${bolsa.length}/${BOLSA_MAX}</small></div>`;
+  h += `<div class="vv-sec">Bolsa <small>${bolsa.length}/${y.bmax || BOLSA_MAX}</small></div>`;
   if (!bolsa.length) return h + '<p class="vv-vacio">La bolsa está vacía. Los monstruos sueltan equipo al morir, y los jefes siempre.</p>';
   const cuenta = k => bolsa.filter(x => x.s === k).length;
   h += '<div class="vv-chips">' + `<button class="vv-chip${!est.filtro ? ' on' : ''}" data-act="filtro" data-id="">Todo ${bolsa.length}</button>` +
@@ -723,6 +723,7 @@ function htmlTintes(y) {
 function htmlMascotas(y) {
   let h = '<div class="vv-lista">';
   for (const [id, ma] of Object.entries(MASCOTAS)) {
+    if (ma.mistica || ma.huevo) continue;   // las místicas nacen de un huevo: tienen su ventana (N)
     const tiene = (y.mascotas || []).includes(id);
     if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // ambulante, pase y pesca no se venden aqui
     const acc = tiene ? (y.mascota === id ? etq('✓ Te acompaña', 'vv-ok') : btn('Llevar', 'comprar', { k: 'mascota', id }, 'sec')) : precioYBoton(y, ma.precio, 'mascota', id, ma.nv);
@@ -1063,7 +1064,7 @@ const textoMin = ms => { const tot = Math.max(1, Math.ceil(ms / 60000)), hh = Ma
 function pintarExped() {
   const y = H.yo(); if (!y) return;
   const id = IDS.exped, ex = y.exped;
-  const masc = y.mascota && MASCOTAS[y.mascota];
+  const masc = mascotaViaja(y.mascota) && MASCOTAS[y.mascota];   // una mística o el huevo no viajan
   const quien = masc ? masc.nombre : 'Un duendecillo explorador';
   parte(id, 'sub').innerHTML = `<span>Expediciones hechas: <b>${fmt(y.expediciones || 0)}</b></span>`;
   let h = '';

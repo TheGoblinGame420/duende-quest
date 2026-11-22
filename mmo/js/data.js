@@ -3073,3 +3073,40 @@ for (const m of Object.values(MAPAS)) {
   m.cornisas = extra.length;
   m.plataformas.push(...extra);
 }
+
+// ═══════════════════════════════════════════════════════
+// MASCOTAS MÍSTICAS Y HUEVO MÍSTICO
+// Las 10 mascotas oficiales (imagenes del dueño en /assets/mascotas/<img>.webp
+// de 256 px y <img>_s.webp de 96 px). Nacen de un Huevo Místico; no se venden.
+// Aqui solo va lo que se VE (nombre, rareza, arte, texto del bono): los
+// numeros que mandan estan en functions/mmo/pets-config.js (solo servidor) y
+// el arnes comprueba que el texto y la tabla digan lo mismo.
+// anim: como se mueve al seguirte. vuela: va a la altura del hombro. mira: -1 si el dibujo mira a la izquierda.
+// ═══════════════════════════════════════════════════════
+export const RAREZAS_MASCOTA = {
+  comun:      { nombre: 'Común',      color: '#a9bdb3', peso: 45 },
+  rara:       { nombre: 'Rara',       color: '#60a5fa', peso: 30 },
+  epica:      { nombre: 'Épica',      color: '#c084fc', peso: 18 },
+  legendaria: { nombre: 'Legendaria', color: '#f5c84c', peso: 6 },
+  mitica:     { nombre: 'Mítica',     color: '#ff7ab6', peso: 1 },
+};
+Object.assign(MASCOTAS, {
+  sapo_rey:         { nombre: 'Sapo Rey Esmeralda',       img: 'sapo_rey',         mistica: true, rareza: 'epica',      alto: 34, nv: 1, precio: 0, anim: 'salta',  bono: '+12% de oro de caza',                       desc: 'Salta detrás de ti dejando chispas verdes; sus cristales laten cuando hay tesoro cerca.' },
+  zorro_mistico:    { nombre: 'Zorro Místico del Bosque', img: 'zorro_mistico',    mistica: true, rareza: 'rara',       alto: 34, nv: 1, precio: 0, anim: 'corre',  bono: '+10% de velocidad al moverte',              desc: 'Corre a tu lado con una estela dorada en la cola.' },
+  buho_runas:       { nombre: 'Búho Sabio de Runas',      img: 'buho_runas',       mistica: true, rareza: 'epica',      alto: 32, nv: 1, precio: 0, anim: 'vuela',  vuela: true, bono: '+15% de experiencia de misiones',  desc: 'Vuela en círculos sobre tu hombro; sus gafas de runas brillan cuando subes de nivel.' },
+  escarabajo_aureo: { nombre: 'Escarabajo Áureo',         img: 'escarabajo_aureo', mira: -1, mistica: true, rareza: 'rara',       alto: 28, nv: 1, precio: 0, anim: 'flota',  bono: '8% de oro doble al cazar',                  desc: 'Flota a ras del suelo y hace girar su moneda cada vez que recoges oro.' },
+  dragon_jade:      { nombre: 'Dragón Bebé de Jade',      img: 'dragon_jade',      mistica: true, rareza: 'legendaria', alto: 36, nv: 1, precio: 0, anim: 'flota',  vuela: true, bono: '+20% de oro de caza',              desc: 'Levita soltando llamitas esmeralda.' },
+  gato_duende:      { nombre: 'Gato Duende Travieso',     img: 'gato_duende',      mistica: true, rareza: 'comun',      alto: 30, nv: 1, precio: 0, anim: 'camina', bono: '+5% de suerte de botín (equipo y cofres)',  desc: 'Camina sigiloso con los ojos encendidos y da un giro cuando cae algo especial.' },
+  hongo_brillante:  { nombre: 'Espíritu Hongo Brillante', img: 'hongo_brillante',  mistica: true, rareza: 'comun',      alto: 30, nv: 1, precio: 0, anim: 'rebota', bono: '+10% de regeneración de vida y recurso',    desc: 'Rebota contento soltando esporas de luz.' },
+  lobo_sombrio:     { nombre: 'Cachorro Lobo Sombrío',    img: 'lobo_sombrio',     mira: -1, mistica: true, rareza: 'legendaria', alto: 34, nv: 1, precio: 0, anim: 'trota',  bono: '+18% de oro y experiencia de jefes',        desc: 'Trota con las runas del pelaje encendidas y aúlla ante los jefes.' },
+  fenix_esmeralda:  { nombre: 'Fénix Esmeralda y Oro',    img: 'fenix_esmeralda',  mira: -1, mistica: true, rareza: 'mitica',     alto: 36, nv: 1, precio: 0, anim: 'planea', vuela: true, bono: '+25% de oro de caza y escudo de racha diaria', desc: 'Planea dejando plumas de fuego. Si faltas un día, guarda tu racha (se recarga cada 7 días).' },
+  golem_cristal:    { nombre: 'Gólem de Cristal y Oro',   img: 'golem_cristal',    mistica: true, rareza: 'epica',      alto: 36, nv: 1, precio: 0, anim: 'flota',  vuela: true, bono: '+15% de bolsa (46 huecos)',        desc: 'Flota con sus piezas girando alrededor y carga con tu botín.' },
+  huevo:            { nombre: 'Huevo Místico de Duende',  huevo: true, alto: 22, nv: 1, precio: 0 },
+});
+export const MISTICAS = Object.keys(MASCOTAS).filter(k => MASCOTAS[k].mistica);
+// Incubar: puntos por actividad que valida el servidor, solo con el huevo equipado.
+// metas[n]: puntos del huevo n+1 (n = eclosiones ya hechas); despues, +extra cada uno.
+export const HUEVO = { caza: 1, jefe: 10, mision: 12, metas: [120, 400, 900], extra: 700 };
+export const metaHuevo = n => (n < HUEVO.metas.length ? HUEVO.metas[Math.max(0, n | 0)] : HUEVO.metas[HUEVO.metas.length - 1] + HUEVO.extra * (n - HUEVO.metas.length + 1));
+// Solo las mascotas de siempre salen de expedicion: una mistica o el huevo se quedan contigo (va el duendecillo explorador).
+export const mascotaViaja = id => !!(id && Object.hasOwn(MASCOTAS, id) && !MASCOTAS[id].mistica && !MASCOTAS[id].huevo);

@@ -616,6 +616,7 @@ async function pruebas() {
   await pruebasRankUnico();
   await pruebasVecinos2d();
   await pruebasCompanero();
+  await pruebasMascotasMisticas();
   await pruebasLlave();
   await pruebasHandoff();
   await pruebasCriaturas();
@@ -4550,6 +4551,152 @@ async function pruebasHandoff() {
     globalThis.fetch = fetchReal;
     for (const [k, v] of [['TELEGRAM_BOT_TOKEN', guardado.tok], ['ADMIN_TG_ID', guardado.adm], ['ADMIN_TELEGRAM_IDS', guardado.tgs], ['ADMIN_EMAILS', guardado.cor], ['CORREO_CONFIRMADO', guardado.conf]]) { if (v === undefined) delete mundo.env[k]; else mundo.env[k] = v; }
   }
+}
+
+async function pruebasMascotasMisticas() {
+  console.log('Huevo Místico y mascotas místicas');
+  const D = await import('../mmo/js/data.js');
+  const { PETS, bonoPet, ESCUDO_RACHA_DIAS } = await import('../functions/mmo/pets-config.js');
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT;
+  const azar = Math.random;
+  const conUltimos = s => { s.ultimos = k => s.ws.rec.filter(m => m.t === k); s.limpiar = () => { s.ws.rec.length = 0; }; return s; };
+  // ── Catálogo: 10 místicas, y el texto que ve el jugador dice lo mismo que la tabla del servidor ──
+  chequear(D.MISTICAS.length === 10 && Object.keys(PETS).length === 10 && D.MISTICAS.every(k => Object.hasOwn(PETS, k)), 'hay 10 místicas y las 10 tienen su bono en pets-config.js');
+  const pct = v => Math.round(v * 100) + '%';
+  chequear(D.MISTICAS.every(k => Object.values(PETS[k]).every(v => typeof v !== 'number' || D.MASCOTAS[k].bono.includes(pct(v)))), 'el texto de cada bono lleva el mismo porcentaje que la tabla del servidor');
+  chequear(/racha/.test(D.MASCOTAS.fenix_esmeralda.bono) && PETS.fenix_esmeralda.escudoRacha === true && D.MASCOTAS.golem_cristal.bono.includes(String(mundo.bolsaMax({ mascota: 'golem_cristal', mascotas: ['golem_cristal'] }))), 'el Fénix anuncia su escudo de racha y el Gólem los huecos reales de bolsa');
+  chequear(D.MISTICAS.every(k => D.MASCOTAS[k].img && Object.hasOwn(D.RAREZAS_MASCOTA, D.MASCOTAS[k].rareza) && D.MASCOTAS[k].precio === 0) && D.MASCOTAS.huevo.huevo === true, 'cada mística tiene imagen, rareza y no tiene precio');
+  chequear(bonoPet({ mascota: 'sapo_rey', mascotas: [] }, 'oro') === 0 && bonoPet({ mascota: 'hongo', mascotas: ['hongo'] }, 'oro') === 0 && bonoPet({ mascota: 'sapo_rey', mascotas: ['sapo_rey'] }, 'oro') === 0.12, 'una mística que no es tuya (o una mascota normal) no da bono');
+  chequear(D.metaHuevo(0) === 120 && D.metaHuevo(1) === 400 && D.metaHuevo(2) === 900 && D.metaHuevo(3) === 1600 && D.metaHuevo(4) === 2300, 'cada huevo pide más incubación que el anterior');
+  // ── Invitado: ni huevo ni místicas ──
+  const inv = conUltimos(await entrar('SinHuevo', 'e1c7'));
+  chequear(!inv.c.huevo && !inv.c.huevoDado && inv.c.mascota !== 'huevo' && mundo.datosPropios(inv).huevo === null, 'un invitado no recibe el Huevo Místico');
+  await inv.mandar({ t: 'comprar', k: 'mascota', id: 'huevo' });
+  chequear(inv.c.mascota !== 'huevo', 'ni puede llevar un huevo que no tiene');
+  ponerNivel(inv, 30, 'guerrero'); await aMapa(inv, 'pueblo', 900); inv.c.oro = 5000000; inv.limpiar();
+  await inv.mandar({ t: 'comprar', k: 'mascota', id: 'dragon_jade' });
+  chequear(!(inv.c.mascotas || []).includes('dragon_jade') && inv.c.oro === 5000000 && inv.ultimos('toast').some(x => /Huevo Místico/.test(x.m)), 'las místicas no se compran, ni con todo el oro');
+  // ── Cuenta registrada: recibe el huevo, y lo lleva puesto ──
+  const t = conUltimos(await entrarTg('Criadora', 77931));
+  await calma();
+  chequear(t.c.huevo && t.c.huevo.p === 0 && t.c.huevoDado === 1 && t.c.mascota === 'huevo', 'una cuenta registrada recibe el huevo y lo lleva puesto');
+  chequear(t.ultimos('toast').some(x => /Huevo Místico/.test(x.m)) && mundo.datosPropios(t).huevo.meta === D.metaHuevo(0), 'se lo avisa y ve la meta de incubación');
+  const v = conUltimos(await entrar('MiraHuevos', 'e2c8'));
+  ponerNivel(t, 12, 'mago'); ponerNivel(v, 12, 'mago');
+  await aMapa(t, 'noche', 600); await aMapa(v, 'noche', 640); limpiarMapa(t);
+  chequear(mundo.infoApariencia(t).ma === 'huevo', 'los demás ven el huevo a su lado');
+  const matar = (s, nv) => { const o = monstruo(s, 'goblin_normal', 30, { nv }); mundo.danar(o, o.hp + 1, s); tick(1); };
+  matar(t, 12);
+  chequear(t.c.huevo.p === D.HUEVO.caza, 'cazar un monstruo de su nivel incuba el huevo');
+  matar(t, 1);
+  chequear(t.c.huevo.p === D.HUEVO.caza, 'un monstruo gris (más de 10 niveles por debajo) no incuba');
+  await t.mandar({ t: 'comprar', k: 'mascota', id: '' });
+  chequear(t.c.mascota === '', 'el huevo se guarda desde cualquier sitio');
+  matar(t, 12);
+  chequear(t.c.huevo.p === D.HUEVO.caza, 'guardado no se incuba');
+  await t.mandar({ t: 'comprar', k: 'mascota', id: 'huevo' });
+  chequear(t.c.mascota === 'huevo', 'y se vuelve a llevar sin ir al Mercader');
+  t.dios = 'mod'; t.diosModo = { golpe: 1 };
+  matar(t, 12);
+  chequear(t.c.huevo.p === D.HUEVO.caza, 'con poderes de dios activos no se incuba');
+  t.dios = false; t.diosModo = null;
+  // Entregar una misión también incuba.
+  const p0 = t.c.huevo.p; t.c.mis = { i: 1, p: D.MISIONES[1].n };
+  mundo.mision(t, null, 'auto');
+  chequear(t.c.huevo.p === p0 + D.HUEVO.mision && t.c.mis.i === 2, 'entregar una misión incuba el huevo');
+  // ── Eclosión ──
+  t.c.huevo.p = D.metaHuevo(0) - 1; v.limpiar(); t.limpiar();
+  matar(t, 12);
+  const nacida = t.c.mascota;
+  chequear(D.MISTICAS.includes(nacida) && t.c.mascotas.includes(nacida) && t.c.eclos === 1, 'al llegar a la meta nace una mística y queda equipada (' + nacida + ')');
+  chequear(t.c.huevo && t.c.huevo.p === 0 && mundo.datosPropios(t).huevo.meta === D.metaHuevo(1), 'llega otro huevo, que pide más incubación');
+  chequear(v.ultimos('eclosion').some(x => x.id === t.id && x.m === nacida) && v.ultimos('pa').some(x => x.p === t.id && x.ma === nacida), 'los del mapa ven la eclosión y a la mascota nueva');
+  for (let i = 0; i < 9; i++) { t.c.mascota = 'huevo'; t.c.huevo.p = D.metaHuevo(t.c.eclos); mundo.huevoEclosionar(t); }
+  const mias = t.c.mascotas.filter(k => D.MISTICAS.includes(k));
+  chequear(mias.length === 10 && new Set(mias).size === 10 && t.c.eclos === 10, 'los 10 huevos dan las 10 místicas, sin repetir ninguna');
+  chequear(!t.c.huevo && mundo.datosPropios(t).huevo === null, 'con las 10 ya no llega otro huevo');
+  await t.mandar({ t: 'comprar', k: 'mascota', id: 'huevo' });
+  chequear(t.c.mascota !== 'huevo', 'y sin huevo no se puede llevar uno');
+  await t.mandar({ t: 'comprar', k: 'mascota', id: 'sapo_rey' });
+  await t.mandar({ t: 'comprar', k: 'mascota', id: 'dragon_jade' });
+  chequear(t.c.mascota === 'dragon_jade' && bonoPet(t.c, 'oro') === 0.2, 'solo una equipada: llevar otra reemplaza a la anterior (y su bono)');
+  // ── Los 10 bonos, calculados en el servidor ──
+  const gana = (id, op = {}) => {
+    t.c.mascota = id; t.c.seca = 0; t.limpiar();
+    Math.random = () => (op.azar === undefined ? 0.5 : op.azar);
+    const o = monstruo(t, 'goblin_normal', 30, { nv: 12 }); if (op.jefe) { o.jefe = true; o.dano = o.dano || new Map(); o.dano.set(t.id, o.hp); }
+    try { mundo.dar(t, 200, 1000, o, 1, true); } finally { Math.random = azar; }
+    mundo.mundoDe(t).mons.delete(o.id);
+    return t.ultimos('gana').pop();
+  };
+  const base = gana('');
+  chequear(base && base.oro === 1000, 'sin mascota, el oro de la caza no cambia');
+  chequear(gana('sapo_rey').oro === 1120, 'Sapo Rey: +12% de oro de caza');
+  chequear(gana('dragon_jade').oro === 1200, 'Dragón de Jade: +20% de oro de caza');
+  chequear(gana('fenix_esmeralda').oro === 1250, 'Fénix: +25% de oro de caza');
+  chequear(gana('hongo').oro === 1000, 'una mascota normal sigue sin dar nada');
+  const esc1 = gana('escarabajo_aureo', { azar: 0.07 }), esc2 = gana('escarabajo_aureo', { azar: 0.09 });
+  chequear(esc1.oro === 2000 && esc1.pd === 1 && esc2.oro === 1000 && !esc2.pd, 'Escarabajo Áureo: 8% de las cazas dan oro doble');
+  const mton0 = t.c.mton;
+  const jBase = gana('', { jefe: true }), jLobo = gana('lobo_sombrio', { jefe: true }), nLobo = gana('lobo_sombrio');
+  chequear(jLobo.oro === Math.round(jBase.oro * 1.18) && Math.abs(jLobo.xp / jBase.xp - 1.18) < 0.01 && nLobo.oro === 1000 && nLobo.xp === base.xp, 'Lobo Sombrío: +18% de oro y XP solo con jefes');
+  chequear(t.c.mton === mton0, 'y el bono de jefes no da mTON');
+  // Suerte: con el dado en 0,0615 sin gato no cae equipo (6%) y con gato sí (6,3%).
+  t.c.bolsa = [];
+  const sinGato = gana('', { azar: 0.0615 }), conGato = gana('gato_duende', { azar: 0.0615 });
+  chequear(!sinGato.item && !!conGato.item, 'Gato Duende: +5% de probabilidad de equipo');
+  // Regeneración (pueblo, zona segura): vida y maná un 10% más rápido.
+  await aMapa(t, 'pueblo', 900);
+  const regen = id => { t.c.mascota = id; t.hp = 1; t.rec = 0; t.golpeT = 0; t.gastoT = 0; tick(10); return [t.hp - 1, t.rec]; };
+  const r0 = regen(''), r1 = regen('hongo_brillante');
+  chequear(r0[0] > 0 && Math.abs(r1[0] / r0[0] - 1.1) < 0.02 && r0[1] > 0 && Math.abs(r1[1] / r0[1] - 1.1) < 0.02, 'Hongo Brillante: +10% de regeneración de vida y de maná (' + r0.map(x => Math.round(x)) + ' → ' + r1.map(x => Math.round(x)) + ')');
+  // XP de misiones.
+  t.c.mascota = 'buho_runas'; t.c.mis = { i: 2, p: D.MISIONES[2].n }; t.limpiar();
+  mundo.mision(t, null, 'auto');
+  chequear(t.ultimos('gana').some(x => x.xp === Math.round(D.MISIONES[2].xp * 1.15)) && mundo.xpMisionMascota({ mascota: '', mascotas: [] }, 1000) === 1000, 'Búho Sabio: +15% de XP al entregar una misión');
+  // Velocidad: el factor va en yo.mv y el presupuesto de mover lo respeta (ni más ni menos).
+  await aMapa(t, 'noche', 400);
+  const mueve = id => { t.c.mascota = id; t.montado = null; t.x = 400; t.y = SUELO; t.movBud = undefined; t.movT = reloj; mundo.mover(t, { x: 400 + 437, y: SUELO, f: 1, a: 1, sq: t.snapN || 0 }); return Math.round(t.x); };
+  chequear(mundo.datosPropios(t).mv === 1 && mueve('') === 400, 'sin Zorro, un paso de 437 px se corrige');
+  t.c.mascota = 'zorro_mistico';
+  chequear(Math.abs(mundo.datosPropios(t).mv - 1.1) < 1e-9 && mueve('zorro_mistico') === 837, 'Zorro Místico: +10% de velocidad, vigilada por el servidor');
+  // Bolsa.
+  t.c.mascota = 'golem_cristal';
+  chequear(mundo.bolsaMax(t.c) === 46 && mundo.datosPropios(t).bmax === 46, 'Gólem de Cristal: la bolsa pasa de 40 a 46 huecos');
+  t.c.bolsa = Array.from({ length: 40 }, () => mundo.nuevoItem(12, 0));
+  mundo.darItem(t, mundo.nuevoItem(12, 0), true);
+  chequear(t.c.bolsa.length === 41, 'con el Gólem cabe la pieza 41');
+  t.c.mascota = ''; t.c.bolsa.length = 40;
+  mundo.darItem(t, mundo.nuevoItem(12, 0), true);
+  chequear(t.c.bolsa.length === 40 && mundo.bolsaMax(t.c) === 40, 'sin él, la bolsa llena sigue siendo de 40');
+  t.c.bolsa = [];
+  // Escudo de racha del Fénix.
+  const hoy = D.hoyUTC(), anteayer = new Date(Date.parse(hoy) - 2 * 86400000).toISOString().slice(0, 10);
+  const racha = (id, r, amu) => { t.c.mascota = id; t.c.salida = 0; t.c.login = { d: anteayer, racha: r, total: 9, max: r, amu }; return mundo.procesarLogin(t); };
+  t.c.petEscudoT = 0;
+  const f1 = racha('fenix_esmeralda', 3, 1);
+  chequear(f1 && f1.racha === 4 && f1.fenix === 1 && t.c.login.amu === 1, 'Fénix: si faltas un día la racha sigue y no gasta el protector');
+  const f2 = racha('fenix_esmeralda', 4, 1);
+  chequear(f2 && f2.racha === 5 && !f2.fenix && t.c.login.amu === 0, 'el escudo se recarga cada ' + ESCUDO_RACHA_DIAS + ' días: antes de eso se gasta el protector');
+  const f3 = racha('', 5, 0);
+  chequear(f3 && f3.racha === 4, 'sin Fénix ni protector, la racha retrocede como siempre');
+  // ── Expediciones: una mística no viaja (va el duendecillo, sin el +15%) y sigue a tu lado ──
+  ponerNivel(t, 20, 'mago');
+  t.c.mascota = 'sapo_rey'; t.c.exped = null;
+  await t.mandar({ t: 'exped', h: 4 });
+  chequear(t.c.exped && t.c.exped.m === 0 && mundo.infoApariencia(t).ma === 'sapo_rey', 'una mística no se va de expedición: sale el duendecillo y ella sigue contigo');
+  t.c.exped = null; t.c.mascotas.push('hongo'); t.c.mascota = 'hongo';
+  await t.mandar({ t: 'exped', h: 4 });
+  chequear(t.c.exped && t.c.exped.m === 1 && mundo.infoApariencia(t).ma === '', 'una mascota normal sí sale (y no se ve mientras tanto)');
+  t.c.exped = null;
+  // ── Volver a entrar no regala otro huevo; un personaje con datos tocados se arregla ──
+  await dejar(t);
+  const t2 = conUltimos(await entrarTg('Criadora', 77931));
+  chequear(!t2.c.huevo && t2.c.eclos === 10 && !t2.ultimos('toast').some(x => /Recibiste un Huevo/.test(x.m)), 'al volver a entrar no se entrega otro huevo');
+  const roto = { uid: 'web:roto', mascota: 'fenix_esmeralda', mascotas: [], huevoDado: 1, huevo: 'x' };
+  mundo.huevoAlEntrar(roto);
+  chequear(roto.mascota === '' && roto.huevo && roto.huevo.p === 0, 'una mística equipada que no es suya se guarda sola al entrar');
+  for (const x of [inv, v, t2]) await dejar(x);
 }
 
 async function pruebasCompanero() {

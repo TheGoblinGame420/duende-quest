@@ -8,7 +8,7 @@
 // que jugar esas horas. Nunca mTON.
 // c.exped = { h, ini, fin, nv }   (nv: tu nivel al salir, fija el premio)
 // ═══════════════════════════════════════════════════════
-import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
+import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS, mascotaViaja, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
 
 export const Expediciones = {
   expedicion(s, m) {
@@ -50,9 +50,9 @@ export const Expediciones = {
     if (c.nivel < EXPEDICION.nv) return this.no(s, `Las expediciones se abren a nivel ${EXPEDICION.nv}.`);
     if (c.exped) return this.no(s, c.exped.fin <= ahora ? 'Recoge antes la expedición que ya volvió.' : 'Ya tienes una expedición en camino.');
     const d = typeof m.d === 'string' && Object.hasOwn(EXPEDICION.destinos, m.d) ? m.d : 'bosque';
-    c.exped = { h, d, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel, m: c.mascota && MASCOTAS[c.mascota] ? 1 : 0 };
+    c.exped = { h, d, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel, m: mascotaViaja(c.mascota) ? 1 : 0 };   // una mística o el huevo no viajan: va el duendecillo
     s.sucio = true;
-    const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
+    const quien = mascotaViaja(c.mascota) ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
     this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición ${EXPEDICION.destinos[d].a}: vuelve en ${h < 1 ? Math.round(h * 60) + ' min' : h + ' h'}. ${c.en3d ? 'Recógela tocando 🧭 en tus misiones.' : 'Recógela en el registro de misiones.'}` });
     this.actualizarYo(s);

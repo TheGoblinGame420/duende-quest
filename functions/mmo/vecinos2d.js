@@ -57,6 +57,7 @@ export const Vecinos2D = {
     // Cumplido: se cobra aquí.
     v2[q.id] = true; s.sucio = true;
     const pr = premioVecino(q, c.nivel, zona);
+    pr.xp = this.xpMisionMascota(c, pr.xp);   // Búho Sabio
     c.oro += pr.oro;
     this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [] });
     this.sumarXp(s, pr.xp);

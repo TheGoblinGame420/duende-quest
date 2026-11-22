@@ -396,7 +396,7 @@ export const Eventos = {
     let pociones = 0;
     if (lleno && Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
     let item = null;
-    if (lleno && Math.random() < T.equipo) {
+    if (lleno && Math.random() < T.equipo * (1 + this.bonoMascota(c, 'suerte'))) {   // Gato Duende: +suerte en cofres
       item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), T.r));
     }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;

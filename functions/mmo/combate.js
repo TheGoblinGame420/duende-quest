@@ -666,7 +666,7 @@ export const Combate = {
     const cl = CLASES[s.c.clase];
     if (cl) {
       const max = s.st.recMax;
-      const sab = 1 + talento(s.c, 'sabiduria');
+      const sab = (1 + talento(s.c, 'sabiduria')) * (1 + this.bonoMascota(s.c, 'regen'));   // Hongo Brillante: +regeneración del recurso
       if (cl.recurso === 'mana') {
         // La regla de los 5 segundos de WoW: el mana vuelve rapido si llevas
         // 5 s sin gastar, y casi nada mientras lanzas sin parar.

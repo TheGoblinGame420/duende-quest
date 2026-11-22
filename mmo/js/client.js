@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, anotarMisSkins, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, RAREZAS_MASCOTA, MISTICAS, mascotaViaja, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, atencionAhora, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -28,6 +28,8 @@ import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFre
 import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=402';
 import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=402';
 import { franjaInstalar } from '/js/instalar.js?v=402';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=402';   // ventana de mascotas místicas (la misma en ORIGINS)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -430,6 +432,8 @@ const TONOS = {
   red:     [['sine', 900, 260, .2, .06], ['triangle', 500, 180, .16, .03, .04]],
   captura: [['triangle', 523, 523, .09, .1], ['triangle', 784, 784, .09, .1, .09], ['triangle', 1047, 1047, .09, .1, .18], ['sine', 1568, 1568, .35, .06, .27]],
   escapa:  [['square', 330, 110, .22, .05], ['sine', 220, 90, .2, .05, .06]],
+  // Huevo Místico: el cascarón que cruje y la fanfarria de la mascota que nace.
+  eclosion: [['square', 180, 90, .08, .05], ['sine', 440, 880, .22, .07, .08], ['triangle', 659, 659, .1, .1, .26], ['triangle', 880, 880, .1, .1, .36], ['triangle', 1319, 1319, .12, .1, .46], ['sine', 1760, 1760, .5, .06, .58]],
 };
 const tonoUltimo = {};
 function tono(k) {
@@ -743,6 +747,7 @@ function recibir(m) {
         if ($('m-mision').classList.contains('on')) pintarMision();
         if ($('m-tienda').classList.contains('on')) pintarTienda();
         if ($('m-inv').classList.contains('on')) pintarInventario();
+        if ($('m-mm').classList.contains('on')) pintarMisticas();
         // #premium con otra ventana abierta al entrar: se reintenta tras la caza (antes lo hacia el 'yo')
         if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);
       }
@@ -772,6 +777,7 @@ function recibir(m) {
       if (recInv && antes && yo.nivel > antes.nivel) recInv.subio(yo.nivel);
       if (!recInv && antes && yo.nivel > antes.nivel && soyInvitado && [3, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador y tus cazas no suman puntos de chicha. Si quieres guardarlo y que sumen, pulsa ' + ($('hud').classList.contains('estrecho') ? '⋯ → el botón de cuenta' : 'el botón de cuenta (arriba)') + ': es gratis con tu correo, y ahí también puedes pasarlo a Telegram.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
+      if ($('m-mm').classList.contains('on')) pintarMisticas();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
@@ -791,6 +797,7 @@ function recibir(m) {
       break;
     case 'ms': agregarMon(m.m); break;
     case 'capt': efectoCaptura(m); break;
+    case 'eclosion': efectoEclosion(m); break;   // nacio una mascota mística (functions/mmo/mascotas.js)
     case 'v2': vec2 = m.l || {}; if ($('m-vec').classList.contains('on') && vecAbierto) pintarVecino(); break;
     case 'v2fin': efectoVecino(m); break;
     case 'cri': criaturas = m; if ($('m-cri').classList.contains('on')) pintarCriaturas(); break;
@@ -834,6 +841,8 @@ function recibir(m) {
       else if (m.chl) flotante(m.x - 18, m.y - 44, '🔒 🥤 desde Nv ' + CHICHA.nvPuntos + (TG || !soyInvitado ? '' : ' con cuenta'), '#a8a2b8', 8);   // candado de la chicha (primeras cazas con Nv < 10)
       if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe() || TEMPORADAS[0]; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
+      if (m.oro > 0 && P.pet && P.pet.mist) { P.pet.sal = performance.now() + 420; if (m.pd || m.item) P.pet.giro = performance.now() + 520; }   // la mística salta (y gira con oro doble o botín)
+      if (m.pd) flotante(m.x, m.y - 14, '¡Oro doble!', '#f5c84c', 11);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       if (m.item) {
         const rz = RAREZAS[m.item.r];
@@ -1341,7 +1350,7 @@ function fisica() {
   const izq = !congelado() && (teclas.ArrowLeft || teclas.KeyA || tIzq);
   const der = !congelado() && (teclas.ArrowRight || teclas.KeyD || tDer);
   let obj = 0;
-  const vel = FIS.vel * velMontura(yo.montado) * (1 + talento(yo, 'agilidad')) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  const vel = FIS.vel * velMontura(yo.montado) * (1 + talento(yo, 'agilidad')) * (yo.mv || 1) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   if (izq) obj -= vel; if (der) obj += vel;
   if (obj) P.f = obj > 0 ? 1 : -1;
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
@@ -1689,6 +1698,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyL' && $('m-mision').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyI' && $('m-inv').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyU' && $('m-cri').classList.contains('on')) cerrarModales();   // como P, O, M y L: la misma tecla abre y cierra
+    if (e.code === 'KeyN' && $('m-mm').classList.contains('on')) cerrarModales();
     return;
   }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
@@ -1712,6 +1722,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR') volverAlPueblo();
   if (e.code === 'KeyC') capturar();
   if (e.code === 'KeyU') abrirCriaturas();
+  if (e.code === 'KeyN') abrirMisticas();
   if (e.code === 'Escape') objetivo = null;
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
   if (/^Digit[1-8]$/.test(e.code)) usarHab(+e.code.slice(5) - 1);
@@ -1941,6 +1952,37 @@ $('cri-lista').addEventListener('click', e => {
   }
 });
 $('b-cri').onclick = abrirCriaturas;
+
+// ── MASCOTAS MÍSTICAS Y HUEVO MÍSTICO ──
+// La ventana la pinta js/mascotas-ui.js (compartida con ORIGINS). Equipar usa el
+// 'comprar' de las mascotas de siempre; el servidor decide (functions/mmo/mascotas.js).
+function abrirMisticas() {
+  if (!yo) return;
+  abrir('m-mm');
+  pintarMisticas();
+}
+function pintarMisticas() {
+  $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA });
+}
+$('mm-cuerpo').addEventListener('click', e => {
+  if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrarModales(); abrirCuenta(); } })) sfx('boton', .3);
+});
+$('b-mm').innerHTML = HUEVO_SVG;
+$('b-mm').onclick = abrirMisticas;
+// Nace una mascota (la mia o la de otro del mapa): chispas, destello, su nombre y la fanfarria.
+function efectoEclosion(m) {
+  const mia = m.id === miId, q = mia ? P : otros.get(m.id), ma = MASCOTAS[m.m];
+  if (!q || !ma) return;
+  const x = q.pet ? q.pet.x : q.x - (q.f || 1) * 36, y = (q.pet ? q.pet.y : q.y) - 16;
+  for (let i = 0; i < (ligero ? 14 : 36); i++) particula(x, y, i % 3 === 0 ? '#f5c84c' : i % 3 === 1 ? '#6df5bd' : '#ffffff', 4.2);
+  flotante(x, y - 34, '¡' + ma.nombre + '!', (RAREZAS_MASCOTA[ma.rareza] || {}).color || '#f5c84c', mia ? 13 : 10);
+  q.petNace = performance.now();   // destello en dibujarMistica
+  if (mia) {
+    tono('eclosion');
+    pausaGolpe = Math.max(pausaGolpe, performance.now() + 90); sacudir = Math.max(sacudir || 0, 5);
+    if (TG && TG.HapticFeedback) vibrar('success'); else if (vibModo() !== 'off') try { navigator.vibrate && navigator.vibrate([20, 50, 20, 50, 60]); } catch (e) {}
+  }
+}
 
 const FRASES = ['¡Hola!', '¿Hacemos grupo?', '¿Alguien para mazmorra?', 'Gracias', 'Bien jugado', 'Necesito ayuda aquí', 'Me voy, nos vemos'];
 let altoChat = 0, tecladoVisto = false;
@@ -3852,7 +3894,7 @@ function pintarEquipo() {
     const cj = CONJUNTOS[id];
     h += `<p class="centro" style="margin:4px 0;font-size:12px;color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? 'bono completo' : pz[id] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span style="color:var(--txt2)">${esc(textoConjunto(cj))}</span></p>`;
   }
-  h += `<p class="centro" style="margin:6px 0">Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
+  h += `<p class="centro" style="margin:6px 0">Bolsa ${bolsa.length}/${yo.bmax || BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
   const comunes = bolsa.filter(x => x.r === 0);
   // Lo mejor de la bolsa para cada ranura (que se pueda usar a tu nivel).
   const mejoras = Object.keys(RANURAS).map(k => {
@@ -5038,14 +5080,106 @@ function escalonarEtiquetas() {
 }
 // Mascota: sigue al duende con retraso, a su espalda (las que vuelan, a la
 // altura de la cabeza). El estado va en el propio duende (q.pet).
-function dibujarMascota(q, id, f, pies, montado) {
+// Imagen de una mística (96 px, /assets/mascotas/<img>_s.webp): se pide una vez; null mientras carga.
+const _imgMist = {};
+function imgMistica(nombre) {
+  let im = _imgMist[nombre];
+  if (!im) { im = _imgMist[nombre] = new Image(); im.decoding = 'async'; im.src = '/assets/mascotas/' + nombre + '_s.webp'; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+// El Huevo Místico, dibujado (esmeralda con vetas de oro). prog 0..1: cuanto mas incubado, mas brilla y mas se mece.
+function dibujarHuevo(alto, prog, t) {
+  const w = alto * .76, h = alto;
+  if (!ligero) {
+    const r = alto * (.9 + prog * .7), a = .16 + prog * .3 + Math.sin(t * 3) * .05;
+    const gr = g.createRadialGradient(0, -h * .5, 1, 0, -h * .5, r);
+    gr.addColorStop(0, 'rgba(111,248,192,' + a.toFixed(3) + ')'); gr.addColorStop(1, 'rgba(111,248,192,0)');
+    g.fillStyle = gr; g.fillRect(-r, -h * .5 - r, r * 2, r * 2);
+  }
+  g.beginPath(); g.moveTo(0, -h); g.bezierCurveTo(w * .62, -h, w * .6, 0, 0, 0); g.bezierCurveTo(-w * .6, 0, -w * .62, -h, 0, -h); g.closePath();
+  const cu = g.createRadialGradient(-w * .16, -h * .68, 1, 0, -h * .45, h * .7);
+  cu.addColorStop(0, '#b6ffe0'); cu.addColorStop(.35, '#22e39a'); cu.addColorStop(.8, '#0a8457'); cu.addColorStop(1, '#064e3b');
+  g.fillStyle = cu; g.fill();
+  g.lineWidth = 1.5; g.strokeStyle = '#03150d'; g.stroke();
+  g.save(); g.clip();
+  g.strokeStyle = '#f5c84c'; g.lineWidth = 1.3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-w * .5, -h * .5); g.quadraticCurveTo(-w * .2, -h * .62, 0, -h * .5); g.quadraticCurveTo(w * .22, -h * .38, w * .5, -h * .5); g.stroke();
+  g.beginPath(); g.moveTo(-w * .5, -h * .26); g.quadraticCurveTo(-w * .15, -h * .34, w * .05, -h * .24); g.quadraticCurveTo(w * .3, -h * .16, w * .5, -h * .26); g.stroke();
+  g.fillStyle = '#ffe08a'; g.fillRect(-w * .18, -h * .8, 2, 2); g.fillRect(w * .16, -h * .7, 2, 2); g.fillRect(w * .02, -h * .4, 2, 2);
+  // Casi a punto: grietas de luz.
+  if (prog > .75) { g.strokeStyle = 'rgba(255,255,255,' + (.5 + Math.sin(t * 9) * .3).toFixed(2) + ')'; g.lineWidth = 1; g.beginPath(); g.moveTo(-w * .12, -h * .95); g.lineTo(w * .04, -h * .78); g.lineTo(-w * .06, -h * .66); g.lineTo(w * .1, -h * .52); g.stroke(); }
+  g.restore();
+}
+// Mística o huevo: te sigue con retraso y a un lado (sin colisión), respira, se mueve a su manera
+// (ma.anim) y deja una estela esmeralda y oro. El estado va en q.pet (mist = true).
+function dibujarMistica(q, id, ma, f, pies, montado, esYo) {
+  const ahora = performance.now(), t = ahora / 1000 + (q.id || 0) * .37;
+  const an = ma.huevo ? 'huevo' : ma.anim;
+  const lado = montado ? 66 : 38;
+  let objX = q.x - f * lado, objY = pies;
+  if (an === 'vuela') { objX = q.x - f * 12 + Math.cos(t * 1.7) * 22; objY = pies - 74 + Math.sin(t * 3.4) * 5; }   // círculos sobre el hombro
+  else if (an === 'planea') objY = pies - 62 + Math.sin(t * 1.5) * 9;
+  else if (an === 'flota') objY = (ma.vuela ? pies - 50 : pies - 7) + Math.sin(t * 2.3) * 4;
+  const p = q.pet || (q.pet = { x: objX, y: objY, f, t: ahora });
+  if (p.id !== id || Math.abs(p.x - objX) > 500) { p.id = id; p.x = objX; p.y = objY; p.sal = 0; p.giro = 0; }
+  p.mist = true;
+  const dx = objX - p.x, k = Math.min(3, (ahora - (p.t || ahora)) / 16.7);
+  p.t = ahora;
+  p.x += dx * (1 - Math.pow(.9, k)); p.y += (objY - p.y) * (1 - Math.pow(.84, k));
+  if (an === 'vuela') p.f = -Math.sin(t * 1.7) > 0 ? 1 : -1;
+  else if (Math.abs(dx) > 2) p.f = dx > 0 ? 1 : -1;
+  else if (Math.abs(q.x - p.x) > 4) p.f = q.x > p.x ? 1 : -1;
+  const anda = Math.abs(dx) > 3;
+  const prog = ma.huevo ? (esYo && yo && yo.huevo ? Math.min(1, yo.huevo.p / Math.max(1, yo.huevo.meta)) : .3) : 0;
+  // Respiración + el paso de cada una.
+  const resp = Math.sin(t * 2.4);
+  let oy = 0, sx = 1 - resp * .015, sy = 1 + resp * .03, rot = 0;
+  if (an === 'salta') { const c = (t * (anda ? 2.6 : 1.05)) % 1, s = Math.sin(Math.min(1, c * 1.5) * Math.PI); oy = -s * (anda ? 15 : 5); if (c > .68) { sy *= .88; sx *= 1.1; } }
+  else if (an === 'rebota') { const c = Math.abs(Math.sin(t * (anda ? 6 : 3.3))); oy = -c * (anda ? 10 : 5); sy *= .9 + c * .14; sx *= 1.07 - c * .09; }
+  else if (an === 'corre' || an === 'trota' || an === 'camina') { if (anda) { const v = an === 'corre' ? 14 : an === 'trota' ? 10.5 : 7.5; oy = -Math.abs(Math.sin(t * v)) * (an === 'camina' ? 2 : 4.5); rot = Math.sin(t * v) * (an === 'camina' ? .04 : .07); } }
+  else if (an === 'planea') rot = Math.sin(t * 1.5) * .08;
+  else if (an === 'huevo') { rot = Math.sin(t * 2.2) * (.07 + prog * .16); oy = -Math.abs(Math.sin(t * 2.2)) * (1 + prog * 2); }
+  // Alegría: salto al ganar oro; giro con oro doble o botín.
+  if (p.sal > ahora) oy -= Math.sin((1 - (p.sal - ahora) / 420) * Math.PI) * 16;
+  if (p.giro > ahora) sx *= Math.cos((1 - (p.giro - ahora) / 520) * Math.PI * 2);
+  const x = Math.round(p.x - camX), y = Math.round(p.y + oy), alto = ma.huevo ? ma.alto : Math.round(ma.alto * 1.15);
+  // Estela esmeralda y oro (ninguna en modo ligero).
+  if (!ligero && (anda || ma.vuela || an === 'flota') && frame % (anda ? 7 : 16) === 0) particula(p.x + (Math.random() - .5) * alto * .5, p.y + oy - alto * (.2 + Math.random() * .5), frame % 14 === 0 ? 'rgba(245,200,76,.85)' : 'rgba(109,245,189,.8)', .5);
+  // Sombra de las que van por el suelo.
+  if (!ma.vuela && an !== 'flota') { g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x, Math.round(p.y) + 1, alto * .3 * (1 + oy / 60), 2.5, 0, 0, Math.PI * 2); g.fill(); }
+  g.save();
+  g.translate(x, y); if (rot) g.rotate(rot);
+  if (ma.huevo) { g.scale(sx, sy); dibujarHuevo(alto, prog, t); }
+  else {
+    const im = imgMistica(ma.img);
+    // Aura suave (el arte ya trae su halo); se salta en modo ligero.
+    if (!ligero) { const r = alto * .85, gr = g.createRadialGradient(0, -alto * .5, 1, 0, -alto * .5, r); gr.addColorStop(0, 'rgba(111,248,192,.20)'); gr.addColorStop(1, 'rgba(111,248,192,0)'); g.fillStyle = gr; g.fillRect(-r, -alto * .5 - r, r * 2, r * 2); }
+    if (im) {
+      g.scale(sx * p.f * (ma.mira || 1), sy);
+      const sm = g.imageSmoothingEnabled;   // el lienzo es pixel art: se suaviza solo este dibujo
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+      g.drawImage(im, -alto / 2, -alto, alto, alto);
+      g.imageSmoothingEnabled = sm;
+    }
+  }
+  g.restore();
+  // Recién nacida: un anillo de luz que se abre.
+  if (q.petNace) {
+    const c = (ahora - q.petNace) / 700;
+    if (c >= 1) q.petNace = 0;
+    else { g.strokeStyle = 'rgba(245,200,76,' + (1 - c).toFixed(2) + ')'; g.lineWidth = 2.5 * (1 - c) + .5; g.beginPath(); g.arc(x, y - alto * .5, 6 + c * 46, 0, Math.PI * 2); g.stroke(); }
+  }
+}
+function dibujarMascota(q, id, f, pies, montado, esYo) {
   const ma = MASCOTAS[id];
   if (!ma) return;
+  if (ma.img || ma.huevo) return dibujarMistica(q, id, ma, f, pies, montado, esYo);
   const hm = HOJAS[ma.hoja];
   if (!hm) return;
   const objX = q.x - f * (montado ? 64 : 34), objY = ma.vuela ? pies - 62 + Math.sin(frame * .07) * 6 : pies;
   const ahora = performance.now();
   const p = q.pet || (q.pet = { x: objX, y: objY, f, t: ahora });
+  p.mist = false; p.id = id;
   if (Math.abs(p.x - objX) > 500) { p.x = objX; p.y = objY; }
   const dx = objX - p.x;
   // Mismo ritmo con 60 o con 20 FPS: el paso depende del tiempo pasado.
@@ -5143,8 +5277,8 @@ function dibujarDuende(q, esYo) {
     dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, mo.tinte || null, false);
   }
   const piesOrig = pies;
-  const masc = esYo ? (yo.exped ? '' : yo.mascota) : q.ma;   // de expedicion no se ve
-  if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig, !!mo);
+  const masc = esYo ? (yo.exped && mascotaViaja(yo.mascota) ? '' : yo.mascota) : q.ma;   // de expedicion no se ve (las místicas y el huevo no viajan)
+  if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig, !!mo, esYo);
   // Criatura compañera (la primera del equipo): va al otro lado, con su apodo.
   const comp = esYo ? companeroPropio() : q.cc;
   if (comp && !muerto && !(fl & FJ.sigilo) && !instancia) dibujarCompanero(q, comp, f, piesOrig, !!masc || !!mo);
@@ -5688,18 +5822,18 @@ function cajaSugerencias() {
 function cajaExpedicion() {
   if (!yo || yo.nivel < EXPEDICION.nv) return '';
   const ex = yo.exped;
-  const quien = yo.mascota && MASCOTAS[yo.mascota] ? MASCOTAS[yo.mascota].nombre : 'Un duendecillo explorador';
+  const quien = mascotaViaja(yo.mascota) ? MASCOTAS[yo.mascota].nombre : 'Un duendecillo explorador';
   let h = '<div class="mis-caja"><b>Expedición</b>';
   if (!ex) {
     let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
     if (!EXPEDICION.destinos[dest]) dest = 'bosque';
-    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} explora mientras no juegas y vuelve con oro, experiencia y el doble de materiales de su destino${yo.mascota && MASCOTAS[yo.mascota] ? '; con tu mascota, +15% de oro' : '. Con una mascota (Mercader), +15% de oro'}.</p>`;
+    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} explora mientras no juegas y vuelve con oro, experiencia y el doble de materiales de su destino${mascotaViaja(yo.mascota) ? '; con tu mascota, +15% de oro' : '. Con una mascota (Mercader), +15% de oro'}.</p>`;
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px;white-space:normal;line-height:1.25"><img src="${A}items/equipo/${MATERIALES[d.mat].icono}.png" alt="" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px">${esc(d.nombre)}<br><small>×${d.mat === 'pescado' ? 3 : 2} ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
     // La de 15 min (EXPEDICION.primera) solo hasta recoger la primera; la de 12 h es la de noche.
     const horasEx = (yo.expediciones ? [] : [EXPEDICION.primera]).concat(EXPEDICION.horas);
     for (const hh of horasEx) {
-      const pr = premioExpedicion(hh, yo.nivel, dest); if (yo.mascota && MASCOTAS[yo.mascota]) pr.oro = Math.round(pr.oro * 1.15);
+      const pr = premioExpedicion(hh, yo.nivel, dest); if (mascotaViaja(yo.mascota)) pr.oro = Math.round(pr.oro * 1.15);
       const etiqueta = hh < 1 ? Math.round(hh * 60) + ' min' : hh >= 12 ? '🌙 Noche · ' + hh + ' h' : hh + ' h';
       let vuelta = ''; try { vuelta = new Date(Date.now() + hh * 3600000).toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Lima' }); } catch (e) {}
       h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px;white-space:normal;line-height:1.25">${etiqueta}<br><small>🪙 ${pr.oro.toLocaleString('es', { useGrouping: 'always' })}${hh >= 8 ? ' · 💎1' : ''}${vuelta ? '<br>vuelve ' + esc(vuelta) : ''}</small></button>`;
@@ -6117,6 +6251,7 @@ function pintarTienda() {
     if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">Volver al color de mi clase</button>`;
   } else if (tabTienda === 'mascota') {
     for (const [id, ma] of Object.entries(MASCOTAS)) {
+      if (ma.mistica || ma.huevo) continue;   // las místicas nacen de un huevo: tienen su ventana (N)
       const tiene = (yo.mascotas || []).includes(id);
       if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // las del ambulante, en su pestaña; la del pase no se vende
       const ico = `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`;

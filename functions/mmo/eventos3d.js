@@ -488,7 +488,7 @@ export const Eventos3D = {
     let item = null;
     // Rareza minima segun el cofre 3D: el epico suelta Raro o mas y el legendario Epico o mas (muy bajo para la zona: la de siempre).
     const rMin3 = bajo ? T.r : ({ comun: 0, epico: 1, legendario: 2 }[cf.tipo] ?? T.r);
-    if (lleno && Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), rMin3)); }
+    if (lleno && Math.random() < X.equipo * (1 + this.bonoMascota(c, 'suerte'))) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), rMin3)); }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
     this.progresoTarea && this.progresoTarea(s, 'cofre');
     this.enviar(s, { t: 'cofre3A', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item: item ? { r: item.r, nombre: nombreItem(item), id: item.id, s: item.s, nv: item.nv, b: item.b, cj: item.cj, vendido: item.vendido } : null, tipo: cf.tipo });
