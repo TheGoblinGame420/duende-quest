@@ -532,7 +532,7 @@ export const Mazmorras = {
     // Solo quien pego o curo; y sin bolsa llena (no se vende solo ni se
     // gasta la semana): asi se puede volver a intentar.
     if (!participo) { this.enviar(s, { t: 'toast', m: `Para el botín de ${MONSTRUOS[o.k].nombre} hay que pelear (golpear o curar).` }); return null; }
-    if ((c.bolsa || []).length >= BOLSA_MAX && !(c.bolsa || []).some(x => !x.cj && !x.banda)) { this.enviar(s, { t: 'toast', m: '🎒 Bolsa llena: haz sitio para cobrar el botín de la banda (sigue disponible esta semana).' }); return null; }
+    if ((c.bolsa || []).length >= this.bolsaMax(c) && !(c.bolsa || []).some(x => !x.cj && !x.banda)) { this.enviar(s, { t: 'toast', m: '🎒 Bolsa llena: haz sitio para cobrar el botín de la banda (sigue disponible esta semana).' }); return null; }
     b.j[o.k] = 1;
     const it = this.generarItem(botinBandaNv(o.final), o.final && Math.random() < 0.15 ? 3 : 2);
     it.des = 1;

@@ -34,7 +34,7 @@ export const Encargos = {
   cumplirEncargo(s, zona, e) {
     const c = s.c, nvZ = ((MAPAS[zona] || {}).nv || [1])[0];
     c.enc[e.id] = true;
-    const xp = Math.max(10, Math.round(xpParaSubir(c.nivel) * 0.06)), oro = oroEncargo(nvZ);
+    const xp = this.xpMisionMascota(c, Math.max(10, Math.round(xpParaSubir(c.nivel) * 0.06))), oro = oroEncargo(nvZ);   // Búho Sabio
     c.oro += oro;
     const subio = this.sumarXp(s, xp);
     this.enviar(s, { t: 'gana', xp, oro, drops: [] });

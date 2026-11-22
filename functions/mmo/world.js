@@ -20,7 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, PAGO_LOCAL, pagoLocalActivo, YAPE_VIGENCIA_MS, textoPagoRecibido, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE, TEMP_META,
-  TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
+  TINTES, MASCOTAS, mascotaViaja, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, costoReparacion, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
@@ -65,6 +65,7 @@ import { ChichaWars } from './chichawars.js';
 import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
 import { instalarGrupo } from './grupo.js';
+import { MascotasMisticas } from './mascotas.js';
 
 const MAX_JUGADORES = 300;
 const VISTA_2D = 1100, TOPE_2D = 40, LEJOS_2D = 450;   // px y filas: la foto 2D con mucha gente solo lleva a los cercanos
@@ -863,6 +864,8 @@ export class MmoWorld {
     c.forja = c.forja || {};
     c.mton = c.mton || 0; c.mtonTotal = c.mtonTotal || 0; c.wallet = c.wallet || null;
     c.eq = c.eq || {}; c.bolsa = c.bolsa || []; c.logros = c.logros || []; c.titulo = c.titulo || ''; c.mundiales = c.mundiales || 0;
+    // Huevo Místico (mascotas.js): el primero, solo a cuentas registradas (nunca a un invitado).
+    s.huevoNuevo = this.huevoAlEntrar(c);
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!Object.hasOwn(CLASES, c.clase || '')) c.clase = null;
     // Skin o arma que ya no existe en data.js (renombrada, quitada o de una copia vieja): se vuelve a la basica.
@@ -978,6 +981,7 @@ export class MmoWorld {
       this.refrescarApariencia(s);
     }).catch(e => console.error('[MMO skinsPagadas]', e));
     if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); if (this.puntoPase) this.puntoPase(s, PASE.puntos.login); }   // titulos de racha 7/14/21; entrar suma al pase (1 vez al dia)
+    if (s.huevoNuevo) { s.huevoNuevo = false; this.enviar(s, { t: 'toast', ok: true, m: '🥚 Recibiste un Huevo Místico de Duende por tener cuenta. Llévalo contigo: se incuba cazando y cumpliendo misiones.' }); }
     if (login && login.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
@@ -2110,6 +2114,9 @@ export class MmoWorld {
     let amu = Math.max(0, Math.min(2, L.amu || 0)), amuUsado = 0;
     // Con la semana recien cumplida (7, 14...) faltar un dia ya pasa a la siguiente: no se gasta.
     const semanaCumplida = (L.racha || 0) >= 7 && (L.racha || 0) % 7 === 0;
+    // Fénix Esmeralda (mascotas.js): su escudo guarda la racha antes de gastar un protector (una vez cada 7 días).
+    let fenix = 0;
+    if (!seguido && L.d === anteayer && !semanaCumplida && this.escudoRacha(c)) { seguido = true; fenix = 1; }
     if (!seguido && L.d === anteayer && amu > 0 && !semanaCumplida) { seguido = true; amu--; amuUsado = 1; }
     // La racha crece sin tope (dia 8 = semana 2, dia 1): una guardada de 7 pasa a 8.
     // Falta UN dia: hasta el 6 retrocede uno; desde el 7 no se pierde la semana
@@ -2155,7 +2162,7 @@ export class MmoWorld {
       const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
       vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
     }
-    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined, amu, amuUsado: amuUsado || undefined, amuRegalo: amuRegalo || undefined, pase: PASE.puntos.login };
+    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined, amu, amuUsado: amuUsado || undefined, amuRegalo: amuRegalo || undefined, fenix: fenix || undefined, pase: PASE.puntos.login };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).
@@ -2168,11 +2175,11 @@ export class MmoWorld {
     // Una pieza de conjunto no se vende sola: se cambia por la comun mas
     // barata de la bolsa (son de coleccion; perderlas dolia mucho).
     // Lo mismo con un epico o legendario (el del dia 7 se vendia en silencio con la bolsa llena).
-    if (c.bolsa.length >= BOLSA_MAX && (it.cj || it.banda || (it.r || 0) >= 2)) {
+    if (c.bolsa.length >= this.bolsaMax(c) && (it.cj || it.banda || (it.r || 0) >= 2)) {
       const i = c.bolsa.reduce((m, x, k) => (!x.cj && !x.banda && (x.r || 0) < Math.max(2, it.r || 0) && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
       if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: se vendió tu objeto más barato (+${v0} oro) para guardar ${it.cj || it.banda ? 'tu pieza de conjunto' : nombreItem(it)}.` }); }
     }
-    if (c.bolsa.length >= BOLSA_MAX) {
+    if (c.bolsa.length >= this.bolsaMax(c)) {
       const v = precioVenta(it);
       c.oro += v;
       if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: ${nombreItem(it)} se vendió solo por ${v} oro.` });
@@ -2222,7 +2229,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, talGratis8: !c.talR8 ? 1 : 0, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0, recetas: c.recetas || {}, bestD: c.bestD || {},
-      vaso: this.infoVaso(c), faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
+      vaso: this.infoVaso(c), faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null, huevo: this.infoHuevo(c), mv: 1 + this.bonoMascota(c, 'vel'), bmax: this.bolsaMax(c),
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -2244,7 +2251,7 @@ export class MmoWorld {
   // CLASSIC 2D: lo mismo pero al momento (sin tick3d): 'yoC' de ~250 B por
   // caza en vez del 'yo' entero; con AUTO continuo ahorra datos moviles.
   yoLuego(s, full) { if (!s.m3) { if (full) return this.actualizarYo(s); return this.enviar(s, { t: 'yoC', yo: { ...this.datosCaza(s), best: s.c.best || {}, bestR: s.c.bestR || {}, sellos: s.c.sellos || {} } }); } s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
-  datosCaza(s) { const c = s.c, max = c.nivel >= NIVEL_MAX; return { nivel: c.nivel, xp: max ? (c.mae || {}).p || 0 : c.xp, xpSig: max ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
+  datosCaza(s) { const c = s.c, max = c.nivel >= NIVEL_MAX; return { nivel: c.nivel, xp: max ? (c.mae || {}).p || 0 : c.xp, xpSig: max ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {}, ...(c.huevo ? { huevo: this.infoHuevo(c) } : null) }; }
   vaciarYo(s, ahora) {
     if (!s.yoPend || ahora - (s.yoT || 0) < 1000) return;
     if (s.yoPend === 'full') return this.actualizarYo(s);
@@ -2257,7 +2264,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { cc: this.companeroDe ? this.companeroDe(s.c) : undefined, p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { cc: this.companeroDe ? this.companeroDe(s.c) : undefined, p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped && mascotaViaja(s.c.mascota) ? '' : s.c.mascota || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -2370,7 +2377,7 @@ export class MmoWorld {
     // mapa de 2600 px en 0,2 s (speed-hack, encontrado en la auditoria).
     // El dios con "velocidad libre" no tiene limite.
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
-      const velPx = FIS.vel * velMontura(s.montado) * (1 + talento(s.c, 'agilidad')) * 60;
+      const velPx = FIS.vel * velMontura(s.montado) * (1 + talento(s.c, 'agilidad')) * (1 + this.bonoMascota(s.c, 'vel')) * 60;   // Zorro Místico: el cliente usa yo.mv
       const dashPx = FIS.dashVel * FIS.dashT;
       const tope = velPx + dashPx + 80;
       const recarga = velPx * 1.2 + dashPx / (FIS.dashCd / 60);
@@ -2425,7 +2432,7 @@ export class MmoWorld {
     if (m.a === 'reforjar') { if (typeof m.id === 'string') this.reforjar(s, m.id); return; }
     if (m.a === 'quitar') {
       if (!Object.hasOwn(RANURAS, m.ranura) || !c.eq[m.ranura]) return;
-      if (c.bolsa.length >= BOLSA_MAX) return this.enviar(s, { t: 'toast', m: 'Tu bolsa está llena: vende algo primero.' });
+      if (c.bolsa.length >= this.bolsaMax(c)) return this.enviar(s, { t: 'toast', m: 'Tu bolsa está llena: vende algo primero.' });
       c.bolsa.push(c.eq[m.ranura]);
       delete c.eq[m.ranura];
     } else {
@@ -2637,8 +2644,9 @@ export class MmoWorld {
       const hoy = hoyUTC();
       if (!c.mundDia || c.mundDia.d !== hoy) c.mundDia = { d: hoy, n: 0 };
       const lleno = c.mundDia.n++ < 6;
-      const xp = Math.round(xpParaSubir(c.nivel) * (lleno ? 0.12 + Math.min(0.13, parte) : 0.02));
-      const oro = Math.round(80 * c.nivel * (1 + Math.min(1, parte * 3)) * (lleno ? 1 : 0.25));
+      const kPet = 1 + this.bonoMascota(c, 'jefes');   // Lobo Sombrío: oro y XP de jefes (nunca mTON)
+      const xp = Math.round(xpParaSubir(c.nivel) * (lleno ? 0.12 + Math.min(0.13, parte) : 0.02) * kPet);
+      const oro = Math.round(80 * c.nivel * (1 + Math.min(1, parte * 3)) * (lleno ? 1 : 0.25) * kPet);
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
       this.progresoTarea(s, 'mundial');
@@ -2834,6 +2842,14 @@ export class MmoWorld {
   // n = miembros del grupo que cobran esta presa (reparte el botin).
   dar(s, xp, oro, o, n, participo) {
     const c = s.c;
+    // Mascota mística (pets-config.js): oro de caza, +jefes y, a veces, oro doble. Solo se calcula aquí.
+    let petDoble = 0;
+    if (o && participo !== false) {
+      const kOro = this.bonoMascota(c, 'oro') + (o.jefe ? this.bonoMascota(c, 'jefes') : 0);
+      if (kOro) oro = Math.round(oro * (1 + kOro));
+      const pDoble = this.bonoMascota(c, 'oroDoble');
+      if (pDoble && Math.random() < pDoble) { oro *= 2; petDoble = 1; }
+    }
     // Ceviche del Duende (pesca + artesania): +10% del oro de caza.
     if (this.elixir(s, 'ceviche')) oro = Math.round(oro * 1.1);
     if (this.elixir(s, 'chichaE')) oro = Math.round(oro * 1.1);   // Chicha Morada del Duende
@@ -2851,6 +2867,7 @@ export class MmoWorld {
     if (this.elixir(s, 'vaso')) xp = Math.round(xp * VASO.xp);   // Vaso de chicha (vasos.js)
     const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
     if (xpSkin) xp = Math.round(xp * xpSkin);
+    if (o && o.jefe && participo !== false) { const kJ = this.bonoMascota(c, 'jefes'); if (kJ) xp = Math.round(xp * (1 + kJ)); }   // Lobo Sombrío
     // Invitado de Nv < 10 en grupo con quien lo invito: +25% (amigos.js).
     if (this.bonoCompanero) xp = Math.round(xp * this.bonoCompanero(s));
     // El descanso duplica la experiencia de cada caza hasta gastarse.
@@ -2913,7 +2930,7 @@ export class MmoWorld {
         // Y tras 25 piezas sin Epico, la siguiente es Epica o mejor.
         c.seca = (c.seca || 0) + 1;
         const pSeca = Math.max(0, c.seca - 15) * 0.01;
-        if (c.seca >= 35 || Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1) + pSeca) {
+        if (c.seca >= 35 || Math.random() < (0.06 * ((n || 1) > 1 ? 1.2 / n : 1) + pSeca) * (1 + this.bonoMascota(c, 'suerte'))) {   // Gato Duende: +suerte
           item = this.darItem(s, generarItem(nvM, (c.secaEp || 0) >= 25 ? 2 : 0));
         }
       }
@@ -2996,7 +3013,8 @@ export class MmoWorld {
       }
     }
     s.sucio = true;
-    this.enviar(s, { t: 'gana', xp, oro, drops, item, primero: primero ? (item && c.eq[item.s] === item ? 2 : 1) : undefined, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, chl: !chi && this.candadoChicha(c) ? 1 : undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
+    this.enviar(s, { t: 'gana', xp, oro, drops, item, pd: petDoble || undefined, primero: primero ? (item && c.eq[item.s] === item ? 2 : 1) : undefined, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, chl: !chi && this.candadoChicha(c) ? 1 : undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
+    this.huevoCaza(s, o, participo);   // incubar el Huevo Místico (mascotas.js)
     this.revisarLogros(s, true);
     this.yoLuego(s, subio || !!item);
   }
@@ -3012,6 +3030,7 @@ export class MmoWorld {
       if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la caza de hoy.' });
       if (d.p < DIARIA.n) return this.enviar(s, { t: 'toast', m: `Te faltan ${DIARIA.n - d.p} monstruos para la caza del día.` });
       const pr = premioDiaria(c.nivel);
+      pr.xp = this.xpMisionMascota(c, pr.xp);   // Búho Sabio
       d.ok = true;
       c.oro += pr.oro;
       if (this.ritualOro) this.ritualOro(s, pr.oro);   // rituales.js: intencion de misiones
@@ -3020,6 +3039,7 @@ export class MmoWorld {
       this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones. Mañana hay otra.`, ok: true });
       this.darMton(s, 25, 'diaria');
       this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [], x: Math.round(s.x), y: Math.round(s.y - 80) });
+      this.huevoMision(s);
       this.actualizarYo(s);
       this.guardar(s);
       return;
@@ -3033,13 +3053,15 @@ export class MmoWorld {
     c.mis = { i: c.mis.i + 1, p: 0 };
     if (c.mis.i === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'm1');
     if (c.mis.i === 1 && this.ofrecerAvisoTg) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
-    this.sumarXp(s, q.xp);
+    const xpQ = this.xpMisionMascota(c, q.xp);   // Búho Sabio
+    this.sumarXp(s, xpQ);
     this.revisarLogros(s);
-    this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${q.xp} XP · +${q.oro} oro`, ok: true });
+    this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${xpQ} XP · +${q.oro} oro`, ok: true });
     // La siguiente de la cadena, dicha en el momento (antes el jugador no sabia que seguia).
     const sig = MISIONES[c.mis.i], ms = sig && MONSTRUOS[sig.tipo];
     if (sig && ms) this.enviar(s, { t: 'toast', m: `📜 Nueva misión: «${sig.nombre}» — caza ${sig.n} × ${ms.nombre} (Nv ${ms.nivel}).${s.m3 ? ' Sigue la luz amarilla.' : ''}` });
-    this.enviar(s, { t: 'gana', xp: q.xp, oro: q.oro, drops: Object.keys(q.pw || {}), x: Math.round(s.x), y: Math.round(s.y - 80) });
+    this.enviar(s, { t: 'gana', xp: xpQ, oro: q.oro, drops: Object.keys(q.pw || {}), x: Math.round(s.x), y: Math.round(s.y - 80) });
+    this.huevoMision(s);
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -3230,7 +3252,7 @@ export class MmoWorld {
     const c = s.c;
     // Ponerse algo que ya es tuyo (montura, alas, color, mascota) vale en cualquier sitio.
     const lista = { montura: c.monturas, alas: c.alas, tinte: c.tintes, mascota: c.mascotas }[m.k];
-    const soloPoner = typeof m.id === 'string' && Array.isArray(lista) && lista.includes(m.id);
+    const soloPoner = (typeof m.id === 'string' && Array.isArray(lista) && lista.includes(m.id)) || (m.k === 'mascota' && (m.id === '' || (m.id === 'huevo' && !!c.huevo)));
     if (!soloPoner && !(s.m3 && m.k === 'skin') && !this.cercaDelMercader(s)) return this.enviar(s, { t: 'toast', m: s.m3 ? 'Para comprar ve al Pueblo Duende (en cualquier punto del pueblo vale).' : 'Tienes que estar junto al Mercader del pueblo.' });
     if (m.k === 'pw') {
       const def = PODERES.find(p => p.id === m.id);
@@ -3300,7 +3322,10 @@ export class MmoWorld {
       else {
         if (typeof m.id !== 'string' || !Object.hasOwn(MASCOTAS, m.id)) return;
         const ma = MASCOTAS[m.id];
-        if (!c.mascotas.includes(m.id)) {
+        // Huevo Místico y mascotas místicas (mascotas.js): el huevo se lleva si lo tienes; las místicas no se venden.
+        if (ma.huevo) { if (!c.huevo) return this.enviar(s, { t: 'toast', m: 'Ahora no tienes ningún Huevo Místico.' }); }
+        else if (!c.mascotas.includes(m.id)) {
+          if (ma.mistica) return this.enviar(s, { t: 'toast', m: 'Esa mascota no se vende: nace de un Huevo Místico.' });
           if (ma.pase) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se gana con el pase de temporada.' });
           if (ma.pesca) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se consigue pescando.' });
           if (ma.amb && !enOfertaAmbulante('mascota', m.id)) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo la trae el Mercader ambulante algunos fines de semana.' });
@@ -3330,7 +3355,7 @@ export class MmoWorld {
       this.equipar(s, { k: m.k, id: m.id });
     } else return;
     this.revisarLogros(s);
-    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `${ARMAS[m.id].nombre} mejorada a +${c.forja[m.id]}.` : m.k === 'montura' ? `Nueva montura: ${MONTURAS[m.id].nombre}. Tecla Y o botón de montura.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
+    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `${ARMAS[m.id].nombre} mejorada a +${c.forja[m.id]}.` : m.k === 'montura' ? `Nueva montura: ${MONTURAS[m.id].nombre}. Tecla Y o botón de montura.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.${MASCOTAS[c.mascota].huevo ? ' Se incuba cazando y con misiones.' : MASCOTAS[c.mascota].mistica ? ' ' + MASCOTAS[c.mascota].bono + '.' : ''}` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
     if (m.k === 'tinte' || m.k === 'mascota') this.guardarSuave(s); else this.guardar(s);   // cosmeticos: sin escritura por mensaje
   }
@@ -3635,7 +3660,7 @@ export class MmoWorld {
       c.oro += oro;
       if (i === 0) c.campeon = (c.campeon || 0) + 1;
       const it = generarItem(c.nivel, i === 0 ? 2 : 1);
-      if ((c.bolsa || []).length < BOLSA_MAX) c.bolsa.push(it); else c.oro += precioVenta(it);
+      if ((c.bolsa || []).length < this.bolsaMax(c)) c.bolsa.push(it); else c.oro += precioVenta(it);
       if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
       else await this.state.storage.put('c:' + uid, c);
       nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n);
@@ -3847,7 +3872,7 @@ export class MmoWorld {
     for (const s of jugadores) {
       this.tickJugador(s, ahora, dt, !mapa.zona);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
-      const k = (!mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) + this.regenVaso(s, ahora);
+      const k = (!mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) * (1 + this.bonoMascota(s.c, 'regen')) + this.regenVaso(s, ahora);   // Hongo Brillante
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     }
     // La Piedra de Hogar pudo sacar a alguien de aqui en este mismo tick.
@@ -4219,6 +4244,8 @@ Object.assign(MmoWorld.prototype, Caso);
 // Criaturas (Fase 2): modelo en c.cri, ver functions/mmo/criaturas.js
 Object.assign(MmoWorld.prototype, Criaturas);
 Object.assign(MmoWorld.prototype, Vecinos2D);   // vecinos y encargos de las zonas 2D (mundo vivo, Fase 2)
+// Huevo Místico y mascotas místicas (bonos en pets-config.js): functions/mmo/mascotas.js
+Object.assign(MmoWorld.prototype, MascotasMisticas);
 // El bot en el grupo oficial de Telegram (bienvenida, novedades, hitos, antiespam): functions/mmo/grupo.js
 instalarGrupo(MmoWorld.prototype);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).

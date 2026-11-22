@@ -21,7 +21,9 @@ import { TALA as TALA_R } from '/mmo/js/data.js?v=402';   // v379: talar cualqui
 import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=402';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
 import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=402';   // tarea del dia de la fiesta en la caja de misiones
 import { waChicha, mesChicha } from '/mmo/js/data.js?v=402';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=402';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=402';
+import { MISTICAS, RAREZAS_MASCOTA, mascotaViaja } from '/mmo/js/data.js?v=402';   // mascotas místicas y Huevo Místico
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=402';   // su ventana (la misma de CLASSIC)   // linea «Nuevo» de la tira diaria y aviso tras actualizar
 import { iniciarRegalo } from '/mmo/js/regalo.js?v=402';
 import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=402';
 import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=402';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
@@ -2994,7 +2996,9 @@ function recibir(m) {
     case 'cuevaFin': cuevaFinM = m; if (cuevaInfo) cuevaInfo.hecha = 1; paso('cueva_ok'); if (m.primera) primeraCueva(m); if (yo && (m.hoy || 0) >= 3 && (yo.cuevaHoy || 0) < 3) { clearTimeout(tarjetaNoche3.t); tarjetaNoche3.t = setTimeout(tarjetaNoche3, 2500); } if (yo) { yo.cuevaRec = m.rec || yo.cuevaRec || 0; yo.cuevaHoy = m.hoy; } if (m.grp) aviso('👥 En grupo no cuenta para el ranking de la Cueva (solo en solitario)' + (m.pos ? ' · sigues #' + m.pos + ' de ' + m.tot + ' de tu clase' : ''), 'ok'); else if (m.pos) aviso('🏆 Puesto #' + m.pos + ' de ' + m.tot + ' de tu clase esta semana · míralo en 🏅', 'ok'); pintarMisiones(); break;
     case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); SON.tocar('logro'); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'resJefe': try { resumenJefe(m); } catch (e) {} break;
+    case 'eclosion': efectoEclosion3(m); break;   // nacio una mascota mística (functions/mmo/mascotas.js)
     case 'gana':
+      if (m.oro > 0 && !m.lad && P.masc && P.masc.mist) { P.masc.sal = mascT + 450; if (m.pd || m.item) P.masc.giro = mascT + 560; }   // la mística salta de alegría (y gira con oro doble o botín)
       // Golpe al Duende Ladron: solo las monedas (no es una baja: sin racha ni bestiario).
       if (m.lad) { ofrecerPresumir.lad = Date.now(); if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); oroCaza3 = performance.now(); } break; }
       ganaSes++; peleaT3 = performance.now(); bestDeGana(m); clearTimeout(revisarCasi.t); revisarCasi.t = setTimeout(revisarCasi, 1600);   // tras el 'yoC' con las cazas al dia
@@ -5310,6 +5314,7 @@ const firmaNpc = t => JSON.stringify(t.startsWith('vecino_') ? [secundarias, yo.
 // Ventanas abiertas al dia (solo se repintan si cambia lo que muestran).
 function refrescarVentanas(lleno) {
   if (lleno) V.actualizar();
+  if ($('v-mm').classList.contains('on')) pintarMisticas();
   if (npcAbierto && npcAbierto !== 'ranking' && $('v-npc').classList.contains('on')) { const f = firmaNpc(npcAbierto); if (f !== firmaNpcAnt) abrirNpc(npcAbierto); }
 }
 // ── VECINOS: la Chichera, la Abuela y los narradores de zona (mundo/js/vecinos.js) ──
@@ -5610,6 +5615,12 @@ const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1
 $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
+// ── MASCOTAS MÍSTICAS: la ventana (js/mascotas-ui.js, compartida con CLASSIC) ──
+function abrirMisticas() { if (!yo) return; pintarMisticas(); abrir('v-mm'); }
+function pintarMisticas() { $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA }); }
+$('mm-cuerpo').addEventListener('click', e => { if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrar('v-mm'); cuentaAqui('crear'); } })) SON.tocar('clic', { vol: 0.8 }); });
+$('b-mm').innerHTML = HUEVO_SVG;
+$('b-mm').onclick = abrirMisticas;
 // Tienda siempre a la vista (v325). Punto rojo mientras no se haya visto la oferta de bienvenida
 // (sin ninguna compra) o haya una compra entregada que aun no se vio. Mismas claves que CLASSIC.
 function puntoTienda() {
@@ -8068,7 +8079,7 @@ function tarjetaNoche3(intento) {
   let f2 = '';
   if (yo.nivel >= EXPEDICION.nv) {
     const ex = yo.exped, quien = ex && !ex.m ? 'Tu explorador' : 'Tu mascota';
-    if (!ex) f2 = fila('🧭', `Manda ${yo.mascota ? 'a tu mascota' : 'un explorador'} de expedición: vuelve con oro y materiales aunque no juegues.<br><button type="button" class="btn sec" data-noche="exp" style="margin-top:4px;padding:5px 10px;font-size:12px">Mandar ahora</button>`);
+    if (!ex) f2 = fila('🧭', `Manda ${mascotaViaja(yo.mascota) ? 'a tu mascota' : 'un explorador'} de expedición: vuelve con oro y materiales aunque no juegues.<br><button type="button" class="btn sec" data-noche="exp" style="margin-top:4px;padding:5px 10px;font-size:12px">Mandar ahora</button>`);
     else if (ex.fin > Date.now()) {
       let hr = ''; try { hr = new Date(ex.fin).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' }); } catch (e) {}
       const otroDia = (() => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date(ex.fin)) !== hoy; } catch (e) { return false; } })();
@@ -8304,7 +8315,7 @@ addEventListener('keydown', e => {
     if (e.key === 'Escape' && $('v-look').classList.contains('on')) return cerrarLook(false);
     if (e.key === 'Escape') document.querySelectorAll('.modal.on').forEach(m => { if (!['v-clase', 'v-muerte', 'v-inicio', 'v-error', 'v-pago'].includes(m.id)) cerrar(m.id); });   // la de pago solo con su ✕ (no se pierden los datos)
     if (cod === 'KeyM' && $('v-mapa').classList.contains('on')) cerrar('v-mapa');
-    for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros'], ['KeyO', 'v-obj']]) if (cod === k && $(id) && $(id).classList.contains('on')) cerrar(id);
+    for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros'], ['KeyO', 'v-obj'], ['KeyN', 'v-mm']]) if (cod === k && $(id) && $(id).classList.contains('on')) cerrar(id);
     return;
   }
   if (hayLateral()) {
@@ -8334,6 +8345,7 @@ addEventListener('keydown', e => {
   if (cod === 'KeyI' && !e.repeat) V.abrirInventario();
   if (cod === 'KeyP' && !e.repeat) V.abrirLibro();
   if (cod === 'KeyL' && !e.repeat) V.abrirLogros();
+  if (cod === 'KeyN' && !e.repeat) abrirMisticas();
   if (cod === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
   // Esc: primero suelta el objetivo; sin objetivo ni nada abierto, abre el menu del juego.
   if (e.code === 'Escape') { if (objetivo || objetivoP || autoAtk) { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); if ((escAviso = (escAviso | 0) + 1) <= 2) aviso('Objetivo quitado · pulsa Esc otra vez para abrir el ⚙ Menú'); } else if (!e.repeat && MENU && !cineEst) MENU.abrir(); }
@@ -8983,7 +8995,7 @@ function fisica(dt) {
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
   const nadando = !P.vuela && !enAbismo(P.x) && alturaEn(P.x, P.z) < -0.7;
   // Con el talento Agilidad, como en el servidor (antes el cliente lo ignoraba).
-  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? alaDe(yo, enAbismo(P.x)).vel : P.planea && P.planeoRapido ? 1.35 : velMontura(yo.montado)) * (1 + talento(yo, 'agilidad')) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? alaDe(yo, enAbismo(P.x)).vel : P.planea && P.planeoRapido ? 1.35 : velMontura(yo.montado)) * (1 + talento(yo, 'agilidad')) * (yo.mv || 1) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   // Inercia ligera (rapida en el suelo, mas suelta en el aire y el agua). Al
   // lanzar un hechizo sin tocar las teclas, se frena en seco (no se corta).
   const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
@@ -9158,13 +9170,106 @@ function tenirMasc(im, hex) {
   tinteMasc.set(k, c);
   return c;
 }
+// ── MÍSTICAS Y HUEVO MÍSTICO EN 3D ──
+// La mística es un sprite con su imagen (256 px) que flota, con un aura aditiva y unas chispas en órbita;
+// el huevo es una malla (esfera con forma de huevo, emisiva, con motas de oro). La luz puntual solo la
+// lleva la MÍA y solo en PC con calidad alta: una por jugador hundiría el rendimiento.
+let _txBrillo = null, mascT = 0;
+function texBrillo() {
+  if (_txBrillo) return _txBrillo;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.42)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  _txBrillo = new THREE.CanvasTexture(c); _txBrillo.colorSpace = THREE.SRGBColorSpace;
+  return _txBrillo;
+}
+function crearMistica(q, ma, im) {
+  const gr = new THREE.Group(); gr.visible = false;
+  const libera = [], alto = (ma.alto || 30) * 1.15 / PX_M;
+  const dorada = ma.rareza === 'legendaria' || ma.rareza === 'mitica', colA = dorada ? 0xf5c84c : 0x22e39a;
+  let cuerpo, tx = null, luz = null;
+  if (ma.huevo) {
+    const R = 0.21, geo = new THREE.SphereGeometry(R, 18, 14), pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const y = pos.getY(i), k = y > 0 ? 1 - 0.3 * Math.pow(y / R, 1.4) : 1; pos.setXYZ(i, pos.getX(i) * k, y * 1.32, pos.getZ(i) * k); }
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x14b87c, emissive: 0x22e39a, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.1 });
+    cuerpo = new THREE.Mesh(geo, mat); cuerpo.position.y = R * 1.32;
+    const gm = new THREE.SphereGeometry(0.026, 6, 5), mm = new THREE.MeshBasicMaterial({ color: 0xf5c84c });
+    for (let i = 0; i < 7; i++) { const a = i * 2.4 + 0.5, yy = -0.14 + i * 0.045, k = yy > 0 ? 1 - 0.3 * Math.pow(yy / R, 1.4) : 1, r = Math.sqrt(Math.max(0, R * R - yy * yy)) * k; const p = new THREE.Mesh(gm, mm); p.position.set(Math.cos(a) * r, yy * 1.32, Math.sin(a) * r); cuerpo.add(p); }
+    libera.push(geo, mat, gm, mm);
+  } else {
+    tx = new THREE.Texture(im); tx.colorSpace = THREE.SRGBColorSpace; tx.minFilter = THREE.LinearFilter; tx.magFilter = THREE.LinearFilter; tx.generateMipmaps = false; tx.needsUpdate = true;
+    const sm = new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false });
+    cuerpo = new THREE.Sprite(sm); cuerpo.center.set(0.5, 0); cuerpo.scale.set(alto, alto, 1);
+    libera.push(tx, sm);
+  }
+  const h = ma.huevo ? 0.55 : alto;
+  const mAura = new THREE.SpriteMaterial({ map: texBrillo(), color: colA, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
+  const aura = new THREE.Sprite(mAura); aura.scale.set(h * 2.1, h * 2.1, 1); aura.position.y = h * 0.5; aura.renderOrder = -1;
+  gr.add(aura); gr.add(cuerpo); libera.push(mAura);
+  const orb = [], nOrb = CAL === 'baja' ? 0 : MOVIL ? 3 : 5;
+  for (let i = 0; i < nOrb; i++) { const mo = new THREE.SpriteMaterial({ map: texBrillo(), color: i % 2 ? 0xf5c84c : 0x6df5bd, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); const s1 = new THREE.Sprite(mo); s1.scale.setScalar(0.15); gr.add(s1); orb.push(s1); libera.push(mo); }
+  if (q === P && CAL === 'alta' && !MOVIL) { luz = new THREE.PointLight(colA, 1.5, 7, 2); luz.position.y = h * 0.6; gr.add(luz); }
+  escena.add(gr);
+  return { s: gr, cuerpo, tx, aura, orb, luz, libera, mist: true, huevo: !!ma.huevo, ma, alto, h, x: q.x, z: q.z, y: q.y || P.y || 0, mir: true, nuevo: true, sal: 0, giro: 0 };
+}
+// Coloca a la mística ya seguida (m.x, m.y, m.z): su forma de moverse, el aura, las órbitas y la luz.
+function moverMistica(q, m, esYo, t, tx, tz, ox, oz) {
+  const ma = m.ma, ts = t / 1000 + (q.id || 0) * 0.37, an = m.huevo ? 'huevo' : ma.anim;
+  const anda = Math.abs(tx - m.x) + Math.abs(tz - m.z) > 0.15;
+  const prog = m.huevo ? (esYo && yo && yo.huevo ? Math.min(1, yo.huevo.p / Math.max(1, yo.huevo.meta)) : 0.3) : 0;
+  let alto = 0.04, px = m.x, pz = m.z, sx = 1 - Math.sin(ts * 2.4) * 0.015, sy = 1 + Math.sin(ts * 2.4) * 0.03;
+  if (an === 'vuela') { alto = 1.3 + Math.sin(ts * 3.4) * 0.1; px += Math.cos(ts * 1.7) * 0.55; pz += Math.sin(ts * 1.7) * 0.55; }
+  else if (an === 'planea') alto = 1.1 + Math.sin(ts * 1.5) * 0.22;
+  else if (an === 'flota') alto = (ma.vuela ? 0.85 : 0.22) + Math.sin(ts * 2.3) * 0.09;
+  else if (an === 'salta') { const c = (ts * (anda ? 2.6 : 1.05)) % 1; alto += Math.sin(Math.min(1, c * 1.5) * Math.PI) * (anda ? 0.45 : 0.14); if (c > 0.68) { sy *= 0.9; sx *= 1.08; } }
+  else if (an === 'rebota') { const c = Math.abs(Math.sin(ts * (anda ? 6 : 3.3))); alto += c * (anda ? 0.3 : 0.14); sy *= 0.9 + c * 0.14; sx *= 1.07 - c * 0.09; }
+  else if (an === 'huevo') alto += Math.abs(Math.sin(ts * 2.2)) * (0.03 + prog * 0.05);
+  else if (anda) alto += Math.abs(Math.sin(ts * (an === 'corre' ? 14 : an === 'trota' ? 10.5 : 7.5))) * (an === 'camina' ? 0.06 : 0.13);
+  if (m.sal > t) alto += Math.sin((1 - (m.sal - t) / 450) * Math.PI) * 0.5;
+  if (m.giro > t) sx *= Math.cos((1 - (m.giro - t) / 560) * Math.PI * 2);
+  m.s.position.set(px, m.y + alto, pz);
+  if (m.huevo) {
+    m.cuerpo.rotation.z = Math.sin(ts * 2.2) * (0.08 + prog * 0.2);
+    m.cuerpo.material.emissiveIntensity = 0.32 + prog * 0.55 + Math.sin(ts * 3) * 0.12;
+  } else {
+    const dd = an === 'vuela' ? -Math.sin(ts * 1.7) * der.x + Math.cos(ts * 1.7) * der.z : (m.x - ox) * der.x + (m.z - oz) * der.z;
+    if (Math.abs(dd) > 0.002) m.mir = dd > 0;   // quieta: conserva el lado
+    const voltea = (m.mir ? 1 : -1) * (ma.mira || 1) < 0;
+    m.tx.repeat.x = voltea ? -1 : 1; m.tx.offset.x = voltea ? 1 : 0;
+    m.cuerpo.scale.set(m.alto * sx, m.alto * sy, 1);
+  }
+  m.aura.material.opacity = (0.34 + Math.sin(ts * 2.1) * 0.1) * (m.huevo ? 0.5 + prog * 0.9 : 1);
+  for (let i = 0; i < m.orb.length; i++) { const a = ts * 1.6 + i * 6.2832 / m.orb.length, r = m.h * 0.62; m.orb[i].position.set(Math.cos(a) * r, m.h * 0.5 + Math.sin(a * 1.7 + i) * m.h * 0.24, Math.sin(a) * r); }
+  if (m.luz) m.luz.intensity = 1.4 + Math.sin(ts * 2.1) * 0.3;
+}
+// Nace una mascota (la mía o la de otro cerca): chispas, estrellas, su nombre y la fanfarria.
+function efectoEclosion3(m) {
+  const mia = m.id === miId, q = mia ? P : otros.get(m.id), ma = MASCOTAS[m.m];
+  if (!q || !ma) return;
+  const x = q.masc ? q.masc.x : q.x, z = q.masc ? q.masc.z : q.z, y = (q.masc ? q.masc.y : q.y || 0) + 0.6;
+  try {
+    FX.emitir(x, y, z, { n: MOVIL ? 30 : 60, color: '#6df5bd', vel: 4.5, vida: 1.1, grav: 3, sube: 2 });
+    FX.emitir(x, y, z, { n: MOVIL ? 12 : 24, color: '#f5c84c', vel: 3, vida: 1.2, grav: -1, tam: 1.5, forma: 'estrella' });
+  } catch (e) {}
+  numero(x, y + 1.2, z, '¡' + ma.nombre + '!', (RAREZAS_MASCOTA[ma.rareza] || {}).color || '#f5c84c', true);
+  if (mia) { try { SON.tocar('nivel'); } catch (e) {} vib('success'); }
+}
 function ponMascota(q, id) {
-  const ma = id && MASCOTAS[id], hj = ma && HOJAS[ma.hoja];
-  if (!hj) id = '';
+  const ma = id && MASCOTAS[id], hj = ma && HOJAS[ma.hoja], mist = !!ma && !!(ma.img || ma.huevo);
+  if (!hj && !mist) id = '';
   if ((q.mascId || '') === id) return;
   q.mascId = id;
-  if (q.masc) { escena.remove(q.masc.s); q.masc.tx.dispose(); q.masc.s.material.dispose(); q.masc = null; }
+  if (q.masc) { escena.remove(q.masc.s); if (q.masc.libera) q.masc.libera.forEach(x => x.dispose()); else { q.masc.tx.dispose(); q.masc.s.material.dispose(); } q.masc = null; }
   if (!id) return;
+  if (mist) {
+    Promise.resolve(ma.huevo ? true : cargarImg(A + 'mascotas/' + ma.img + '.webp')).then(im => {
+      if (!im || q.mascId !== id || q.masc || q.mascFuera) return;
+      q.masc = crearMistica(q, ma, im);
+    });
+    return;
+  }
   Promise.resolve(cargarImg(A + 'enemigos/sheets/' + ma.hoja + '.png')).then(im => {
     if (!im || q.mascId !== id || q.masc || q.mascFuera) return;
     const img = ma.tinte ? tenirMasc(im, ma.tinte) : im;
@@ -9187,7 +9292,7 @@ function moverMascota(q, esYo, t, dt) {
   if (!m) return;
   const f = q.fig;
   const figVis = f && (f.tipo === 'modelo' ? f.raiz.visible : f.m.visible);
-  const fuera = esYo ? !!(yo && yo.exped) || P.muerto : q.muerto || !q.mascVer;
+  const fuera = esYo ? !!(yo && yo.exped && mascotaViaja(yo.mascota)) || P.muerto : q.muerto || !q.mascVer;   // las místicas y el huevo no se van de expedición
   m.s.visible = !!figVis && !fuera;
   if (!m.s.visible) { m.nuevo = true; return; }
   const ry = esYo ? P.ry || 0 : q.ry || 0, sn = Math.sin(ry), cs = Math.cos(ry);
@@ -9198,6 +9303,7 @@ function moverMascota(q, esYo, t, dt) {
   m.x += (tx - m.x) * k; m.z += (tz - m.z) * k;
   const suelo = alturaEn(m.x, m.z), base = Math.abs(suelo - yb) < 3 ? suelo : yb;
   m.y += (base - m.y) * Math.min(1, k * 1.5);
+  if (m.mist) return moverMistica(q, m, esYo, t, tx, tz, ox, oz);
   const ts = t / 1000, anda = Math.abs(tx - m.x) + Math.abs(tz - m.z) > 0.15;
   // Las voladoras flotan a 0,5 m; las de suelo van dando saltitos.
   const alto = m.vuela ? 0.5 + Math.sin(ts * 6) * 0.08 : 0.05 + (anda ? Math.abs(Math.sin(ts * 9)) * 0.12 : Math.abs(Math.sin(ts * 3)) * 0.04);
@@ -9212,6 +9318,7 @@ function moverMascota(q, esYo, t, dt) {
   m.tx.offset.set((voltea ? col + 1 : col) / m.cols, 1 - (fila + 1) / m.filas);
 }
 function moverMascotas(t, dt) {
+  mascT = t;
   if (yo) ponMascota(P, yo.mascota || '');
   // Ajenas: como mucho las MAX_MASC_AJENAS mas cercanas (en calidad baja, ninguna).
   if (t - mascTopeT > 500) {

@@ -777,6 +777,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
         <button class="bt extra" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)" aria-label="Piedra de Hogar"><img class="ico-bt" src="/assets/items/equipo/I_Crystal02.png" alt=""></button>
         <button class="bt" id="b-inv" title="Inventario (I)" aria-label="Inventario"><img class="ico-bt" src="/assets/items/equipo/I_Chest02.png" alt=""></button>
         <button class="bt" id="b-cri" title="Criaturas (U)" aria-label="Criaturas">🐾</button>
+        <button class="bt" id="b-mm" title="Mascotas místicas y Huevo Místico (N)" aria-label="Mascotas místicas"></button>
         <button class="bt" id="b-tienda" title="Tienda: skins, alas y packs" aria-label="Tienda">💎<span class="bt-txt">TIENDA</span></button>
         <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
@@ -912,6 +913,15 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
   </div>
 </div>
 <style>.vec-dice{font-size:14px;line-height:1.45;background:rgba(250,204,21,.08);border-left:3px solid #facc15;padding:8px 10px;border-radius:4px;margin:0 0 8px}</style>
+
+<style>#b-mm svg{width:17px;height:21px;display:block;margin:auto}</style>
+<div class="modal" id="m-mm">
+  <div class="ventana" style="width:min(680px,100%)">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>MASCOTAS MÍSTICAS</h2>
+    <div id="mm-cuerpo"></div>
+  </div>
+</div>
 
 <div class="modal" id="m-cri">
   <div class="ventana">

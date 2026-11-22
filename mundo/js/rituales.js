@@ -9,7 +9,7 @@
 //     hora que elijas. Solo se envía con el permiso de avisos de siempre.
 //   · Filas para la sección HOY de «Mis objetivos» (no añade nada al HUD).
 // No entrega nada: todo lo decide el servidor (mensaje 'rit'). Lo de mundo.js llega por `c`.
-import { EXPEDICION, DIARIA, premioDiaria } from '/mmo/js/data.js?v=402';
+import { EXPEDICION, DIARIA, premioDiaria, mascotaViaja } from '/mmo/js/data.js?v=402';
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]));
 const num = n => (Number(n) || 0).toLocaleString('es');
@@ -97,7 +97,7 @@ export function crearRituales(c) {
     if ((y.nivel || 1) < EXPEDICION.nv) return '';
     if (ex && ex.fin > ahora) return `<div class="rt-paso ok"><b><i>✓</i>Expedición en camino</b><small>Vuelve a las ${esc(horaTxt(ex.fin))} (hora de Perú) con oro y materiales.</small></div>`;
     if (ex) return `<div class="rt-paso"><b><i>🧭</i>Tu expedición ya volvió</b><small>Recoge el botín y mándala otra vez para la noche.</small><button type="button" class="btn sec rt-mini" data-rt="exr">Recoger y mandar de nuevo</button></div>`;
-    return `<div class="rt-paso"><b><i>🧭</i>Expedición nocturna</b><small>${y.mascota ? 'Tu mascota' : 'Un duendecillo explorador'} sale 12 horas y vuelve por la mañana con oro y materiales.</small><button type="button" class="btn sec rt-mini" data-rt="exm">Mandar 12 h al Bosque</button> <button type="button" class="btn sec rt-mini" data-rt="exv">Elegir destino</button></div>`;
+    return `<div class="rt-paso"><b><i>🧭</i>Expedición nocturna</b><small>${mascotaViaja(y.mascota) ? 'Tu mascota' : 'Un duendecillo explorador'} sale 12 horas y vuelve por la mañana con oro y materiales.</small><button type="button" class="btn sec rt-mini" data-rt="exm">Mandar 12 h al Bosque</button> <button type="button" class="btn sec rt-mini" data-rt="exv">Elegir destino</button></div>`;
   }
   function seccionAviso() {
     const av = (inf && inf.av) || { m: null, n: null, con: 0, tg: 0 };

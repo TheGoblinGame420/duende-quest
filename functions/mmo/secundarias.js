@@ -39,7 +39,7 @@ export const Secundarias = {
     const c = s.c;
     c.sec[q.id + ':ok'] = 1;
     delete c.sec[q.id];
-    const xp = Math.max(10, Math.round(xpParaSubir(Math.min(c.nivel, q.nv + TOPE_XP)) * q.premio.xp)), oro = q.premio.oro;
+    const xp = this.xpMisionMascota(c, Math.max(10, Math.round(xpParaSubir(Math.min(c.nivel, q.nv + TOPE_XP)) * q.premio.xp))), oro = q.premio.oro;   // Búho Sabio
     c.oro += oro;
     c.mat = c.mat || {};
     for (const k in q.premio.mat || {}) c.mat[k] = Math.min(999, (c.mat[k] || 0) + q.premio.mat[k]);

@@ -379,7 +379,7 @@ export const Mundo3D = {
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
       const modo = a === 3 ? ala.vel + 0.05 : a === 4 && h0 > 0.3 && s.planeoVel ? 1.4 : velMontura(s.montado);   // planear desde el suelo no acelera
-      const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad'));
+      const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad')) * (1 + this.bonoMascota(s.c, 'vel'));   // Zorro Místico (el cliente usa yo.mv)
       const tope = vel + 3;   // ~1 s de margen por huecos de red
       // La esquiva es un PRESTAMO: los +3 m se devuelven de la recarga siguiente (no sirve de speed hack).
       const rec = vel * 1.15 * dt / 1000, pago = Math.min(s.esqDeuda || 0, rec);
@@ -728,7 +728,7 @@ export const Mundo3D = {
       if (this.vacio3d(s, ahora)) continue;
       this.tickJugador(s, ahora, dt, seguro);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
-      const k = (seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) + this.regenVaso(s, ahora);
+      const k = (seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) * (1 + this.bonoMascota(s.c, 'regen')) + this.regenVaso(s, ahora);   // Hongo Brillante
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     } catch (e) { fallo('3d-jug', e); }
     const vivos = jugadores.filter(s => !s.muerto);
