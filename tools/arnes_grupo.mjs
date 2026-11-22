@@ -82,6 +82,7 @@ chequear(!enSilencio(Date.UTC(2026, 10, 11, 13, 0)) && !enSilencio(Date.UTC(2026
 console.log('Grupo: enlaces');
 const E = clasificarEnlace;
 chequear(E('https://duende-quest.alfonso12hc.workers.dev/jugar/') === 'ok' && E('duende-quest.alfonso12hc.workers.dev/seguridad.html') === 'ok', 'el sitio oficial pasa');
+chequear(E('https://duendequest.com/jugar/') === 'ok' && E('www.duendequest.com/mundo/') === 'ok' && E('https://duendequest.com.otro.com/x') === 'enlace' && E('https://duendequest.com/?u=otro.com') === 'enlace', 'el dominio duendequest.com pasa y sus imitaciones no');
 chequear(E('https://duende-quest.alfonso12hc.workers.dev.otro.com/x') === 'enlace' && E('https://duende-quest.alfonso12hc.workers.dev@otro.com/x') === 'enlace', 'un dominio que imita al oficial no pasa');
 chequear(E('https://duende-quest.alfonso12hc.workers.dev/?u=otro.com') === 'enlace', 'otro dominio escondido en la ruta del oficial no pasa');
 chequear(E('t.me/duendequest_bot') === 'ok' && E('https://t.me/ElDuendeOficial') === 'ok' && E('https://t.me/elduende420peru/12') === 'ok', 'los t.me del proyecto pasan');

@@ -6,11 +6,11 @@
 // Guardado en el navegador (cw_estado). La cuenta compartida con Duende Quest,
 // el pase premium y el mercado entre jugadores llegan con el servidor.
 // ═══════════════════════════════════════════════════════
-import * as D from './datos.js?v=399';
-import * as A from './arte.js?v=399';
-import { pedir } from './red.js?v=399';
-import { abrirCuenta } from '/js/cuenta.js?v=399';   // la misma cuenta de Duende Quest, sin salir del juego
-import * as R from './rig.js?v=399';
+import * as D from './datos.js?v=400';
+import * as A from './arte.js?v=400';
+import { pedir } from './red.js?v=400';
+import { abrirCuenta } from '/js/cuenta.js?v=400';   // la misma cuenta de Duende Quest, sin salir del juego
+import * as R from './rig.js?v=400';
 
 const W = 540, PISO = 360;
 let H = 640, Y_OLLA = 505, Y_CH = 590;   // la escena llena el alto libre de la pantalla: ajustar() recalcula H y baja ollas y chichera

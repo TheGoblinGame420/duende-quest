@@ -28,10 +28,11 @@
 
 import { VERSION, NOVEDADES, NIVEL_MAX, MONSTRUOS, DIARIA, TORRE, HORA_FELIZ, diaJuego, temporadaDe, TEMP_DIAS, diaFiesta } from '../../mmo/js/data.js';
 import { riesgoEstafa, riesgoContacto, telefonoDisfrazado } from './social.js';
+import { SITIO, HOSTS_OFICIALES } from '../api/dominio.js';
 
 // ── Constantes ──
-const SITIO = 'https://duende-quest.alfonso12hc.workers.dev';
-export const HOST_OFICIAL = 'duende-quest.alfonso12hc.workers.dev';
+// Dominio en functions/api/dominio.js: duendequest.com y el viejo workers.dev son oficiales.
+export const HOST_OFICIAL = HOSTS_OFICIALES[0];
 export const JUGAR_URL = SITIO + '/jugar/';
 const SEGURIDAD_URL = SITIO + '/seguridad.html';
 // t.me del proyecto (en minusculas): el bot, el creador, el canal y el grupo publico.
@@ -111,7 +112,7 @@ export function clasificarEnlace(url, extra) {
   host = host.replace(/:\d+$/, '').replace(/^www\./, '').replace(/\.+$/, '');
   if (!host || !host.includes('.')) return 'ok';
   // Otro dominio escondido en la ruta del oficial («…workers.dev/?u=otro.com») no pasa.
-  if (host === HOST_OFICIAL) return /[a-z0-9-]\.[a-z]{2,}(?:[/?#&]|$)/.test(ruta.replace(/\.html?\b/g, '')) ? 'enlace' : 'ok';
+  if (HOSTS_OFICIALES.includes(host)) return /[a-z0-9-]\.[a-z]{2,}(?:[/?#&]|$)/.test(ruta.replace(/\.html?\b/g, '')) ? 'enlace' : 'ok';
   const seg = ruta.replace(/^\/+/, '').split(/[/?#]/)[0] || '';
   if (host === 't.me' || host === 'telegram.me' || host === 'telegram.dog') {
     if (!seg) return 'ok';

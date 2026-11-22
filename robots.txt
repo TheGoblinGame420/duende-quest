@@ -1,4 +1,4 @@
-# DUENDE QUEST — https://duende-quest.alfonso12hc.workers.dev/
+# DUENDE QUEST — https://duendequest.com/
 User-agent: *
 Allow: /
 # Rutas internas: API, WebSocket del MMO y la Mini App de Telegram (solo se abre desde Telegram)
@@ -6,4 +6,4 @@ Disallow: /api/
 Disallow: /mmo/ws
 Disallow: /tonconnect-manifest.json
 
-Sitemap: https://duende-quest.alfonso12hc.workers.dev/sitemap.xml
+Sitemap: https://duendequest.com/sitemap.xml

@@ -2,19 +2,19 @@
 <html lang="es">
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
-<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
+<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Duende Quest: juego arcade gratis en el navegador</title>
 <meta name="description" content="Juega gratis a Duende Quest, un juego arcade de plataformas en pixel art hecho en Perú: oleadas, jefes, campaña y ranking global. Sin descargas.">
-<link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/game">
+<link rel="canonical" href="https://duendequest.com/game">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Duende Quest">
 <meta property="og:locale" content="es_PE">
 <meta property="og:title" content="Duende Quest: juego arcade gratis en el navegador">
 <meta property="og:description" content="Juego de plataformas en pixel art hecho en Perú: oleadas, jefes, campaña y ranking global. Gratis y sin descargas.">
-<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/game">
-<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/arcade.jpg">
+<meta property="og:url" content="https://duendequest.com/game">
+<meta property="og:image" content="https://duendequest.com/assets/og/arcade.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -22,7 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Duende Quest: juego arcade gratis en el navegador">
 <meta name="twitter:description" content="Juego de plataformas en pixel art hecho en Perú: oleadas, jefes, campaña y ranking global. Gratis y sin descargas.">
-<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/arcade.jpg">
+<meta name="twitter:image" content="https://duendequest.com/assets/og/arcade.jpg">
 <!-- PWA: permite "Agregar a pantalla de inicio" con icono propio en vez de
      una captura generica de la pagina (Android) o sin icono (iOS Safari). -->
 <link rel="manifest" href="/inicio/manifest.json">
@@ -65,12 +65,12 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="js/config.js?v=399"></script>
-<script src="js/missions.js?v=399"></script>
-<script src="js/streak.js?v=399"></script>
-<script src="js/achievements.js?v=399"></script>
-<script src="js/auth-manager.js?v=399" defer></script>
-<script type="module">import { abrirCuenta } from '/js/cuenta.js?v=399'; window.__dqAbrirCuenta = abrirCuenta;</script>   <!-- la misma cuenta de todos los juegos -->
+<script src="js/config.js?v=400"></script>
+<script src="js/missions.js?v=400"></script>
+<script src="js/streak.js?v=400"></script>
+<script src="js/achievements.js?v=400"></script>
+<script src="js/auth-manager.js?v=400" defer></script>
+<script type="module">import { abrirCuenta } from '/js/cuenta.js?v=400'; window.__dqAbrirCuenta = abrirCuenta;</script>   <!-- la misma cuenta de todos los juegos -->
 <style>
 /* ── TOKENS (guia de diseño comun, oct 2026) ──
    Las variables viejas se mantienen remapeadas a tonos sobrios. */
@@ -797,7 +797,7 @@ window.DQE = {
   },
 };
 </script>
-<script src="js/engine.js?v=399"></script>
+<script src="js/engine.js?v=400"></script>
 <script>
 'use strict';
 // ── RANKING ──// ── RANKING ──

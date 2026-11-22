@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
-<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=399"></script>
+<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
+<script src="/js/origen.js?v=400"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -15,29 +15,29 @@
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/">
+<link rel="canonical" href="https://duendequest.com/">
 <meta name="author" content="El Duende (@ElDuendeOficial)">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Duende Quest">
 <meta property="og:locale" content="es_PE">
 <meta property="og:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta property="og:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
-<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/portada.jpg">
+<meta property="og:image" content="https://duendequest.com/assets/og/portada.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D: la plaza de Pueblo Duende en ORIGINS y una batalla contra un jefe en CLASSIC">
-<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/">
+<meta property="og:url" content="https://duendequest.com/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@elduendesolana">
 <meta name="twitter:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
-<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/portada.jpg">
+<meta name="twitter:image" content="https://duendequest.com/assets/og/portada.jpg">
 <meta name="twitter:image:alt" content="Duende Quest, MMORPG gratis en 3D y en 2D">
 <meta name="theme-color" content="#090615">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=399" defer></script>
-<script src="/js/portada-orden.js?v=399" defer></script>
+<script src="/js/pwa.js?v=400" defer></script>
+<script src="/js/portada-orden.js?v=400" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -45,18 +45,18 @@
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://duende-quest.alfonso12hc.workers.dev/#website",
-      "url": "https://duende-quest.alfonso12hc.workers.dev/",
+      "@id": "https://duendequest.com/#website",
+      "url": "https://duendequest.com/",
       "name": "Duende Quest",
       "inLanguage": "es",
-      "publisher": { "@id": "https://duende-quest.alfonso12hc.workers.dev/#org" }
+      "publisher": { "@id": "https://duendequest.com/#org" }
     },
     {
       "@type": "Organization",
-      "@id": "https://duende-quest.alfonso12hc.workers.dev/#org",
+      "@id": "https://duendequest.com/#org",
       "name": "Duende Quest",
-      "url": "https://duende-quest.alfonso12hc.workers.dev/",
-      "logo": "https://duende-quest.alfonso12hc.workers.dev/assets/ui/coin.png",
+      "url": "https://duendequest.com/",
+      "logo": "https://duendequest.com/assets/ui/coin.png",
       "founder": { "@type": "Person", "name": "El Duende", "url": "https://t.me/ElDuendeOficial" },
       "sameAs": [
         "https://t.me/ElDuendeOficial",
@@ -69,12 +69,12 @@
     },
     {
       "@type": "VideoGame",
-      "@id": "https://duende-quest.alfonso12hc.workers.dev/#game",
+      "@id": "https://duendequest.com/#game",
       "name": "Duende Quest",
       "alternateName": "Duende Quest Online",
-      "url": "https://duende-quest.alfonso12hc.workers.dev/",
-      "image": "https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png",
-      "screenshot": ["https://duende-quest.alfonso12hc.workers.dev/assets/capturas/origins-plaza.jpg", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/origins-plaza-noche.jpg", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-dragon-acantilados.png","https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-pueblo-jugadores.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-cavernas-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-jefe-selva.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-movil.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/arcade-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg"],
+      "url": "https://duendequest.com/",
+      "image": "https://duendequest.com/assets/mmo_banner.png",
+      "screenshot": ["https://duendequest.com/assets/capturas/origins-plaza.jpg", "https://duendequest.com/assets/capturas/origins-plaza-noche.jpg", "https://duendequest.com/assets/capturas/mmo-dragon-acantilados.png","https://duendequest.com/assets/capturas/mmo-pueblo-jugadores.png", "https://duendequest.com/assets/capturas/mmo-cavernas-combate.png", "https://duendequest.com/assets/capturas/mmo-jefe-selva.png", "https://duendequest.com/assets/capturas/mmo-movil.png", "https://duendequest.com/assets/capturas/arcade-combate.png", "https://duendequest.com/assets/video/promo3d-poster.jpg"],
       "description": "RPG y MMORPG de duendes en pixel art, gratis en el navegador y en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real.",
       "inLanguage": "es",
       "genre": ["RPG", "MMORPG", "3D", "Mundo abierto", "Acción", "Pixel art"],
@@ -86,7 +86,7 @@
       "isAccessibleForFree": true,
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
       "author": { "@type": "Person", "name": "El Duende", "url": "https://t.me/ElDuendeOficial" },
-      "publisher": { "@id": "https://duende-quest.alfonso12hc.workers.dev/#org" }
+      "publisher": { "@id": "https://duendequest.com/#org" }
     }
   ]
 }
@@ -95,7 +95,7 @@
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "@id": "https://duende-quest.alfonso12hc.workers.dev/#faq",
+  "@id": "https://duendequest.com/#faq",
   "mainEntity": [
     {
       "@type": "Question",
@@ -638,6 +638,18 @@ footer{
   .game-layout{grid-template-columns:1fr;}
 }
 .nav-right.con-cta .nav-play{display:none!important;}
+/* Cuenta unica (js/cuenta-portada.js): la misma en CLASSIC, ORIGINS, Chicha Wars y el arcade */
+.nav-right{position:relative}
+.nav-cuenta{min-height:44px;padding:.4rem .9rem;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--txt);font:600 14px var(--sans);cursor:pointer;white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
+.nav-cuenta:hover,.nav-cuenta[aria-expanded="true"]{border-color:var(--pri-txt)}
+.nav-cuenta-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;display:flex;flex-direction:column;min-width:210px;padding:.35rem;border-radius:10px;background:var(--panel,#121826);border:1px solid var(--borde);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.nav-cuenta-menu[hidden]{display:none}
+.nav-cuenta-menu a,.nav-cuenta-menu button{display:block;text-align:left;min-height:44px;padding:.65rem .8rem;border-radius:7px;border:0;background:none;color:var(--txt);font:500 14px var(--sans);text-decoration:none;cursor:pointer}
+.nav-cuenta-menu a:hover,.nav-cuenta-menu button:hover{background:var(--panel2,#182033)}
+/* La barra se salía por la derecha en 1280 px (precio + wallet): por debajo de 1500 px sin la píldora de precio
+   (sigue en la sección del token) y por debajo de 1380 px la wallet solo con su icono (aria-label con el texto). */
+@media (max-width:1500px){.nav-right .live-price-pill{display:none!important}}
+@media (max-width:1380px){#wallet-connect-btn{font-size:0!important;min-width:44px;min-height:44px;padding:.4rem .7rem}#wallet-connect-btn::before{content:'🔗';font-size:17px}#wallet-connect-btn.connected::before{content:'✅'}}
 /* Celular apaisado y ventanas bajas: el boton de jugar tambien cabe en la primera pantalla */
 @media (min-width:600px) and (max-height:480px){
   section.hero{padding-top:4.6rem;min-height:auto;}
@@ -798,7 +810,7 @@ section[id]{scroll-margin-top:72px;}
 .faq-cta p{font-size:14px;color:var(--txt2);margin-top:.8rem;}
 </style>
 <!-- Capa de marca de la portada (nov-2026): variables, héroe, franja del token, utilidad y cómo comprar -->
-<link rel="stylesheet" href="/css/portada.css?v=399">
+<link rel="stylesheet" href="/css/portada.css?v=400">
 </head>
 <body>
 
@@ -826,6 +838,8 @@ section[id]{scroll-margin-top:72px;}
   <div class="nav-right">
     <a class="nav-play nav-instalar" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a" aria-label="Instalar Duende Quest como app" title="Instalar como app"><span aria-hidden="true">⬇</span><span class="nav-instalar-t"> Instalar</span></a>
     <a class="nav-play nav-jugar" href="/jugar/?web=1">Jugar gratis</a>
+    <button type="button" id="nav-cuenta" class="nav-cuenta" hidden aria-haspopup="dialog" aria-expanded="false">Entrar</button>
+    <div id="nav-cuenta-menu" class="nav-cuenta-menu" hidden><a href="/jugar/?web=1">Jugar con mi cuenta</a><a href="/mundo/#premium">Mis skins y tienda</a><button type="button" data-salir>Cerrar sesión</button></div>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>
       <span class="dot"></span>
@@ -1093,7 +1107,7 @@ section[id]{scroll-margin-top:72px;}
      Capturas sacadas del juego real (tools/cdp.mjs). Clic = se amplian en el
      visor #cap-visor (sin librerias). -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoObject","name":"Tráiler de Duende Quest","description":"30 segundos de juego real de Duende Quest: 4 clases, mazmorras con jefes, juego online y el premio de chicha morada. Gratis en el navegador y en Telegram.","thumbnailUrl":"https://duende-quest.alfonso12hc.workers.dev/assets/video/trailer-2-poster.jpg","uploadDate":"2026-10-22","duration":"PT30S","contentUrl":"https://duende-quest.alfonso12hc.workers.dev/assets/video/trailer-2.mp4","inLanguage":"es"}
+{"@context":"https://schema.org","@type":"VideoObject","name":"Tráiler de Duende Quest","description":"30 segundos de juego real de Duende Quest: 4 clases, mazmorras con jefes, juego online y el premio de chicha morada. Gratis en el navegador y en Telegram.","thumbnailUrl":"https://duendequest.com/assets/video/trailer-2-poster.jpg","uploadDate":"2026-10-22","duration":"PT30S","contentUrl":"https://duendequest.com/assets/video/trailer-2.mp4","inLanguage":"es"}
 </script>
 <!-- ========== TRAILER (30 s, juego real; se genera con tools/promo/) ========== -->
 <section class="section" id="trailer" aria-labelledby="trailer-h">
@@ -2356,9 +2370,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase: defer no frena el dibujo y corre antes de 'load', que es cuando lo usa auth-manager.js (initSupabase) -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=399"></script>
+<script src="js/config.js?v=400"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=399"></script>
+<script src="js/auth-manager.js?v=400"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2461,7 +2475,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
   } catch (e) {}
 })();
 </script>
-<script src="js/price-feed.js?v=399"></script>
+<script src="js/price-feed.js?v=400"></script>
+<script type="module" src="js/tienda-portada.js?v=400"></script>
+<script type="module" src="js/cuenta-portada.js?v=400"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

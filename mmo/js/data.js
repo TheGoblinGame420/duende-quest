@@ -516,12 +516,30 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 399;
+export const VERSION = 400;
+
+// Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
+// tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
+// el servidor. Escribe solo si cambio (el 'yo' llega muchas veces). Lo llaman CLASSIC y ORIGINS.
+export function anotarMisSkins(yo) {
+  try {
+    if (!yo || !Array.isArray(yo.skins) || typeof localStorage === 'undefined') return;
+    const v = JSON.stringify({ s: yo.skins.filter(k => typeof k === 'string').slice(0, 60), k: String(yo.skin || ''), n: String(yo.nombre || '').slice(0, 24) });
+    if (anotarMisSkins.u === v) return;
+    anotarMisSkins.u = v;
+    localStorage.setItem('dq_mis_skins', v);
+  } catch (e) {}
+}
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 153, fecha: '21 nov 2026', items: [
+    '🛍️ La tienda de la portada muestra todas las skins (17) con vista 3D o 2D, filtros por tipo y rareza, y marca las que ya tienes en este navegador.',
+    '👤 Botón «Entrar» en la portada: la misma cuenta de correo de todos los juegos, sin salir de la página.',
+    '🔗 duendequest.com es el sitio oficial: sus enlaces ya se pueden compartir en el chat del juego y en el grupo de Telegram.',
+  ] },
   { n: 152, fecha: '21 nov 2026', items: [
     '💻 Tu cuenta de Telegram también en Chrome o PC: en Telegram ve a Ajustes → «Jugar en Chrome o PC» y entras con tu mismo duende (nivel, oro y compras).',
   ] },

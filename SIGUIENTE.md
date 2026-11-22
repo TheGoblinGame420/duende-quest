@@ -5,6 +5,14 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v400 (21-nov-2026): auditoría, dominio, tienda y cuenta en la portada
+
+- **Dominio:** `functions/api/dominio.js` es la única fuente (`SITIO`, `HOSTS_OFICIALES`, `sitioDe(env)` con `APP_URL` opcional). duendequest.com y el viejo workers.dev son oficiales en el antispam del grupo (`grupo.js clasificarEnlace`), el filtro del chat (`social.js DOMINIO_OFICIAL`) y CORS (`lib.js`). Metadatos, sitemap y robots apuntan a duendequest.com. **No se redirige workers.dev** (los invitados perderían su duende: vive en el localStorage de ese origen).
+- **Sin tocar, a propósito:** `telegram-bot.js` y `cron.js` siguen con workers.dev (regla: el bot no se toca), igual que el manifiesto de TON y el QR de la etiqueta (`tools/etiqueta_qr.py`). Si el dueño lo aprueba: cambiar esas constantes por `sitioDe(env)` y regenerar el QR antes de imprimir.
+- **Tienda de la portada:** `js/tienda-portada.js` pinta las 17 skins desde `SKINS` (data.js se pide al abrir el pliegue de la tienda), con miniaturas 3D (`assets/skins/3d/<id>.webp`, recorte de `node tools/foto_taller.mjs --todas <dir> --paquete`, vista tres cuartos 615,40-935,480 → 192×264). «Ya la tienes» sale de `localStorage dq_mis_skins` (`anotarMisSkins` en data.js, la llaman CLASSIC y ORIGINS al recibir `yo`). Una skin nueva necesita su miniatura.
+- **Cuenta en la portada:** `js/cuenta-portada.js` + botón `#nav-cuenta` (no sale en Telegram).
+- **Auditoría de pagos SOL (solo lectura, no se tocó nada):** huecos para que decida el dueño: (1) una misma firma puede pagar un pedido del MMO (`firma:` en el DO) y uno de la web (`sol_orders.tx_signature`), porque ninguno mira el registro del otro; (2) `helius-verify.js:143` acepta un 3 % menos del monto; (3) `world.js:1682` exige `program === 'spl-token'`: si $DUENDE fuera Token-2022, todos los pagos en $DUENDE se rechazarían; (4) el cliente usa el RPC público de mainnet-beta (suele dar 429). La entrega es manual, así que el dueño ve cada pedido antes de entregar.
+
 ## v396 (17-nov-2026): mundo vivo en el 2D
 
 Por los comentarios de los jugadores: el mundo vacío, faltaban NPC, el ranking no unía el 2D y el 3D, y faltaba retención. El detalle de las fases está en **CLAUDE.md**:

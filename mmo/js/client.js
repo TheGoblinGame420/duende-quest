@@ -5,7 +5,7 @@
 // algo (daño, oro, experiencia, compras) lo decide el servidor.
 // ═══════════════════════════════════════════════════════
 import {
-  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
+  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, anotarMisSkins, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
@@ -18,14 +18,14 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=399';
-import { iniciarRegalo } from './regalo.js?v=399';
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=399';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=399';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=399';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=399';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=399';
-import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=399';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=400';
+import { iniciarRegalo } from './regalo.js?v=400';
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=400';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=400';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=400';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=400';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=400';
+import { authAparato, guardarAparato, falloAparato, olvidarAparato, ventanaLlave, tieneAparato } from '/js/llave.js?v=400';   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -688,7 +688,7 @@ function recibir(m) {
       for (const k in cdPoder) delete cdPoder[k];
       clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
-      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; llenoN = 0; llenoHasta = 0; if (ws) ws._listo = true;
+      miId = m.id; yo = m.yo; anotarMisSkins(yo); online = m.on || 0; reintentos = 0; llenoN = 0; llenoHasta = 0; if (ws) ws._listo = true;
       versionServidor(+m.ver || 0);   // el servidor ya va por una version mayor: recarga segura (versionServidor)
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
@@ -732,7 +732,7 @@ function recibir(m) {
       }
       break;
     case 'yo': {
-      const antes = yo; yo = m.yo; puntoTienda();
+      const antes = yo; yo = m.yo; anotarMisSkins(yo); puntoTienda();
       if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); if (nueva && SKINS[nueva]) setTimeout(() => ofrecerPresumir('✨ ¡Estrené la skin ' + SKINS[nueva].nombre + ' en Duende Quest!', 'look'), 1500); }
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       cuentaAlEntrar();
@@ -6812,5 +6812,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=399').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=400').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

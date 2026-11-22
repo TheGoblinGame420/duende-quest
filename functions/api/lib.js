@@ -23,8 +23,9 @@ export const STARS_PACKAGES = [
 import { PRECIOS_SKIN_USD } from '../../mmo/js/data.js';
 export const SKIN_PRICES_USD = PRECIOS_SKIN_USD;
 
+import { ORIGENES_OFICIALES } from './dominio.js';
 const ALLOWED_ORIGINS = [
-  'https://duende-quest.alfonso12hc.workers.dev',
+  ...ORIGENES_OFICIALES,
   'http://localhost:3456',
   'http://127.0.0.1:3456',
 ];

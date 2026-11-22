@@ -78,7 +78,15 @@ export const Alertas = {
   alertaRegistro(c, heredado) {
     if (!c || !c.uid || c.uid.startsWith('inv:')) return;
     if (this.env && this.env.ADMIN_TG_ID && c.uid === 'tg:' + this.env.ADMIN_TG_ID) return;   // el propio dueño
-    this.alertaInfo('registros', limpio(c.nombre), origenDe(c.uid) + (heredado ? ', era invitado · Nv ' + (c.nivel || 1) : '') + (c.invitadoPor ? ', vino invitado por un amigo' : ''));
+    const base = origenDe(c.uid) + (heredado ? ', era invitado · Nv ' + (c.nivel || 1) : '');
+    const de = c.invitadoPor;
+    if (!de) return this.alertaInfo('registros', limpio(c.nombre), base);
+    // Quien lo invito, con su nombre (conectado: de memoria; si no, un get del storage).
+    const nombre = c.nombre;
+    const conInvitador = n => this.alertaInfo('registros', limpio(nombre), base + ', invitado por ' + (n ? limpio(n) : 'un amigo'));
+    const online = this.porUid && this.porUid.get(de);
+    if (online && online.c) return conInvitador(online.c.nombre);
+    Promise.resolve(this.state.storage.get('c:' + de)).then(co => conInvitador(co && co.nombre), () => conInvitador(null));
   },
   // Una sola vez por personaje (c.av10; lo conserva al pasar de invitado a cuenta). Las cuentas de prueba no avisan.
   alertaNivel10(c) {

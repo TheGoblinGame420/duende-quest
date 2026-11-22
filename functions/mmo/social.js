@@ -66,8 +66,8 @@ const RE_ESTAFA = [
   /\b(?:seed phrase|seed|frase semilla|semilla de (?:tu |la )?(?:wallet|cartera|billetera)|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
 ];
 // El unico dominio que se puede escribir (con sus rutas). Ni «…workers.dev.otro.com», ni «…workers.dev@otro.com»,
-// ni «x-duende-quest…», ni otro dominio escondido en la ruta («…workers.dev/?u=otro.com»): esos siguen bloqueados. Con dominio propio, se añade aqui.
-const DOMINIO_OFICIAL = /(?<![\w.@-])(?:https?:\/\/)?duende-quest\.alfonso12hc\.workers\.dev(?:[/?#][\w\-/?=&#%]*(?:\.html)?)?(?![\w@-]|[.:][a-z0-9/])/gi;
+// ni «x-duende-quest…», ni otro dominio escondido en la ruta («…workers.dev/?u=otro.com»): esos siguen bloqueados. Dominios oficiales: duendequest.com (con o sin www) y el viejo workers.dev (functions/api/dominio.js).
+const DOMINIO_OFICIAL = /(?<![\w.@-])(?:https?:\/\/)?(?:duende-quest\.alfonso12hc\.workers\.dev|(?:www\.)?duendequest\.com)(?:[/?#][\w\-/?=&#%]*(?:\.html)?)?(?![\w@-]|[.:][a-z0-9/])/gi;
 // Estafas de la chicha y de cobros por chat: pedir plata por un envio, un deposito, un yape o un premio.
 // Hablar del premio, del banco del juego o de pagar con oro NO cae aqui («reclamo mi chicha», «deposita oro en la bóveda»).
 // Tambien la forma de escribirlo en Peru («S/. 20»), en palabras («cinco soles») y en dolares.
