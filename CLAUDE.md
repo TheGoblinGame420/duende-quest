@@ -295,4 +295,12 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
     - **Riesgo:** el mismo que el token de invitado (V7).
   - **Modo Dios en ORIGINS** (`mundo/js/dios3.js`): F2 o Ajustes → «Modo Dios». Tiene poderes, jefe mundial, anuncio, jugadores, pedidos y moderación, y usa los mismos mensajes `dios`. Al entrar sale un aviso si eres dios.
   - **Pruebas:** `pruebasLlave` en el arnés.
-
+- **v401 (22-nov-2026): todo en duendequest.com.**
+  - TON Connect (manifiesto y `manifestUrl`) pasó al dominio oficial.
+  - Las PÁGINAS de workers.dev se mudan solas: `functions/api/mudanza.js` responde 301 a robots, HEAD y a quien ya pasó sin nada guardado (cookie `dqm=0`); a un navegador le da una página puente que lee su `localStorage` (`dq_*`, `dq3_*`, `cw_*`, sesión `sb-*`) y salta a `/mudanza#paquete`. `mudanza.html` lo guarda sin pisar nada, solo si la visita viene del dominio viejo, y sigue a la misma ruta con sus parámetros y #hash.
+  - No se redirigen `/api/*`, `/mmo/ws` ni los archivos de workers.dev (webhooks y clientes abiertos).
+  - `run_worker_first` (wrangler.toml) ahora lista también las páginas: **una página nueva hay que añadirla allí** en todas sus formas. Lo comprueba `tools/arnes_mudanza.mjs` (dentro de `verificar`); de punta a punta en producción: `node tools/qa_mudanza.mjs`.
+- **v402 (22-nov-2026): paleta global «Esmeralda y oro místico».**
+  - Fuente única: `css/tema.css` (`--primary`, `--secondary`, `--accent`, `--bg-dark`, superficies, texto, estados, degradados y brillos). No se enlaza: `node tools/tema.mjs` lo copia en cada página (`<style id="dq-tema">`) junto con el «puente» de los nombres viejos de esa página (`--bg`, `--panel`, `--pri`, `--oro`…). `verificar` falla si una copia quedó vieja.
+  - Jerarquía: esmeralda = acción principal; oro = token, premios y premium; violeta = ORIGINS y rarezas. El maná, la XP de descanso y la rareza «Rara» siguen azules; el lienzo del juego y los colores de daño/clase no se tocaron; `/chicha/` y Chicha Wars conservan su morado.
+  - Para comparar un cambio de colores: `node tools/fotos_paleta.mjs <carpeta>` con `mmo_local` en marcha.
