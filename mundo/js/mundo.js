@@ -9296,7 +9296,8 @@ function moverMascota(q, esYo, t, dt) {
   m.s.visible = !!figVis && !fuera;
   if (!m.s.visible) { m.nuevo = true; return; }
   const ry = esYo ? P.ry || 0 : q.ry || 0, sn = Math.sin(ry), cs = Math.cos(ry);
-  const tx = q.x - sn * 1.2 + cs * 0.6, tz = q.z - cs * 1.2 - sn * 0.6;
+  const atras = m.mist ? 0.75 : 1.2, lado = m.mist ? 1.15 : 0.6;   // las místicas van más al costado: flotan y taparían al duende
+  const tx = q.x - sn * atras + cs * lado, tz = q.z - cs * atras - sn * lado;
   const yb = esYo ? P.y : q.y;
   if (m.nuevo || Math.hypot(tx - m.x, tz - m.z) > 20) { m.x = tx; m.z = tz; m.y = yb; m.nuevo = false; }
   const k = 1 - Math.exp(-6 * dt), ox = m.x, oz = m.z;

@@ -18,7 +18,7 @@ const CSS = `
 .mm-huevo svg{flex:none;width:58px;height:72px;filter:drop-shadow(0 0 10px rgba(34,227,154,.55));animation:mm-mece 2.6s ease-in-out infinite;transform-origin:50% 92%}
 .mm-huevo .mm-h-txt{flex:1;min-width:0}
 .mm-huevo b{display:block;font:800 15px/1.25 var(--sans,system-ui,sans-serif);color:var(--accent,#f5c84c);margin:0 0 3px}
-.mm-huevo p{font:500 13px/1.4 var(--sans,system-ui,sans-serif);color:var(--text-2,#a9bdb3);margin:0 0 8px}
+#mm-cuerpo .mm-huevo p{font:500 13px/1.4 var(--sans,system-ui,sans-serif);color:var(--text-2,#a9bdb3);margin:0 0 8px}
 .mm-barra{height:12px;border-radius:99px;background:rgba(0,0,0,.45);border:1px solid var(--border,#213832);overflow:hidden;margin:0 0 4px}
 .mm-barra i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1ad68a,#6ff8c0 60%,#f5c84c);box-shadow:0 0 10px rgba(34,227,154,.6);transition:width .5s cubic-bezier(.2,1.4,.4,1)}
 .mm-barra-t{font:700 12px var(--sans,system-ui,sans-serif);color:var(--text,#ecf7f1);margin:0 0 8px}
@@ -37,11 +37,11 @@ const CSS = `
 .mm-ficha.no .mm-img img{filter:brightness(0) opacity(.5)}
 .mm-rz{font:800 10px var(--sans,system-ui,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:var(--rz);margin:0 0 2px}
 .mm-ficha b{font:800 13px/1.25 var(--sans,system-ui,sans-serif);color:var(--text,#ecf7f1);margin:0 0 4px}
-.mm-bono{font:700 12px/1.3 var(--sans,system-ui,sans-serif);color:var(--primary-soft,#6df5bd);margin:0 0 4px}
-.mm-desc{font:500 11px/1.35 var(--sans,system-ui,sans-serif);color:var(--text-3,#7f958a);margin:0 0 8px;flex:1}
+#mm-cuerpo .mm-bono{font:700 12px/1.3 var(--sans,system-ui,sans-serif);color:var(--primary-soft,#6df5bd);margin:0 0 4px}
+#mm-cuerpo .mm-desc{font:500 11px/1.35 var(--sans,system-ui,sans-serif);color:var(--text-3,#7f958a);margin:0 0 8px;flex:1}
 .mm-ficha .mm-btn{width:100%;min-height:36px;padding:6px 8px}
 .mm-va{font:800 12px var(--sans,system-ui,sans-serif);color:var(--rz);margin:0 0 6px}
-.mm-nota{font:500 12px/1.45 var(--sans,system-ui,sans-serif);color:var(--text-3,#7f958a);margin:12px 0 0;text-align:center}
+#mm-cuerpo .mm-nota{font:500 12px/1.45 var(--sans,system-ui,sans-serif);color:var(--text-3,#7f958a);margin:12px 0 0;text-align:center}
 @keyframes mm-flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes mm-mece{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
 @media (max-width:420px){.mm-rejilla{grid-template-columns:repeat(2,1fr);gap:8px}.mm-huevo{padding:10px}.mm-huevo svg{width:46px;height:58px}}
@@ -55,7 +55,9 @@ function estilos() {
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // El huevo (esmeralda con vetas de oro): la cabecera de la ventana y el icono del botón.
-export const HUEVO_SVG = '<svg viewBox="0 0 48 60" aria-hidden="true"><defs><radialGradient id="mm-hg" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#b6ffe0"/><stop offset=".35" stop-color="#22e39a"/><stop offset=".8" stop-color="#0a8457"/><stop offset="1" stop-color="#064e3b"/></radialGradient></defs><path d="M24 2C13 2 4 20 4 36c0 13 9 22 20 22s20-9 20-22C44 20 35 2 24 2z" fill="url(#mm-hg)" stroke="#03150d" stroke-width="2"/><path d="M8 30c5-3 8 3 13 0s7-6 12-3 6 4 9 2M10 44c4-2 7 2 11 0s8-4 12-1 5 2 7 1" fill="none" stroke="#f5c84c" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="16" r="2" fill="#f5c84c"/><circle cx="31" cy="22" r="1.6" fill="#f5c84c"/><circle cx="26" cy="38" r="1.8" fill="#ffe08a"/><ellipse cx="16" cy="20" rx="4" ry="7" fill="#fff" opacity=".22" transform="rotate(-18 16 20)"/></svg>';
+const svgHuevo = id => '<svg viewBox="0 0 48 60" aria-hidden="true"><defs><radialGradient id="' + id + '" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#b6ffe0"/><stop offset=".35" stop-color="#22e39a"/><stop offset=".8" stop-color="#0a8457"/><stop offset="1" stop-color="#064e3b"/></radialGradient></defs><path d="M24 2C13 2 4 20 4 36c0 13 9 22 20 22s20-9 20-22C44 20 35 2 24 2z" fill="url(#' + id + ')" stroke="#03150d" stroke-width="2"/><path d="M8 30c5-3 8 3 13 0s7-6 12-3 6 4 9 2M10 44c4-2 7 2 11 0s8-4 12-1 5 2 7 1" fill="none" stroke="#f5c84c" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="16" r="2" fill="#f5c84c"/><circle cx="31" cy="22" r="1.6" fill="#f5c84c"/><circle cx="26" cy="38" r="1.8" fill="#ffe08a"/><ellipse cx="16" cy="20" rx="4" ry="7" fill="#fff" opacity=".22" transform="rotate(-18 16 20)"/></svg>';
+// El del botón de la barra lleva otro id de degradado: si el botón queda oculto (menú «⋯» del móvil), el de la ventana no se queda sin relleno.
+export const HUEVO_SVG = svgHuevo('mm-hg-b');
 
 // op: { yo, invitado, MASCOTAS, MISTICAS, RAREZAS }
 export function htmlMisticas(op) {
@@ -66,13 +68,13 @@ export function htmlMisticas(op) {
   const nTengo = MISTICAS.filter(id => tengo.has(id)).length;
   let h = '';
   if (invitado) {
-    h += `<div class="mm-huevo">${HUEVO_SVG}<div class="mm-h-txt"><b>Tu Huevo Místico te espera</b><p>Crea tu cuenta gratis (solo correo y contraseña) y recibe un Huevo Místico de Duende. Tu duende de invitado pasa contigo, con todo lo que lleva.</p><button type="button" class="mm-btn oro" data-mm="cuenta">Crear mi cuenta gratis</button></div></div>`;
+    h += `<div class="mm-huevo">${svgHuevo('mm-hg-v')}<div class="mm-h-txt"><b>Tu Huevo Místico te espera</b><p>Crea tu cuenta gratis (solo correo y contraseña) y recibe un Huevo Místico de Duende. Tu duende de invitado pasa contigo, con todo lo que lleva.</p><button type="button" class="mm-btn oro" data-mm="cuenta">Crear mi cuenta gratis</button></div></div>`;
   } else if (y.huevo) {
     const p = Math.max(0, y.huevo.p | 0), meta = Math.max(1, y.huevo.meta | 0), pct = Math.min(100, Math.round(p * 100 / meta));
     const llevo = eq === 'huevo';
-    h += `<div class="mm-huevo">${HUEVO_SVG}<div class="mm-h-txt"><b>Huevo Místico de Duende</b><div class="mm-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${meta}" aria-valuenow="${Math.min(p, meta)}"><i style="width:${pct}%"></i></div><div class="mm-barra-t">Incubación ${Math.min(p, meta)} / ${meta}</div><p>${llevo ? 'Lo llevas contigo: se incuba cuando cazas monstruos de tu nivel, vences jefes y entregas misiones.' : 'Solo se incuba si lo llevas contigo. Mientras llevas el huevo no tienes el bono de otra mascota.'}</p>${llevo ? '<button type="button" class="mm-btn sec" data-mm="guardar">Guardar el huevo</button>' : '<button type="button" class="mm-btn" data-mm="llevar" data-id="huevo">Llevar el huevo</button>'}</div></div>`;
+    h += `<div class="mm-huevo">${svgHuevo('mm-hg-v')}<div class="mm-h-txt"><b>Huevo Místico de Duende</b><div class="mm-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${meta}" aria-valuenow="${Math.min(p, meta)}"><i style="width:${pct}%"></i></div><div class="mm-barra-t">Incubación ${Math.min(p, meta)} / ${meta}</div><p>${llevo ? 'Lo llevas contigo: se incuba cuando cazas monstruos de tu nivel, vences jefes y entregas misiones.' : 'Solo se incuba si lo llevas contigo. Mientras llevas el huevo no tienes el bono de otra mascota.'}</p>${llevo ? '<button type="button" class="mm-btn sec" data-mm="guardar">Guardar el huevo</button>' : '<button type="button" class="mm-btn" data-mm="llevar" data-id="huevo">Llevar el huevo</button>'}</div></div>`;
   } else if (nTengo >= MISTICAS.length) {
-    h += `<div class="mm-huevo">${HUEVO_SVG}<div class="mm-h-txt"><b>Colección completa</b><p>Ya nacieron tus ${MISTICAS.length} mascotas místicas. Elige cuál te acompaña.</p></div></div>`;
+    h += `<div class="mm-huevo">${svgHuevo('mm-hg-v')}<div class="mm-h-txt"><b>Colección completa</b><p>Ya nacieron tus ${MISTICAS.length} mascotas místicas. Elige cuál te acompaña.</p></div></div>`;
   }
   h += '<div class="mm-rejilla">';
   for (const id of MISTICAS) {

@@ -5120,7 +5120,7 @@ function dibujarMistica(q, id, ma, f, pies, montado, esYo) {
   // Alegría: salto al ganar oro; giro con oro doble o botín.
   if (p.sal > ahora) oy -= Math.sin((1 - (p.sal - ahora) / 420) * Math.PI) * 16;
   if (p.giro > ahora) sx *= Math.cos((1 - (p.giro - ahora) / 520) * Math.PI * 2);
-  const x = Math.round(p.x - camX), y = Math.round(p.y + oy), alto = ma.alto;
+  const x = Math.round(p.x - camX), y = Math.round(p.y + oy), alto = ma.huevo ? ma.alto : Math.round(ma.alto * 1.15);
   // Estela esmeralda y oro (ninguna en modo ligero).
   if (!ligero && (anda || ma.vuela || an === 'flota') && frame % (anda ? 7 : 16) === 0) particula(p.x + (Math.random() - .5) * alto * .5, p.y + oy - alto * (.2 + Math.random() * .5), frame % 14 === 0 ? 'rgba(245,200,76,.85)' : 'rgba(109,245,189,.8)', .5);
   // Sombra de las que van por el suelo.
