@@ -20,6 +20,7 @@ import {
   CAPTURA,
 } from './data.js?v=402';
 import { iniciarRegalo } from './regalo.js?v=402';
+import * as vivo from '/js/vivo.js?v=402';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
 import { vecinosDe, encargoVecino } from './vecinos2d.js?v=402';   // vecinos y encargos de las zonas (mundo vivo)
 import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=402';
 import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=402';
@@ -186,6 +187,8 @@ function vibrar(tipo) {
 }
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+// Inventario y botones vivos (js/vivo.js). Con el modo ligero (pocos FPS) se queda sin animaciones.
+vivo.iniciar({ juego: '2d', ligero: () => ligero, tg: () => TG });
 if (TACTIL) document.body.classList.add('tactil');
 const colaAvisoMovil = [];   // aviso() es izada y puede llamarse antes que su seccion: la cola va aqui arriba
 if (TG) document.body.classList.add('tg');
@@ -1034,6 +1037,7 @@ function recibir(m) {
     // Cuenta regresiva de Año Nuevo («🎆 n…»): cada numero reemplaza al anterior (sin apilar 10 avisos).
     case 'chicha_rec': if (tabInv === 'chicha') pintarChicha(); break;   // ya reclamó: que vea su código y el botón de WhatsApp
     case 'toast': if (/^🎆 \d+…$/.test(m.m || '')) { document.querySelectorAll('.aviso').forEach(a => { if (/^\d+…$/.test(a.textContent)) a.remove(); }); aviso(m.m, 'ok', 1500); break; }
+      if (!m.ok) vivo.fallo();   // «no se pudo»: sacudida corta del boton o tarjeta que se acaba de tocar (js/vivo.js)
       if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
@@ -3824,8 +3828,8 @@ function pintarEquipo() {
   for (const k in RANURAS) {
     const it = eq[k];
     h += it
-      ? `<div class="ranura" data-quitar="${k}" title="Quitar" style="border-color:${RAREZAS[it.r].color}">${htmlItem(it)}<small>${RANURAS[k].nombre}</small></div>`
-      : `<div class="ranura vacia"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
+      ? `<div class="ranura" data-quitar="${k}" data-ran="${k}" title="Quitar" style="border-color:${RAREZAS[it.r].color};--rz:${RAREZAS[it.r].color}">${htmlItem(it)}<small>${RANURAS[k].nombre}</small></div>`
+      : `<div class="ranura vacia" data-ran="${k}"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
   }
   h += '</div>';
   // Conjuntos que llevas puestos (aunque sea una pieza): cuantas y su bono.
@@ -3858,22 +3862,25 @@ function pintarEquipo() {
     const acc = (puede ? `<button class="btn" data-eq="${it.id}">Equipar</button>` : `<span class="precio" style="color:var(--warn)">Nv ${it.nv}</span>`)
       + `<button class="btn sec" data-vender="${it.id}">Vender ${precioVenta(it)}</button>`
       + (it.r >= 1 && yo.nivel >= NIVEL_MAX ? `<button class="btn sec" data-reforjar="${it.id}" title="Vuelve a tirar su línea extra (junto a la Artesana)">Reforjar ${costoReforja(it)}</button>` : '');
+    // data-rz / --rz / data-s: los usa js/vivo.js (brillo por rareza y vuelo de la pieza a su ranura).
     h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:var(--txt2)">Nv${it.nv}</span>${flecha}`,
-      `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">Conjunto: ' + esc(textoConjunto(CONJUNTOS[it.cj])) + '</span>' : ''}`, acc);
+      `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">Conjunto: ' + esc(textoConjunto(CONJUNTOS[it.cj])) + '</span>' : ''}`, acc)
+      .replace('<div class="item">', `<div class="item" data-rz="${it.r | 0}" data-s="${esc(it.s)}" style="--rz:${rz.color}">`);
   }
   $('inv-lista').innerHTML = h;
   const L = $('inv-lista');
-  L.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'equipar', id: b.dataset.eq }); });
-  L.querySelectorAll('[data-vender]').forEach(b => b.onclick = () => { sfx('moneda', .3); mandar({ t: 'item', a: 'vender', id: b.dataset.vender }); });
+  L.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { sfx('boton', .3); vivo.alEquipar(b); mandar({ t: 'item', a: 'equipar', id: b.dataset.eq }); });
+  L.querySelectorAll('[data-vender]').forEach(b => b.onclick = () => { sfx('moneda', .3); const itV = bolsa.find(x => x.id === b.dataset.vender); vivo.alVender(b, itV ? precioVenta(itV) : 0, '#monedero'); mandar({ t: 'item', a: 'vender', id: b.dataset.vender }); });
   L.querySelectorAll('[data-reforjar]').forEach(b => b.onclick = () => {
     const it = bolsa.find(x => x.id === b.dataset.reforjar);
     if (it && confirm('¿Reforjar por ' + costoReforja(it).toLocaleString('es', { useGrouping: 'always' }) + ' oro? Su línea extra se vuelve a tirar al azar (puede salir peor). Hazlo junto a la Artesana Lila.')) { sfx('moneda', .3); mandar({ t: 'item', a: 'reforjar', id: it.id }); }
   });
   L.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'quitar', ranura: b.dataset.quitar }); });
   const bm = $('b-equipar-mejor');
-  if (bm) bm.onclick = () => { sfx('boton', .4); mejoras.forEach(x => mandar({ t: 'item', a: 'equipar', id: x.id })); };
+  if (bm) bm.onclick = () => { sfx('boton', .4); vivo.vibrar('equipar'); mejoras.forEach(x => mandar({ t: 'item', a: 'equipar', id: x.id })); };
   const bv = $('b-vender-comunes');
-  if (bv) bv.onclick = () => { sfx('moneda', .4); comunes.forEach(x => mandar({ t: 'item', a: 'vender', id: x.id })); };
+  if (bv) bv.onclick = () => { sfx('moneda', .4); vivo.alVender(bv, comunes.reduce((a, x) => a + precioVenta(x), 0), '#monedero'); comunes.forEach(x => mandar({ t: 'item', a: 'vender', id: x.id })); };
+  vivo.repintado();   // la ranura que acaba de recibir una pieza destella (js/vivo.js)
 }
 
 // ── RECOMPENSA DIARIA ──
@@ -5973,7 +5980,7 @@ function lineaChat(nombre, txt, canal, colorNombre) {
 }
 
 // ── VENTANAS ──
-function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; pedirSincroAtras(); }
+function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); vivo.abrir($(id)); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; pedirSincroAtras(); }
 function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); pedirSincroAtras(); }
 // Atras del navegador o del movil fuera de Telegram (v327): la ventana abierta deja una entrada en el
 // historial y el Atras la cierra en vez de sacar del juego. En Telegram lo lleva su BackButton (arriba).
@@ -6195,7 +6202,7 @@ function pintarTienda() {
 }
 
 let tabInv = 'skin';
-document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { tabInv = b.dataset.itab; document.querySelectorAll('[data-itab]').forEach(x => x.classList.toggle('on', x === b)); pintarInventario(); });
+document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { const cambia = tabInv !== b.dataset.itab; tabInv = b.dataset.itab; document.querySelectorAll('[data-itab]').forEach(x => x.classList.toggle('on', x === b)); if (cambia && $('m-inv').classList.contains('on')) vivo.abrir($('m-inv')); pintarInventario(); });
 function abrirInventario() { if (!yo) return; abrir('m-inv'); pintarInventario(); }
 $('h-chicha').onclick = () => { if (!yo) return; const b = document.querySelector('[data-itab="chicha"]'); if (b) b.onclick(); abrirInventario(); };
 function pintarInventario() {
@@ -6227,7 +6234,7 @@ function pintarInventario() {
     h += tarjeta(ico, d.nombre + mas, d.desc, acc);
   }
   $('inv-lista').innerHTML = h;
-  $('inv-lista').querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }));
+  $('inv-lista').querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => { vivo.vibrar('equipar'); mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }); });
 }
 
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
