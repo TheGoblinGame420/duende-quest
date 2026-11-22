@@ -1,7 +1,7 @@
 # Archivos que NUNCA deben servirse públicamente desde el Worker.
 #
 # OJO: esto es una lista NEGRA. Todo lo que no esté aquí se publica en
-# https://duende-quest.alfonso12hc.workers.dev/<ruta>. Cada archivo nuevo en la
+# https://duendequest.com/<ruta>. Cada archivo nuevo en la
 # raíz es público por defecto — por eso LAUNCH-CHECKLIST.md quedó expuesto.
 # Lo correcto a futuro es invertirlo: mover el sitio a public/ y servir solo esa
 # carpeta desde [assets] en wrangler.toml.

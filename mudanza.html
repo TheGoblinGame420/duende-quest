@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Duende Quest</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#060b0a;color:#eaf6ef;font:16px system-ui,sans-serif;text-align:center}a{color:#f5c84c}</style>
+</head>
+<body>
+<p>Preparando tu duende…<br><a id="seguir" href="/">Continuar</a></p>
+<script>
+// MUDANZA (llegada). El dominio viejo (functions/api/mudanza.js) manda aqui lo
+// que el jugador tenia guardado, en el #fragmento. Se guarda SIN pisar nada de
+// lo que ya haya en este dominio y se sigue a la pagina pedida. Solo se acepta
+// si la visita viene del dominio viejo (o sin procedencia, y entonces nunca la
+// sesion de la cuenta): un enlace armado por otro no puede meter su cuenta.
+(function () {
+  var VIEJO = 'https://duende-quest.alfonso12hc.workers.dev';
+  var to = '/';
+  try {
+    var h = location.hash.slice(1).replace(/-/g, '+').replace(/_/g, '/');
+    var d = h ? JSON.parse(decodeURIComponent(escape(atob(h)))) : null;
+    if (d && typeof d.to === 'string' && d.to.length < 9000 && /^\/(?![\/\\])/.test(d.to) && d.to.indexOf('/mudanza') !== 0) to = d.to;
+    var ref = document.referrer || '';
+    var deViejo = ref === VIEJO || ref.indexOf(VIEJO + '/') === 0;
+    if (d && d.k && typeof d.k === 'object' && (deViejo || !ref)) {
+      for (var c in d.k) {
+        if (!Object.prototype.hasOwnProperty.call(d.k, c)) continue;
+        var v = d.k[c];
+        if (typeof v !== 'string' || v.length > 12000 || !/^(dq_|dq3_|cw_|duende_|sb-)/.test(c)) continue;
+        if (/^sb-/.test(c) && !deViejo) continue;
+        var aqui = localStorage.getItem(c);
+        if (aqui == null) localStorage.setItem(c, v);
+        // Dos duendes de invitado (uno por dominio): manda el de aqui y el
+        // viejo queda de reserva, como cuando se abre el enlace de otro duende.
+        else if (c === 'dq_mmo_tok' && aqui !== v && /^[a-f0-9]{32}$/.test(v) && localStorage.getItem('dq_mmo_tok_previo') == null) localStorage.setItem('dq_mmo_tok_previo', v);
+      }
+    }
+  } catch (e) {}
+  try { document.getElementById('seguir').href = to; } catch (e) {}
+  location.replace(to);
+})();
+</script>
+</body>
+</html>

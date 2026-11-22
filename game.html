@@ -65,12 +65,12 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="js/config.js?v=400"></script>
-<script src="js/missions.js?v=400"></script>
-<script src="js/streak.js?v=400"></script>
-<script src="js/achievements.js?v=400"></script>
-<script src="js/auth-manager.js?v=400" defer></script>
-<script type="module">import { abrirCuenta } from '/js/cuenta.js?v=400'; window.__dqAbrirCuenta = abrirCuenta;</script>   <!-- la misma cuenta de todos los juegos -->
+<script src="js/config.js?v=401"></script>
+<script src="js/missions.js?v=401"></script>
+<script src="js/streak.js?v=401"></script>
+<script src="js/achievements.js?v=401"></script>
+<script src="js/auth-manager.js?v=401" defer></script>
+<script type="module">import { abrirCuenta } from '/js/cuenta.js?v=401'; window.__dqAbrirCuenta = abrirCuenta;</script>   <!-- la misma cuenta de todos los juegos -->
 <style>
 /* ── TOKENS (guia de diseño comun, oct 2026) ──
    Las variables viejas se mantienen remapeadas a tonos sobrios. */
@@ -797,7 +797,7 @@ window.DQE = {
   },
 };
 </script>
-<script src="js/engine.js?v=400"></script>
+<script src="js/engine.js?v=401"></script>
 <script>
 'use strict';
 // ── RANKING ──// ── RANKING ──
@@ -826,7 +826,7 @@ async function _walletApiWeb(action,payload){
 // Telegram (telegram/index.html) -- aqui sin twaReturnUrl (eso es especifico
 // de volver a un chat de Telegram tras aprobar en la wallet; en una pestaña
 // normal de navegador el SDK ya maneja el regreso solo, con QR o extension).
-const TON_MANIFEST_WEB='https://duende-quest.alfonso12hc.workers.dev/tonconnect-manifest.json';
+const TON_MANIFEST_WEB='https://duendequest.com/tonconnect-manifest.json';
 let tonUIWeb=null, tonAddrWeb=null;
 function initTonConnectWeb(){
   try{

@@ -8,6 +8,7 @@ import walletApi from './functions/api/wallet.js';
 import tokenStats from './functions/api/token-stats.js';
 import { runCron } from './functions/api/cron.js';
 import { evValido } from './functions/mmo/retencion.js';
+import { tocaMudanza, respuestaMudanza } from './functions/api/mudanza.js';
 export { MmoWorld } from './functions/mmo/world.js';
 
 export default {
@@ -15,6 +16,11 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const context = { request, env, ctx };
+
+    // Dominio viejo (workers.dev): las paginas se mudan a duendequest.com con el
+    // duende del jugador (functions/api/mudanza.js). La API, el WebSocket y los
+    // archivos siguen sirviendose igual.
+    if (tocaMudanza(request, url)) return respuestaMudanza(request, url);
 
     // Route API calls
     if (path === '/api/telegram-bot') return telegramBot.onRequestPost(context);

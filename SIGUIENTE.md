@@ -5,6 +5,14 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v401 (22-nov-2026): todo en duendequest.com
+
+- TON pasó al dominio oficial (manifiesto + manifestUrl). Quien tenía la wallet conectada la conecta una vez más (la sesión de TON Connect es por origen).
+- workers.dev ya no muestra páginas: `functions/api/mudanza.js` (301 a robots; página puente a navegadores) + `mudanza.html` (llegada, no pisa nada, solo acepta si viene del dominio viejo). La API, `/mmo/ws` y los archivos de workers.dev siguen vivos a propósito: el webhook de Telegram/Helius puede seguir apuntando allí y un cliente abierto no se corta.
+- **Página nueva = añadirla a `run_worker_first`** (wrangler.toml) en sus formas; `tools/arnes_mudanza.mjs` falla si falta.
+- Pendiente del dueño: en BotFather, cambiar a duendequest.com las URL de la Mini App y del botón de menú (hoy funcionan por la mudanza, pero con un salto); añadir `https://duendequest.com/**` a las Redirect URLs de Supabase; si quiere, mover el webhook del bot a duendequest.com (no hace falta).
+- Dos duendes de invitado (uno por dominio): queda el del dominio nuevo y el viejo va a `dq_mmo_tok_previo`.
+
 ## v400 (21-nov-2026): auditoría, dominio, tienda y cuenta en la portada
 
 - **Dominio:** `functions/api/dominio.js` es la única fuente (`SITIO`, `HOSTS_OFICIALES`, `sitioDe(env)` con `APP_URL` opcional). duendequest.com y el viejo workers.dev son oficiales en el antispam del grupo (`grupo.js clasificarEnlace`), el filtro del chat (`social.js DOMINIO_OFICIAL`) y CORS (`lib.js`). Metadatos, sitemap y robots apuntan a duendequest.com. **No se redirige workers.dev** (los invitados perderían su duende: vive en el localStorage de ese origen).

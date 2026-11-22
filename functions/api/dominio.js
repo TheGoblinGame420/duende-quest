@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════
 // DUENDE QUEST — dominio oficial (una sola fuente)
 //
-// duendequest.com es el dominio de produccion; el viejo workers.dev sigue
-// sirviendo lo mismo (no se redirige: los invitados guardan su duende en el
-// localStorage de ESE origen y lo perderian). Todo lo que reconozca enlaces
+// duendequest.com es el dominio de produccion. Desde v401 las paginas del viejo
+// workers.dev se mudan solas al oficial llevando el duende del invitado
+// (functions/api/mudanza.js + /mudanza.html). Todo lo que reconozca enlaces
 // oficiales (antispam del grupo, filtro del chat, CORS) acepta los dos.
 //
 // APP_URL (variable de entorno opcional, solo https://host sin ruta) cambia

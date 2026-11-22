@@ -516,7 +516,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 400;
+export const VERSION = 401;
 
 // Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
 // tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
@@ -535,6 +535,10 @@ export function anotarMisSkins(yo) {
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 154, fecha: '22 nov 2026', items: [
+    '🏠 Todo el juego vive ya en duendequest.com: si entras por la dirección antigua, te llevamos solo a la nueva con tu duende, tu nombre y tus ajustes.',
+    '💎 La conexión de la wallet de TON también es de duendequest.com (si ya la tenías conectada, conéctala una vez más).',
+  ] },
   { n: 153, fecha: '21 nov 2026', items: [
     '🛍️ La tienda de la portada muestra todas las skins (17) con vista 3D o 2D, filtros por tipo y rareza, y marca las que ya tienes en este navegador.',
     '👤 Botón «Entrar» en la portada: la misma cuenta de correo de todos los juegos, sin salir de la página.',

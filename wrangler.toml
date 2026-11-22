@@ -23,7 +23,23 @@ not_found_handling = "404-page"
 # Object). /interno/* NO va: solo existe dentro del Durable Object
 # (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
 # nueva, AGREGARLA aqui si tambien coincide con un archivo; si no, ya llega al Worker.
-run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev", "/mmo/cw", "/mmo/rank"]
+# Desde v401 tambien pasan primero las PAGINAS (una invocacion por visita, no por
+# archivo): en el dominio viejo workers.dev el Worker las muda a duendequest.com
+# (functions/api/mudanza.js); en el oficial las sirve tal cual con las mismas
+# cabeceras. Los patrones no distinguen dominio, por eso van aqui. Una pagina
+# NUEVA (carpeta con index.html o archivo .html) debe anadirse a esta lista en sus
+# formas (/x, /x/, /x/index.html o /x, /x.html); si falta, en workers.dev se
+# queda sin redirigir. Tope de Cloudflare: 100 entradas (hoy 48).
+run_worker_first = [
+  "/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev", "/mmo/cw", "/mmo/rank",
+  "/", "/index.html", "/mmo", "/mmo/", "/mmo/index.html", "/mundo",
+  "/mundo/", "/mundo/index.html", "/jugar", "/jugar/", "/jugar/index.html", "/inicio",
+  "/inicio/", "/inicio/index.html", "/chicha", "/chicha/", "/chicha/index.html", "/chicha-wars",
+  "/chicha-wars/", "/chicha-wars/index.html", "/telegram", "/telegram/", "/telegram/index.html", "/token",
+  "/token/", "/token/index.html", "/game", "/game.html", "/guia", "/guia.html",
+  "/novedades", "/novedades.html", "/seguridad", "/seguridad.html", "/terminos", "/terminos.html",
+  "/privacidad", "/privacidad.html", "/reembolsos", "/reembolsos.html", "/mundo/galeria", "/mundo/galeria.html"
+]
 # (/api/medir, el ID del pixel de Meta para js/medir.js, ya entra por /api/*.)
 
 # Medicion de anuncios de Meta (pixel + Conversions API): APAGADA mientras no
