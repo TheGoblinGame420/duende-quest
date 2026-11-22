@@ -20,7 +20,7 @@ import { spawnSync } from 'node:child_process';
 import { RAIZ } from './version.mjs';
 
 const args = new Set(process.argv.slice(2));
-const URL_BASE = (process.env.DQ_URL || 'https://duende-quest.alfonso12hc.workers.dev').replace(/\/$/, '');
+const URL_BASE = (process.env.DQ_URL || 'https://duendequest.com').replace(/\/$/, '');
 const SECRETO = process.env.DEPLOY_SECRET || '';
 const MAX_CONECTADOS = 15;
 

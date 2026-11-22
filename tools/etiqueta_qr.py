@@ -10,7 +10,7 @@
 # ═══════════════════════════════════════════════════════
 import os, re, sys
 
-URL = 'https://duende-quest.alfonso12hc.workers.dev/chicha/?utm_source=etiqueta'
+URL = 'https://duendequest.com/chicha/?utm_source=etiqueta'
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SALIDA = os.path.join(RAIZ, 'assets', 'etiqueta')
 BORDE = 4       # zona blanca obligatoria, en modulos

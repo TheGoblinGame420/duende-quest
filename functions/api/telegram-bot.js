@@ -6,12 +6,15 @@ import { supabaseQuery, isFirstPurchase } from './lib.js';
 import { textoPagoRecibido, ENTREGA } from '../../mmo/js/data.js';
 import { grupoWebhook } from './grupo.js';
 
-const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
-const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
+import { SITIO } from './dominio.js';
+
+// Dominio oficial: functions/api/dominio.js (duendequest.com desde v401, aprobado por el dueño).
+const WEBAPP_URL = SITIO + '/telegram/index.html';
+const SITE_URL = SITIO;
 // Exportada: los avisos de vuelta del MMO (functions/mmo/retencion.js) usan la misma.
-export const MMO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mmo/';
+export const MMO_URL = SITIO + '/mmo/';
 // El mundo abierto en 3D (el mismo personaje y servidor que el MMO).
-export const MUNDO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mundo/';
+export const MUNDO_URL = SITIO + '/mundo/';
 // El creador del juego y sus canales oficiales: se muestran en /start y
 // /creador para que cualquiera pueda comprobar quién está detrás del juego.
 const CREADOR_TG = 'https://t.me/ElDuendeOficial';
@@ -34,7 +37,7 @@ const TEXTO_SEGURIDAD = '🔒 Nunca te pediremos contraseñas, frases semilla ni
 const BOTON_SEGURIDAD = [{ text: '🔒 Seguridad', url: SEGURIDAD_URL }];
 const DEXSCREENER_URL = 'https://api.dexscreener.com/latest/dex/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 // Trailer de la portada (assets/video/; cambiar el numero al regenerarlo).
-const TRAILER_URL = 'https://duende-quest.alfonso12hc.workers.dev/assets/video/trailer-2.mp4';
+const TRAILER_URL = SITIO + '/assets/video/trailer-2.mp4';
 const PUMP_FUN_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
 function getEnv(context) {

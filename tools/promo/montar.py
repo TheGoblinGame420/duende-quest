@@ -236,7 +236,7 @@ def tarjeta_final(formato):
     y2 += int(t * 1.6) + (10 if v else 0)
     y3 = pastilla(capas[2], '✈️ @duendequest_bot', cx, y2, 60 if v else 50, (34, 158, 217), BLANCO, NEGRA, pad=(40, 20), alfa=255)
     y3 += 26 if v else 18
-    pastilla(capas[2], 'duende-quest.alfonso12hc.workers.dev', cx, y3, 42 if v else 38, (15, 18, 32), (255, 216, 74), NEGRITA, pad=(30, 16), alfa=235, max_ancho=960)
+    pastilla(capas[2], 'duendequest.com', cx, y3, 42 if v else 38, (15, 18, 32), (255, 216, 74), NEGRITA, pad=(30, 16), alfa=235, max_ancho=960)
     return [con_sombra(c) for c in capas]
 
 

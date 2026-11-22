@@ -7,7 +7,7 @@
 //
 // tools/ no se publica (.assetsignore).
 // ═══════════════════════════════════════════════════════
-const url = process.argv[2] || 'wss://duende-quest.alfonso12hc.workers.dev/mmo/ws';
+const url = process.argv[2] || 'wss://duendequest.com/mmo/ws';
 // Paginas para los anuncios de Meta: /jugar/ sin nada de cripto y la portada sin
 // promesas falsas (cofres, ticker, contador). Se revisan por HTTP antes del WebSocket.
 const web = url.replace(/^ws/, 'http').replace(/\/mmo\/ws.*$/, '');

@@ -7,12 +7,13 @@
 // ═══════════════════════════════════════════════════════
 
 import { tg, supabaseQuery, postDiscord } from './lib.js';
+import { SITIO } from './dominio.js';
 
 // El "pulso del mercado" (precio de $DUENDE publicado solo cada dia en
 // Telegram y Discord) se quito el 24-oct-2026 a pedido del dueño: molestaba.
 // El precio sale cuando alguien escribe /price en el bot, y para comprar /buy.
 
-const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
+const WEBAPP_URL = SITIO + '/telegram/index.html';
 const TOURNAMENT_PRIZES = [1000, 500, 250]; // $DUENDE para top 1-3
 
 function envOf(env) {
