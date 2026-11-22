@@ -311,3 +311,7 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - **Mascotas místicas**: `functions/mmo/pets-config.js` (números, solo servidor), `functions/mmo/mascotas.js` (huevo: `c.huevo`, `c.huevoDado`, `c.eclos`), `js/mascotas-ui.js` (ventana, tecla N). Van sobre `MASCOTAS` / `c.mascota`. `datosPropios` manda `huevo`, `mv` y `bmax`.
   - **Inventario vivo**: `js/vivo.js`. **Instalar**: `js/instalar.js`. **Pruebas**: `pruebasHandoff` y `pruebasMascotasMisticas` en el arnés; `tools/qa_handoff.mjs` (Chrome real contra `mmo_local`).
   - **No hecho**: memecoin en TON, correos propios, avatar subido, insignia de creador (ver `SIGUIENTE.md`).
+- **v404 (22-nov-2026): gastos en $DUENDE y registro de quema.**
+  - Excepción aprobada por el dueño a «los pagos son manuales»: los tres `GASTOS_DUENDE` (eclosión instantánea, nivel de mascota, protector de racha) se **entregan solos** tras la verificación en la cadena. Skins, oro y lo demás siguen igual. La verificación de pagos no se tocó.
+  - `functions/mmo/gastos.js`: `gastoDisponible`, `gastoAplicar`, `gastoEntregar`, `verificarQuema`, mensaje `{ t: 'gastos' }`. Niveles en `c.petNv` (bono ×(1 + 0,10·nivel), `pets-config.js`); protectores comprados en `c.login.amuC`.
+  - Los gastos no cuentan como ingreso del fondo de mTON (van a quema) ni marcan `c.compro`.

@@ -14,53 +14,53 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=403';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=403';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=403';   // meta del talento elegido a Nv 7 en la barra de XP
-import { TALA as TALA_R } from '/mmo/js/data.js?v=403';   // v379: talar cualquier arbol
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=403';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=403';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha, mesChicha } from '/mmo/js/data.js?v=403';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=403';
-import { MISTICAS, RAREZAS_MASCOTA, mascotaViaja } from '/mmo/js/data.js?v=403';   // mascotas místicas y Huevo Místico
-import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=403';   // su ventana (la misma de CLASSIC)   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=403';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=403';
-import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=403';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=403';
-import { crearMusica } from './musica.js?v=403';
-import { crearSonidos } from './sonidos.js?v=403';
-import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=403';
-import { construirCueva } from './cueva.js?v=403';
-import { TAPA, transparentar } from './tapa.js?v=403';
-import { construirAbismo } from './abismo.js?v=403';
-import { crearParticulas } from './particulas.js?v=403';
-import { crearCielo } from './cielo.js?v=403';
-import { PERF } from './perf.js?v=403';
-import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=403';
-import { construirLugares, faltanPropios } from './lugares.js?v=403';
-import { cargarModelado } from './modelado.js?v=403';
-import { crearRuinas } from './ruinas.js?v=403';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
-import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=403';
-import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=403';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=403';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=404';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=404';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=404';   // meta del talento elegido a Nv 7 en la barra de XP
+import { TALA as TALA_R } from '/mmo/js/data.js?v=404';   // v379: talar cualquier arbol
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=404';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=404';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=404';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES, anotarMisSkins } from '/mmo/js/data.js?v=404';
+import { MISTICAS, RAREZAS_MASCOTA, mascotaViaja, GASTOS_DUENDE, MASCOTA_NV_MAX } from '/mmo/js/data.js?v=404';   // mascotas místicas y Huevo Místico
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=404';   // su ventana (la misma de CLASSIC)   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=404';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=404';
+import { abrirCuenta, recordarInvitado } from '/js/cuenta.js?v=404';   // cuenta rápida con correo aquí mismo (antes había que ir a CLASSIC)
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar, LUZ_BORDE, BORDE_DIA, BORDE_K, BORDE_FX, ponerMonstruosPaq } from './modelos.js?v=404';
+import { crearMusica } from './musica.js?v=404';
+import { crearSonidos } from './sonidos.js?v=404';
+import { crearAtmosfera, GRADO_ZONA } from './atmosfera.js?v=404';
+import { construirCueva } from './cueva.js?v=404';
+import { TAPA, transparentar } from './tapa.js?v=404';
+import { construirAbismo } from './abismo.js?v=404';
+import { crearParticulas } from './particulas.js?v=404';
+import { crearCielo } from './cielo.js?v=404';
+import { PERF } from './perf.js?v=404';
+import { cargarKenney, cargarPaquete, piezasCasa, KIT_FX } from './kenney.js?v=404';
+import { construirLugares, faltanPropios } from './lugares.js?v=404';
+import { cargarModelado } from './modelado.js?v=404';
+import { crearRuinas } from './ruinas.js?v=404';   // portal, menhires, arcos, murete, hitos y entradas modelados (assets/3d/dq_ruinas)
+import { texturaSuelo, vestirSuelo, crearSotobosque, generarSotobosque } from './terreno.js?v=404';
+import { vestirKit, crearObra, crearEdificios, animarObra } from './arquitectura.js?v=404';   // piedra, madera y teja procedurales; portal, murete, arcos, antorchas
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=404';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=403';
-import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=403';   // v376: lugares con nombre de la franja exterior
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=403';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=403';
-import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=403';   // formas de peligro, estados del objetivo y arquetipos
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=403';
-import { PISTAS } from '/mmo/js/caso.js?v=403';
-import { htmlCaso } from './caso.js?v=403';
-import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=403';
-import { crearRituales } from './rituales.js?v=403';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=403';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=403';
-import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=403';
-import { iniciarDios3 } from './dios3.js?v=403';   // panel del Modo Dios en el 3D
-import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=403';
-import { franjaInstalar } from '/js/instalar.js?v=403';   // «Añadir a pantalla de inicio» al llegar con el enlace de Telegram   // tu cuenta de Telegram en Chrome
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=404';
+import { lugares3d, LUGAR_DIST } from '/mmo/js/mundo3d.js?v=404';   // v376: lugares con nombre de la franja exterior
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=404';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=404';
+import { dentroForma, ESTADOS_MON, ARQ_NOMBRE, ARQ_PISTA } from '/mmo/js/combate3d.js?v=404';   // formas de peligro, estados del objetivo y arquetipos
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=404';
+import { PISTAS } from '/mmo/js/caso.js?v=404';
+import { htmlCaso } from './caso.js?v=404';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=404';
+import { crearRituales } from './rituales.js?v=404';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=404';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=404';
+import { iniciarMenu, crearGfx, fusionarGfx, bajarAuto, PRESETS, NIVELES, NOMBRE_NIVEL } from './menu.js?v=404';
+import { iniciarDios3 } from './dios3.js?v=404';   // panel del Modo Dios en el 3D
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=404';
+import { franjaInstalar } from '/js/instalar.js?v=404';   // «Añadir a pantalla de inicio» al llegar con el enlace de Telegram   // tu cuenta de Telegram en Chrome
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -3255,6 +3255,7 @@ function recibir(m) {
       if (String(m.id).startsWith('h_')) cdHab[m.id.slice(2)] = { fin: performance.now() + m.hasta, ms: m.hasta };
       else cdPoder[m.id] = performance.now() + m.hasta;
       break;
+    case 'gastos': gastosInfo = m; if ($('v-mm').classList.contains('on')) pintarMisticas(); break;   // gastos en $DUENDE y quema (functions/mmo/gastos.js)
     case 'pedidoSol': case 'factura': case 'pedidoYape': V.alPedido(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
     case 'pw': if (m.p === miId) { if (m.i === 0) SON.tocar('cura', { vol: 0.8 }); else sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); } break;   // la pocion: campanitas de curacion
     case 'cast':
@@ -5626,9 +5627,10 @@ $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
 // ── MASCOTAS MÍSTICAS: la ventana (js/mascotas-ui.js, compartida con CLASSIC) ──
-function abrirMisticas() { if (!yo) return; pintarMisticas(); abrir('v-mm'); }
-function pintarMisticas() { $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA }); }
-$('mm-cuerpo').addEventListener('click', e => { if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrar('v-mm'); cuentaAqui('crear'); } })) SON.tocar('clic', { vol: 0.8 }); });
+let gastosInfo = null;   // { t: 'gastos' } del servidor: qué gastos en $DUENDE se pueden y la quema
+function abrirMisticas() { if (!yo) return; if (!soyInvitado && !modoAnuncio()) mandar({ t: 'gastos' }); pintarMisticas(); abrir('v-mm'); }
+function pintarMisticas() { $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA, GASTOS: GASTOS_DUENDE, NV_MAX: MASCOTA_NV_MAX, gastos: gastosInfo, sinCripto: modoAnuncio() }); }
+$('mm-cuerpo').addEventListener('click', e => { if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrar('v-mm'); cuentaAqui('crear'); }, gasto: id => mandar({ t: 'pedido', id, metodo: 'duende', via: 'hud' }), quema: firma => mandar({ t: 'gastos', a: 'quema', firma }) })) SON.tocar('clic', { vol: 0.8 }); });
 $('b-mm').innerHTML = HUEVO_SVG;
 $('b-mm').onclick = abrirMisticas;
 // Tienda siempre a la vista (v325). Punto rojo mientras no se haya visto la oferta de bienvenida
@@ -10713,7 +10715,7 @@ window.__dq3 = { P, mons, otros, get cam() { return camara; }, get camYaw() { re
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 // Modo trailer para grabar videos (mundo/js/trailer.js): ?trailer=1 y SOLO en el servidor local.
 if (/[?&]trailer=1(&|$)/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
-  import('./trailer.js?v=403').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
+  import('./trailer.js?v=404').then(m => m.iniciarTrailer({ P, mons, otros, camara: window.__dq3.camara, get yo() { return yo; }, get camYaw() { return camYaw; }, get camPitch() { return camPitch; }, get objetivo() { return objetivo; },
     listo: () => arteListo && $('carga').style.display === 'none' })).catch(e => console.error('[trailer]', e));
 
 // ── INICIO ──

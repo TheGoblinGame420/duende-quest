@@ -617,6 +617,7 @@ async function pruebas() {
   await pruebasVecinos2d();
   await pruebasCompanero();
   await pruebasMascotasMisticas();
+  await pruebasGastosDuende();
   await pruebasLlave();
   await pruebasHandoff();
   await pruebasCriaturas();
@@ -4697,6 +4698,189 @@ async function pruebasMascotasMisticas() {
   mundo.huevoAlEntrar(roto);
   chequear(roto.mascota === '' && roto.huevo && roto.huevo.p === 0, 'una mística equipada que no es suya se guarda sola al entrar');
   for (const x of [inv, v, t2]) await dejar(x);
+}
+
+// ── v404: gastos en $DUENDE (eclosión, nivel de mascota, protector). El cobro es el de siempre
+// (pedido con monto exacto + transacción leída en Solana + firma de un solo uso); aquí se prueba
+// esa validación con transacciones de mentira, la entrega automática y el registro de quema. ──
+async function pruebasGastosDuende() {
+  console.log('Gastos en $DUENDE: validación en la cadena, firmas repetidas, entrega sola y quema');
+  const D = await import('../mmo/js/data.js');
+  const { SOL_DEV_WALLET } = await import('../functions/api/lib.js');
+  const { bonoPet, PETS, EVO_PASO } = await import('../functions/mmo/pets-config.js');
+  const guardado = { tok: mundo.env.TELEGRAM_BOT_TOKEN, adm: mundo.env.ADMIN_TG_ID };
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT; mundo.env.ADMIN_TG_ID = '88123';
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = async (url, init) => String(url).includes('/auth/v1/user')
+    ? new Response(JSON.stringify({ id: 'w-gasto-1', email: 'gasto@correo.test', email_confirmed_at: 'x', user_metadata: { username: 'Gastona' } }))
+    : String(url).includes('api.telegram.org') ? new Response('{"ok":true,"result":{}}') : fetchReal(url, init);
+  const entrarWeb = async () => {
+    const ws = new WsFalso(); mundo.abrir(ws);
+    const s = [...mundo.sesiones.values()].pop();
+    ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'web', tok: 'tok-web' } }) });
+    for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 5));
+    if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+    s.ws = ws; s.mandar = o => { s.cuenta = 0; s.gastosT = 0; s.pidiendo = false; if (mundo.ritmoSolM) mundo.ritmoSolM.clear(); return mundo.recibir(s, JSON.stringify(o)); };
+    s.ultimos = x => ws.rec.filter(m => m.t === x); s.limpiar = () => { ws.rec.length = 0; };
+    return s;
+  };
+  // La cadena de mentira: lo que devolvería leerTx (pagos) y leerQuema (saldos del token).
+  const txs = new Map(), quemas = new Map();
+  const pago = (raw, op = {}) => ({ ok: true, instr: [{ program: 'spl-token', parsed: { type: 'transferChecked', info: { destination: 'CtaTokDuende', mint: op.mint || D.DUENDE_MINT, tokenAmount: { amount: String(raw) }, authority: 'Pagador' } } }], cuentas: ['Pagador', 'CtaTokDuende'], post: [{ mint: D.DUENDE_MINT, owner: op.owner || SOL_DEV_WALLET, accountIndex: 1 }], recibidoSol: 0, tiempo: op.tiempo || Date.now() });
+  const firma = n => ('Tx' + 'ABCDEFGHJK'[n % 10] + 'abcdefghij'[Math.floor(n / 10) % 10]).padEnd(88, 'x');
+  mundo.leerTx = async f => txs.get(f) || { ok: false, motivo: 'la transacción falló', recibido: 0 };
+  mundo.leerQuema = async f => quemas.get(f) || { ok: false, motivo: 'la transacción falló' };
+  mundo.precioDuendeSeguro = async () => 0.00002;
+  const pedidoDe = (s, id) => mundo.pedidos.filter(x => x.uid === s.c.uid && x.paquete === id).pop();
+  const nPed = () => mundo.pedidos.length;
+  const quema = () => mundo.quemaLeer();
+  try {
+    chequear(D.GASTOS_DUENDE.length === 3 && D.GASTOS_DUENDE.every(g => g.usd > 0 && g.usd <= 1 && g.efecto) && !D.PAQUETES.some(p => p.efecto), 'tres gastos, de US$1 o menos, en su propio catálogo (no salen en la tienda de paquetes)');
+
+    // ── Quién puede pedirlos ──
+    const inv = await entrar('InvGasto', 'cd41'); const n0 = nPed();
+    await inv.mandar({ t: 'pedido', id: 'eclosion', metodo: 'duende' });
+    chequear(nPed() === n0, 'un invitado no puede pedir un gasto en $DUENDE');
+    await dejar(inv);
+    const tgS = await entrarTg('TgGasto', 70811); tgS.ultimos = x => tgS.ws.rec.filter(m => m.t === x);
+    tgS.pidiendo = false;
+    await tgS.mandar({ t: 'pedido', id: 'eclosion', metodo: 'duende' });
+    chequear(nPed() === n0 && tgS.ultimos('toast').some(m => /navegador/.test(m.m)), 'dentro de Telegram no se paga con el token: manda al navegador');
+    tgS.gastosT = 0; await tgS.mandar({ t: 'gastos' });
+    chequear((tgS.ultimos('gastos').pop() || {}).tg === 1, 'y su ventana lo sabe (tg: 1)');
+    await dejar(tgS);
+
+    const w = await entrarWeb();
+    chequear(w.c && w.c.uid === 'web:w-gasto-1' && w.c.huevo && w.c.mascota === 'huevo', 'la cuenta de correo entra con su Huevo Místico puesto');
+    await w.mandar({ t: 'gastos' });
+    const g0 = w.ultimos('gastos').pop() || {};
+    chequear(g0.l && !g0.l.find(x => x.id === 'eclosion').no && /mascota mística/.test(g0.l.find(x => x.id === 'evo').no || '') && !g0.tg && !g0.dueno, 'la ventana recibe qué gastos puede hacer ahora (eclosión sí; subir de nivel aún no)');
+
+    // ── El pedido ──
+    await w.mandar({ t: 'pedido', id: 'eclosion', metodo: 'stars' });
+    const ps = w.ultimos('pedidoSol').pop() || {}, pd = pedidoDe(w, 'eclosion');
+    chequear(pd && pd.metodo === 'duende' && pd.gasto === 1 && ps.metodo === 'duende' && ps.wallet === SOL_DEV_WALLET && ps.mint === D.DUENDE_MINT && ps.raw === pd.duendeRaw, 'un gasto siempre se cobra en $DUENDE (aunque el cliente pida otro método), a la wallet de El Duende');
+    chequear(ps.usd === 1 && Math.abs(pd.duendeRaw / 1e6 * 0.00002 - 1) < 0.01, 'el monto es su precio en dólares al precio del token de ese momento (sin descuentos raros)');
+    const raw = pd.duendeRaw;
+
+    // ── Validación de la transacción ──
+    w.limpiar(); await w.mandar({ t: 'pedidoFirma', codigo: pd.codigo, firma: 'no-es-una-firma' });
+    chequear(pd.estado === 'esperando_pago' && w.ultimos('toast').some(m => /no es válida/.test(m.m)), 'una firma con formato imposible ni se consulta');
+    const malas = [
+      [firma(1), pago(raw + 1), 'monto distinto (por una unidad)'],
+      [firma(2), pago(raw - 10000), 'monto menor'],
+      [firma(3), pago(raw, { owner: 'OtraWalletCualquiera' }), 'pago a otra wallet'],
+      [firma(4), pago(raw, { mint: 'OtroTokenCualquiera' }), 'otro token'],
+      [firma(5), pago(raw, { tiempo: pd.creado - 120000 }), 'pago anterior al pedido'],
+      [firma(6), null, 'transacción que falló o no existe'],
+    ];
+    for (const [f, tx, txt] of malas) {
+      if (tx) txs.set(f, tx);
+      await w.mandar({ t: 'pedidoFirma', codigo: pd.codigo, firma: f });
+      chequear(pd.estado === 'esperando_pago' && !pd.firma && !(await mundo.state.storage.get('firma:' + f)) && w.c.huevo, 'no se acredita: ' + txt + ' (el pedido sigue esperando y la firma queda libre)');
+    }
+    // El pago bueno: monto exacto, a la wallet, del token, después del pedido.
+    const fOk = firma(7); txs.set(fOk, pago(raw));
+    const oro0 = w.c.oro, ing0 = mundo.ingresosSol.length;
+    w.limpiar(); await w.mandar({ t: 'pedidoFirma', codigo: pd.codigo, firma: fOk });
+    await calma();
+    const nacida = w.c.mascota;
+    chequear(pd.estado === 'entregado' && pd.por === 'auto' && D.MISTICAS.includes(nacida) && w.c.mascotas.includes(nacida), 'con la transacción correcta se entrega solo: el huevo eclosiona al momento');
+    chequear((await mundo.state.storage.get('firma:' + fOk)) === pd.codigo, 'la firma queda guardada como usada');
+    chequear((await quema()).pend === raw && (await quema()).hecho === 0 && (await quema()).n === 1, 'el monto queda apuntado «por quemar» (no «quemado»: aún no hay firma de quema)');
+    chequear(w.c.oro === oro0 && !w.c.compro && mundo.puedeBienvenida(w.c.uid, w.c) && mundo.ingresosSol.length === ing0, 'no da oro, no gasta el pack de bienvenida y no cuenta como ingreso del fondo de mTON');
+    chequear(w.ultimos('eclosion').length === 1 && w.ultimos('gastos').length >= 1 && !w.ultimos('regalo').length, 'el cliente ve la eclosión y la ventana se actualiza');
+
+    // ── Firmas repetidas (replay) ──
+    await w.mandar({ t: 'pedido', id: 'protector', metodo: 'duende' });
+    const pd2 = pedidoDe(w, 'protector');
+    chequear(pd2 && pd2.duendeRaw > 0 && Math.abs(pd2.duendeRaw / 1e6 * 0.00002 - 0.5) < 0.01, 'el protector cuesta US$0,50');
+    txs.set(fOk, pago(pd2.duendeRaw));   // aunque esa transacción «valiera» para este pedido...
+    w.limpiar(); await w.mandar({ t: 'pedidoFirma', codigo: pd2.codigo, firma: fOk });
+    chequear(pd2.estado === 'esperando_pago' && w.ultimos('toast').some(m => /ya se usó/.test(m.m)) && !(w.c.login || {}).amuC, 'la misma firma no acredita un segundo pedido (bloqueo de replay)');
+    chequear((await mundo.state.storage.get('firma:' + fOk)) === pd.codigo, 'y sigue atada al primer pedido');
+    const f2 = firma(8); txs.set(f2, pago(pd2.duendeRaw));
+    await w.mandar({ t: 'pedidoFirma', codigo: pd2.codigo, firma: f2 });
+    await calma();
+    chequear(pd2.estado === 'entregado' && w.c.login.amuC === 1 && (await quema()).pend === raw + pd2.duendeRaw, 'con su propia transacción, el protector se entrega y se suma a lo por quemar');
+    w.limpiar(); await w.mandar({ t: 'pedidoFirma', codigo: pd2.codigo, firma: firma(9) });
+    chequear(w.ultimos('toast').some(m => /ya no está esperando/.test(m.m)) && w.c.login.amuC === 1, 'un pedido ya entregado no se paga ni se entrega dos veces');
+
+    // ── El protector comprado salva la racha ──
+    const hoy = D.hoyUTC(), anteayer = new Date(Date.parse(hoy) - 2 * 86400000).toISOString().slice(0, 10);
+    w.c.mascota = ''; w.c.salida = 0; w.c.login = { d: anteayer, racha: 3, total: 9, max: 3, amu: 0, amuC: 1 };
+    const lg = mundo.procesarLogin(w);
+    chequear(lg && lg.racha === 4 && !w.c.login.amuC, 'faltó un día: la racha sigue (3 → 4) y el protector comprado se gasta');
+    w.c.login = { d: anteayer, racha: 4, total: 10, max: 4, amu: 0 };
+    chequear(mundo.procesarLogin(w).racha === 3, 'sin protector, retrocede como siempre');
+
+    // ── Subir de nivel a la mascota ──
+    w.c.mascotas = ['sapo_rey']; w.c.mascota = 'sapo_rey'; w.c.petNv = undefined;
+    chequear(Math.abs(bonoPet(w.c, 'oro') - PETS.sapo_rey.oro) < 1e-9, 'a nivel 0 el bono es el de siempre');
+    await w.mandar({ t: 'pedido', id: 'evo', metodo: 'duende' });
+    const pd3 = pedidoDe(w, 'evo');
+    chequear(pd3 && pd3.pet === 'sapo_rey', 'el pedido apunta qué mascota se sube (la que lleva)');
+    w.c.mascota = '';   // se la quita antes de pagar: da igual, el pedido ya sabe cuál era
+    const f3 = firma(10); txs.set(f3, pago(pd3.duendeRaw));
+    await w.mandar({ t: 'pedidoFirma', codigo: pd3.codigo, firma: f3 });
+    await calma();
+    w.c.mascota = 'sapo_rey';
+    chequear(pd3.estado === 'entregado' && w.c.petNv.sapo_rey === 1 && Math.abs(bonoPet(w.c, 'oro') - PETS.sapo_rey.oro * (1 + EVO_PASO)) < 1e-9 && mundo.datosPropios(w).petNv.sapo_rey === 1, 'pagado: sube a nivel 1 y su bono crece un 10 % (lo calcula el servidor)');
+    w.c.petNv.sapo_rey = D.MASCOTA_NV_MAX;
+    chequear(Math.abs(bonoPet(w.c, 'oro') - PETS.sapo_rey.oro * 1.5) < 1e-9 && bonoPet({ mascota: 'sapo_rey', mascotas: ['sapo_rey'], petNv: { sapo_rey: 99 } }, 'oro') <= PETS.sapo_rey.oro * 1.5 + 1e-9, 'el máximo es nivel ' + D.MASCOTA_NV_MAX + ' (bono x1,5), aunque los datos digan más');
+    const n1 = nPed(); w.limpiar();
+    await w.mandar({ t: 'pedido', id: 'evo', metodo: 'duende' });
+    chequear(nPed() === n1 && w.ultimos('toast').some(m => /nivel máximo/.test(m.m)), 'en el nivel máximo no se crea el pedido (no se cobra lo que no se puede dar)');
+
+    // ── Pagado pero ya no aplicable: no se pierde el pago ni se regala nada ──
+    w.c.huevo = { p: 0 };
+    await w.mandar({ t: 'pedido', id: 'eclosion', metodo: 'duende' });
+    const pd4 = pedidoDe(w, 'eclosion'), antesQ = (await quema()).pend;
+    w.c.huevo = null;   // eclosionó jugando entre el pedido y el pago
+    const f4 = firma(11); txs.set(f4, pago(pd4.duendeRaw));
+    w.limpiar(); await w.mandar({ t: 'pedidoFirma', codigo: pd4.codigo, firma: f4 });
+    await calma();
+    chequear(pd4.estado === 'por_verificar' && (await mundo.state.storage.get('firma:' + f4)) === pd4.codigo && (await quema()).pend === antesQ && w.ultimos('toast').some(m => /no se pudo aplicar/.test(m.m)), 'si al llegar el pago ya no hay huevo, queda pagado y sin entregar para que lo resuelva el dueño');
+    chequear((await mundo.entregarPedido({ codigo: pd4.codigo })).ok === false, 'y /entregar tampoco lo fuerza mientras no se pueda aplicar');
+    // Con el jugador desconectado y otra vez con huevo, la entrega del dueño sí lo aplica.
+    w.c.huevo = { p: 0 }; w.c.mascotas = ['sapo_rey']; w.sucio = true; await mundo.guardar(w); await dejar(w);
+    const r4 = await mundo.entregarPedido({ codigo: pd4.codigo });
+    const cOff = await mundo.state.storage.get('c:web:w-gasto-1');
+    chequear(r4.ok && pd4.estado === 'entregado' && cOff.mascotas.length === 2 && D.MISTICAS.includes(cOff.mascota) && (await quema()).pend === antesQ + pd4.duendeRaw, 'desconectado también se entrega: la mascota le espera al entrar');
+
+    // ── Registro de quema ──
+    const total = (await quema()).pend;
+    const saldo = (i, owner, n) => ({ mint: D.DUENDE_MINT, owner, accountIndex: i, uiTokenAmount: { amount: String(n) } });
+    const quemado = Math.floor(total / 2);
+    const fq = firma(20);
+    quemas.set(fq, { ok: true, pre: [saldo(1, SOL_DEV_WALLET, 9e9)], post: [saldo(1, SOL_DEV_WALLET, 9e9 - quemado)] });
+    quemas.set(firma(21), { ok: true, pre: [saldo(1, SOL_DEV_WALLET, 5e6), saldo(2, 'Amigo', 0)], post: [saldo(1, SOL_DEV_WALLET, 0), saldo(2, 'Amigo', 5e6)] });   // transferencia
+    quemas.set(firma(22), { ok: true, pre: [saldo(3, 'OtraWallet', 5e6)], post: [saldo(3, 'OtraWallet', 0)] });   // quema, pero de otra wallet
+    chequear((await mundo.verificarQuema(fq)).raw === quemado && (await mundo.verificarQuema(firma(21))).ok === false && (await mundo.verificarQuema(firma(22))).ok === false && (await mundo.verificarQuema(firma(23))).ok === false, 'solo cuenta como quema lo que desaparece del total y sale de la wallet de El Duende (una transferencia o la quema de otro no)');
+    const w2 = await entrarWeb();
+    await w2.mandar({ t: 'gastos', a: 'quema', firma: fq });
+    chequear((await quema()).hecho === 0 && !(await mundo.state.storage.get('firma:' + fq)), 'un jugador no puede registrar quemas');
+    await dejar(w2);
+    const due = await entrarTg('Creador', 88123); due.ultimos = x => due.ws.rec.filter(m => m.t === x);
+    const mandarD = o => { due.cuenta = 0; if (mundo.ritmoSolM) mundo.ritmoSolM.clear(); return mundo.recibir(due, JSON.stringify(o)); };
+    await mandarD({ t: 'gastos', a: 'quema', firma: firma(21) });
+    chequear((await quema()).hecho === 0, 'ni el dueño puede apuntar una transferencia como quema');
+    await mandarD({ t: 'gastos', a: 'quema', firma: fOk });
+    chequear((await quema()).hecho === 0, 'ni la firma de un pago');
+    await mandarD({ t: 'gastos', a: 'quema', firma: fq });
+    const q1 = await quema();
+    chequear(q1.hecho === quemado && q1.pend === total - quemado && q1.q.length === 1 && q1.q[0].f === fq && (await mundo.state.storage.get('firma:' + fq)) === 'quema', 'el dueño registra la quema con su firma: pasa de «por quemar» a «quemado»');
+    await mandarD({ t: 'gastos', a: 'quema', firma: fq });
+    chequear((await quema()).hecho === quemado && due.ultimos('toast').some(m => /ya está registrada/.test(m.m)), 'la misma quema no se cuenta dos veces');
+    due.gastosT = 0; await mandarD({ t: 'gastos' });
+    const gd = due.ultimos('gastos').pop() || {};
+    chequear(gd.dueno === 1 && gd.quema && gd.quema.hecho === quemado && gd.quema.q[0].f === fq, 'la ventana enseña lo quemado con su firma (y solo al dueño el campo para registrar)');
+    await dejar(due);
+  } finally {
+    globalThis.fetch = fetchReal;
+    delete mundo.leerTx; delete mundo.leerQuema; delete mundo.precioDuendeSeguro;
+    for (const [k, v] of [['TELEGRAM_BOT_TOKEN', guardado.tok], ['ADMIN_TG_ID', guardado.adm]]) { if (v === undefined) delete mundo.env[k]; else mundo.env[k] = v; }
+  }
 }
 
 async function pruebasCompanero() {

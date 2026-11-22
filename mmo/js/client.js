@@ -18,18 +18,19 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=403';
-import { iniciarRegalo } from './regalo.js?v=403';
-import * as vivo from '/js/vivo.js?v=403';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=403';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=403';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=403';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=403';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=403';
-import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=403';
-import { franjaInstalar } from '/js/instalar.js?v=403';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=404';
+import { iniciarRegalo } from './regalo.js?v=404';
+import * as vivo from '/js/vivo.js?v=404';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=404';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=404';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=404';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=404';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=404';
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=404';
+import { franjaInstalar } from '/js/instalar.js?v=404';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
-import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=403';   // ventana de mascotas místicas (la misma en ORIGINS)
+import { GASTOS_DUENDE, MASCOTA_NV_MAX } from './data.js?v=404';   // gastos en $DUENDE (los pinta js/mascotas-ui.js)
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=404';   // ventana de mascotas místicas (la misma en ORIGINS)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -993,6 +994,7 @@ function recibir(m) {
       pintarHud();
       break;
     case 'factura': abrirFactura(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
+    case 'gastos': gastosInfo = m; if ($('m-mm').classList.contains('on')) pintarMisticas(); break;   // gastos en $DUENDE y quema (functions/mmo/gastos.js)
     case 'pedidoSol': mostrarPedidoSol(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
     case 'pedidoYape': mostrarPedidoYape(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
     case 'buzon': regalo2.alBuzon(m); break;
@@ -1956,16 +1958,19 @@ $('b-cri').onclick = abrirCriaturas;
 // ── MASCOTAS MÍSTICAS Y HUEVO MÍSTICO ──
 // La ventana la pinta js/mascotas-ui.js (compartida con ORIGINS). Equipar usa el
 // 'comprar' de las mascotas de siempre; el servidor decide (functions/mmo/mascotas.js).
+let gastosInfo = null;   // { t: 'gastos' } del servidor: qué gastos en $DUENDE se pueden y la quema
 function abrirMisticas() {
   if (!yo) return;
   abrir('m-mm');
+  if (!soyInvitado && !modoAnuncio()) mandar({ t: 'gastos' });
   pintarMisticas();
 }
 function pintarMisticas() {
-  $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA });
+  $('mm-cuerpo').innerHTML = htmlMisticas({ yo, invitado: soyInvitado, MASCOTAS, MISTICAS, RAREZAS: RAREZAS_MASCOTA, GASTOS: GASTOS_DUENDE, NV_MAX: MASCOTA_NV_MAX, gastos: gastosInfo, sinCripto: modoAnuncio() });
 }
 $('mm-cuerpo').addEventListener('click', e => {
-  if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrarModales(); abrirCuenta(); } })) sfx('boton', .3);
+  if (clicMisticas(e, { equipar: id => mandar({ t: 'comprar', k: 'mascota', id }), cuenta: () => { cerrarModales(); abrirCuenta(); },
+    gasto: id => mandar({ t: 'pedido', id, metodo: 'duende', via: 'hud' }), quema: firma => mandar({ t: 'gastos', a: 'quema', firma }) })) sfx('boton', .3);
 });
 $('b-mm').innerHTML = HUEVO_SVG;
 $('b-mm').onclick = abrirMisticas;
@@ -4317,7 +4322,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc(textoPagoRecibido())} Esta ventana solo se cierra con ✕; si la cierras, en Tienda → 💎 PAQUETES → Tus compras pulsa «Pagar».</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc((m.auto ? 'Se entrega solo en cuanto la red de Solana confirma el pago (suele tardar menos de un minuto).' : textoPagoRecibido()))} Esta ventana solo se cierra con ✕; si la cierras, en Tienda → 💎 PAQUETES → Tus compras pulsa «Pagar».</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -6967,5 +6972,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=403').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=404').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

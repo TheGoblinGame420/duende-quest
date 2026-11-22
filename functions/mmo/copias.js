@@ -18,6 +18,7 @@
 // ═══════════════════════════════════════════════════════
 import { getEnv } from '../api/lib.js';
 import { VERSION, PAQUETES } from '../../mmo/js/data.js';
+import { gastoDe } from './gastos.js';
 
 export const BK_MAX = 7;
 const TROZO = 512 * 1024;          // bytes por valor del storage
@@ -229,11 +230,12 @@ export const Copias = {
     let n = 0;
     for (const pd of pedidos || []) {
       if (pd.estado !== 'entregado' || !(pd.entregado > t)) continue;
-      const pq = PAQUETES.find(x => x.id === pd.paquete), k = 'c:' + pd.uid;
+      const pq = PAQUETES.find(x => x.id === pd.paquete) || gastoDe(pd.paquete), k = 'c:' + pd.uid;
       const c = pq && await this.state.storage.get(k);
       if (!c || (pq.unaVez && c.bienvYa)) continue;
-      this.aplicarPaquete(c, pq, null);
-      c.compro = 1; if (pq.unaVez) c.bienvYa = 1;
+      if (pq.efecto) { if (this.gastoDisponible(c, pq, pd)) continue; this.gastoAplicar(c, pq, pd, null); }   // gasto en $DUENDE (gastos.js)
+      else { this.aplicarPaquete(c, pq, null); c.compro = 1; }
+      if (pq.unaVez) c.bienvYa = 1;
       await this.state.storage.put(k, c);
       n++;
     }

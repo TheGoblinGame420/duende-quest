@@ -67,8 +67,8 @@ export const MascotasMisticas = {
     if (c.huevo.p >= metaHuevo(c.eclos || 0)) this.huevoEclosionar(s);
   },
   // Nace una mistica que no tenga (peso por rareza). Devuelve su id, o '' si ya las tenia todas.
-  huevoEclosionar(s) {
-    const c = s.c;
+  // Solo los datos (vale con el jugador desconectado: eclosión instantánea pagada, gastos.js). Devuelve el id o ''.
+  huevoNacer(c) {
     c.mascotas = c.mascotas || [];
     const faltan = MISTICAS.filter(k => !c.mascotas.includes(k));
     if (!c.huevo || !faltan.length) { c.huevo = null; if (c.mascota === 'huevo') c.mascota = ''; return ''; }
@@ -80,6 +80,12 @@ export const MascotasMisticas = {
     c.eclos = (c.eclos || 0) + 1;
     // Si aun le faltan, llega otro huevo (sin equipar: elige entre llevar a su mascota o incubar).
     c.huevo = faltan.length > 1 ? { p: 0 } : null;
+    return id;
+  },
+  huevoEclosionar(s) {
+    const c = s.c;
+    const id = this.huevoNacer(c);
+    if (!id) return '';
     s.sucio = true;
     const ma = MASCOTAS[id], rz = RAREZAS_MASCOTA[ma.rareza];
     this.aClave(s.k, { t: 'eclosion', id: s.id, m: id });

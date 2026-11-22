@@ -516,7 +516,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 403;
+export const VERSION = 404;
 
 // Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
 // tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
@@ -535,6 +535,11 @@ export function anotarMisSkins(yo) {
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 157, fecha: '22 nov 2026', items: [
+    '🔥 Tres usos nuevos de $DUENDE, todos opcionales y desde el navegador: eclosionar tu Huevo Místico al momento (US$1), subir de nivel a tu mascota mística (US$1 por nivel, hasta 5; cada nivel suma un 10 % a su bono) y un protector de racha (US$0,50). Están en la ventana de mascotas (tecla N).',
+    '⛓ Se pagan en $DUENDE al precio del momento y se entregan solos en cuanto la red de Solana confirma el pago.',
+    '🔥 Lo que se gasta así queda apuntado para quemar. El juego solo cuenta como quemado lo que ya tiene su firma en la cadena, y enlaza cada quema.',
+  ] },
   { n: 156, fecha: '22 nov 2026', items: [
     '🥚 Huevo Místico: si tienes cuenta (Telegram o correo) recibes uno gratis. Llévalo contigo mientras cazas y entregas misiones y eclosiona en una de las 10 mascotas místicas. Ábrelo con la tecla N o con el botón del huevo.',
     '🐉 10 mascotas místicas que te siguen en 2D y en 3D y ayudan de verdad: más oro, más experiencia de misiones, más velocidad, mejor botín, más bolsa… Llevas una a la vez.',
@@ -3116,6 +3121,17 @@ export const MISTICAS = Object.keys(MASCOTAS).filter(k => MASCOTAS[k].mistica);
 // Incubar: puntos por actividad que valida el servidor, solo con el huevo equipado.
 // metas[n]: puntos del huevo n+1 (n = eclosiones ya hechas); despues, +extra cada uno.
 export const HUEVO = { caza: 1, jefe: 10, mision: 12, metas: [120, 400, 900], extra: 700 };
+// Gastos en $DUENDE (v404): lo unico de la tienda que se paga SOLO con el token, desde el navegador
+// (dentro de Telegram la tienda es con Stars). Precio en dolares, cobrado en $DUENDE al precio del
+// momento. Se entregan solos al confirmarse en la cadena y su monto queda apuntado para quemar
+// (functions/mmo/gastos.js). Precios bajos y fijos a proposito (dueño, 22-nov-2026): que no asusten.
+export const GASTOS_DUENDE = [
+  { id: 'eclosion',  nombre: 'Eclosión instantánea',        usd: 1,   efecto: 'eclosion',  desc: 'Tu Huevo Místico eclosiona ya, sin esperar a incubarlo.' },
+  { id: 'evo',       nombre: 'Subir de nivel a tu mascota', usd: 1,   efecto: 'evo',       desc: 'La mascota mística que llevas sube un nivel: su bono crece un 10 % por nivel.' },
+  { id: 'protector', nombre: 'Protector de racha',          usd: 0.5, efecto: 'protector', desc: 'Si un día no entras, tu racha diaria sigue. Se guarda hasta que haga falta.' },
+];
+export const MASCOTA_NV_MAX = 5;          // niveles que se pueden subir a cada mascota mística
+export const PROTECTOR_COMPRA_MAX = 5;    // protectores comprados que se pueden guardar a la vez
 export const metaHuevo = n => (n < HUEVO.metas.length ? HUEVO.metas[Math.max(0, n | 0)] : HUEVO.metas[HUEVO.metas.length - 1] + HUEVO.extra * (n - HUEVO.metas.length + 1));
 // Solo las mascotas de siempre salen de expedicion: una mistica o el huevo se quedan contigo (va el duendecillo explorador).
 export const mascotaViaja = id => !!(id && Object.hasOwn(MASCOTAS, id) && !MASCOTAS[id].mistica && !MASCOTAS[id].huevo);

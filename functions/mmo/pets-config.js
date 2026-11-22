@@ -18,7 +18,7 @@
 //   escudoRacha si faltas un dia la racha sigue (una vez cada ESCUDO_RACHA_DIAS)
 // Una sola mascota equipada (c.mascota), y tiene que ser suya (c.mascotas).
 // ═══════════════════════════════════════════════════════
-import { BOLSA_MAX } from '../../mmo/js/data.js';
+import { BOLSA_MAX, MASCOTA_NV_MAX } from '../../mmo/js/data.js';
 
 export const PETS = {
   sapo_rey:         { oro: 0.12 },
@@ -33,6 +33,10 @@ export const PETS = {
   golem_cristal:    { bolsa: 0.15 },
 };
 export const ESCUDO_RACHA_DIAS = 7;
+// Cada nivel de la mascota (c.petNv[id], se sube con $DUENDE: gastos.js) suma este tanto de SU bono:
+// nivel 5 = bono x1,5 (un Sapo de +12 % pasa a +18 %). Los bonos de si/no no cambian.
+export const EVO_PASO = 0.10;
+export const nivelPet = c => { const id = c && c.mascota, n = c && c.petNv && typeof c.petNv === 'object' ? c.petNv[id] | 0 : 0; return Math.max(0, Math.min(MASCOTA_NV_MAX, n)); };
 
 // La mistica que lleva puesta (y que es suya), o null.
 export function petDe(c) {
@@ -42,6 +46,6 @@ export function petDe(c) {
 // Valor del bono `clave` de la mascota equipada: numero (0 si no aplica); los de si/no dan 1.
 export function bonoPet(c, clave) {
   const p = petDe(c), v = p ? p[clave] : 0;
-  return typeof v === 'number' ? v : v ? 1 : 0;
+  return typeof v === 'number' ? v * (1 + EVO_PASO * nivelPet(c)) : v ? 1 : 0;
 }
 export const bolsaMaxDe = c => BOLSA_MAX + Math.round(BOLSA_MAX * bonoPet(c, 'bolsa'));

@@ -281,6 +281,7 @@ export const Mundo3D = {
       case 'lfgUnir': return this.unirseLfg(s, m);
       case 'lfgQuitar': return this.quitarLfg(s);
       case 'pedido': return this.pedido(s, m);
+      case 'gastos': return this.gastos(s, m);   // gastos.js
       case 'pedidoCancelar': return this.pedidoCancelar(s, m);   // world.js
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);

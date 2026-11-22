@@ -24,9 +24,9 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=403';
-import { LORE_MONSTRUOS } from './lore.js?v=403';
-import * as vivo from '/js/vivo.js?v=403';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
+} from '/mmo/js/data.js?v=404';
+import { LORE_MONSTRUOS } from './lore.js?v=404';
+import * as vivo from '/js/vivo.js?v=404';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1186,7 +1186,7 @@ function mostrarPedidoSol(m) {
     `<p class="vv-p">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="vv-input" data-firma placeholder="Firma de la transacción" autocomplete="off" spellcheck="false">` +
     `<button class="btn sec" data-p="firma" style="width:100%">Enviar comprobante</button>` +
-    `<p class="vv-p" style="margin-top:10px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc(textoPagoRecibido())} Si cierras esta ventana, la franja de arriba te devuelve a estos datos.</p>`;
+    `<p class="vv-p" style="margin-top:10px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc((m.auto ? 'Se entrega solo en cuanto la red de Solana confirma el pago (suele tardar menos de un minuto).' : textoPagoRecibido()))} Si cierras esta ventana, la franja de arriba te devuelve a estos datos.</p>`;
   const c = parte(id, 'cuerpo');
   const copiar = t => {
     try { navigator.clipboard.writeText(t).then(() => H.aviso('Copiado', 'ok'), () => H.aviso('No se pudo copiar: cópialo a mano.', 'err')); } catch (e) { H.aviso('No se pudo copiar: cópialo a mano.', 'err'); }

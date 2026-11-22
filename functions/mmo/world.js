@@ -20,7 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, PAGO_LOCAL, pagoLocalActivo, YAPE_VIGENCIA_MS, textoPagoRecibido, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE, TEMP_META,
-  TINTES, MASCOTAS, mascotaViaja, enOfertaAmbulante, ambulanteActivo, mundialDe,
+  TINTES, PROTECTOR_COMPRA_MAX, MASCOTAS, mascotaViaja, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, costoReparacion, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
@@ -66,6 +66,7 @@ import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
 import { instalarGrupo } from './grupo.js';
 import { MascotasMisticas } from './mascotas.js';
+import { Gastos, gastoDe } from './gastos.js';
 
 const MAX_JUGADORES = 300;
 const VISTA_2D = 1100, TOPE_2D = 40, LEJOS_2D = 450;   // px y filas: la foto 2D con mucha gente solo lleva a los cercanos
@@ -576,6 +577,7 @@ export class MmoWorld {
       case 'retirar': return this.retirar(s);
       case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
       case 'pedido': return this.pedido(s, m);
+      case 'gastos': return this.gastos(s, m);   // gastos.js: los tres gastos en $DUENDE y la quema
       case 'pedidoCancelar': return this.pedidoCancelar(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
@@ -1356,13 +1358,14 @@ export class MmoWorld {
   // cualquier pedido pagado, en revisión, comprobándose o ya entregado, y
   // c.compro (marca en el personaje: los pedidos viejos se podan pasado 300).
   puedeBienvenida(uid, c) {
-    return !!uid && !uid.startsWith('inv:') && !(c && c.compro) && !this.pedidos.some(x => x.uid === uid && ['pagado', 'por_verificar', 'comprobando', 'entregado'].includes(x.estado));
+    return !!uid && !uid.startsWith('inv:') && !(c && c.compro) && !this.pedidos.some(x => x.uid === uid && !x.gasto && ['pagado', 'por_verificar', 'comprobando', 'entregado'].includes(x.estado));
   }
   async pedidoUno(s, m) {
     const c = s.c;
-    const pq = PAQUETES.find(x => x.id === m.id);
+    const pq = PAQUETES.find(x => x.id === m.id) || gastoDe(m.id);
     if (!pq) return;
-    const metodo = m.metodo === 'sol' || m.metodo === 'duende' || m.metodo === 'yape' ? m.metodo : 'stars';
+    // Los gastos en $DUENDE (gastos.js) solo se pagan con el token.
+    const metodo = pq.efecto ? 'duende' : m.metodo === 'sol' || m.metodo === 'duende' || m.metodo === 'yape' ? m.metodo : 'stars';
     const no = t => this.enviar(s, { t: 'toast', m: t });
     if (c.uid.startsWith('inv:')) return no('Para comprar entra con tu cuenta de Telegram o inicia sesión en el juego web.');
     // El metodo lo decide la cuenta con la que se ENTRO (con cuentas vinculadas,
@@ -1370,7 +1373,12 @@ export class MmoWorld {
     // correo no podia pagar con nada). Stars tambien desde la web: solo se crea
     // el enlace de factura y el pago sigue el flujo manual de siempre.
     const auth = s.uidAuth || c.uid;
-    if (metodo !== 'stars' && auth.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
+    if (pq.efecto) {
+      // Dentro de Telegram no (alli la tienda es con Stars); con la cuenta de Telegram abierta en el navegador, si.
+      if (s.authK === 'tg') return no('Esto se paga con $DUENDE desde el navegador: Ajustes → «Jugar en el navegador».');
+      const mot = this.gastoDisponible(c, pq);
+      if (mot) return no(mot);
+    } else if (metodo !== 'stars' && auth.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (metodo === 'yape' && !pagoLocalActivo()) return no('El pago con Yape / Plin aún no está disponible.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     if (pq.alas && (c.alas || []).includes(pq.alas)) return no('Ya tienes esas alas.');
@@ -1400,6 +1408,7 @@ export class MmoWorld {
       uidPago: auth,   // cuenta con la que se entro al pedir (Telegram o correo)
     };
     if (c.vinc && c.vinc.tg) pd.tgVinc = c.vinc.tg;   // Telegram vinculado al pedir (pagador valido)
+    if (pq.efecto) { pd.gasto = 1; if (pq.efecto === 'evo') pd.pet = c.mascota; }   // gastos.js: se entrega solo y se apunta para quemar
     // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
     if (['hud', 'oro', 'npc', 'bot', 'falta', 'bienv', 'revivir'].includes(m.via)) pd.via = m.via;
     // Origen, campaña y dias desde el alta: /ventas y el ROAS D7 de /mmostats (retencion.js).
@@ -1447,8 +1456,8 @@ export class MmoWorld {
     if (metodo === 'duende') {
       // Precio real del token (pump.fun / DexScreener); sin precio no se cobra.
       const precioD = await this.precioDuendeSeguro();
-      if (!precioD) return no('No se pudo leer el precio de $DUENDE ahora. Intenta en un minuto o paga con SOL.');
-      const usd = pq.usd * DUENDE_DESCUENTO;
+      if (!precioD) return no(pq.efecto ? 'No se pudo leer el precio de $DUENDE ahora. Intenta en un minuto.' : 'No se pudo leer el precio de $DUENDE ahora. Intenta en un minuto o paga con SOL.');
+      const usd = pq.usd * (pq.efecto ? 1 : DUENDE_DESCUENTO);   // los gastos ya son solo en $DUENDE: su precio es el que es
       // Unidades minimas (6 decimales) con 4 cifras finales propias del pedido.
       // Como en SOL, el monto queda reservado: dos pedidos vivos con el mismo
       // monto dejaban que otro se quedara con un pago ajeno (la cadena no dice para quien era).
@@ -1456,12 +1465,12 @@ export class MmoWorld {
       const ocupadoD = r => this.pedidos.some(x => x.metodo === 'duende' && x.duendeRaw === r && x.estado !== 'entregado' && x.estado !== 'anulado');
       let raw = 0;
       for (let i = 0; i < 30; i++) { const r = baseD + 1 + Math.floor(Math.random() * 9998); if (!ocupadoD(r)) { raw = r; break; } }
-      if (!raw) return no('La tienda está muy ocupada ahora mismo: intenta en unos minutos o paga con SOL.');
-      if (!Number.isSafeInteger(raw)) return no('El precio de $DUENDE no permite calcular el monto. Paga con SOL.');
+      if (!raw) return no(pq.efecto ? 'La tienda está muy ocupada ahora mismo: intenta en unos minutos.' : 'La tienda está muy ocupada ahora mismo: intenta en unos minutos o paga con SOL.');
+      if (!Number.isSafeInteger(raw)) return no(pq.efecto ? 'El precio de $DUENDE no permite calcular el monto ahora. Intenta más tarde.' : 'El precio de $DUENDE no permite calcular el monto. Paga con SOL.');
       pd.duendeRaw = raw; pd.precioDuende = precioD;
       this.pedidos.push(pd);
       await this.guardarPedidos();
-      return this.enviar(s, { t: 'pedidoSol', metodo: 'duende', codigo: pd.codigo, raw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, wallet: SOL_DEV_WALLET, usd: Math.round(usd * 100) / 100, nombre: pq.nombre });
+      return this.enviar(s, { t: 'pedidoSol', metodo: 'duende', codigo: pd.codigo, raw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, wallet: SOL_DEV_WALLET, usd: Math.round(usd * 100) / 100, nombre: pq.nombre, auto: pq.efecto ? 1 : undefined });
     }
     const precio = await getSolPriceUsd();
     if (!precio) return no('No se pudo leer el precio del SOL ahora. Intenta en un minuto.');
@@ -1580,6 +1589,8 @@ export class MmoWorld {
       this.avisarAdmin(`🛒 *Compra · pedido #${pd.codigo}* ⏰ *pagado FUERA DE PLAZO* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 ${monto} al precio de hace más de 30 min\n🔗 https://solscan.io/tx/${firma}\n\nRevisa el precio actual y decide: /entregar ${pd.codigo}, o devuélvelo y /anular ${pd.codigo}`, botonesPedido(pd.codigo), false, 'compras');
       return;
     }
+    // Gastos en $DUENDE (eclosión, nivel de mascota, protector): entrega automática (decisión del dueño, 22-nov-2026).
+    if (pd.gasto) { await this.gastoEntregar(s, pd, firma, monto); return; }
     // Entrega MANUAL (27-oct-2026, decision del dueño): el pago verificado le llega por
     // Telegram con los botones Entregar/Anular y el entrega con /entregar o Modo Dios.
     no('📨 Pago confirmado en la cadena. ' + textoPagoRecibido() + (pd.uid.startsWith('tg:') ? ' Te avisamos aquí y por Telegram.' : ' Te avisamos aquí en el juego al entregarlo.'));   // cuenta web: el aviso de entrega no va por Telegram
@@ -1795,7 +1806,7 @@ export class MmoWorld {
   async entregarPedido(b) {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || (pd.estado !== 'pagado' && pd.estado !== 'por_verificar')) return { ok: false, error: 'No hay un pedido pagado con ese código.' };
-    const pq = PAQUETES.find(x => x.id === pd.paquete);
+    const pq = PAQUETES.find(x => x.id === pd.paquete) || gastoDe(pd.paquete);
     // Cerrojo: entre la comprobacion y 'entregado' hay un await; dos avisos a la vez
     // (bot y entrega automatica) entregaban dos veces.
     if (pd.entregando) return { ok: false, error: 'Ese pedido ya se está entregando.' };
@@ -1806,12 +1817,17 @@ export class MmoWorld {
     if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
     // Dos packs de bienvenida pagados a la vez (dos pedidos abiertos): solo se entrega uno; el otro, anúlalo o devuélvelo.
     if (pq.unaVez && (c.bienvYa || this.pedidos.some(x => x !== pd && x.uid === pd.uid && x.paquete === pq.id && x.estado === 'entregado'))) return { ok: false, error: 'Esa cuenta ya recibió el Pack de bienvenida (es de una sola vez). Anula este pedido o devuelve el pago.' };
-    const notaSkin = this.aplicarPaquete(c, pq, s);
+    // Gasto en $DUENDE que ya no se puede aplicar (el huevo eclosionó solo, la mascota llegó al máximo): no se entrega; lo resuelve el dueño.
+    if (pq.efecto) { const mot = this.gastoDisponible(c, pq, pd); if (mot) return { ok: false, error: mot }; }
+    const notaSkin = pq.efecto ? this.gastoAplicar(c, pq, pd, s) : this.aplicarPaquete(c, pq, s);
     pd.estado = 'entregado'; pd.entregado = Date.now(); pd.por = b.por || 'bot';
+    if (pq.efecto) await this.quemaSumar(pd.duendeRaw);   // queda «por quemar»
     metaEvento(this, c, 'Purchase', { value: pd.usd, currency: 'USD', content_ids: [pd.paquete] }, 'pur_' + pd.codigo);   // sin await: si Meta falla, la entrega sigue
     this.hitoCompra(c, 'en', pd); this.ventaCohorte(pd);   // embudo de compra y ARPU/ROAS D7 (retencion.js)
-    c.compro = 1; if (pq.unaVez) c.bienvYa = 1;   // queda en el personaje aunque el pedido se pode
-    if (pd.metodo === 'sol' || pd.metodo === 'duende') {
+    if (!pq.efecto) c.compro = 1;   // queda en el personaje aunque el pedido se pode (un gasto en $DUENDE no gasta el pack de bienvenida)
+    if (pq.unaVez) c.bienvYa = 1;
+    // Los gastos en $DUENDE van a la quema: no son ingreso (no engordan el fondo de mTON).
+    if ((pd.metodo === 'sol' || pd.metodo === 'duende') && !pq.efecto) {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
       this.ingresosSol = this.ingresosSol.filter(x => Date.now() - x.t < 30 * 86400000);
       await this.state.storage.put('ingresosSol', this.ingresosSol);
@@ -1821,12 +1837,13 @@ export class MmoWorld {
     const regalo = { cod: pd.codigo, nombre: pd.nombre, skin: pq.skin && SKINS[pq.skin] ? pq.skin : '', ala: pq.alas && ALAS[pq.alas] ? pq.alas : '', oro: pq.oro || 0, pw: pq.pw || null, ya: notaSkin.includes('Ya la tenías') ? 1 : 0 };
     // Dos entregas sin conectarse: la anterior no se pierde, pasa al buzon.
     if (!s && c.regaloPend && c.regaloPend.cod !== regalo.cod) await this.buzonAgregar(pd.uid, `🎁 Tu compra "${c.regaloPend.nombre}" ya está en tu personaje. Gracias por apoyar DUENDE QUEST.`);
-    if (!s) c.regaloPend = regalo;
+    if (!s && !pq.efecto) c.regaloPend = regalo;
     if (s) await this.guardar(s); else await this.state.storage.put('c:' + pd.uid, c);
     await this.guardarPedidos();
     // Pack sin skin (oro + pociones): aplicarPaquete no manda 'yo'; sin esto el cliente seguia con las pociones viejas y la tienda ofreciendo el pack.
     if (s) this.actualizarYo(s);
-    if (s) this.enviar(s, { t: 'regalo', ...regalo, vivo: 1 });
+    if (s && !pq.efecto) this.enviar(s, { t: 'regalo', ...regalo, vivo: 1 });
+    if (s && pq.efecto) this.enviar(s, { t: 'toast', ok: true, m: '🔥 ' + pd.nombre + ': listo.' + notaSkin + ' Tus $DUENDE quedan apuntados para quemar.' });
     await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`, true);
     // Pago con Stars desde la web (uid no es tg:): el bot le prometio al pagador «Te avisaremos aquí».
     if (pd.tgPagador && !String(pd.uid).startsWith('tg:')) {
@@ -2123,6 +2140,9 @@ export class MmoWorld {
     let fenix = 0;
     if (!seguido && L.d === anteayer && !semanaCumplida && this.escudoRacha(c)) { seguido = true; fenix = 1; }
     if (!seguido && L.d === anteayer && amu > 0 && !semanaCumplida) { seguido = true; amu--; amuUsado = 1; }
+    // Protectores comprados con $DUENDE (gastos.js): despues del Fénix y de los de regalo.
+    let amuC = Math.max(0, Math.min(PROTECTOR_COMPRA_MAX, L.amuC | 0));
+    if (!seguido && L.d === anteayer && amuC > 0 && !semanaCumplida) { seguido = true; amuC--; amuUsado = 1; }
     // La racha crece sin tope (dia 8 = semana 2, dia 1): una guardada de 7 pasa a 8.
     // Falta UN dia: hasta el 6 retrocede uno; desde el 7 no se pierde la semana
     // cumplida (el 7 pasa al 8, el 14 al 15; si no, vuelve al inicio de su semana, de 10 a 8).
@@ -2144,7 +2164,7 @@ export class MmoWorld {
     let item = null;
     if (pr.item !== undefined) item = this.darItem(s, generarItem(c.nivel, pr.item), true);
     const max = Math.max(L.max || 0, r0, racha);
-    c.login = { d: hoy, racha, total: (L.total || 0) + 1, max, amu };
+    c.login = { d: hoy, racha, total: (L.total || 0) + 1, max, amu, ...(amuC ? { amuC } : {}) };
     // Hitos cosmeticos (una sola vez): los titulos son logros (revisarLogros);
     // el color de nombre se entrega aqui.
     const hitos = [];
@@ -2234,13 +2254,13 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, talGratis8: !c.talR8 ? 1 : 0, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0, recetas: c.recetas || {}, bestD: c.bestD || {},
-      vaso: this.infoVaso(c), faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null, huevo: this.infoHuevo(c), mv: 1 + this.bonoMascota(c, 'vel'), bmax: this.bolsaMax(c),
+      vaso: this.infoVaso(c), faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null, huevo: this.infoHuevo(c), petNv: c.petNv || undefined, mv: 1 + this.bonoMascota(c, 'vel'), bmax: this.bolsaMax(c),
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
       // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
       pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || ((x.metodo === 'sol' || x.metodo === 'duende') && Date.now() - x.creado < PEDIDO_VIGENCIA_MS) || (x.metodo === 'yape' && Date.now() - x.creado < YAPE_VIGENCIA_MS))).slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, pagadoEn: x.pagadoEn || undefined, reclamado: x.reclamadoEn && Date.now() - x.reclamadoEn < 6 * 3600000 ? 1 : undefined, ...(x.estado === 'esperando_pago' ? (x.metodo === 'yape' ? { yape: this.datosYape(x) } : x.metodo === 'duende'
+        .map(x => ({ auto: x.gasto ? 1 : undefined, codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, pagadoEn: x.pagadoEn || undefined, reclamado: x.reclamadoEn && Date.now() - x.reclamadoEn < 6 * 3600000 ? 1 : undefined, ...(x.estado === 'esperando_pago' ? (x.metodo === 'yape' ? { yape: this.datosYape(x) } : x.metodo === 'duende'
           ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
           : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
@@ -4251,6 +4271,8 @@ Object.assign(MmoWorld.prototype, Criaturas);
 Object.assign(MmoWorld.prototype, Vecinos2D);   // vecinos y encargos de las zonas 2D (mundo vivo, Fase 2)
 // Huevo Místico y mascotas místicas (bonos en pets-config.js): functions/mmo/mascotas.js
 Object.assign(MmoWorld.prototype, MascotasMisticas);
+// Gastos en $DUENDE (eclosión, nivel de mascota, protector) y registro de quema: functions/mmo/gastos.js
+Object.assign(MmoWorld.prototype, Gastos);
 // El bot en el grupo oficial de Telegram (bienvenida, novedades, hitos, antiespam): functions/mmo/grupo.js
 instalarGrupo(MmoWorld.prototype);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).

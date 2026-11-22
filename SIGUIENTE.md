@@ -5,6 +5,15 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v404 (22-nov-2026): gastos en $DUENDE y registro de quema
+
+- **Catálogo y precios en un solo sitio**: `GASTOS_DUENDE` en `mmo/js/data.js` (eclosión US$1, nivel de mascota US$1, protector US$0,50). El dueño pidió precios «sostenibles y que no asusten».
+- **Lógica**: `functions/mmo/gastos.js`. El cobro y su verificación (`pedidoUno`, `pedidoFirma`, `verificarDuende`) NO se tocaron: solo se añadió la rama de entrega automática para `pd.gasto`. Todo lo demás (skins, oro) sigue con entrega manual.
+- **Quema**: los tokens llegan a la wallet del dueño. `storage 'quema'` = por quemar / quemado. El dueño quema desde su wallet y pega la firma en la ventana de mascotas (campo que solo ve él); `verificarQuema` lo comprueba en la cadena. Pendiente del dueño: hacer la primera quema y registrarla.
+- **Dentro de Telegram no se venden** (allí la tienda es con Stars); con la cuenta de Telegram abierta en el navegador, sí.
+- Sin probar con un pago real en Solana: la validación se probó con transacciones simuladas (misma forma que devuelve el RPC). Conviene que el dueño haga una compra de US$0,50 para verlo de punta a punta.
+- Ideas: enseñar el nivel de la mascota en su ficha y a los demás; excluir los bonos de mascota en PvP.
+
 ## v403 (22-nov-2026): identidad unificada, mascotas místicas e inventario vivo
 
 - **Handoff** (`functions/api/auth.js`, `functions/mmo/llave.js`, `js/llave.js`): OTT de 60 s en memoria del DO → `/?ott=` → cookie `dq_s` HttpOnly. El cliente solo guarda la marca `dq_ck`. Un script en línea al principio de index, mmo y mundo saca el OTT de la barra antes que cualquier otro script. Prueba real: `node tools/qa_handoff.mjs` con `mmo_local` (que ahora sirve `/api/auth/*` con un token de bot solo de pruebas).
