@@ -19,6 +19,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { MmoWorld } from '../functions/mmo/world.js';
+import { authApi } from '../functions/api/auth.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUERTO = +(process.env.PUERTO || process.env.PORT || 8787);
@@ -42,6 +43,14 @@ const state = {
   blockConcurrencyWhile: f => f(),
 };
 const mundo = new MmoWorld(state, {});
+// /api/auth/* (handoff Telegram -> navegador) con un token de bot SOLO de pruebas: con el se firma
+// el initData de mentira (tools/qa_handoff.mjs). El mundo solo lo ve durante la llamada interna.
+export const TOKEN_BOT_LOCAL = '1000000:local-solo-pruebas';
+const envAuth = { TELEGRAM_BOT_TOKEN: TOKEN_BOT_LOCAL, MMO: { idFromName: () => 'mundo-1', get: () => ({ fetch: async (u, init) => {
+  const antes = mundo.env.TELEGRAM_BOT_TOKEN; mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT_LOCAL;
+  try { return await mundo.fetch(new Request(u, init)); } finally { mundo.env.TELEGRAM_BOT_TOKEN = antes; }
+} }) } };
+const cookieLocal = req => { const m = /(?:^|;\s*)dq_s=([a-f0-9]{32})(?:;|$)/.exec(req.headers.cookie || ''); return m ? m[1] : ''; };
 
 // ── WebSocket a mano (RFC 6455) con la forma que espera world.js ──
 class WsLocal {
@@ -90,6 +99,20 @@ const srv = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/mmo/ws') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, online: mundo.contarOnline() })); return; }
   if (p === '/mmo/rank') { mundo.rankPublico().then(async r => { res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(await r.text()); }).catch(e => { res.writeHead(500); res.end(String(e)); }); return; }
+  // Handoff Telegram -> navegador (functions/api/auth.js): el mismo codigo que en produccion.
+  if (p.startsWith('/api/auth/')) {
+    let cuerpo = ''; req.on('data', d => { cuerpo += d; if (cuerpo.length > 16384) req.destroy(); }); req.on('end', async () => {
+      try {
+        const h = new Headers(); for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string') h.set(k, v);
+        h.set('CF-Connecting-IP', '127.0.0.1');
+        const r = await authApi(new Request('http://' + (req.headers.host || 'localhost') + p, { method: req.method, headers: h, body: req.method === 'POST' ? cuerpo : undefined }), envAuth, p);
+        const cab = {}; r.headers.forEach((v, k) => { if (k !== 'set-cookie') cab[k] = v; });
+        const ck = r.headers.getSetCookie ? r.headers.getSetCookie() : []; if (ck.length) cab['Set-Cookie'] = ck;
+        res.writeHead(r.status, cab); res.end(await r.text());
+      } catch (e) { res.writeHead(500); res.end(JSON.stringify({ ok: false, m: String(e) })); }
+    });
+    return;
+  }
   // Chicha Wars (functions/mmo/chichawars.js): el POST pasa tal cual al mundo.
   if (p === '/mmo/cw' && req.method === 'POST') {
     let cuerpo = ''; req.on('data', d => { cuerpo += d; }); req.on('end', async () => {
@@ -136,6 +159,6 @@ srv.on('upgrade', (req, sock) => {
   const acc = crypto.createHash('sha1').update(req.headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + acc + '\r\n\r\n');
   sock.setNoDelay(true);
-  mundo.abrir(new WsLocal(sock));
+  mundo.abrir(new WsLocal(sock), '', cookieLocal(req));   // la cookie de sesion (dq_s), como en produccion
 });
 srv.listen(PUERTO, () => console.log(`DUENDE QUEST ONLINE local: http://localhost:${PUERTO}/mmo/  (datos en ${DATOS})`));

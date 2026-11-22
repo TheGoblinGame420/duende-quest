@@ -38,7 +38,7 @@ import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
 import { VERSION as VERSION_JUEGO, ENTREGA, VASO } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
 import { Vincular } from './vincular.js';
-import { Llave } from './llave.js';   // «Jugar en Chrome»: la cuenta de Telegram fuera de Telegram
+import { Llave, cookieSesion } from './llave.js';   // «Jugar en Chrome»: la cuenta de Telegram fuera de Telegram
 import { rangoDe, enAbismo, islaEn } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -354,7 +354,7 @@ export class MmoWorld {
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
-    this.abrir(servidor, ip);
+    this.abrir(servidor, ip, cookieSesion(request));   // la cookie de la cuenta de Telegram en el navegador (llave.js)
     return new Response(null, { status: 101, webSocket: cliente });
   }
 
@@ -381,8 +381,8 @@ export class MmoWorld {
   }
 
   // ── CONEXION ──
-  abrir(ws, ip) {
-    const s = { id: this.sigSesion++, ws, ip: ip || '', c: null, cuenta: 0, ventana: Date.now(), cerrado: false };
+  abrir(ws, ip, ck) {
+    const s = { id: this.sigSesion++, ws, ip: ip || '', c: null, cuenta: 0, ventana: Date.now(), cerrado: false, ck: /^[a-f0-9]{32}$/.test(ck || '') ? ck : '' };
     this.sesiones.set(s.id, s);
     ws.addEventListener('message', ev => {
       this.recibir(s, ev.data).catch(e => { console.error('[MMO]', e); this.enviar(s, { t: 'err', m: 'Error del servidor' }); });
@@ -557,7 +557,7 @@ export class MmoWorld {
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
       case 'mision': return this.mision(s, m);
-      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': case 'vincProbar': return this.vincular(s, m);
       case 'llave': case 'llaveCerrar': return this.llave(s, m);   // llave.js
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
@@ -634,9 +634,10 @@ export class MmoWorld {
           pagadas = { tgId: String(u.id) };
           s.authK = 'tg';
         }
-      } else if ((a.k === 'llave' && /^[a-f0-9]{32}$/.test(a.cod || '')) || (a.k === 'dt' && /^[a-f0-9]{32}$/.test(a.tok || ''))) {
-        // La cuenta de Telegram en el navegador (llave.js): enlace de un uso o token de aparato.
-        uid = a.k === 'llave' ? await this.holaLlave(s, a.cod) : await this.holaDt(a.tok);
+      } else if ((a.k === 'llave' && /^[a-f0-9]{32}$/.test(a.cod || '')) || (a.k === 'dt' && /^[a-f0-9]{32}$/.test(a.tok || '')) || (a.k === 'ck' && s.ck)) {
+        // La cuenta de Telegram en el navegador (llave.js): enlace de un uso, token de aparato
+        // o la cookie HttpOnly que llego con la subida del WebSocket (el cliente no la ve: solo dice 'ck').
+        uid = a.k === 'llave' ? await this.holaLlave(s, a.cod) : await this.holaDt(a.k === 'ck' ? s.ck : a.tok, s);
         if (uid && uid.startsWith('tg:')) {
           nombre = 'Duende' + uid.slice(-4);
           pagadas = { tgId: uid.slice(3) };
@@ -1981,6 +1982,10 @@ export class MmoWorld {
       return json({ ok: true, ...this.infoFondo() });
     }
     if (accion === 'chichas' || accion === 'chichasSin' || accion === 'chichaCoord' || accion === 'chichaLibera' || accion === 'chichaOk' || accion === 'chichaNo' || accion === 'chichaTel') return json(await this.internoChicha(accion, b));
+    // Handoff Telegram -> navegador por HTTP (functions/api/auth.js; llave.js).
+    if (accion === 'ott') { const r = this.ottCrear(String(b.uid || ''), !!b.largo); return json(r ? { ok: true, ...r } : { ok: false }); }
+    if (accion === 'canje') return json(await this.ottCanjear(String(b.cod || ''), String(b.ip || ''), String(b.viejo || '')));
+    if (accion === 'salir') { let n = 0; for (const t of Array.isArray(b.toks) ? b.toks.slice(0, 4) : []) if (await this.dtCerrar(String(t))) n++; return json({ ok: true, n }); }
     if (accion === 'mantenimiento') return json(await this.mantenimiento(b));   // antes de publicar (copias.js, tools/deploy.mjs)
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
     if (accion === 'pedidoValido') {

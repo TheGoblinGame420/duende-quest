@@ -17,8 +17,15 @@
 // cuenta vuelve a entrar con hola.vcod y hereda al invitado con la misma herencia
 // atomica de world.js (holaCuenta). El token del invitado nunca sale del aparato.
 // c.vinc = { tg: 'tg:<id>', web: 'web:<id>' } (las cuentas secundarias).
+//
+// v403 — sin codigo (vincProbar): quien juega con una cuenta y en esa misma sesion
+// demuestra la otra (el JWT de su correo dentro de Telegram, o el initData de
+// Telegram con su correo) las une al momento. Solo si la cuenta que llega aun no
+// tiene un duende con progreso (Nv 5 o menos, sin compras): si lo tiene no se toca
+// nada y se le manda al camino del codigo, donde elige cual conservar.
 // ═══════════════════════════════════════════════════════
 import { claveNombre, esqueleto } from './dios.js';
+import { getEnv, verifyInitData, verifySupabaseUser } from '../api/lib.js';
 
 const VINC_MS = 10 * 60 * 1000;
 const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -173,6 +180,49 @@ export const Vincular = {
         this.enviar(s, { t: 'vincOk', nombre: destino.nombre });
         setTimeout(() => this.expulsar(s, `Cuenta vinculada con ${destino.nombre}. Vuelve a entrar.`), 300);
         return;
+      }
+      case 'vincProbar': {
+        if (yoAuth.startsWith('inv:') || c.uid.startsWith('inv:')) return;   // el invitado hereda al crear la cuenta (holaCuenta)
+        const ahoraP = Date.now();
+        if (ahoraP - (s.vincProbarT || 0) < 5000) return;   // cada prueba consulta a Supabase o firma un HMAC
+        s.vincProbarT = ahoraP;
+        const env = getEnv({ env: this.env });
+        const resp = o => this.enviar(s, { t: 'vincProbar', ...o });
+        let otro = '';
+        try {
+          if (typeof m.tok === 'string' && m.tok.length < 4096) { const u = await verifySupabaseUser(env, m.tok); if (u && u.id) otro = 'web:' + u.id; }
+          else if (typeof m.d === 'string' && m.d.length < 4096) { const u = await verifyInitData(m.d, env.BOT_TOKEN, 24 * 3600); if (u && u.id) otro = 'tg:' + u.id; }
+        } catch (e) { otro = ''; }
+        if (s.cerrado || s.c !== c) return;
+        if (!otro) return resp({ ok: false, m: 'No se pudo comprobar esa cuenta.' });
+        const tipo = tipoUid(otro);
+        if (otro === c.uid || otro === yoAuth || (c.vinc || {})[tipo] === otro) return resp({ ok: true, ya: true, tipo });
+        if (tipo === tipoUid(c.uid) || (c.vinc || {})[tipo]) return resp({ ok: false, m: `Este duende ya tiene una cuenta de ${NOMBRE_TIPO[tipo]} unida.` });
+        if (typeof (await this.state.storage.get('al:' + otro)) === 'string') return resp({ ok: false, m: 'Esa cuenta ya está unida a otro duende.' });
+        if (this.porUid.get(otro) || (this.entrando && this.entrando.has(otro))) return resp({ ok: false, m: 'Esa cuenta está abierta en otra ventana: ciérrala y prueba otra vez.' });
+        if (await this.baneado(otro)) return resp({ ok: false, m: 'Esa cuenta no se puede unir.' });
+        const suyo = await this.state.storage.get('c:' + otro);
+        if (s.cerrado || s.c !== c) return;
+        // Con progreso propio no se decide por el: que elija cual conservar con el codigo (vincUsar archiva uno).
+        if (suyo && ((suyo.nivel || 1) > 5 || suyo.compro || Object.keys(suyo.vinc || {}).length))
+          return resp({ ok: false, propio: { nombre: suyo.nombre, nivel: suyo.nivel || 1 }, m: `Esa cuenta ya tiene su propio duende (${suyo.nombre}, Nv ${suyo.nivel || 1}). Para unirlas elige cuál conservar en Ajustes → Vincular cuentas.` });
+        if (suyo) {
+          if (suyo.nivel > 1 || suyo.oro > 0) await this.state.storage.put('arch:' + otro, { ...suyo, archivado: Date.now(), por: c.uid });
+          await this.state.storage.delete('c:' + otro);
+          if (this.rkQuitar) await this.rkQuitar(otro);
+          for (const kn of ['n:' + claveNombre(suyo.nombre), 'ne:' + esqueleto(suyo.nombre)]) if ((await this.state.storage.get(kn)) === otro) await this.state.storage.delete(kn);
+        }
+        await this.state.storage.put('al:' + otro, c.uid);
+        c.vinc = { ...(c.vinc || {}), [tipo]: otro };
+        s.sucio = true; await this.guardar(s);
+        // La cuenta recien unida puede traer su rol (el dueño que une su correo a su duende de Telegram, o al reves).
+        const antes = s.dios;
+        s.dios = this.calcularDios(s, s.extraAuth);
+        if (s.dios !== antes && this.actualizarYo) this.actualizarYo(s);
+        console.log('[MMO vincular prueba]', otro, '->', c.uid);
+        this.enviar(s, this.infoVinc(s));
+        resp({ ok: true, tipo });
+        return this.enviar(s, { t: 'toast', ok: true, m: `Cuenta de ${NOMBRE_TIPO[tipo]} unida a este duende: entres por donde entres, es el mismo.` });
       }
       case 'vincQuitar': {
         // Solo 'tg' o 'web', y con hasOwn: '__proto__' o 'constructor' existen en

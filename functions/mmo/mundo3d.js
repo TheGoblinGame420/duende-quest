@@ -215,7 +215,7 @@ export const Mundo3D = {
       case 'mision': return this.mision(s, m, true);
       case 'cofre3': return this.abrirCofre3d(s, m);
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
-      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': case 'vincProbar': return this.vincular(s, m);
       case 'llave': case 'llaveCerrar': return this.llave(s, m);   // llave.js
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.

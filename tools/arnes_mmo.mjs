@@ -617,6 +617,7 @@ async function pruebas() {
   await pruebasVecinos2d();
   await pruebasCompanero();
   await pruebasLlave();
+  await pruebasHandoff();
   await pruebasCriaturas();
   await pruebasCaptura();
   await pruebas3d();
@@ -4354,6 +4355,178 @@ async function pruebasLlave() {
     chequear(!c5.c, 'desde Telegram se cierran todos los navegadores');
     await dejar(t2);
   } finally { if (adminAntes === undefined) delete mundo.env.ADMIN_TG_ID; else mundo.env.ADMIN_TG_ID = adminAntes; }
+}
+
+// ── v403: handoff Telegram -> navegador por HTTP (OTT de 60 s, cookie HttpOnly), cierre real,
+// rol admin por listas y union de cuentas con la prueba de las dos identidades ──
+async function pruebasHandoff() {
+  console.log('Handoff Telegram → navegador (OTT, cookie, cierre), rol admin y unión de cuentas');
+  const { authApi, origenPropio } = await import('../functions/api/auth.js');
+  const { cookieSesion } = await import('../functions/mmo/llave.js');
+  const guardado = { tok: mundo.env.TELEGRAM_BOT_TOKEN, adm: mundo.env.ADMIN_TG_ID, tgs: mundo.env.ADMIN_TELEGRAM_IDS, cor: mundo.env.ADMIN_EMAILS, conf: mundo.env.CORREO_CONFIRMADO };
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT; mundo.env.ADMIN_TG_ID = '88123';
+  const env = { TELEGRAM_BOT_TOKEN: TOKEN_BOT, MMO: { idFromName: () => 'mundo-1', get: () => ({ fetch: (u, init) => mundo.fetch(new Request(u, init)) }) } };
+  const SITIO = 'https://duendequest.com';
+  const pedir = async (ruta, cuerpo, cab, metodo = 'POST') => {
+    const r = await authApi(new Request(SITIO + ruta, { method: metodo, headers: { Origin: SITIO, 'Content-Type': 'application/json', ...(cab || {}) }, body: metodo === 'POST' ? JSON.stringify(cuerpo || {}) : undefined }), env, ruta);
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    return { st: r.status, j, ck: (r.headers.getSetCookie ? r.headers.getSetCookie() : [r.headers.get('set-cookie') || '']).join(' | '), limpia: r.headers.get('Clear-Site-Data') || '' };
+  };
+  const entrarAuth = async (auth, ck) => {
+    const ws = new WsFalso(); mundo.abrir(ws, '', ck);
+    const s = [...mundo.sesiones.values()].pop();
+    ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth }) });
+    for (let i = 0; i < 300 && !s.c && !ws.rec.some(m => m.t === 'err'); i++) await new Promise(r => setTimeout(r, 5));
+    if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+    s.ws = ws; s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
+    s.ultimos = x => ws.rec.filter(m => m.t === x); s.limpiar = () => { ws.rec.length = 0; };
+    return s;
+  };
+  const tokDe = ck => (/dq_s=([a-f0-9]{32})/.exec(ck) || [])[1] || '';
+  const fetchReal = globalThis.fetch;
+  try {
+    // El duende de Telegram que se va a llevar al navegador.
+    const t0 = await entrarTg('Viajero', 70501); t0.c.oro = 9876; t0.sucio = true; await mundo.guardar(t0); await dejar(t0);
+    const idata = await initDataTg(70501, 'Viajero');
+
+    // ── OTT ──
+    chequear((await pedir('/api/auth/telegram-handoff', { initData: idata }, { Origin: 'https://malo.example' })).st === 403, 'otra web no puede pedir el enlace (Origin ajeno: 403)');
+    chequear((await pedir('/api/auth/telegram-handoff', null, null, 'GET')).st === 405, 'solo por POST');
+    chequear((await pedir('/api/auth/telegram-handoff', { initData: 'user=%7B%22id%22%3A70501%7D&auth_date=1&hash=' + 'a'.repeat(64) })).st === 401, 'un initData inventado no da enlace (401)');
+    chequear((await pedir('/api/auth/telegram-handoff', { initData: idata.replace(/70501/, '70502') })).st === 401, 'ni uno real con el id cambiado (el HMAC ya no cuadra)');
+    const h1 = await pedir('/api/auth/telegram-handoff', { initData: idata });
+    chequear(h1.st === 200 && /^[a-f0-9]{32}$/.test(h1.j.ott || '') && h1.j.seg === 60, 'con el initData firmado sale un OTT de un solo uso que vale 60 s');
+    const hL = await pedir('/api/auth/telegram-handoff', { initData: idata, largo: true });
+    chequear(hL.st === 200 && hL.j.seg === 600 && hL.j.ott !== h1.j.ott, 'el de «copiar para la PC» vale 10 minutos');
+    chequear(![...almacen.keys()].some(k => k.includes(h1.j.ott)), 'el OTT no se guarda en el storage (solo en memoria)');
+
+    // ── Canje ──
+    chequear((await pedir('/api/auth/canje', { ott: h1.j.ott }, { Origin: 'https://malo.example' })).st === 403, 'otra web no puede canjear');
+    chequear((await pedir('/api/auth/canje', { ott: 'zz' })).st === 400 && (await pedir('/api/auth/canje', { ott: 'b'.repeat(32) })).st === 410, 'un OTT mal formado o inventado no entra');
+    const c1 = await pedir('/api/auth/canje', { ott: h1.j.ott });
+    const tok1 = tokDe(c1.ck);
+    chequear(c1.st === 200 && c1.j.nombre === 'Viajero' && !!tok1, 'el canje devuelve de quién es la cuenta y pone la cookie de sesión');
+    chequear(/HttpOnly/.test(c1.ck) && /Secure/.test(c1.ck) && /SameSite=Lax/.test(c1.ck) && /Path=\//.test(c1.ck), 'la cookie es HttpOnly; Secure; SameSite=Lax');
+    chequear(!JSON.stringify(c1.j).includes(tok1), 'el token no viaja en el cuerpo: el JavaScript de la página no lo ve');
+    chequear(![...almacen.keys()].some(k => k.includes(tok1)), 'en el storage solo queda el hash del token');
+    chequear((await pedir('/api/auth/canje', { ott: h1.j.ott })).st === 410, 'el mismo OTT no sirve dos veces');
+    const h2 = await pedir('/api/auth/telegram-handoff', { initData: idata });
+    mundo.llaves.get(h2.j.ott).exp = Date.now() - 1;
+    chequear((await pedir('/api/auth/canje', { ott: h2.j.ott })).st === 410 && !mundo.llaves.has(h2.j.ott), 'un OTT caducado no entra (y se gasta igual)');
+
+    // ── La cookie en el WebSocket ──
+    const req = (origen, ck) => new Request('https://duendequest.com/mmo/ws', { headers: { ...(origen ? { Origin: origen } : {}), Cookie: 'otra=1; dq_s=' + ck + '; x=2' } });
+    chequear(cookieSesion(req(SITIO, tok1)) === tok1 && cookieSesion(req('https://malo.example', tok1)) === '', 'el mundo solo acepta la cookie si el Origin es nuestro');
+    chequear(origenPropio(new Request('https://duendequest.com/api/auth/canje', { method: 'POST', headers: { Origin: 'http://localhost:8787' } })) === false, 'localhost no es un Origin válido en producción');
+    const n1 = await entrarAuth({ k: 'ck' }, tok1);
+    chequear(n1.c && n1.c.uid === 'tg:70501' && n1.c.oro === 9876 && n1.authK === 'dt', 'con la cookie el navegador entra al MISMO duende de Telegram');
+    const n0 = await entrarAuth({ k: 'ck' }, '');
+    chequear(!n0.c && n0.ultimos('err').some(m => m.auth === 'ck'), 'sin cookie, decir «ck» no entra a nada');
+    const nM = await entrarAuth({ k: 'ck', tok: tok1 }, 'c'.repeat(32));
+    chequear(!nM.c, 'el token no se acepta en el mensaje: solo vale el de la cookie');
+
+    // ── Otra llave en el mismo navegador: la sesion anterior deja de valer ──
+    const h3 = await pedir('/api/auth/telegram-handoff', { initData: idata });
+    const c3 = await pedir('/api/auth/canje', { ott: h3.j.ott }, { Cookie: 'dq_s=' + tok1 });
+    const tok3 = tokDe(c3.ck);
+    await calma();
+    chequear(c3.st === 200 && tok3 && tok3 !== tok1 && n1.ws.rec.some(m => m.t === 'err' && m.fatal), 'al canjear otra llave, el token anterior se anula y su sesión abierta se cierra');
+    chequear(!(await entrarAuth({ k: 'ck' }, tok1)).c, 'y el token viejo ya no entra');
+
+    // ── Cerrar sesion ──
+    const n3 = await entrarAuth({ k: 'ck' }, tok3);
+    chequear(n3.c && n3.c.uid === 'tg:70501', 'la cookie nueva entra');
+    chequear((await pedir('/api/auth/salir', {}, { Origin: 'https://malo.example', Cookie: 'dq_s=' + tok3 })).st === 403, 'otra web no puede cerrarte la sesión');
+    const sal = await pedir('/api/auth/salir', {}, { Cookie: 'dq_s=' + tok3 });
+    await calma();
+    chequear(sal.st === 200 && sal.j.n === 1 && /dq_s=;/.test(sal.ck) && /Max-Age=0/.test(sal.ck), 'cerrar sesión borra la cookie');
+    chequear(/"cookies"/.test(sal.limpia) && /"storage"/.test(sal.limpia), 'y pide al navegador vaciar cookies y almacenamiento (Clear-Site-Data)');
+    chequear(n3.ws.rec.some(m => m.t === 'err' && m.fatal) && !(await entrarAuth({ k: 'ck' }, tok3)).c, 'el token deja de existir en el servidor: la sesión abierta se cierra y no vuelve a entrar');
+    chequear(!(await mundo.state.storage.get('dtl:tg:70501')), 'no queda ningún aparato apuntado a la cuenta');
+    // El token viejo de localStorage (dq_dt, v399) tambien se cierra por aqui.
+    const tv = await entrarTg('Viajero', 70501); tv.ultimos = x => tv.ws.rec.filter(m => m.t === x);
+    await tv.mandar({ t: 'llave' });
+    const viejo = await entrarAuth({ k: 'llave', cod: (tv.ultimos('llave')[0] || {}).cod });
+    const dt = (viejo.ultimos('llaveOk')[0] || {}).tok;
+    await dejar(tv);
+    const sal2 = await pedir('/api/auth/salir', { dt });
+    await calma();
+    chequear(sal2.j.n === 1 && !(await entrarAuth({ k: 'dt', tok: dt })).c, 'el token de aparato antiguo (localStorage) también se invalida al cerrar sesión');
+    // Tope de enlaces vivos por cuenta.
+    let ult = 200; for (let i = 0; i < 9; i++) ult = (await pedir('/api/auth/telegram-handoff', { initData: idata })).st;
+    chequear(ult === 429, 'como mucho 8 enlaces vivos por cuenta (el noveno: 429)');
+    for (const [k, v] of mundo.llaves) if (v.uid === 'tg:70501') mundo.llaves.delete(k);
+
+    // ── Rol admin: ADMIN_TELEGRAM_IDS y ADMIN_EMAILS ──
+    const rol = (uid, extra, uidAuth) => mundo.calcularDios({ c: { uid }, uidAuth }, extra);
+    mundo.env.ADMIN_TELEGRAM_IDS = '70777, 70778';
+    chequear(rol('tg:88123') === 'dueno' && rol('tg:70777') === 'mod' && rol('tg:70778') === 'mod' && rol('tg:70779') === false, 'ADMIN_TELEGRAM_IDS da rol admin (moderador); el dueño sigue siendo ADMIN_TG_ID');
+    mundo.env.ADMIN_EMAILS = 'Admin@DuendeQuest.com, otro@duendequest.com';
+    const adm = { email: 'admin@duendequest.com', emailOk: true };
+    chequear(rol('web:u-1', adm) === false, 'ADMIN_EMAILS no da nada mientras falte CORREO_CONFIRMADO=1');
+    mundo.env.CORREO_CONFIRMADO = '1';
+    chequear(rol('web:u-1', adm) === 'mod', 'con CORREO_CONFIRMADO=1, el correo verificado de la lista es admin');
+    chequear(rol('web:u-1', { email: 'admin@duendequest.com', emailOk: false }) === false, 'un correo sin verificar no es admin');
+    chequear(rol('web:u-1', { email: 'admin@duendequest.com.malo.test', emailOk: true }) === false && rol('inv:abc', adm) === false, 'ni un correo parecido, ni un invitado');
+    chequear(rol('web:u-1', adm) !== 'dueno', 'el correo nunca da el nivel de dueño (oro, skins, copias y pedidos siguen siendo solo suyos)');
+    // De punta a punta: un moderador de la lista entra por Telegram, ve el panel y no puede dar oro.
+    const mod = await entrarTg('ModLista', 70777); mod.ultimos = x => mod.ws.rec.filter(m => m.t === x);
+    chequear(mod.dios === 'mod' && mundo.datosPropios(mod).dios === 1, 'el servidor le dice a su cliente que tiene Modo Dios');
+    const oroAntes = mod.c.oro;
+    await mod.mandar({ t: 'dios', a: 'oro', n: 99999 });
+    chequear(mod.c.oro === oroAntes, 'pero dar oro sigue siendo solo del dueño (se valida en el servidor)');
+    const nadie = await entrarTg('SinRol', 70779);
+    await nadie.mandar({ t: 'dios', a: 'anuncio', m: 'hola' });
+    chequear(!nadie.dios && mundo.datosPropios(nadie).dios === 0, 'quien no está en ninguna lista no tiene panel ni permisos');
+    await dejar(mod); await dejar(nadie);
+    delete mundo.env.ADMIN_TELEGRAM_IDS; delete mundo.env.ADMIN_EMAILS; delete mundo.env.CORREO_CONFIRMADO;
+
+    // ── Unir cuentas con la prueba de las dos identidades (vincProbar) ──
+    let idWeb = 'w-hand-1';
+    globalThis.fetch = async (url, init) => String(url).includes('/auth/v1/user')
+      ? (String((init && init.headers && (init.headers.Authorization || init.headers.authorization)) || '').includes('malo') ? new Response('{}', { status: 401 }) : new Response(JSON.stringify({ id: idWeb, email: idWeb + '@correo.test', email_confirmed_at: 'x', user_metadata: { username: 'Web' + idWeb.slice(-1) } })))
+      : fetchReal(url, init);
+    const tg1 = await entrarTg('UneTG', 70601); tg1.ultimos = x => tg1.ws.rec.filter(m => m.t === x);
+    ponerNivel(tg1, 22, 'mago'); tg1.sucio = true; await mundo.guardar(tg1);
+    await tg1.mandar({ t: 'vincProbar', tok: 'tok-malo' });
+    chequear(tg1.ultimos('vincProbar').some(m => m.ok === false) && !tg1.c.vinc, 'una prueba que Supabase no reconoce no une nada');
+    tg1.vincProbarT = 0; tg1.ws.rec.length = 0;
+    await tg1.mandar({ t: 'vincProbar', tok: 'tok-web' });
+    chequear(tg1.ultimos('vincProbar').some(m => m.ok === true && m.tipo === 'web') && tg1.c.vinc && tg1.c.vinc.web === 'web:w-hand-1' && (await mundo.state.storage.get('al:web:w-hand-1')) === 'tg:70601', 'dentro de Telegram, al entrar con su correo, la cuenta se une a su duende sin código');
+    await dejar(tg1);
+    const w1 = await entrarAuth({ k: 'web', tok: 'tok-web' });
+    chequear(w1.c && w1.c.uid === 'tg:70601' && w1.c.nivel === 22 && w1.uidAuth === 'web:w-hand-1', 'y entrando con el correo en el navegador juega con el mismo duende (no nace un invitado nuevo)');
+    await dejar(w1);
+    // Una cuenta de correo que ya tiene duende con progreso no se toca.
+    idWeb = 'w-hand-2';
+    const w2 = await entrarAuth({ k: 'web', tok: 'tok-web' });
+    ponerNivel(w2, 9, 'guerrero'); w2.sucio = true; await mundo.guardar(w2); await dejar(w2);
+    const tg2 = await entrarTg('UneTG2', 70602); tg2.ultimos = x => tg2.ws.rec.filter(m => m.t === x);
+    await tg2.mandar({ t: 'vincProbar', tok: 'tok-web' });
+    const r2 = tg2.ultimos('vincProbar').pop() || {};
+    chequear(r2.ok === false && r2.propio && r2.propio.nivel === 9 && !tg2.c.vinc && !(await mundo.state.storage.get('al:web:w-hand-2')) && ((await mundo.state.storage.get('c:web:w-hand-2')) || {}).nivel === 9, 'si el correo ya tiene un duende con progreso no se decide por él: nada cambia y se le manda a elegir');
+    await dejar(tg2);
+    // Al reves: con el correo, dentro de Telegram, la prueba es el initData.
+    idWeb = 'w-hand-3';
+    const w3 = await entrarAuth({ k: 'web', tok: 'tok-web' });
+    ponerNivel(w3, 15, 'picaro'); w3.sucio = true; await mundo.guardar(w3);
+    await w3.mandar({ t: 'vincProbar', d: (await initDataTg(70603, 'TgNuevo')).replace(/70603/, '70604') });
+    chequear(w3.ultimos('vincProbar').some(m => m.ok === false) && !w3.c.vinc, 'un initData manipulado no une nada');
+    w3.vincProbarT = 0; w3.limpiar();
+    await w3.mandar({ t: 'vincProbar', d: await initDataTg(70603, 'TgNuevo') });
+    chequear(w3.ultimos('vincProbar').some(m => m.ok === true && m.tipo === 'tg') && (await mundo.state.storage.get('al:tg:70603')) === 'web:w-hand-3', 'con el correo, el initData de Telegram une esa cuenta de Telegram');
+    await dejar(w3);
+    const tg3 = await entrarTg('TgNuevo', 70603);
+    chequear(tg3.c && tg3.c.uid === 'web:w-hand-3' && tg3.c.nivel === 15, 'y desde Telegram entra a ese mismo duende');
+    await dejar(tg3);
+    const inv = await entrar('InvProbar', 'ab77'); const rec0 = inv.ws.rec.length;
+    await inv.mandar({ t: 'vincProbar', tok: 'tok-web' });
+    chequear(!inv.ws.rec.slice(rec0).some(m => m.t === 'vincProbar') && !inv.c.vinc, 'un invitado no une cuentas por aquí (hereda al crear la suya)');
+    await dejar(inv);
+  } finally {
+    globalThis.fetch = fetchReal;
+    for (const [k, v] of [['TELEGRAM_BOT_TOKEN', guardado.tok], ['ADMIN_TG_ID', guardado.adm], ['ADMIN_TELEGRAM_IDS', guardado.tgs], ['ADMIN_EMAILS', guardado.cor], ['CORREO_CONFIRMADO', guardado.conf]]) { if (v === undefined) delete mundo.env[k]; else mundo.env[k] = v; }
+  }
 }
 
 async function pruebasCompanero() {

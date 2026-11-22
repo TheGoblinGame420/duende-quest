@@ -9,6 +9,7 @@ import tokenStats from './functions/api/token-stats.js';
 import { runCron } from './functions/api/cron.js';
 import { evValido } from './functions/mmo/retencion.js';
 import { tocaMudanza, respuestaMudanza } from './functions/api/mudanza.js';
+import { authApi } from './functions/api/auth.js';
 export { MmoWorld } from './functions/mmo/world.js';
 
 export default {
@@ -21,6 +22,9 @@ export default {
     // duende del jugador (functions/api/mudanza.js). La API, el WebSocket y los
     // archivos siguen sirviendose igual.
     if (tocaMudanza(request, url)) return respuestaMudanza(request, url);
+
+    // Tu cuenta de Telegram en el navegador: OTT, canje con cookie HttpOnly y cierre de sesion (functions/api/auth.js).
+    if (path.startsWith('/api/auth/')) return authApi(request, env, path);
 
     // Route API calls
     if (path === '/api/telegram-bot') return telegramBot.onRequestPost(context);

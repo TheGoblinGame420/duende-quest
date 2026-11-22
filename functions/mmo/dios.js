@@ -76,13 +76,28 @@ export const Dios = {
     const uids = [s.c.uid, s.uidAuth, v.tg, v.web].filter(u => typeof u === 'string' && u);
     if (uids.every(u => u.startsWith('inv:'))) return false;
     if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return 'dueno';
-    const lista = String(this.env.MMO_ADMINS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-    if (uids.some(u => lista.includes(u.toLowerCase()))) return env.ADMIN_TG_ID ? 'mod' : 'dueno';
-    // El correo NO da dios: con 'Confirm email' apagado en Supabase cualquiera puede
-    // registrar un correo ajeno ya "confirmado". Solo valen uids (web:<uuid> / tg:<id>);
-    // el aviso del log dice que uid añadir a MMO_ADMINS.
-    if (extra && extra.email && lista.includes(String(extra.email).toLowerCase()))
-      console.warn('[MMO] correo de MMO_ADMINS sin su uid en la lista; añade a MMO_ADMINS:', uids.filter(u => u.startsWith('web:')).join(','));
+    const partes = v => String(v || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    // v403 — ADMIN_TELEGRAM_IDS: mas cuentas de Telegram con rol admin (moderador). El dueño
+    // sigue siendo ADMIN_TG_ID; si no esta puesto, el primero de esta lista.
+    const tgs = partes(this.env.ADMIN_TELEGRAM_IDS).filter(x => /^\d{1,20}$/.test(x));
+    if (!env.ADMIN_TG_ID && tgs.length && uids.includes('tg:' + tgs[0])) return 'dueno';
+    if (tgs.some(id => uids.includes('tg:' + id))) return 'mod';
+    const lista = partes(this.env.MMO_ADMINS);
+    if (uids.some(u => lista.includes(u.toLowerCase()))) return env.ADMIN_TG_ID || tgs.length ? 'mod' : 'dueno';
+    // v403 — ADMIN_EMAILS: rol admin (moderador, nunca dueño: no mueve oro, skins, copias ni pedidos)
+    // para la cuenta de correo VERIFICADO que este en la lista. Solo vale si ademas el dueño pone
+    // CORREO_CONFIRMADO=1: con «Confirm email» apagado en Supabase cualquiera registra un correo
+    // ajeno y nace ya "confirmado"; ese interruptor es su palabra de que lo encendio.
+    const correo = extra && extra.emailOk && extra.email ? String(extra.email).toLowerCase() : '';
+    if (correo) {
+      const correos = partes(this.env.ADMIN_EMAILS);
+      if (correos.includes(correo)) {
+        if (String(this.env.CORREO_CONFIRMADO || '') === '1') return 'mod';
+        console.warn('[MMO] ADMIN_EMAILS no se aplica sin CORREO_CONFIRMADO=1 (activa «Confirm email» en Supabase Auth y pon ese secreto). uid:', uids.filter(u => u.startsWith('web:')).join(','));
+      }
+      // Un correo escrito en MMO_ADMINS sigue sin valer: alli van uids (web:<uuid> / tg:<id>).
+      if (lista.includes(correo)) console.warn('[MMO] correo de MMO_ADMINS sin su uid en la lista; añade a MMO_ADMINS:', uids.filter(u => u.startsWith('web:')).join(','));
+    }
     return false;
   },
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
