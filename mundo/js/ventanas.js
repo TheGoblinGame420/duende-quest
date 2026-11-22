@@ -26,6 +26,7 @@ import {
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
 } from '/mmo/js/data.js?v=402';
 import { LORE_MONSTRUOS } from './lore.js?v=402';
+import * as vivo from '/js/vivo.js?v=402';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -318,6 +319,7 @@ function abrirV(id) {
   // Una ventana del modulo a la vez.
   for (const k in IDS) if (IDS[k] !== id && abierta(IDS[k])) cerrarV(IDS[k]);
   H.abrir(id);
+  vivo.abrir($v(id));   // sus tarjetas entran una tras otra, solo al abrir (js/vivo.js)
   const c = parte(id, 'cuerpo'); if (c) c.scrollTop = 0;
 }
 function pintarTabs(id, tabs, actual, act) {
@@ -401,6 +403,7 @@ function pintarInventario() {
   const c = parte(id, 'cuerpo');
   c.innerHTML = est.inv === 'mat' ? htmlMateriales(y) : (est.inv === 'equipo' ? htmlFilaMejor(y) + htmlVaso(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
   dibujarHojas(c);
+  vivo.repintado();   // la ranura que acaba de recibir una pieza destella (js/vivo.js)
 }
 // Materiales (v376): que tienes, donde sale cada uno, para que sirve y que puedes fabricar ya.
 // Las recetas secretas (oculta) que aun no hiciste salen como «receta secreta», sin nombre.
@@ -457,8 +460,8 @@ function htmlEquipo(y) {
   for (const k in RANURAS) {
     const it = eq[k];
     h += it
-      ? `<button class="vv-ranura${est.ranura === k ? ' sel' : ''}" style="--rz:${RAREZAS[it.r].color}" data-act="ranura" data-id="${k}" title="${esc(nombreItem(it))}"><span class="nv">${it.nv}</span><img src="${A}items/equipo/${iconoItem(it)}.png" alt="">${'<small>' + RANURAS[k].nombre + '</small>'}</button>`
-      : `<div class="vv-ranura vacia"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
+      ? `<button class="vv-ranura${est.ranura === k ? ' sel' : ''}" style="--rz:${RAREZAS[it.r].color}" data-act="ranura" data-id="${k}" data-ran="${k}" title="${esc(nombreItem(it))}"><span class="nv">${it.nv}</span><img src="${A}items/equipo/${iconoItem(it)}.png" alt="">${'<small>' + RANURAS[k].nombre + '</small>'}</button>`
+      : `<div class="vv-ranura vacia" data-ran="${k}"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
   }
   h += '</div>';
   // Detalle de la pieza puesta que tocaste (con el boton de quitar).
@@ -494,7 +497,7 @@ function htmlEquipo(y) {
       + (it.r >= 1 && y.nivel >= NIVEL_MAX ? btn(pidiendo('reforjar:' + it.id) ? '¿Seguro? Toca otra vez' : `Reforjar ${MON}${fmt(costoReforja(it))}`, 'reforjar', { id: it.id }, pidiendo('reforjar:' + it.id) ? 'ojo' : 'sec') : '');
     h += tarjeta(icoItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span class="vv-dim">Nv${it.nv}</span>${flecha}`,
       `${esc(rz.nombre)} · ${esc(RANURAS[it.s] ? RANURAS[it.s].nombre : '')} · ${esc(textoBonos(it.b || {}))}${comp}${it.cj && CONJUNTOS[it.cj] ? `<br><span style="color:${CONJUNTOS[it.cj].color}">Conjunto: ${esc(textoConjunto(CONJUNTOS[it.cj]))}</span>` : ''}`,
-      acc, ` style="--rz:${rz.color}"`);
+      acc, ` style="--rz:${rz.color}" data-rz="${it.r | 0}" data-s="${esc(it.s)}"`);   // data-rz / data-s: brillo por rareza y vuelo a la ranura (js/vivo.js)
   }
   return h + '</div>';
 }
@@ -1360,11 +1363,11 @@ function mostrarPedidoYape(m) {
 // ═══════════════════ ACCIONES (delegadas por ventana) ═══════════════════
 const ACC = {
   // Inventario
-  itab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.inv, k, est.inv); est.inv = k; H.sfx('boton', 0.2); pintarInventario(); if (nuevo) trasTab(IDS.inv, k); },
+  itab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.inv, k, est.inv); est.inv = k; H.sfx('boton', 0.2); pintarInventario(); if (nuevo) { trasTab(IDS.inv, k); vivo.abrir($v(IDS.inv)); } },
   ranura: b => { est.ranura = est.ranura === b.dataset.id ? '' : b.dataset.id; H.sfx('boton', 0.2); pintarInventario(); },
-  quitar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'quitar', ranura: b.dataset.id }); est.ranura = ''; },
+  quitar: b => { H.sfx('boton', 0.3); vivo.vibrar('toque'); H.mandar({ t: 'item', a: 'quitar', ranura: b.dataset.id }); est.ranura = ''; },
   filtro: b => { est.filtro = b.dataset.id; pintarInventario(); },
-  'equipar-item': b => { H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'equipar', id: b.dataset.id }); },
+  'equipar-item': b => { H.sfx('boton', 0.3); vivo.alEquipar(b); H.mandar({ t: 'item', a: 'equipar', id: b.dataset.id }); },
   // Reforjar (junto a la Artesana) pide un segundo toque: la linea nueva puede salir peor.
   reforjar: b => {
     if (!confirmar('reforjar:' + b.dataset.id)) { marcarSeguro(b); return; }
@@ -1374,7 +1377,7 @@ const ACC = {
     const y = H.yo(), it = ((y && y.bolsa) || []).find(x => x.id === b.dataset.id);
     // Lo epico, legendario o de conjunto pide un segundo toque.
     if (it && (it.r >= 2 || it.cj) && !confirmar('vender:' + it.id)) { marcarSeguro(b); return; }
-    H.sfx('moneda', 0.3); H.mandar({ t: 'item', a: 'vender', id: b.dataset.id });
+    H.sfx('moneda', 0.3); vivo.alVender(b, it ? precioVenta(it) : 0, '#' + IDS.inv + ' [data-sub] .vv-precio'); H.mandar({ t: 'item', a: 'vender', id: b.dataset.id });
   },
   irArtesana: () => { H.sfx('boton', 0.3); if (H.irArtesana) H.irArtesana(); },
   tomarVaso: () => { H.sfx('boton', 0.3); H.mandar({ t: 'vaso', a: 'tomar' }); },
@@ -1387,15 +1390,16 @@ const ACC = {
       const cand = bolsa.filter(x => x.s === k && puedeUsar(x, y) && (!protege || x.cj === puesto.cj)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
       return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
     }).filter(Boolean);
-    H.sfx('boton', 0.4);
+    H.sfx('boton', 0.4); vivo.vibrar('equipar');
     mejoras.forEach(x => H.mandar({ t: 'item', a: 'equipar', id: x.id }));
   },
   comunes: b => {
     if (!confirmar('comunes')) { marcarSeguro(b); return; }
     const y = H.yo(); H.sfx('moneda', 0.4);
+    if (y) vivo.alVender(b, comunesVendibles(y).reduce((a, x) => a + precioVenta(x), 0), '#' + IDS.inv + ' [data-sub] .vv-precio');
     if (y) comunesVendibles(y).forEach(x => H.mandar({ t: 'item', a: 'vender', id: x.id }));
   },
-  equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
+  equipar: b => { H.sfx('boton', 0.3); vivo.vibrar('equipar'); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
   probarSkin: b => { if (!H.probarSkin || !SKINS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarSkin(b.dataset.id); },
   probarMontura: b => { if (!H.probarMontura || !MONTURAS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarMontura(b.dataset.id); },
   // Solo al tocar el boton: abre el selector de chats (Telegram) o la hoja de compartir; nunca envia nada solo.
@@ -1633,6 +1637,8 @@ export function iniciarVentanas(opciones) {
     listo = true;
     const st = document.createElement('style'); st.id = 'vv-css'; st.textContent = CSS;
     document.head.appendChild(st);
+    // Inventario y botones vivos (js/vivo.js). Con graficos bajos o sin efectos se queda sin animaciones.
+    vivo.iniciar({ juego: '3d', tg: TG, ligero: () => { const g = window.dqGfx && window.dqGfx.ajustes; return !!(g && (g.fx === 0 || g.efectivo === 'baja')); } });
     delegar(crearModal(IDS.inv, 'INVENTARIO'));
     delegar(crearModal(IDS.libro, 'LIBRO DE CLASE'));
     delegar(crearModal(IDS.tienda, 'MERCADER'));
@@ -1649,6 +1655,7 @@ export function iniciarVentanas(opciones) {
     setInterval(pintarFranja, 2000);
   }
   return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, abrirTiendaTemp, alTiendaTemp, actualizar, alPedido, compararConPuesta, deltasBonos,
+    fallo: vivo.fallo,   // el servidor dijo que no: sacudida corta de lo ultimo que se toco (js/vivo.js)
     // Probador 3D: el mismo precio y botones de compra que la tarjeta de la tienda, y sus clics.
     compraSkin: id => { const y = H.yo(), d = SKINS[id]; return y && d ? ((y.skins || []).includes(id) ? (y.skin === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: 'skin', id }, '')) : accPrecio(y, 'skin', id, d)) : ''; },
     delegarCompra: el => delegar(el) };

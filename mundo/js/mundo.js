@@ -3057,6 +3057,7 @@ function recibir(m) {
     } break;
     case 'chicha_rec': verChicha(); break;   // ya reclamó: que vea su código y el botón de WhatsApp
     case 'toast': if (m.ofreceGrupo) { ofertaGrupo(m); break; }
+      try { if (!m.ok && V.fallo) V.fallo(); } catch (e) {}   // «no se pudo»: sacudida corta de lo que se acaba de tocar (js/vivo.js)
       // Bono del día/semana y cofre semanal: el texto se guarda y se muestra al abrir el cofre (no estropea la sorpresa).
       if (/^(Semana|Día) completo\. Bono:|^📦 Cofre semanal \d\/3 abierto/.test(m.m || '')) { cofreSemTxt = (m.m || '').replace(/^📦 /, ''); clearTimeout(cofreSemTxtT); cofreSemTxtT =setTimeout(() => { if (cofreSemTxt) { aviso(cofreSemTxt, 'ok'); cofreSemTxt = ''; } }, 3000); break; }
       // Nombre aceptado (Ajustes o bautizo): la tarjeta de bautizo se cierra al momento, aunque la red tarde.
