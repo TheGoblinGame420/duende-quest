@@ -60,6 +60,10 @@ try {
   const c = (ck.cookies || []).find(x => x.name === 'dq_s');
   chequear(!!c && c.httpOnly && c.secure && c.sameSite === 'Lax', 'el navegador guarda dq_s como HttpOnly; Secure; SameSite=Lax');
 
+  // Cuenta registrada: recibe su Huevo Místico y lo lleva puesto (functions/mmo/mascotas.js).
+  const hv = await dev(`(() => { const s = [...mundo.sesiones.values()].find(x => x.c && x.c.uid === 'tg:${TG_ID}'); return s ? { huevo: !!s.c.huevo, masc: s.c.mascota, yo: !!mundo.datosPropios(s).huevo } : null; })()`);
+  chequear(hv && hv.huevo && hv.masc === 'huevo' && hv.yo, 'la cuenta de Telegram recibe su Huevo Místico y lo lleva puesto');
+
   console.log('2. Recargar: sigue siendo el mismo duende (sin enlace)');
   await nav.ir(BASE + '/mundo/');
   await new Promise(r => setTimeout(r, 2500));

@@ -516,7 +516,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 402;
+export const VERSION = 403;
 
 // Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
 // tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
@@ -535,6 +535,15 @@ export function anotarMisSkins(yo) {
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 156, fecha: '22 nov 2026', items: [
+    '🥚 Huevo Místico: si tienes cuenta (Telegram o correo) recibes uno gratis. Llévalo contigo mientras cazas y entregas misiones y eclosiona en una de las 10 mascotas místicas. Ábrelo con la tecla N o con el botón del huevo.',
+    '🐉 10 mascotas místicas que te siguen en 2D y en 3D y ayudan de verdad: más oro, más experiencia de misiones, más velocidad, mejor botín, más bolsa… Llevas una a la vez.',
+    '🌐 ¿Juegas en Telegram? En Ajustes, «Jugar en el navegador o instalar la app»: un enlace de un solo uso abre tu mismo duende en Chrome o Safari, y de ahí a tu pantalla de inicio.',
+    '🔗 Si dentro de Telegram entras con tu correo, las dos cuentas quedan unidas a tu duende sin escribir ningún código.',
+    '🔒 «Cerrar sesión» ahora cierra de verdad: en el servidor y en el navegador.',
+    '🎒 Inventario más vivo: brillo según la rareza, botones que responden al toque y vibración en el celular.',
+    '🚪 Portada nueva: entra al instante desde el navegador, sin Telegram y sin registrarte.',
+  ] },
   { n: 155, fecha: '22 nov 2026', items: [
     '🎨 Colores nuevos en todo Duende Quest: negro esmeralda, el verde del duende en los botones y el oro de la moneda para premios y tienda. Los dos juegos, la portada y Telegram se ven ahora como un solo mundo.',
     '💎 La ventana para conectar la wallet de TON usa los mismos colores.',

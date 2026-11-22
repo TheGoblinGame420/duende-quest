@@ -5,7 +5,7 @@
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>/* Enlace de un solo uso de Telegram (?ott=): sale de la barra antes de que ningún otro script lea la dirección (js/llave.js lo canjea). */(function(){try{var m=/[?&]ott=([^&#]*)/.exec(location.search);if(!m)return;var i=/[?&]ir=(mundo|mmo)(&|$)/.exec(location.search);sessionStorage.setItem('dq_ott',m[1]);if(i)sessionStorage.setItem('dq_ott_ir',i[1]);var q=location.search.replace(/([?&])(ott|ir)=[^&#]*/g,'$1').replace(/[?&]+$/,'').replace(/\?&+/,'?').replace(/&&+/g,'&');history.replaceState(history.state,'',location.pathname+(q.length>1?q:'')+location.hash);}catch(e){}})();</script>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=402"></script>
+<script src="/js/origen.js?v=403"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -52,8 +52,8 @@
   });
 })();
 </script>
-<script src="/js/pwa.js?v=402" defer></script>
-<script src="/js/portada-orden.js?v=402" defer></script>
+<script src="/js/pwa.js?v=403" defer></script>
+<script src="/js/portada-orden.js?v=403" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -844,7 +844,7 @@ section[id]{scroll-margin-top:72px;}
 .faq-cta p{font-size:14px;color:var(--txt2);margin-top:.8rem;}
 </style>
 <!-- Capa de marca de la portada (nov-2026): variables, héroe, franja del token, utilidad y cómo comprar -->
-<link rel="stylesheet" href="/css/portada.css?v=402">
+<link rel="stylesheet" href="/css/portada.css?v=403">
 <!-- tema:inicio (lo escribe tools/tema.mjs desde css/tema.css; no editar aqui) --><style id="dq-tema">:root{--primary:#22e39a;--primary-strong:#0a8457;--primary-deep:#086b47;--primary-soft:#6df5bd;--primary-ink:#03150d;--secondary:#a78bfa;--secondary-strong:#7c4dff;--accent:#f5c84c;--accent-strong:#c9962a;--accent-ink:#1b1305;--bg-deep:#040706;--bg-dark:#070c0b;--surface:#0d1614;--surface-2:#13201c;--surface-3:#1a2b26;--glass:rgba(8,16,14,.86);--glass-soft:rgba(10,22,19,.62);--border:#213832;--border-soft:rgba(109,245,189,.18);--border-gold:rgba(245,200,76,.38);--text:#ecf7f1;--text-2:#a9bdb3;--text-3:#7f958a;--success:#34d399;--warning:#fbbf24;--danger:#ff5d6c;--info:#7dd3fc;--grad-primary:linear-gradient(180deg,#6ff8c0 0%,#1ad68a 100%);--grad-accent:linear-gradient(180deg,#fbe08d 0%,#e8b03a 100%);--grad-brand:linear-gradient(120deg,#22e39a 0%,#f5c84c 100%);--glow-primary:0 0 0 1px rgba(34,227,154,.38),0 8px 24px rgba(16,185,129,.24);--glow-accent:0 0 0 1px rgba(245,200,76,.42),0 8px 24px rgba(245,200,76,.2);--shadow:0 10px 30px rgba(0,0,0,.5)}:root{--bg:var(--bg-dark);--panel:var(--surface);--panel2:var(--surface-2);--borde:var(--border);--txt:var(--text);--txt2:var(--text-2);--txt3:var(--text-3);--pri:var(--primary-strong);--pri2:var(--primary-deep);--pri-txt:var(--primary-soft);--ok:var(--success);--warn:var(--warning);--err:var(--danger);--oro:var(--accent);--oro2:var(--accent-strong);--oro-tinta:var(--accent-ink);--verde:var(--success);--green:var(--success);--amarillo:var(--accent);--yellow:var(--accent);--rosa:var(--secondary);--purple:var(--secondary);--pink:var(--secondary);--cian:var(--primary-soft);--cyan:var(--primary-soft);--rojo:var(--danger);--red:var(--danger);--dark:var(--bg-dark);--card:var(--surface);--sombra:var(--shadow);--marco:var(--border-gold)}</style><!-- tema:fin -->
 </head>
 <body>
@@ -1245,7 +1245,7 @@ section[id]{scroll-margin-top:72px;}
     <ol class="pasos">
       <li><span class="paso-n" aria-hidden="true">1</span><div><h3>Entra gratis</h3><p>Abre el juego en el navegador del celular o del PC, o dentro de Telegram con el bot oficial @duendequest_bot. Puedes empezar como invitado.</p><div class="paso-mas"><div><span>Navegador</span><span>Telegram</span><span>Invitado, sin registro</span></div></div></div></li>
       <li><span class="paso-n" aria-hidden="true">2</span><div><h3>Elige tu clase</h3><p>Guerrero (tanque), Mago (daño a distancia), Sacerdote (sanador) o Pícaro (cuerpo a cuerpo). Cada clase tiene sus propias habilidades.</p><div class="paso-mas"><div><span>Guerrero · aguanta</span><span>Mago · daño de lejos</span><span>Sacerdote · cura</span><span>Pícaro · golpes rápidos</span></div></div></div></li>
-      <li><span class="paso-n" aria-hidden="true">3</span><div><h3>Juega con otros</h3><p>Forma grupo, entra a mazmorras, únete a una hermandad y enfrenta jefes con otros jugadores conectados en tiempo real.</p><div class="paso-mas"><div><span>Caza y sube de nivel</span><span>Captura criaturas</span><span>Jefes en grupo</span><span>Mismo duende en 2D y 3D</span></div></div></div></li>
+      <li><span class="paso-n" aria-hidden="true">3</span><div><h3>Juega con otros</h3><p>Forma grupo, entra a mazmorras, únete a una hermandad y enfrenta jefes con otros jugadores conectados en tiempo real.</p><div class="paso-mas"><div><span>Caza y sube de nivel</span><span>Captura criaturas</span><span>Jefes en grupo</span><span>Mismo duende en 2D y 3D</span><span>Huevo Místico al crear tu cuenta</span></div></div></div></li>
     </ol>
     <figure class="pasos-movil">
       <button type="button" class="cap-abrir" data-full="assets/capturas/mmo-movil" aria-label="Ampliar captura: el juego en el celular">
@@ -2411,9 +2411,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase: defer no frena el dibujo y corre antes de 'load', que es cuando lo usa auth-manager.js (initSupabase) -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=402"></script>
+<script src="js/config.js?v=403"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=402"></script>
+<script src="js/auth-manager.js?v=403"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2515,9 +2515,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
   } catch (e) {}
 })();
 </script>
-<script src="js/price-feed.js?v=402"></script>
-<script type="module" src="js/tienda-portada.js?v=402"></script>
-<script type="module" src="js/cuenta-portada.js?v=402"></script>
+<script src="js/price-feed.js?v=403"></script>
+<script type="module" src="js/tienda-portada.js?v=403"></script>
+<script type="module" src="js/cuenta-portada.js?v=403"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

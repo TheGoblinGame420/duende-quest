@@ -5,6 +5,17 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v403 (22-nov-2026): identidad unificada, mascotas místicas e inventario vivo
+
+- **Handoff** (`functions/api/auth.js`, `functions/mmo/llave.js`, `js/llave.js`): OTT de 60 s en memoria del DO → `/?ott=` → cookie `dq_s` HttpOnly. El cliente solo guarda la marca `dq_ck`. Un script en línea al principio de index, mmo y mundo saca el OTT de la barra antes que cualquier otro script. Prueba real: `node tools/qa_handoff.mjs` con `mmo_local` (que ahora sirve `/api/auth/*` con un token de bot solo de pruebas).
+- **Cerrar sesión**: `cerrarSesionTotal()` en `js/llave.js` (portada, CLASSIC, ORIGINS). Borra también el duende de invitado del navegador: por eso pregunta antes.
+- **Rol admin**: `calcularDios` en `dios.js`. `ADMIN_EMAILS` NO vale sin `CORREO_CONFIRMADO=1` (y solo da moderador). Pendiente del dueño: activar «Confirm email» en Supabase antes de poner ese secreto.
+- **Mascotas místicas**: números en `functions/mmo/pets-config.js`, lógica en `functions/mmo/mascotas.js`, textos y arte en `MASCOTAS` de `data.js` (el arnés comprueba que coincidan). Imágenes: `assets/mascotas/` (se rehacen con `tools/mascotas/recortar.py`). Fotos: `node tools/fotos_mascotas.mjs`.
+- **Sin hacer en mascotas**: los bonos también valen en PvP (el Zorro da +10 % de velocidad en duelos y Abismo); en 3D son sprites, no modelos; la luz puntual solo en PC con calidad alta.
+- **Inventario vivo**: `js/vivo.js` (fotos: `node tools/fotos_inventario.mjs`). El juego tiene 4 rarezas; «Mítico» solo existe en las mascotas.
+- **No se hizo, a propósito**: memecoin en TON (STON.fi, quema, `verify-jetton`): $DUENDE es de Solana, no hay jetton ni precios y choca con las reglas de pagos; correos `@duendequest.com` (DNS y clave del dueño; los correos de cuenta los manda Supabase: se configura allí el SMTP); avatar subido (sin R2 ni moderación); insignia de creador; tabla `users` (la identidad vive en el DO: `c:<uid>` + alias `al:`).
+- Sin probar: teléfono real, Telegram real (el handoff se probó con un initData firmado con un token de pruebas), iPhone instalado como app (puede no compartir la cookie con Safari).
+
 ## v402 (22-nov-2026): paleta «Esmeralda y oro místico»
 
 - **Un solo sitio para los colores:** `css/tema.css`. No se enlaza: `node tools/tema.mjs` lo copia en cada página (`<style id="dq-tema">` antes de `</head>`) con el puente de los nombres viejos de esa página. `verificar` falla si una copia quedó vieja.
