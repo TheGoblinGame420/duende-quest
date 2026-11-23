@@ -11,6 +11,7 @@
 //  c.huevo     = { p }  puntos de incubacion del huevo que tiene (o null)
 //  c.huevoDado = 1      ya se le entrego el primero (una vez por personaje)
 //  c.eclos     = n      huevos que ya eclosionaron (fija la meta del siguiente)
+//  c.petRegalo = 1      ya se le miro el regalo de la v405 (regaloMascota)
 //
 // El huevo es SOLO de cuentas registradas (uid 'tg:' o 'web:'; un invitado
 // 'inv:' no lo recibe hasta crear su cuenta). Incuba unicamente equipado
@@ -22,7 +23,7 @@
 //            (equipar o guardar usa el { t: 'comprar', k: 'mascota', id } de siempre)
 // ═══════════════════════════════════════════════════════
 import { MASCOTAS, MISTICAS, RAREZAS_MASCOTA, HUEVO, metaHuevo, MONSTRUOS } from '../../mmo/js/data.js';
-import { bonoPet, bolsaMaxDe, ESCUDO_RACHA_DIAS } from './pets-config.js';
+import { bonoPet, bolsaMaxDe, ESCUDO_RACHA_DIAS, REGALO_PET } from './pets-config.js';
 
 const registrada = c => !!c && typeof c.uid === 'string' && (c.uid.startsWith('tg:') || c.uid.startsWith('web:'));
 
@@ -46,6 +47,30 @@ export const MascotasMisticas = {
     c.huevo = { p: 0 };
     if (!c.mascota) c.mascota = 'huevo';
     return true;
+  },
+  // Regalo de la v405 a los duendes que ya existian (REGALO_PET, pets-config.js): su primer huevo
+  // eclosiona solo y la mascota queda puesta. Una vez por personaje, solo con cuenta, y solo si aun no
+  // tenia ninguna mistica. Va despues de huevoAlEntrar. Solo datos: devuelve el id de la que nacio, o ''.
+  regaloMascota(c) {
+    if (!registrada(c) || c.petRegalo || !c.huevo) return '';
+    if ((c.creado || 0) >= REGALO_PET.hasta) return '';
+    c.petRegalo = 1;
+    if ((c.eclos || 0) > 0 || (c.mascotas || []).some(k => MISTICAS.includes(k))) return '';
+    return this.huevoNacer(c);
+  },
+  // El aviso del regalo (despues de 'bienvenido'): se guarda ya, para que al volver sea la misma mascota.
+  regaloAvisar(s, id) {
+    const c = s.c, ma = MASCOTAS[id];
+    if (!ma) return;
+    s.sucio = true;
+    const avisar = () => {
+      if (s.cerrado || s.c !== c) return;
+      this.enviar(s, { t: 'toast', ok: true, imp: 1, m: `🎁 Regalo por tener tu cuenta: nació ${ma.nombre} (${RAREZAS_MASCOTA[ma.rareza].nombre}) y ya te acompaña. ${ma.bono}.${c.huevo ? ' Tienes otro huevo para incubar.' : ''} Cámbiala en Mascotas.` });
+      if (c.mascota === id) this.aClave(s.k, { t: 'eclosion', id: s.id, m: id });   // el destello (solo adorno)
+    };
+    if (REGALO_PET.espera > 0) setTimeout(avisar, REGALO_PET.espera); else avisar();
+    this.revisarLogros(s);
+    this.guardar(s);
   },
   // Para datosPropios: barra del huevo (o null si no tiene).
   infoHuevo(c) { return c.huevo ? { p: Math.floor(c.huevo.p || 0), meta: metaHuevo(c.eclos || 0) } : null; },

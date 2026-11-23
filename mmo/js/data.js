@@ -516,7 +516,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 404;
+export const VERSION = 405;
 
 // Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
 // tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
@@ -535,6 +535,11 @@ export function anotarMisSkins(yo) {
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 158, fecha: '22 nov 2026', items: [
+    '🎁 Si tu duende ya existía y tienes cuenta (Telegram o correo), tu primera mascota mística nace sola al entrar y ya te acompaña, con su bono. Además te queda otro huevo para incubar.',
+    '🐾 La llevas a tu lado en CLASSIC y en ORIGINS, y los demás también la ven. Cámbiala o guárdala en Mascotas (tecla N).',
+    '📱 En el celular, la franja «Instalar» ya no tapa los avisos.',
+  ] },
   { n: 157, fecha: '22 nov 2026', items: [
     '🔥 Tres usos nuevos de $DUENDE, todos opcionales y desde el navegador: eclosionar tu Huevo Místico al momento (US$1), subir de nivel a tu mascota mística (US$1 por nivel, hasta 5; cada nivel suma un 10 % a su bono) y un protector de racha (US$0,50). Están en la ventana de mascotas (tecla N).',
     '⛓ Se pagan en $DUENDE al precio del momento y se entregan solos en cuanto la red de Solana confirma el pago.',

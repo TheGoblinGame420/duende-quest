@@ -49,3 +49,10 @@ export function bonoPet(c, clave) {
   return typeof v === 'number' ? v * (1 + EVO_PASO * nivelPet(c)) : v ? 1 : 0;
 }
 export const bolsaMaxDe = c => BOLSA_MAX + Math.round(BOLSA_MAX * bonoPet(c, 'bolsa'));
+
+// Regalo de la v405 (dueño, 22-nov-2026): a los duendes que YA existian, su primer Huevo Místico
+// eclosiona solo la proxima vez que entren con cuenta, y la mascota sale ya puesta. Los duendes
+// creados despues de esta fecha siguen incubando su huevo como siempre.
+// Es un objeto para que el arnes pueda mover la fecha sin depender del dia en que se ejecute.
+// espera: el aviso sale unos segundos despues de entrar, cuando el mundo ya cargo (antes se perdia tras la pantalla de carga).
+export const REGALO_PET = { hasta: Date.UTC(2026, 10, 23, 5), espera: 6000 };   // 23-nov-2026 00:00, hora de Perú

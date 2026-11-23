@@ -9,6 +9,9 @@
 // ═══════════════════════════════════════════════════════
 import { MmoWorld } from '../functions/mmo/world.js';
 import { pub } from '../functions/mmo/social.js';
+import { REGALO_PET } from '../functions/mmo/pets-config.js';
+REGALO_PET.espera = 0;  // en el arnes el aviso sale al momento
+REGALO_PET.hasta = 0;   // el regalo de la v405 depende de una fecha: apagado salvo en pruebasRegaloMascota
 import { MAPAS, HABS, CLASES, statsJugador, statsMonstruo, SUELO } from '../mmo/js/data.js';
 import { cofresDe, esZonaAbierta, EVENTO_DURA_MS, COFRE_CADA_MS, RARO_REAPARECE_MS } from '../functions/mmo/eventos.js';
 
@@ -618,6 +621,7 @@ async function pruebas() {
   await pruebasCompanero();
   await pruebasMascotasMisticas();
   await pruebasGastosDuende();
+  await pruebasRegaloMascota();
   await pruebasLlave();
   await pruebasHandoff();
   await pruebasCriaturas();
@@ -4698,6 +4702,54 @@ async function pruebasMascotasMisticas() {
   mundo.huevoAlEntrar(roto);
   chequear(roto.mascota === '' && roto.huevo && roto.huevo.p === 0, 'una mística equipada que no es suya se guarda sola al entrar');
   for (const x of [inv, v, t2]) await dejar(x);
+}
+
+// ── v405: a los duendes que ya existían les nace su primera mística al entrar con cuenta, ya puesta. ──
+async function pruebasRegaloMascota() {
+  console.log('Regalo de la primera mascota a los duendes que ya existían');
+  const D = await import('../mmo/js/data.js');
+  const conUltimos = s => { s.ultimos = k => s.ws.rec.filter(m => m.t === k); s.limpiar = () => { s.ws.rec.length = 0; }; return s; };
+  const misticas = c => (c.mascotas || []).filter(k => D.MISTICAS.includes(k));
+  const regalo = s => s.ultimos('toast').some(x => /Regalo por tener tu cuenta/.test(x.m));
+  // Tres cuentas de antes de la fecha: una con huevo a medias, una con mascota normal puesta, una que ya incubó.
+  REGALO_PET.hasta = 0;
+  const a0 = conUltimos(await entrarTg('ViejaHuevo', 77951)); await calma();
+  a0.c.huevo.p = 80;
+  const b0 = conUltimos(await entrarTg('ViejaHongo', 77952)); await calma();
+  b0.c.mascotas = ['hongo']; b0.c.mascota = 'hongo';
+  const c0 = conUltimos(await entrarTg('ViejaCria', 77953)); await calma();
+  c0.c.huevo.p = D.metaHuevo(0); mundo.huevoEclosionar(c0);
+  const yaTenia = misticas(c0.c)[0];
+  chequear(misticas(a0.c).length === 0 && a0.c.mascota === 'huevo' && !a0.c.petRegalo, 'con la fecha pasada, una cuenta sigue con su huevo y sin regalo');
+  for (const x of [a0, b0, c0]) { x.sucio = true; await dejar(x); }
+  // Llega la v405: vuelven a entrar.
+  REGALO_PET.hasta = Date.now() + 3600000;
+  const a = conUltimos(await entrarTg('ViejaHuevo', 77951)); await calma();
+  const ma = misticas(a.c);
+  chequear(ma.length === 1 && a.c.mascota === ma[0] && a.c.eclos === 1 && a.c.petRegalo === 1, 'a un duende que ya existía le nace su primera mística al entrar, y la lleva puesta');
+  chequear(regalo(a) && !a.ultimos('toast').some(x => /Recibiste un Huevo/.test(x.m)) && a.ultimos('eclosion').some(x => x.m === ma[0]), 'se lo avisa con su destello (y no con el aviso del huevo)');
+  chequear(mundo.infoApariencia(a).ma === ma[0] && mundo.datosPropios(a).mascota === ma[0], 'los demás la ven a su lado y él la ve puesta');
+  chequear(a.c.huevo && a.c.huevo.p === 0 && mundo.datosPropios(a).huevo.meta === D.metaHuevo(1), 'le queda otro huevo para incubar, con la meta del segundo');
+  chequear(mundo.bonoMascota(a.c, Object.keys((await import('../functions/mmo/pets-config.js')).PETS[ma[0]])[0]) > 0, 'y su bono ya cuenta');
+  const b = conUltimos(await entrarTg('ViejaHongo', 77952)); await calma();
+  chequear(misticas(b.c).length === 1 && b.c.mascota === misticas(b.c)[0] && b.c.mascotas.includes('hongo'), 'quien llevaba una mascota normal pasa a llevar la mística, y conserva la suya');
+  await b.mandar({ t: 'comprar', k: 'mascota', id: 'hongo' });
+  chequear(b.c.mascota === 'hongo', 'y puede volver a ponerse la de antes');
+  const c = conUltimos(await entrarTg('ViejaCria', 77953)); await calma();
+  chequear(misticas(c.c).length === 1 && misticas(c.c)[0] === yaTenia && c.c.eclos === 1 && !regalo(c), 'quien ya había incubado la suya no recibe otra');
+  // No se repite, y es la misma al volver.
+  await dejar(a);
+  const a2 = conUltimos(await entrarTg('ViejaHuevo', 77951)); await calma();
+  chequear(misticas(a2.c).length === 1 && misticas(a2.c)[0] === ma[0] && a2.c.mascota === ma[0] && !regalo(a2), 'al volver sigue con la misma mascota y no hay segundo regalo');
+  // Invitados y duendes nuevos: como siempre.
+  const inv = conUltimos(await entrar('SinRegalo', 'e3c9')); await calma();
+  chequear(misticas(inv.c).length === 0 && !inv.c.huevo && !inv.c.petRegalo && !regalo(inv), 'un invitado no recibe mascota');
+  const viejo = { uid: 'inv:abc', creado: 1, mascotas: [], huevo: { p: 0 } };
+  chequear(mundo.regaloMascota(viejo) === '' && viejo.mascotas.length === 0, 'ni aunque su duende sea antiguo');
+  REGALO_PET.hasta = 0;
+  const n = conUltimos(await entrarTg('NuevaCuenta', 77954)); await calma();
+  chequear(misticas(n.c).length === 0 && n.c.mascota === 'huevo' && n.c.huevo.p === 0 && !regalo(n), 'un duende creado después de la fecha recibe su huevo y lo incuba como siempre');
+  for (const x of [a2, b, c, inv, n]) await dejar(x);
 }
 
 // ── v404: gastos en $DUENDE (eclosión, nivel de mascota, protector). El cobro es el de siempre

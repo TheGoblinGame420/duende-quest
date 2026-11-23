@@ -34,11 +34,14 @@ export function franjaInstalar(op = {}) {
     const x = document.createElement('button');
     x.type = 'button'; x.setAttribute('aria-label', 'Cerrar'); x.textContent = '×';
     x.style.cssText = 'flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#a9bdb3;font-size:20px;padding:0;cursor:pointer';
-    si.onclick = () => { f.remove(); if (window.dqInstalar) window.dqInstalar(); };
-    x.onclick = () => f.remove();
+    // Mientras está puesta, la página puede apartar sus avisos (body.dq-franja-inst): en CLASSIC caían debajo.
+    const quitar = () => { f.remove(); document.body.classList.remove('dq-franja-inst'); };
+    si.onclick = () => { quitar(); if (window.dqInstalar) window.dqInstalar(); };
+    x.onclick = quitar;
     f.append(tx, si, x);
     document.body.appendChild(f);
-    setTimeout(() => f.remove(), op.forzar ? 40000 : 25000);
+    document.body.classList.add('dq-franja-inst');
+    setTimeout(quitar, op.forzar ? 40000 : 25000);
     return true;
   } catch (e) { return false; }
 }

@@ -869,6 +869,8 @@ export class MmoWorld {
     c.eq = c.eq || {}; c.bolsa = c.bolsa || []; c.logros = c.logros || []; c.titulo = c.titulo || ''; c.mundiales = c.mundiales || 0;
     // Huevo Místico (mascotas.js): el primero, solo a cuentas registradas (nunca a un invitado).
     s.huevoNuevo = this.huevoAlEntrar(c);
+    s.petRegalo = this.regaloMascota(c);   // v405: a los duendes que ya existian les nace ya
+    if (s.petRegalo) s.huevoNuevo = false;
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!Object.hasOwn(CLASES, c.clase || '')) c.clase = null;
     // Skin o arma que ya no existe en data.js (renombrada, quitada o de una copia vieja): se vuelve a la basica.
@@ -984,6 +986,7 @@ export class MmoWorld {
       this.refrescarApariencia(s);
     }).catch(e => console.error('[MMO skinsPagadas]', e));
     if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); if (this.puntoPase) this.puntoPase(s, PASE.puntos.login); }   // titulos de racha 7/14/21; entrar suma al pase (1 vez al dia)
+    if (s.petRegalo) { const id = s.petRegalo; s.petRegalo = ''; this.regaloAvisar(s, id); }
     if (s.huevoNuevo) { s.huevoNuevo = false; this.enviar(s, { t: 'toast', ok: true, m: '🥚 Recibiste un Huevo Místico de Duende por tener cuenta. Llévalo contigo: se incuba cazando y cumpliendo misiones.' }); }
     if (login && login.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada

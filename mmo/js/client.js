@@ -18,19 +18,19 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=404';
-import { iniciarRegalo } from './regalo.js?v=404';
-import * as vivo from '/js/vivo.js?v=404';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=404';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=404';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=404';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=404';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=404';
-import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=404';
-import { franjaInstalar } from '/js/instalar.js?v=404';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=405';
+import { iniciarRegalo } from './regalo.js?v=405';
+import * as vivo from '/js/vivo.js?v=405';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=405';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=405';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=405';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=405';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=405';
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=405';
+import { franjaInstalar } from '/js/instalar.js?v=405';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
-import { GASTOS_DUENDE, MASCOTA_NV_MAX } from './data.js?v=404';   // gastos en $DUENDE (los pinta js/mascotas-ui.js)
-import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=404';   // ventana de mascotas místicas (la misma en ORIGINS)
+import { GASTOS_DUENDE, MASCOTA_NV_MAX } from './data.js?v=405';   // gastos en $DUENDE (los pinta js/mascotas-ui.js)
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=405';   // ventana de mascotas místicas (la misma en ORIGINS)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1062,7 +1062,7 @@ function recibir(m) {
     case 'chicha_rec': if (tabInv === 'chicha') pintarChicha(); break;   // ya reclamó: que vea su código y el botón de WhatsApp
     case 'toast': if (/^🎆 \d+…$/.test(m.m || '')) { document.querySelectorAll('.aviso').forEach(a => { if (/^\d+…$/.test(a.textContent)) a.remove(); }); aviso(m.m, 'ok', 1500); break; }
       if (!m.ok) vivo.fallo();   // «no se pudo»: sacudida corta del boton o tarjeta que se acaba de tocar (js/vivo.js)
-      if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
+      if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : '', m.imp ? 9000 : undefined); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
       if (m.carga) {
@@ -6972,5 +6972,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=404').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=405').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

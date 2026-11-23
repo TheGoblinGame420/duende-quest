@@ -5,6 +5,13 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v405 (22-nov-2026): la primera mascota, regalada a los duendes que ya existían
+
+- `REGALO_PET.hasta` (`functions/mmo/pets-config.js`) es la fecha de corte: 23-nov-2026 00:00 de Perú. Si el dueño quiere repetir el regalo más adelante, basta mover esa fecha (quien ya lo recibió no lo recibe otra vez: `c.petRegalo`).
+- Un invitado con duende antiguo lo recibe el día que cree su cuenta (es un incentivo más para registrarse).
+- El arnés apaga el regalo (`REGALO_PET.hasta = 0`) salvo en `pruebasRegaloMascota`: así las pruebas no dependen del día en que se ejecuten.
+- Sigue pendiente: enseñar el nivel de la mascota en su ficha; bonos de mascota en PvP.
+
 ## v404 (22-nov-2026): gastos en $DUENDE y registro de quema
 
 - **Catálogo y precios en un solo sitio**: `GASTOS_DUENDE` en `mmo/js/data.js` (eclosión US$1, nivel de mascota US$1, protector US$0,50). El dueño pidió precios «sostenibles y que no asusten».

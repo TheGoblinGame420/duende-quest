@@ -315,3 +315,7 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - Excepción aprobada por el dueño a «los pagos son manuales»: los tres `GASTOS_DUENDE` (eclosión instantánea, nivel de mascota, protector de racha) se **entregan solos** tras la verificación en la cadena. Skins, oro y lo demás siguen igual. La verificación de pagos no se tocó.
   - `functions/mmo/gastos.js`: `gastoDisponible`, `gastoAplicar`, `gastoEntregar`, `verificarQuema`, mensaje `{ t: 'gastos' }`. Niveles en `c.petNv` (bono ×(1 + 0,10·nivel), `pets-config.js`); protectores comprados en `c.login.amuC`.
   - Los gastos no cuentan como ingreso del fondo de mTON (van a quema) ni marcan `c.compro`.
+- **v405 (22-nov-2026): la primera mascota, regalada a los duendes que ya existían.**
+  - `regaloMascota(c)` (tras `huevoAlEntrar`, en el hola): con cuenta, creado antes de `REGALO_PET.hasta` (`pets-config.js`) y sin ninguna mística → `huevoNacer` y queda puesta. Una vez (`c.petRegalo`). Los duendes nuevos siguen incubando su huevo.
+  - `regaloAvisar`: guarda al momento; el aviso (toast con `imp`) y el destello salen a los `REGALO_PET.espera` ms. El arnés pone `hasta = 0` y `espera = 0`.
+  - `js/instalar.js` pone `body.dq-franja-inst` mientras la franja está a la vista (el 2D baja sus avisos).
