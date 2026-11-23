@@ -12,8 +12,8 @@
 //    invitado del webview): juegas con tu cuenta de Telegram y hay un botón para
 //    llevarla al navegador o instalar la app.
 // ═══════════════════════════════════════════════════════
-import { abrirCuenta } from '/js/cuenta.js?v=405';
-import { ottListo, tieneAparato, nombreAparato, abrirNavegador, cerrarSesionTotal } from '/js/llave.js?v=405';
+import { abrirCuenta } from '/js/cuenta.js?v=406';
+import { ottListo, tieneAparato, nombreAparato, abrirNavegador, cerrarSesionTotal } from '/js/llave.js?v=406';
 
 const $ = id => document.getElementById(id);
 const b = $('nav-cuenta'), menu = $('nav-cuenta-menu');

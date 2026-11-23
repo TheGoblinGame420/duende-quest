@@ -18,19 +18,19 @@ import {
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
   CAPTURA,
-} from './data.js?v=405';
-import { iniciarRegalo } from './regalo.js?v=405';
-import * as vivo from '/js/vivo.js?v=405';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
-import { vecinosDe, encargoVecino } from './vecinos2d.js?v=405';   // vecinos y encargos de las zonas (mundo vivo)
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=405';
-import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=405';
-import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=405';
-import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=405';
-import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=405';
-import { franjaInstalar } from '/js/instalar.js?v=405';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
+} from './data.js?v=406';
+import { iniciarRegalo } from './regalo.js?v=406';
+import * as vivo from '/js/vivo.js?v=406';   // inventario y botones vivos: resorte, brillo por rareza, vibracion (solo presentacion)
+import { vecinosDe, encargoVecino } from './vecinos2d.js?v=406';   // vecinos y encargos de las zonas (mundo vivo)
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=406';
+import { marioneta, dibujarMarioneta, tiempoMuerto } from './marioneta.js?v=406';
+import { fondoCielo, fondoMundo, fondoTono, fondoEstanque, fondoSombra, fondoFrente } from './fondo2d.js?v=406';
+import { formCuenta, recordarInvitado } from '/js/cuenta.js?v=406';
+import { authAparato, guardarAparato, falloAparato, tieneAparato, ottListo, avisoOtt, abrirNavegador, cerrarSesionTotal, unirCuentaWeb, respuestaUnir, nombrarAparato } from '/js/llave.js?v=406';
+import { franjaInstalar } from '/js/instalar.js?v=406';   // «Añadir a pantalla de inicio» dentro del juego   // tu cuenta de Telegram en Chrome   // formulario de cuenta comun a todos los juegos (correo + contraseña)
 
-import { GASTOS_DUENDE, MASCOTA_NV_MAX } from './data.js?v=405';   // gastos en $DUENDE (los pinta js/mascotas-ui.js)
-import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=405';   // ventana de mascotas místicas (la misma en ORIGINS)
+import { GASTOS_DUENDE, MASCOTA_NV_MAX } from './data.js?v=406';   // gastos en $DUENDE (los pinta js/mascotas-ui.js)
+import { htmlMisticas, clicMisticas, HUEVO_SVG } from '/js/mascotas-ui.js?v=406';   // ventana de mascotas místicas (la misma en ORIGINS)
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -6972,5 +6972,5 @@ requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
 // estado para los scripts que prueban el juego.
 if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar, capturar, pintarRed, abrirCriaturas };
-if (TRAILER) import('./trailer.js?v=405').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
+if (TRAILER) import('./trailer.js?v=406').then(m => m.iniciarTrailer({ P, mons, cv, ajustarVista, cerrarModales, esJefe: o => !!(MONSTRUOS[o.k] || {}).jefe, cargado: () => cargadas >= porCargar,
   get yo() { return yo; }, get camX() { return camX; }, get VW() { return VW; }, get OY() { return OY; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; } })).catch(e => console.error('[trailer]', e));

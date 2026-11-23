@@ -4,7 +4,7 @@
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>/* Enlace de un solo uso de Telegram (?ott=): sale de la barra antes de que ningún otro script lea la dirección (js/llave.js lo canjea). */(function(){try{var m=/[?&]ott=([^&#]*)/.exec(location.search);if(!m)return;var i=/[?&]ir=(mundo|mmo)(&|$)/.exec(location.search);sessionStorage.setItem('dq_ott',m[1]);if(i)sessionStorage.setItem('dq_ott_ir',i[1]);var q=location.search.replace(/([?&])(ott|ir)=[^&#]*/g,'$1').replace(/[?&]+$/,'').replace(/\?&+/,'?').replace(/&&+/g,'&');history.replaceState(history.state,'',location.pathname+(q.length>1?q:'')+location.hash);}catch(e){}})();</script>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duendequest.com"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=405"></script>
+<script src="/js/origen.js?v=406"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -72,14 +72,14 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=405" defer></script>
+<script src="/js/pwa.js?v=406" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=405" defer></script>
+<script src="/js/config.js?v=406" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
    apuntan a tonos sobrios. ── */
-@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=405) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=406) format("woff2");font-display:block;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
 :root{
   --bg:#070c0b;--panel:#0d1614;--panel2:#13201c;--borde:#213832;
   --txt:#ecf7f1;--txt2:#a9bdb3;--txt3:#7f958a;
@@ -1198,7 +1198,7 @@ body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuer
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=405"></script>
+<script type="module" src="/mmo/js/client.js?v=406"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

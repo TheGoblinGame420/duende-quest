@@ -516,7 +516,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 405;
+export const VERSION = 406;
 
 // Tienda de la portada (index.html, js/tienda-portada.js): recuerda en ESTE navegador que skins
 // tiene el duende, solo para marcar «Ya la tienes». No es autoridad de nada: la compra la valida
@@ -535,6 +535,11 @@ export function anotarMisSkins(yo) {
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 159, fecha: '22 nov 2026', items: [
+    '🎬 En la portada ya se ve el juego antes de entrar: gameplay real de ORIGINS (3D) y de CLASSIC (2D), cada uno con su botón para jugar.',
+    '🧭 La portada sigue ahora el recorrido del jugador: ver el juego, empezar en 3 pasos y conocerlo; el token, la comunidad y la tienda van después.',
+    '✉️ Nuevo correo de contacto: contacto@duendequest.com.',
+  ] },
   { n: 158, fecha: '22 nov 2026', items: [
     '🎁 Si tu duende ya existía y tienes cuenta (Telegram o correo), tu primera mascota mística nace sola al entrar y ya te acompaña, con su bono. Además te queda otro huevo para incubar.',
     '🐾 La llevas a tu lado en CLASSIC y en ORIGINS, y los demás también la ven. Cámbiala o guárdala en Mascotas (tecla N).',

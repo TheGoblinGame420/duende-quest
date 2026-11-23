@@ -6,6 +6,7 @@
 //   (contrato y transparencia, tokenomics, hoja de ruta); el canje y el apoyo quedan plegados al final.
 //   En modo anuncio (html.anuncio) todo eso está oculto por CSS y aquí no se arma nada con ello.
 // - Botones [data-copiar]: copian la dirección del contrato.
+// - Desde el 22-nov-2026 el recorrido del jugador va primero (gameplay, 3 pasos, el juego) y el token después.
 // Sin JavaScript la página queda en el orden del HTML, con todo desplegado.
 (function () {
   'use strict';
@@ -158,8 +159,10 @@
       'Todo opcional. Compra $DUENDE directo al creador, canjea o dona para que el juego siga creciendo.', 'bloque-duende');
     var bt = d.getElementById('bloque-tienda'), bd = d.getElementById('bloque-duende');
     if (bt && bd && (bd.compareDocumentPosition(bt) & Node.DOCUMENT_POSITION_FOLLOWING)) bt.insertAdjacentElement('afterend', bd);
-    // Orden: los dos juegos, el token (utilidad, cómo comprar, datos), el juego en detalle, comunidad, tienda y preguntas
-    var orden = ['juegos', 'utilidad', 'como-comprar', 'bloque-token', 'lo-nuevo', 'bloque-juego', 'empieza', 'bloque-comunidad', 'bloque-tienda', 'bloque-duende', 'faq']
+    // Orden (22-nov-2026, el dueño: «que el cliente se interese en jugar»): primero el recorrido del jugador
+    // seguido y sin cortes (ver el gameplay → empezar en 3 pasos → conocer el juego), después el token
+    // (utilidad, cómo comprar, datos), lo nuevo, comunidad, tienda y preguntas. Antes el token iba 2.º.
+    var orden = ['juegos', 'empieza', 'bloque-juego', 'utilidad', 'como-comprar', 'bloque-token', 'lo-nuevo', 'bloque-comunidad', 'bloque-tienda', 'bloque-duende', 'faq']
       .map(function (id) { return d.getElementById(id); }).filter(Boolean);
     // Solo se mueve lo que no está ya en su sitio: mover un bloque grande (aunque quede igual) cuesta CPU al arrancar
     for (var k = 1; k < orden.length; k++) if (orden[k - 1].nextElementSibling !== orden[k]) orden[k - 1].insertAdjacentElement('afterend', orden[k]);
@@ -239,7 +242,7 @@
 
     // ---------- Barra de secciones en celular ----------
     var nav = d.querySelector('body > nav, nav[aria-label="Principal"]');
-    var lista = [['juegos', 'Juegos'], ['utilidad', 'Utilidad'], ['como-comprar', 'Comprar'], ['bloque-token', 'Token'], ['lo-nuevo', 'Novedades'], ['bloque-juego', 'El juego'], ['empieza', 'Empieza'], ['bloque-comunidad', 'Comunidad'], ['bloque-tienda', 'Tienda'], ['faq', 'Preguntas']]
+    var lista = [['juegos', 'Gameplay'], ['empieza', 'Empieza'], ['bloque-juego', 'El juego'], ['utilidad', 'Utilidad'], ['como-comprar', 'Comprar'], ['bloque-token', 'Token'], ['lo-nuevo', 'Novedades'], ['bloque-comunidad', 'Comunidad'], ['bloque-tienda', 'Tienda'], ['faq', 'Preguntas']]
       .filter(function (x) { var el = d.getElementById(x[0]); return el && !el.hidden && seVe(el); });
     if (nav && lista.length) {
       var barra = d.createElement('div');
