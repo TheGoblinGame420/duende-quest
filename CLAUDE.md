@@ -319,3 +319,8 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - `regaloMascota(c)` (tras `huevoAlEntrar`, en el hola): con cuenta, creado antes de `REGALO_PET.hasta` (`pets-config.js`) y sin ninguna mística → `huevoNacer` y queda puesta. Una vez (`c.petRegalo`). Los duendes nuevos siguen incubando su huevo.
   - `regaloAvisar`: guarda al momento; el aviso (toast con `imp`) y el destello salen a los `REGALO_PET.espera` ms. El arnés pone `hasta = 0` y `espera = 0`.
   - `js/instalar.js` pone `body.dq-franja-inst` mientras la franja está a la vista (el 2D baja sus avisos).
+- **Dominio (22-nov-2026): una sola dirección y zona endurecida.**
+  - `tocaMudanza` también muda `www.` y `http://` (son otros orígenes); `mudanza.html` acepta esas procedencias. `HSTS` y `HOST_WWW` en `functions/api/dominio.js` (`_headers` lleva la misma cabecera a mano; el arnés de mudanza lo comprueba).
+  - `worker.js` responde `/.well-known/security.txt` y `/favicon.ico` (están en `run_worker_first`). `[observability]` activo: registros en el panel.
+  - En el panel: TLS mínimo 1.2, DNSSEC, SPF/DKIM/DMARC restrictivos (el dominio no envía correo). «Always Use HTTPS» sigue apagado a propósito hasta el 23-dic-2026 (ver `SIGUIENTE.md`).
+  - Las herramientas con Chrome sin ventana se identifican como «Headless» y el servidor las trata como robot (301 sin puente): para probar la mudanza hay que poner un User-Agent normal.

@@ -5,6 +5,15 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## Dominio y Cloudflare (22-nov-2026)
+
+- **Hecho en el panel**: TLS mínimo 1.2, DNSSEC, SPF/DKIM/DMARC restrictivos. **Hecho en código**: www y http → https://duendequest.com (puente de `functions/api/mudanza.js`), HSTS con subdominios, security.txt, favicon, `[observability]`.
+- **Pendiente con fecha**: activar «Always Use HTTPS» (SSL/TLS → Edge Certificates) a partir del 23-dic-2026. Antes no: el borde redirige sin pasar por el puente y quien tuviera algo guardado en http lo perdería. El 22-nov el 31 % de las peticiones del día llegaban sin cifrar (2.070 de 6.680; buena parte serán robots).
+- **Si algún día el dominio envía correo** (p. ej. SMTP propio para los correos de Supabase, o Email Routing para tener contacto@duendequest.com): hay que cambiar el SPF `v=spf1 -all`, poner el DKIM del proveedor y revisar el DMARC, o los correos se rechazan.
+- **No tocar sin probar**: Bot Fight Mode (el webhook de Telegram y Helius entran por /api/*). Web Analytics de Cloudflare inyecta un script en cada página: antes, actualizar privacidad.html.
+- **Del dueño**: verificación en dos pasos en la cuenta de Cloudflare; Google Search Console (propiedad de dominio por DNS + enviar /sitemap.xml); verificar el dominio en Meta si va a anunciar.
+- wrangler sigue sin sesión en la laptop, pero el panel se puede manejar con el navegador integrado si el dueño inicia sesión allí.
+
 ## v405 (22-nov-2026): la primera mascota, regalada a los duendes que ya existían
 
 - `REGALO_PET.hasta` (`functions/mmo/pets-config.js`) es la fecha de corte: 23-nov-2026 00:00 de Perú. Si el dueño quiere repetir el regalo más adelante, basta mover esa fecha (quien ya lo recibió no lo recibe otra vez: `c.petRegalo`).
