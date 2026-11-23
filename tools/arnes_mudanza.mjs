@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { esPagina, tocaMudanza, respuestaMudanza, PUENTE } from '../functions/api/mudanza.js';
-import { DOMINIO_VIEJO, SITIO } from '../functions/api/dominio.js';
+import { DOMINIO_VIEJO, SITIO, HSTS } from '../functions/api/dominio.js';
 import worker from '../worker.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,7 +25,11 @@ for (const p of ['/api/telegram-bot', '/api/helius-verify', '/mmo/ws', '/mmo/ev'
 
 chequear(toca(VIEJO + '/mmo/?ref=abc'), 'el dominio viejo muda sus paginas');
 chequear(!toca(SITIO + '/mmo/'), 'el dominio oficial no se toca');
-chequear(!toca('https://www.duendequest.com/'), 'www del oficial no se toca');
+// Una sola direccion: www y http son otros origenes y se mudan igual que el dominio viejo.
+chequear(toca('https://www.duendequest.com/') && toca('https://www.duendequest.com/mmo/?ref=abc') && toca('http://www.duendequest.com/mundo/'), 'www se muda al dominio sin www');
+chequear(toca('http://duendequest.com/') && toca('http://duendequest.com/mmo/'), 'http se muda a https');
+chequear(!toca('https://www.duendequest.com/api/token-stats') && !toca('https://www.duendequest.com/mmo/js/client.js?v=1') && !toca('https://www.duendequest.com/mmo/', { m: 'POST' }) && !toca('http://duendequest.com/mmo/ws'), 'en www y http tampoco se tocan la API, los archivos ni un POST');
+chequear(!toca('http://localhost:8787/mmo/') && !toca('https://www.duendequest.com.otro.com/') && !toca('https://wwwduendequest.com/'), 'ni el servidor local ni un dominio parecido cuentan');
 chequear(!toca(VIEJO + '/api/telegram-bot', { m: 'POST' }) && !toca(VIEJO + '/mmo/', { m: 'POST' }), 'un POST nunca se redirige (webhooks)');
 chequear(!toca(VIEJO + '/mmo/ws') && !toca(VIEJO + '/tonconnect-manifest.json') && !toca(VIEJO + '/mmo/js/client.js?v=400'), 'ni el WebSocket ni los archivos');
 chequear(!toca('https://duende-quest.alfonso12hc.workers.dev.otro.com/mmo/'), 'un dominio parecido no cuenta');
@@ -95,6 +99,11 @@ const SB = 'sb-abcdefghij-auth-token';
   chequear(l4.localStorage.length === 0 && l4.destino === '/mundo/?ref=ab12#premium', 'desde otro sitio no se guarda nada (solo se sigue a la ruta)');
   const l5 = correrLlegada(p.destino, { ref: 'https://duende-quest.alfonso12hc.workers.dev.malo.example/' });
   chequear(l5.localStorage.length === 0, 'un dominio parecido al viejo tampoco vale');
+  for (const ref of ['https://www.duendequest.com/mundo/', 'http://duendequest.com/', 'http://www.duendequest.com/x']) {
+    const lw = correrLlegada(p.destino, { ref });
+    chequear(lw.localStorage.getItem('dq_mmo_tok') === TOK_A && lw.localStorage.getItem(SB) !== null && lw.destino === '/mundo/?ref=ab12#premium', 'desde ' + ref.split('/').slice(0, 3).join('/') + ' llega el duende y la sesion');
+  }
+  chequear(correrLlegada(p.destino, { ref: 'https://www.duendequest.com.malo.example/' }).localStorage.length === 0 && correrLlegada(p.destino, { ref: 'https://duendequest.com.malo.example/' }).localStorage.length === 0, 'un dominio parecido al oficial tampoco vale');
   const l6 = correrLlegada(p.destino, { ref: '' });
   chequear(l6.localStorage.getItem('dq_mmo_tok') === TOK_A && l6.localStorage.getItem(SB) === null, 'sin procedencia llega el duende de invitado pero nunca la sesion de la cuenta');
 }
@@ -134,6 +143,25 @@ const SB = 'sb-abcdefghij-auth-token';
   chequear(r3.status === 200 && (await r3.text()) === '<html>pagina</html>' && pedidos.join() === '/mmo/' && /frame-ancestors/.test(r3.headers.get('Content-Security-Policy')) && r3.headers.get('Strict-Transport-Security'), 'worker: en el oficial la pagina se sirve tal cual, con sus cabeceras');
   const r4 = await worker.fetch(pet(VIEJO + '/tonconnect-manifest.json'), env, ctx);
   chequear(r4.status === 200 && r4.headers.get('Access-Control-Allow-Origin') === '*', 'worker: un archivo del dominio viejo se sigue sirviendo');
+  // www y http: una sola direccion.
+  pedidos.length = 0;
+  const w1 = await worker.fetch(pet('https://www.duendequest.com/mundo/?x=1'), env, ctx);
+  chequear(w1.status === 200 && (await w1.text()).includes('/mudanza#') && pedidos.length === 0, 'worker: pagina en www → puente');
+  const w2 = await worker.fetch(pet('https://www.duendequest.com/mundo/?x=1', { ua: 'Mozilla/5.0 (compatible; Googlebot/2.1)' }), env, ctx);
+  chequear(w2.status === 301 && w2.headers.get('Location') === SITIO + '/mundo/?x=1', 'worker: buscador en www → 301 al dominio sin www');
+  const w3 = await worker.fetch(pet('http://duendequest.com/guia', { ua: 'curl/8.0' }), env, ctx);
+  chequear(w3.status === 301 && w3.headers.get('Location') === SITIO + '/guia', 'worker: http → 301 a https');
+  const w4 = await worker.fetch(pet('https://www.duendequest.com/tonconnect-manifest.json'), env, ctx);
+  chequear(w4.status === 200 && w4.headers.get('Access-Control-Allow-Origin') === '*', 'worker: un archivo en www se sigue sirviendo');
+  // security.txt, favicon y HSTS.
+  const s1 = await worker.fetch(pet(SITIO + '/.well-known/security.txt'), env, ctx);
+  const st = await s1.text();
+  const vence = (st.split('\n').find(l => l.startsWith('Expires: ')) || '').slice(9);
+  chequear(s1.status === 200 && s1.headers.get('Content-Type').startsWith('text/plain') && st.startsWith('Contact: https://') && new Date(vence) > new Date() && st.includes('Canonical: ' + SITIO + '/.well-known/security.txt'), 'worker: security.txt con contacto y fecha de caducidad futura');
+  pedidos.length = 0;
+  const f1 = await worker.fetch(pet(SITIO + '/favicon.ico'), env, ctx);
+  chequear(f1.status === 200 && pedidos.join() === '/assets/ui/icon-192.png' && fs.existsSync(path.join(RAIZ, 'assets/ui/icon-192.png')), 'worker: /favicon.ico sirve el icono de la app');
+  chequear(r3.headers.get('Strict-Transport-Security') === HSTS && HSTS.includes('includeSubDomains') && !HSTS.includes('preload') && fs.readFileSync(path.join(RAIZ, '_headers'), 'utf8').includes('Strict-Transport-Security: ' + HSTS), 'HSTS con subdominios, igual en el Worker y en _headers');
   const r5 = await worker.fetch(pet(VIEJO + '/mmo/rank', { m: 'POST' }), env, ctx);
   chequear(r5.status === 405, 'worker: las rutas dinamicas del dominio viejo siguen igual');
 }

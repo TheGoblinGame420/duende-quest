@@ -29,7 +29,8 @@ not_found_handling = "404-page"
 # cabeceras. Los patrones no distinguen dominio, por eso van aqui. Una pagina
 # NUEVA (carpeta con index.html o archivo .html) debe anadirse a esta lista en sus
 # formas (/x, /x/, /x/index.html o /x, /x.html); si falta, en workers.dev se
-# queda sin redirigir. Tope de Cloudflare: 100 entradas (hoy 48).
+# queda sin redirigir. Tope de Cloudflare: 100 entradas (hoy 51). Las tres ultimas
+# no son paginas: /favicon.ico y security.txt los responde worker.js.
 run_worker_first = [
   "/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev", "/mmo/cw", "/mmo/rank",
   "/", "/index.html", "/mmo", "/mmo/", "/mmo/index.html", "/mundo",
@@ -38,9 +39,16 @@ run_worker_first = [
   "/chicha-wars/", "/chicha-wars/index.html", "/telegram", "/telegram/", "/telegram/index.html", "/token",
   "/token/", "/token/index.html", "/game", "/game.html", "/guia", "/guia.html",
   "/novedades", "/novedades.html", "/seguridad", "/seguridad.html", "/terminos", "/terminos.html",
-  "/privacidad", "/privacidad.html", "/reembolsos", "/reembolsos.html", "/mundo/galeria", "/mundo/galeria.html"
+  "/privacidad", "/privacidad.html", "/reembolsos", "/reembolsos.html", "/mundo/galeria", "/mundo/galeria.html",
+  "/favicon.ico", "/security.txt", "/.well-known/security.txt"
 ]
 # (/api/medir, el ID del pixel de Meta para js/medir.js, ya entra por /api/*.)
+
+# Registros del Worker y del Durable Object (console.log / console.error y cada
+# excepcion) en el panel de Cloudflare: Workers → duende-quest → Observability.
+# Gratis hasta 200.000 lineas al dia, 3 dias guardadas; al pasar el tope solo dejan de guardarse.
+[observability]
+enabled = true
 
 # Medicion de anuncios de Meta (pixel + Conversions API): APAGADA mientras no
 # existan META_PIXEL_ID y META_CAPI_TOKEN. Para activarla, el dueño crea el

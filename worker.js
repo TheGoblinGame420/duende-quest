@@ -10,6 +10,7 @@ import { runCron } from './functions/api/cron.js';
 import { evValido } from './functions/mmo/retencion.js';
 import { tocaMudanza, respuestaMudanza } from './functions/api/mudanza.js';
 import { authApi } from './functions/api/auth.js';
+import { SITIO, HSTS } from './functions/api/dominio.js';
 export { MmoWorld } from './functions/mmo/world.js';
 
 export default {
@@ -18,9 +19,9 @@ export default {
     const path = url.pathname;
     const context = { request, env, ctx };
 
-    // Dominio viejo (workers.dev): las paginas se mudan a duendequest.com con el
-    // duende del jugador (functions/api/mudanza.js). La API, el WebSocket y los
-    // archivos siguen sirviendose igual.
+    // Dominio viejo (workers.dev), www y http: las paginas se mudan a
+    // https://duendequest.com con el duende del jugador (functions/api/mudanza.js).
+    // La API, el WebSocket y los archivos siguen sirviendose igual.
     if (tocaMudanza(request, url)) return respuestaMudanza(request, url);
 
     // Tu cuenta de Telegram en el navegador: OTT, canje con cookie HttpOnly y cierre de sesion (functions/api/auth.js).
@@ -119,11 +120,20 @@ export default {
     // cabeceras de _headers. Aqui solo caen esas rutas sin match y las
     // peticiones no-navegacion a archivos que no existen; se les ponen las
     // mismas cabeceras a mano. Mantener ambas listas iguales.
-    const res = await env.ASSETS.fetch(request);
+    // security.txt (RFC 9116): a donde escribir si alguien encuentra un fallo de seguridad.
+    // Va aqui y no como archivo para no depender de como se publican las carpetas con punto.
+    if (path === '/.well-known/security.txt' || path === '/security.txt') {
+      const vence = new Date(Math.floor(Date.now() / 86400000 + 330) * 86400000).toISOString();   // ~11 meses (la norma pide menos de un año)
+      return new Response(['Contact: https://t.me/ElDuendeOficial', 'Contact: ' + SITIO + '/seguridad', 'Expires: ' + vence, 'Preferred-Languages: es, en', 'Canonical: ' + SITIO + '/.well-known/security.txt', 'Policy: ' + SITIO + '/seguridad', ''].join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': HSTS } });
+    }
+    // /favicon.ico: lo piden solos algunos navegadores, buscadores y vistas previas (daba 404). Es el icono de la app.
+    const esIcono = path === '/favicon.ico';
+    const res = await env.ASSETS.fetch(esIcono ? new Request(new URL('/assets/ui/icon-192.png', url), { method: request.method === 'HEAD' ? 'HEAD' : 'GET' }) : request);
     const headers = new Headers(res.headers);
+    if (esIcono && res.ok) headers.set('Cache-Control', 'public, max-age=604800');
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    headers.set('Strict-Transport-Security', 'max-age=31536000');
+    headers.set('Strict-Transport-Security', HSTS);
     headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     // frame-ancestors: sin esto Telegram podria no poder incrustar la Mini
     // App dentro de web.telegram.org en algunos clientes.

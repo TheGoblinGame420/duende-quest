@@ -14,8 +14,13 @@
 // No se redirige: /api/* (webhooks del bot y de pagos), el WebSocket ni los
 // archivos (JS, imagenes, manifiesto): un cliente viejo abierto sigue vivo
 // hasta que recarga. Rutas que llegan aqui: run_worker_first en wrangler.toml.
+//
+// Desde el 22-nov-2026 se mudan igual las otras dos formas de escribir el sitio,
+// para que haya UNA sola direccion (https://duendequest.com): «www.» y «http://».
+// Cada una es otro origen para el navegador (otro localStorage), por eso usan el
+// mismo puente y no un 301 a secas.
 // ═══════════════════════════════════════════════════════
-import { DOMINIO_VIEJO, SITIO } from './dominio.js';
+import { DOMINIO, DOMINIO_VIEJO, HOST_WWW, SITIO, HSTS } from './dominio.js';
 
 const NO_PAGINA = ['/api/', '/mmo/ws', '/mmo/ev', '/mmo/cw', '/mmo/rank', '/interno/'];
 const ROBOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|discord|slack|curl|wget|python|httpclient|headless|lighthouse|monitor|uptime/i;
@@ -28,7 +33,8 @@ export function esPagina(path) {
 }
 
 export function tocaMudanza(request, url) {
-  return url.hostname === DOMINIO_VIEJO && (request.method === 'GET' || request.method === 'HEAD') && esPagina(url.pathname);
+  const otroOrigen = url.hostname === DOMINIO_VIEJO || url.hostname === HOST_WWW || (url.hostname === DOMINIO && url.protocol === 'http:');
+  return otroOrigen && (request.method === 'GET' || request.method === 'HEAD') && esPagina(url.pathname);
 }
 
 // Corre en el NAVEGADOR: lee lo guardado y salta. Va como TEXTO (no como funcion
@@ -72,7 +78,7 @@ export function respuestaMudanza(request, url) {
   const comunes = {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Strict-Transport-Security': 'max-age=31536000',
+    'Strict-Transport-Security': HSTS,
     'X-Robots-Tag': 'noindex'
   };
   if (request.method === 'HEAD' || yaPaso || !ua || ROBOT.test(ua)) {

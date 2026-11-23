@@ -23,7 +23,10 @@
     var d = h ? JSON.parse(decodeURIComponent(escape(atob(h)))) : null;
     if (d && typeof d.to === 'string' && d.to.length < 9000 && /^\/(?![\/\\])/.test(d.to) && d.to.indexOf('/mudanza') !== 0) to = d.to;
     var ref = document.referrer || '';
-    var deViejo = ref === VIEJO || ref.indexOf(VIEJO + '/') === 0;
+    // Tambien se mudan www y http (22-nov-2026): son otros origenes del mismo sitio.
+    var ORIGENES = [VIEJO, 'https://www.duendequest.com', 'http://www.duendequest.com', 'http://duendequest.com'];
+    var deViejo = false;
+    for (var i = 0; i < ORIGENES.length; i++) if (ref === ORIGENES[i] || ref.indexOf(ORIGENES[i] + '/') === 0) deViejo = true;
     if (d && d.k && typeof d.k === 'object' && (deViejo || !ref)) {
       for (var c in d.k) {
         if (!Object.prototype.hasOwnProperty.call(d.k, c)) continue;

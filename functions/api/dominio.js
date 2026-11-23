@@ -11,7 +11,11 @@
 // ═══════════════════════════════════════════════════════
 export const DOMINIO = 'duendequest.com';
 export const DOMINIO_VIEJO = 'duende-quest.alfonso12hc.workers.dev';
+export const HOST_WWW = 'www.' + DOMINIO;   // se muda al dominio sin www (functions/api/mudanza.js)
 export const SITIO = 'https://' + DOMINIO;
+// Cabecera HSTS, igual en todas partes (_headers lleva la misma a mano). Con subdominios; sin «preload» a proposito:
+// entrar en la lista de los navegadores es un compromiso dificil de deshacer.
+export const HSTS = 'max-age=31536000; includeSubDomains';
 // Hosts que cuentan como «nuestros» (sin www: quien compara ya se lo quita).
 export const HOSTS_OFICIALES = [DOMINIO, DOMINIO_VIEJO];
 export const ORIGENES_OFICIALES = [SITIO, 'https://www.' + DOMINIO, 'https://' + DOMINIO_VIEJO];
