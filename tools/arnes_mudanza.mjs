@@ -157,7 +157,7 @@ const SB = 'sb-abcdefghij-auth-token';
   const s1 = await worker.fetch(pet(SITIO + '/.well-known/security.txt'), env, ctx);
   const st = await s1.text();
   const vence = (st.split('\n').find(l => l.startsWith('Expires: ')) || '').slice(9);
-  chequear(s1.status === 200 && s1.headers.get('Content-Type').startsWith('text/plain') && st.startsWith('Contact: https://') && new Date(vence) > new Date() && st.includes('Canonical: ' + SITIO + '/.well-known/security.txt'), 'worker: security.txt con contacto y fecha de caducidad futura');
+  chequear(s1.status === 200 && s1.headers.get('Content-Type').startsWith('text/plain') && st.startsWith('Contact: mailto:contacto@duendequest.com') && st.includes('Contact: https://') && fs.readFileSync(path.join(RAIZ, 'seguridad.html'), 'utf8').includes('mailto:contacto@duendequest.com') && new Date(vence) > new Date() && st.includes('Canonical: ' + SITIO + '/.well-known/security.txt'), 'worker: security.txt con contacto y fecha de caducidad futura');
   pedidos.length = 0;
   const f1 = await worker.fetch(pet(SITIO + '/favicon.ico'), env, ctx);
   chequear(f1.status === 200 && pedidos.join() === '/assets/ui/icon-192.png' && fs.existsSync(path.join(RAIZ, 'assets/ui/icon-192.png')), 'worker: /favicon.ico sirve el icono de la app');

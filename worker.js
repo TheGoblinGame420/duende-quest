@@ -124,7 +124,7 @@ export default {
     // Va aqui y no como archivo para no depender de como se publican las carpetas con punto.
     if (path === '/.well-known/security.txt' || path === '/security.txt') {
       const vence = new Date(Math.floor(Date.now() / 86400000 + 330) * 86400000).toISOString();   // ~11 meses (la norma pide menos de un año)
-      return new Response(['Contact: https://t.me/ElDuendeOficial', 'Contact: ' + SITIO + '/seguridad', 'Expires: ' + vence, 'Preferred-Languages: es, en', 'Canonical: ' + SITIO + '/.well-known/security.txt', 'Policy: ' + SITIO + '/seguridad', ''].join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': HSTS } });
+      return new Response(['Contact: mailto:contacto@duendequest.com', 'Contact: https://t.me/ElDuendeOficial', 'Contact: ' + SITIO + '/seguridad', 'Expires: ' + vence, 'Preferred-Languages: es, en', 'Canonical: ' + SITIO + '/.well-known/security.txt', 'Policy: ' + SITIO + '/seguridad', ''].join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff', 'Strict-Transport-Security': HSTS } });
     }
     // /favicon.ico: lo piden solos algunos navegadores, buscadores y vistas previas (daba 404). Es el icono de la app.
     const esIcono = path === '/favicon.ico';
