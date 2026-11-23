@@ -5,6 +5,13 @@ medido o probado, no son ideas sueltas.
 
 ---
 
+## v406 (22-nov-2026): gameplay en la portada y plan por fases
+
+- **Plan vigente**: `GDD-TECNICO.md`. La fase A empieza por el libro mayor de oro (A1); nada de sumideros ni precios nuevos antes de dos semanas de datos. Decisiones pendientes del dueño: sección 8 de ese documento.
+- **Hueco confirmado en el código**: Chicha Wars cambia por oro del MMO un saldo de monedas que llega del cliente (`limpiarEst` solo lo recorta), con tope de 1.000 de oro al día por cuenta. Fase A3.
+- **Clips de la portada**: para cambiarlos, editar las listas de `tools/promo/gameplay_web.sh` y volver a ejecutarlo. Las tomas crudas son de la v394-396 (sin mascotas místicas): conviene regrabar una toma con mascota cuando haya ocasión.
+- **Orden de la portada**: una sola lista en `js/portada-orden.js` (`orden` y `lista`). Una sección sin id (la franja del token) no la mueve ese guion: en el HTML tiene que ir antes de `#juegos` o acaba al final de la página.
+
 ## Dominio y Cloudflare (22-nov-2026)
 
 - **Hecho en el panel**: TLS mínimo 1.2, DNSSEC, SPF/DKIM/DMARC restrictivos. **Hecho en código**: www y http → https://duendequest.com (puente de `functions/api/mudanza.js`), HSTS con subdominios, security.txt, favicon, `[observability]`.

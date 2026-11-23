@@ -324,3 +324,7 @@ Para saber el estado real, el dueño puede ejecutar `sql/00-diagnostico.sql` (es
   - `worker.js` responde `/.well-known/security.txt` y `/favicon.ico` (están en `run_worker_first`). `[observability]` activo: registros en el panel.
   - En el panel: TLS mínimo 1.2, DNSSEC, DMARC en reject y Email Routing (`contacto@duendequest.com` reenviado al Gmail del dueño; el dominio recibe pero no envía correo). «Always Use HTTPS» sigue apagado a propósito hasta el 23-dic-2026 (ver `SIGUIENTE.md`).
   - Las herramientas con Chrome sin ventana se identifican como «Headless» y el servidor las trata como robot (301 sin puente): para probar la mudanza hay que poner un User-Agent normal.
+- **v406 (22-nov-2026): gameplay en la portada, recorrido del jugador primero y plan por fases.**
+  - `#juegos` de `index.html`: dos `video.juego-vid` (`assets/video/gameplay-3d.mp4` y `gameplay-2d.mp4`, hechos con `tools/promo/gameplay_web.sh`); el guion del final de la página los carga al verse y los pausa al salir.
+  - `js/portada-orden.js` ordena la portada al cargar (el HTML es solo el orden sin JavaScript): gameplay → 3 pasos → el juego → token → resto.
+  - `GDD-TECNICO.md`: plan por fases (A: libro mayor, esquema `c.v`, Chicha Wars, validador de mensajes, firmas únicas). Es un plan; no hay nada de eso programado.
